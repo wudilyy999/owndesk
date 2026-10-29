@@ -1,0 +1,10 @@
+#!/bin/bash
+# Waits until the desktop is drawing and noVNC is accepting connections
+for _ in $(seq 150); do
+  if xdpyinfo >/dev/null 2>&1 && curl -fsS http://127.0.0.1:6079/health >/dev/null && ss -Hltn '( sport = :6081 )' | grep -q .; then
+    exit 0
+  fi
+  sleep 0.2
+done
+echo "The desktop didn't come up in time." >&2
+exit 1

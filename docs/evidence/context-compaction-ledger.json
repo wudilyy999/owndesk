@@ -1,0 +1,24 @@
+{
+  "recordedAt": "2026-10-26T03:44:25.775Z",
+  "passed": true,
+  "database": "agent_context_32591c98126f45d2b161a1453a0769d5",
+  "checks": [
+    "Real SDK compaction, durable checkpoint, fresh-process continuation, pinned owner input, original attempt pricing and zero-request replay",
+    "Missing compaction receipt remains unknown/unpriced; normal request and automatic retry are blocked",
+    "Invalid returned summary is a saved billed response, rejected without repeat requests or invented fallback",
+    "Interrupted compaction requires the original retry-consent request, even when current history is empty",
+    "Original monthly budget gate blocks a summary before any model intent/request",
+    "Pinned input with no removable history fails before spending; no compaction thrashing",
+    "Raw history, main Task/attempt/migration counts and .env remain unchanged",
+    "Frozen per-Task window overrides the worker default; pinned-only input above the soft trigger remains usable within the hard reserve",
+    "Explicit upstream context rejection preserves unknown billing and blocks retries; controlled consent forces compaction below the local trigger before continuation",
+    "Cancellation blocks both summary and ordinary model requests before dispatch"
+  ],
+  "localFixtureRequests": 8,
+  "cloudModelRequests": 0,
+  "realDesktopActions": 0,
+  "tasks": 10,
+  "mainUnchanged": true,
+  "envUnchanged": true,
+  "scope": "Production decide/generateText and PostgreSQL ledger with local fixed responses and health-only CLI fixture. Fresh child process resumed the saved summary. No DBOS workflow/desktop/cloud-model quality acceptance or deployment claim."
+}

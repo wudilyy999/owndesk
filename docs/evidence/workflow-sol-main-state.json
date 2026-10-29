@@ -1,0 +1,18 @@
+{
+  "recordedAt": "2026-10-26T01:46:57.665Z",
+  "health": {
+    "ready": true,
+    "version": "0.15.1-dev"
+  },
+  "businessMigrations": 16,
+  "activeTasks": 0,
+  "mainEnvMatchesBeforeProductionFix": true,
+  "settingsUnchanged": "Both Sol test runs asserted exact main encrypted settings equality before shutdown",
+  "originalGeminiAttemptsUnchanged": "Both Sol runs compared every original Gemini attempt field",
+  "sourceTaskUnchanged": "Both Sol runs compared all source Task fields",
+  "retainedSource": "2026-10-25T17:54:02.765656646Z sha256:c90794aae50fa9acdbea1a0dd8aae1b1d785023d438fc4fb2cd53616216770b3 exited",
+  "experimentWorkstationsStopped": true,
+  "processes": "57067 next-server (v16.4.3)      \n57068 /opt/homebrew/Cellar/node@24/24.20.0/bin/node --import tsx worker/main.ts",
+  "dockerContext": "colima",
+  "noMainMigrationOrRestart": true
+}

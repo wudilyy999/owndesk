@@ -1,0 +1,143 @@
+{
+  "passed": true,
+  "scope": "controlled-short-run-linux-capacity-baseline",
+  "directory": "data/experiments/pa-linux-1792903976167/attempt-1792906944635",
+  "recordedAt": "2026-10-25T05:45:19.559Z",
+  "elapsedMs": 174923,
+  "server": {
+    "cpuCount": 2,
+    "memoryBytes": 3040575488,
+    "architecture": "aarch64"
+  },
+  "sampleCount": 6,
+  "completedTaskCount": 8,
+  "outcomes": [
+    {
+      "round": 1,
+      "taskId": "d49d2928-1da6-4e3a-b8e5-37ddd410a204",
+      "artifactId": "d49d2928-1da6-4e3a-b8e5-37ddd410a204-s1-a7-f0",
+      "elapsedMs": 14227,
+      "rows": 4,
+      "amount": 620
+    },
+    {
+      "round": 2,
+      "taskId": "76e78724-a917-484b-87fa-9c6190b60d5c",
+      "artifactId": "76e78724-a917-484b-87fa-9c6190b60d5c-s1-a7-f0",
+      "elapsedMs": 10825,
+      "rows": 4,
+      "amount": 620
+    },
+    {
+      "round": 3,
+      "taskId": "af268009-27eb-45ce-a34d-7893a28ff44e",
+      "artifactId": "af268009-27eb-45ce-a34d-7893a28ff44e-s1-a7-f0",
+      "elapsedMs": 10518,
+      "rows": 4,
+      "amount": 620
+    },
+    {
+      "round": 4,
+      "taskId": "ec53ee52-762d-4a51-aa09-bd703403fdda",
+      "artifactId": "ec53ee52-762d-4a51-aa09-bd703403fdda-s1-a7-f0",
+      "elapsedMs": 10258,
+      "rows": 4,
+      "amount": 620
+    },
+    {
+      "round": 5,
+      "taskId": "00f5dfa0-168e-4040-a657-0d180eff2cc9",
+      "artifactId": "00f5dfa0-168e-4040-a657-0d180eff2cc9-s1-a7-f0",
+      "elapsedMs": 10271,
+      "rows": 4,
+      "amount": 620
+    },
+    {
+      "round": 6,
+      "taskId": "ea1f7bdd-f086-4303-86b7-1f9352403386",
+      "artifactId": "ea1f7bdd-f086-4303-86b7-1f9352403386-s1-a7-f0",
+      "elapsedMs": 10485,
+      "rows": 4,
+      "amount": 620
+    },
+    {
+      "round": 7,
+      "taskId": "1b07847c-c513-46f0-8804-ba10436c3fa9",
+      "artifactId": "1b07847c-c513-46f0-8804-ba10436c3fa9-s1-a7-f0",
+      "elapsedMs": 11573,
+      "rows": 4,
+      "amount": 620
+    },
+    {
+      "round": 8,
+      "taskId": "4a8b42fb-d31c-427d-a26b-9c4b2696636b",
+      "artifactId": "4a8b42fb-d31c-427d-a26b-9c4b2696636b-s1-a7-f0",
+      "elapsedMs": 10493,
+      "rows": 4,
+      "amount": 620
+    }
+  ],
+  "controlledProvider": true,
+  "realModelJudgmentEvaluated": false,
+  "actualCloudProviderEvaluated": false,
+  "ordinaryPublicDnsEvaluated": false,
+  "authenticatedFixtureBypass": true,
+  "modelResponseDelayMs": 500,
+  "mainLocalDeploymentUnchanged": true,
+  "longRunningCapacityEvaluated": false,
+  "minimumServerSpecEstablished": false,
+  "automaticIdleStopEvaluated": false,
+  "applicationVersion": "0.9.0-dev",
+  "businessMigration": "0011",
+  "guestProtocolVersion": 2,
+  "controlledModelCalls": 56,
+  "actualDownloads": 8,
+  "finalBrowserPageCount": 1,
+  "finalGuestAndViewerOomKilled": false,
+  "httpsClientIgnoredTestCertificateErrors": true,
+  "pinnedImages": {
+    "worker": "182dc2e2d4d2",
+    "web": "600afb5d58dd",
+    "workstation": "441e717eefd1",
+    "postgres": "c54a696c6801",
+    "caddy": "c7d68e4fa1bb"
+  },
+  "resourceSamplesFile": "resource-samples.json",
+  "freshInstallationOnRetainedVm": true,
+  "restoredInstallationUnchanged": true,
+  "databaseBytes": {
+    "before": 10206231,
+    "after": 12033047,
+    "growth": 1826816
+  },
+  "finalAllocatedVolumeBytes": {
+    "artifacts": 69632,
+    "home": 10461184
+  },
+  "unverified": [
+    "long-running capacity and disk retention",
+    "universal minimum host specification",
+    "actual VPS/public DNS/ACME",
+    "real-model and site judgment",
+    "real login retained after idle stop",
+    "long-lived actual human waits under idle maintenance",
+    "matched Xiryn comparison"
+  ],
+  "priorTaskBeforeFailures": [
+    {
+      "directory": "data/experiments/pa-linux-1792903976167/attempt-1792906654465",
+      "reason": "Operator HTTPS entry not yet forwarded; added non-mutating readiness check",
+      "tasksStarted": 0
+    },
+    {
+      "directory": "data/experiments/pa-linux-1792903976167/attempt-1792906794678",
+      "reason": "Guest subnet overlapped a retained failed-install network; select unoccupied subnet and per-attempt fixture names",
+      "tasksStarted": 0
+    },
+    {
+      "directory": "data/experiments/pa-linux-1792903976167/attempt-1792906847606",
+      "reason": "Docker host/none metadata has null IPAM.Config; handle this external metadata shape",
+      "tasksStarted": 0
+    }
+  ]
+}

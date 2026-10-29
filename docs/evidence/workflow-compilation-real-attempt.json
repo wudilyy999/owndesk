@@ -1,0 +1,50 @@
+{
+  "passed": false,
+  "scope": "C1/T19 real-model candidate compilation, not C2 execution, ready certification or Xiryn comparison",
+  "directory": "data/experiments/agent_compile_89b32692f49640c5b7887bb19091d06f",
+  "checks": [
+    {
+      "check": "source ownership, immutable contract, parameter declarations, request deduplication and unverified-ready gate",
+      "passed": true
+    },
+    {
+      "check": "SQL0016 applied only to the new isolated clone; source Task retained byte-for-byte",
+      "passed": true
+    }
+  ],
+  "database": "agent_compile_89b32692f49640c5b7887bb19091d06f",
+  "taskId": "5b0ad29b-a729-439b-91a0-13f34fb090fc",
+  "sourceTaskId": "2935de0d-e34e-467a-bbdf-0f1135f5428b",
+  "state": {
+    "status": "needs_review",
+    "result": null,
+    "error": null
+  },
+  "attempts": [
+    {
+      "decision_no": 1,
+      "attempt_no": 1,
+      "status": "unknown",
+      "cost_micros": null,
+      "model": "custom/gemini-3.8-flash-high",
+      "error": "TimeoutError: The operation was aborted due to timeout"
+    }
+  ],
+  "version": {
+    "id": "5b0ad29b-a729-439b-91a0-13f34fb090fc",
+    "workflowId": "5b0ad29b-a729-439b-91a0-13f34fb090fc",
+    "revision": 1,
+    "name": "Thunar 创建并重命名目录",
+    "sourceTaskId": "2935de0d-e34e-467a-bbdf-0f1135f5428b",
+    "compilationTaskId": "5b0ad29b-a729-439b-91a0-13f34fb090fc",
+    "status": "draft",
+    "environment": {
+      "locale": "C.UTF-8",
+      "application": "Thunar",
+      "guestProtocol": 6,
+      "workstationImageId": "sha256:c90794aae50fa9acdbea1a0dd8aae1b1d785023d438fc4fb2cd53616216770b3"
+    },
+    "plan": null,
+    "createdAt": "2026-10-25T18:15:39.645Z"
+  }
+}

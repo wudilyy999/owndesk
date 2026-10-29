@@ -1,0 +1,69 @@
+{
+  "passed": true,
+  "directory": "data/experiments/pa-linux-1792926302902/attempt-1792926823777",
+  "checks": [
+    {
+      "check": "Fresh rootful Linux Docker: absent policy rejected; scoped bridge/firewall initialized and live rules verified",
+      "detail": {
+        "ready": true,
+        "policy": "private-v1",
+        "name": "pa-b6f39d4d-egress",
+        "bridge": "pagb6f39d4d",
+        "subnet": "172.30.201.0/24",
+        "controlIPs": [
+          "127.0.0.1",
+          "93.184.216.9"
+        ]
+      }
+    },
+    {
+      "check": "Production Linux Compose: migrations/one-owner init, HTTPS chain validation, owner settings and private DB/Web/worker; only worker mounts Docker"
+    },
+    {
+      "check": "Production cloud task: CUA/DOM, visible WSS desktop, human RFB login, worker SIGKILL recovery, one download and verified CSV delivery",
+      "detail": {
+        "taskId": "aa176476-6f4a-4d9d-ba56-fcf7fc15ad3e",
+        "downloads": 1,
+        "amount": 620
+      }
+    },
+    {
+      "check": "Basic isolation: guest has no control secrets/socket/published ports; actual Web endpoint reachable from trusted host and blocked from guest"
+    },
+    {
+      "check": "Production cancellation: real shell heartbeat starts, owner cancels, guest removed and preserved home heartbeat stops",
+      "detail": {
+        "taskId": "d3ec9ea0-b112-4ed1-846e-c9755438084c"
+      }
+    }
+  ],
+  "recordedAt": "2026-10-25T11:14:40.356Z",
+  "applicationVersion": "0.15.1-dev",
+  "scope": "single-agent production-container controlled delivery",
+  "actualTasks": 2,
+  "completed": 1,
+  "cancelled": 1,
+  "taskResults": [
+    {
+      "taskId": "aa176476-6f4a-4d9d-ba56-fcf7fc15ad3e",
+      "status": "completed"
+    },
+    {
+      "taskId": "d3ec9ea0-b112-4ed1-846e-c9755438084c",
+      "status": "cancelled"
+    }
+  ],
+  "taskCountGate": 2,
+  "ordinaryPublicDnsEvaluated": false,
+  "fullDeploymentPassed": false,
+  "runtimeMetadata": {
+    "version": "0.15.1-dev",
+    "businessMigrations": 16
+  },
+  "controlledProvider": true,
+  "realModelJudgmentEvaluated": false,
+  "actualCloudProviderEvaluated": false,
+  "fullRestoreEvaluated": false,
+  "hostKind": "dedicated rootful Linux VM with its own kernel; isolated Colima profile",
+  "mainLocalDeploymentUnchanged": true
+}

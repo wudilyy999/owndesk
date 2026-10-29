@@ -1,0 +1,173 @@
+{
+  "passed": true,
+  "scope": "controlled-linux-idle-stop-and-wakeup",
+  "stage": "idle",
+  "directory": "data/experiments/pa-linux-1792903976167/attempt-1792907342959",
+  "recordedAt": "2026-10-25T05:53:43.320Z",
+  "elapsedMs": 280362,
+  "server": {
+    "cpuCount": 2,
+    "memoryBytes": 3040575488,
+    "architecture": "aarch64"
+  },
+  "sampleCount": 8,
+  "completedTaskCount": 9,
+  "outcomes": [
+    {
+      "round": 1,
+      "taskId": "5c42d7dd-a97e-40cb-b635-7384163717d4",
+      "artifactId": "5c42d7dd-a97e-40cb-b635-7384163717d4-s1-a7-f0",
+      "elapsedMs": 14521,
+      "rows": 4,
+      "amount": 620
+    },
+    {
+      "round": 2,
+      "taskId": "2d0ef8a6-45bc-49f5-b166-3f00b05e219c",
+      "artifactId": "2d0ef8a6-45bc-49f5-b166-3f00b05e219c-s1-a7-f0",
+      "elapsedMs": 11169,
+      "rows": 4,
+      "amount": 620
+    },
+    {
+      "round": 3,
+      "taskId": "cf2bdfe5-df73-466c-a783-067a70283507",
+      "artifactId": "cf2bdfe5-df73-466c-a783-067a70283507-s1-a7-f0",
+      "elapsedMs": 10347,
+      "rows": 4,
+      "amount": 620
+    },
+    {
+      "round": 4,
+      "taskId": "5d5ec73b-d1a8-430a-a432-05ef0c5050ab",
+      "artifactId": "5d5ec73b-d1a8-430a-a432-05ef0c5050ab-s1-a7-f0",
+      "elapsedMs": 10270,
+      "rows": 4,
+      "amount": 620
+    },
+    {
+      "round": 5,
+      "taskId": "a234f084-824e-45d6-8466-4c97be24a94d",
+      "artifactId": "a234f084-824e-45d6-8466-4c97be24a94d-s1-a7-f0",
+      "elapsedMs": 10500,
+      "rows": 4,
+      "amount": 620
+    },
+    {
+      "round": 6,
+      "taskId": "f9746add-5505-44e7-bc6a-8cca7ba2b217",
+      "artifactId": "f9746add-5505-44e7-bc6a-8cca7ba2b217-s1-a7-f0",
+      "elapsedMs": 10427,
+      "rows": 4,
+      "amount": 620
+    },
+    {
+      "round": 7,
+      "taskId": "b1e8ea0e-16ad-4ad1-9c97-342b13f4fdef",
+      "artifactId": "b1e8ea0e-16ad-4ad1-9c97-342b13f4fdef-s1-a7-f0",
+      "elapsedMs": 11136,
+      "rows": 4,
+      "amount": 620
+    },
+    {
+      "round": 8,
+      "taskId": "f3063e83-76b0-459a-9e84-a67531e41da5",
+      "artifactId": "f3063e83-76b0-459a-9e84-a67531e41da5-s1-a7-f0",
+      "elapsedMs": 10927,
+      "rows": 4,
+      "amount": 620
+    },
+    {
+      "round": 9,
+      "taskId": "de4ebf25-5fc0-4423-8aca-09718e10a84c",
+      "artifactId": "de4ebf25-5fc0-4423-8aca-09718e10a84c-s1-a7-f0",
+      "elapsedMs": 11686,
+      "rows": 4,
+      "amount": 620
+    }
+  ],
+  "checks": [
+    {
+      "disabledWithoutDatabaseAccess": true
+    },
+    {
+      "syntheticEligibilityCases": [
+        "human",
+        "quarantined",
+        "handoff-pending",
+        "reserved",
+        "queued",
+        "waiting_user",
+        "needs_review"
+      ]
+    },
+    {
+      "check": "Actual leased-worker timer stopped guest/viewer, preserved their containers and fenced the old boot/epoch",
+      "waitMs": 77065,
+      "before": {
+        "epoch": 32,
+        "bootId": "74d8b461-2a7d-442a-a459-ec9365e9329a",
+        "updatedAt": "2026-10-25T05:51:16.152846+00:00"
+      },
+      "after": {
+        "epoch": 33,
+        "bootId": null,
+        "mode": "idle",
+        "activeTaskId": null
+      }
+    },
+    {
+      "check": "Ninth production task automatically woke the stopped desktop and delivered the checked CSV; home marker retained; only one blank browser page remains",
+      "taskId": "de4ebf25-5fc0-4423-8aca-09718e10a84c"
+    }
+  ],
+  "controlledProvider": true,
+  "realModelJudgmentEvaluated": false,
+  "actualCloudProviderEvaluated": false,
+  "ordinaryPublicDnsEvaluated": false,
+  "authenticatedFixtureBypass": true,
+  "modelResponseDelayMs": 500,
+  "mainLocalDeploymentUnchanged": true,
+  "longRunningCapacityEvaluated": false,
+  "minimumServerSpecEstablished": false,
+  "automaticIdleStopEvaluated": true,
+  "configuredIdleMinutes": 1,
+  "httpsClientIgnoredTestCertificateErrors": true,
+  "applicationVersion": "0.9.0-dev",
+  "businessMigration": "0011",
+  "guestProtocolVersion": 2,
+  "controlledModelCalls": 63,
+  "actualDownloads": 9,
+  "finalBrowserPageCount": 1,
+  "finalGuestAndViewerOomKilled": false,
+  "pinnedImages": {
+    "worker": "54af95cddc0d",
+    "web": "600afb5d58dd",
+    "workstation": "441e717eefd1",
+    "postgres": "c54a696c6801",
+    "caddy": "c7d68e4fa1bb"
+  },
+  "resourceSamplesFile": "resource-samples.json",
+  "freshInstallationOnRetainedVm": true,
+  "restoredInstallationUnchanged": true,
+  "databaseBytes": {
+    "before": 10206231,
+    "after": 12213271,
+    "growth": 2007040
+  },
+  "finalAllocatedVolumeBytes": {
+    "artifacts": 77824,
+    "home": 6324224
+  },
+  "unverified": [
+    "long-running capacity and disk retention",
+    "universal minimum host specification",
+    "actual VPS/public DNS/ACME",
+    "real-model and site judgment",
+    "real login retained after idle stop",
+    "long-lived actual human waits under idle maintenance",
+    "matched Xiryn comparison"
+  ],
+  "automaticStopResourceSampleHasNoRunningGuestOrViewer": true,
+  "eligibilityProbesSynthetic": true
+}

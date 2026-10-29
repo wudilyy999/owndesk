@@ -1,0 +1,13 @@
+{
+  "passed": true,
+  "fixtureOnly": true,
+  "taskId": "734a5f54-3a9d-498e-82f3-9b6ac13b9f37",
+  "checks": [
+    "Unauthenticated tasks rejected; public registration disabled",
+    "Authenticated submit, source deduplication and Origin checks",
+    "Completed task exposes a verified, owner-only downloadable artifact",
+    "SSE resumes after Last-Event-ID without replaying acknowledged events",
+    "Sign-out invalidates the owner session"
+  ],
+  "recordedAt": "2026-10-24T18:30:44.974Z"
+}

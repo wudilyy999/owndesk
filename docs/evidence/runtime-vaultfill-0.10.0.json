@@ -1,0 +1,75 @@
+{
+  "passed": true,
+  "controlledProvider": true,
+  "realModelJudgmentEvaluated": false,
+  "applicationVersion": "0.10.0-dev",
+  "guestProtocolVersion": 3,
+  "workstationImage": "personal-agent-workstation:0.3.0",
+  "controlledWebsite": true,
+  "guestFillEvaluated": true,
+  "guestFillTasksEvaluated": 13,
+  "checks": [
+    {
+      "check": "Actual old guest2 image with a new container label is rejected by its real health; no task/model call or secret release",
+      "agentId": "qMaajLoGN9I2"
+    },
+    {
+      "check": "Real owner approval UI binds exact origin/version/two targets; matched and masked login fills once, independently signs in once; deleted-item replay uses host receipt without decrypt/retype; fresh DOM replaces automatic screenshots; auth/Origin/secret-in-approval rejected",
+      "taskId": "9e7ad582-9536-4f19-af17-7d4960e24443"
+    },
+    {
+      "check": "Actual secure OTP form feeds only an item reference; one approved code input and sign-in; consumed task-scoped code removed while release audit remains",
+      "taskId": "956fb7f5-9dcb-4d2b-b32f-fe6e030f74c7"
+    },
+    {
+      "check": "Changed descriptor is rejected before typing; expired/revision-changed grants cannot approve or release values; wrong exact origin never obtains a grant; all have zero inputs",
+      "taskIds": [
+        "d70dd3d5-ae0e-4b24-8fd1-52268a785824",
+        "90ac12d0-546b-40ed-b3b1-746c9547e5af"
+      ]
+    },
+    {
+      "check": "SIGKILL during approval wait preserves decision but fences old grant; owner declines it, fresh observation/epoch obtains a distinct approval and fills once",
+      "taskId": "7d80430c-ab10-4494-b7e9-878d0d66f156"
+    },
+    {
+      "check": "guest_receipt: deterministic receipt/checkpoint interruption; restart never releases or types twice; known receipts survive deleted items; lost receipt requires explicit continue/cancel, not completion",
+      "taskId": "85b52d72-0459-48d5-9ebb-d558866ff971"
+    },
+    {
+      "check": "host_receipt: deterministic receipt/checkpoint interruption; restart never releases or types twice; known receipts survive deleted items; lost receipt requires explicit continue/cancel, not completion",
+      "taskId": "72ead6cc-9105-472b-9988-8af432acb1b9"
+    },
+    {
+      "check": "lost_receipt: deterministic receipt/checkpoint interruption; restart never releases or types twice; known receipts survive deleted items; lost receipt requires explicit continue/cancel, not completion",
+      "taskId": "4376417a-b462-488a-866c-8e0db00e7363"
+    },
+    {
+      "check": "partial: only known first field entered; safe attempted/filled details reach review, raw fill arguments absent; continue does not resubmit or refill",
+      "taskId": "af878cde-7a6d-4b29-b1df-b20a8d6414fb"
+    },
+    {
+      "check": "timeout: only known first field entered; safe attempted/filled details reach review, raw fill arguments absent; continue does not resubmit or refill",
+      "taskId": "ebec5fd7-a42c-4cae-9f95-b51f9ae31020"
+    },
+    {
+      "check": "Cancellation during blocked second field ends actual guest processes; task becomes cancelled with no later form submission",
+      "taskId": "d6e1be58-31a6-4f34-9d52-7064ae09925a"
+    },
+    {
+      "check": "Sample username/password/code values absent from all public/DBOS tables and model requests; post-logout approval rejected; controlled target site legitimately sees input values, guest-code secrecy not claimed"
+    },
+    {
+      "check": "Actual thirteen-task coverage gate: twelve completed explicit outcomes, one real cancellation; an entry point or generic suite alone cannot pass the fill acceptance",
+      "taskCount": 13
+    },
+    {
+      "check": "Provider key encrypted at rest, local config overrides env, masked settings view; plaintext key absent from task/DBOS records"
+    },
+    {
+      "check": "Completed Web/worker logs, actual guest journals/controller logs and model requests contain no sample secret values; website inputs are independently counted and matched"
+    }
+  ],
+  "directory": "data/experiments/agent_runtime_83c9184bdd504261bd61dc20a18d1825",
+  "recordedAt": "2026-10-25T07:46:03.750Z"
+}

@@ -1,0 +1,14 @@
+{
+  "passed": true,
+  "applicationVersion": "0.4.0-dev",
+  "featureFocus": "Telegram durable transport",
+  "checks": [
+    "Production build and TypeScript completed",
+    "All previous preview tasks drained; matching PostgreSQL 16 backup archive saved/inventory parsed; additive migration 0007 applied",
+    "Owner production Telegram/settings routes and actual mobile production UI accessible; unconfigured bot stays disabled",
+    "Unauthenticated, signed-out, foreign-Origin and malformed token requests rejected",
+    "Controlled Telegram/model integration: see telegram.json; real Telegram and model judgment remain unevaluated"
+  ],
+  "directory": "data/experiments/telegram-preview-1792881449331",
+  "recordedAt": "2026-10-24T22:37:30.360Z"
+}

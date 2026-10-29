@@ -1,0 +1,91 @@
+{
+  "date": "2026-10-29",
+  "status": "development_verified_not_deployed",
+  "scope": "read-only AT-SPI2 metadata attached to original desktop observations; existing coordinate/key inputs unchanged",
+  "workstation": {
+    "sourceCandidate": "0.6.4",
+    "testedImage": "personal-agent-workstation:0.6.4-atspi",
+    "protocol": 6,
+    "capability": "atspi-observation-v1",
+    "packaging": "Tested image reuses existing AT-SPI dependency layers with current controller/rootfs. Fresh Debian build stopped after slow repository downloads; log retained. No clean production build claimed."
+  },
+  "verification": {
+    "contextUnits": 18,
+    "isolatedDesktopChecks": [
+      "empty desktop retains screenshot with explicit unavailable accessibility",
+      "real Thunar screenshot includes native control names",
+      "GTK names/text/value/checked/disabled/bounds observed; password, hidden and background text excluded",
+      "coordinate click refreshes tree; receipt replay identical; consumed observation rejected",
+      "reader timeout, malformed output and process failure preserve screenshots with explicit status",
+      "bounded traversal reports partial and truncation",
+      "actual SDK request contains AT-SPI controls and at most two original screenshots (local fetch only)",
+      "human takeover rejects old-epoch input"
+    ],
+    "localSdkRequests": 1,
+    "cloudModelRequests": 0,
+    "businessTasks": 0,
+    "typescript": true,
+    "format": true,
+    "pythonSyntax": true,
+    "guestJavaScriptSyntax": true,
+    "desktopBashSyntax": true
+  },
+  "mainUnchanged": {
+    "counts": {
+      "tasks": 12,
+      "attempts": 65,
+      "actions": 58,
+      "artifacts": 7,
+      "active": 0
+    },
+    "envMtime": "2026-10-26T15:55:04.877Z",
+    "envBytes": 448,
+    "health": {
+      "ready": true,
+      "version": "0.17.0-dev"
+    },
+    "pids": "25794 /opt/homebrew/Cellar/node@24/24.20.0/bin/node\n26072 next-server (v16.4.3)",
+    "workstationImage": "personal-agent-workstation:0.6.3"
+  },
+  "limitations": [
+    "No production deployment or clean production image acceptance",
+    "SDK request locally captured using real guest results; no full worker Task or real-model quality comparison",
+    "Only Thunar and controlled GTK fixture tested; AT-SPI exposure depends on application",
+    "Password-role text redacted; ordinary UI text is still sent to selected model",
+    "Tree and image are sequential samples, not atomic"
+  ],
+  "preservedTrials": [
+    {
+      "trial": 1,
+      "outcome": "Cached test image copied home files as root; desktop startup failed. Test Dockerfile corrected to match production ownership step."
+    },
+    {
+      "trial": 2,
+      "outcome": "Test request omitted required application=Thunar; guest rejected it before dispatch. Fixture request corrected."
+    },
+    {
+      "trial": 3,
+      "outcome": "Thunar observation passed; GTK typelib installation hit network deadline."
+    },
+    {
+      "trial": 4,
+      "outcome": "Repeated pending test package download intentionally stopped. Fixture replaced by ctypes over already installed GTK libraries."
+    },
+    {
+      "trial": 5,
+      "outcome": "All eight isolated check groups passed."
+    }
+  ],
+  "artifacts": {
+    "root": "data/experiments/atspi-observation-1793245588489",
+    "desktop": "data/experiments/atspi-observation-1793245588489/trial-5/result.json",
+    "fixture": "data/experiments/atspi-observation-1793245588489/trial-5/fixture.json",
+    "screenshot": "data/experiments/atspi-observation-1793245588489/trial-5/fixture.jpg",
+    "modelRequest": "data/experiments/atspi-observation-1793245588489/trial-5/model-request-metadata.json",
+    "context": "data/experiments/atspi-observation-1793245588489/context-tests.log",
+    "typecheck": "data/experiments/atspi-observation-1793245588489/typecheck.log",
+    "format": "data/experiments/atspi-observation-1793245588489/format.log",
+    "cachedBuild": "data/experiments/atspi-observation-1793245588489/cached-build.log",
+    "freshBuild": "data/experiments/atspi-observation-1793245588489/build.log"
+  }
+}

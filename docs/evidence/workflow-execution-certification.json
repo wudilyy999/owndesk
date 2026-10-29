@@ -1,0 +1,12 @@
+{
+  "passed": true,
+  "scope": "C2 certification transaction checks using synthetic checkpoint/receipt mutations of retained real samples; not new GUI tasks",
+  "database": "agent_flowcert_a981ca18b66c411d810904942302ddf1",
+  "directory": "data/experiments/agent_flowcert_a981ca18b66c411d810904942302ddf1",
+  "checks": [
+    "Original executeAction dispatch authorizer rejects expired cached decisions and over-limit inputs before sending",
+    "Completing an early/manual result check does not count as a full execution sample or throw during completion",
+    "A fixed result with an unresolved action receipt does not certify the version",
+    "Three distinct complete checked traces on the same actual image certify the immutable version"
+  ]
+}

@@ -1,0 +1,83 @@
+{
+  "status": "withdrawn",
+  "recordedAt": "2026-10-27T07:48:07.673Z",
+  "reason": "User requested abandoning screenshot UI numbering.",
+  "removed": [
+    "desktop_observe and desktop_act tool schemas/routes/prompts",
+    "numbered browser screenshot option",
+    "AT-SPI/OCR annotation modules and added image packages",
+    "active experimental test commands and six test/fixture files"
+  ],
+  "retained": [
+    "original screenshot/pointer/keyboard tools and observation safety",
+    "original plain-text DOM references and credential/payment approvals",
+    "lazy browser startup",
+    "bounded generic tool projection and at most two recent valid screenshots",
+    "historical experiment reports/images/databases/unknown cost records"
+  ],
+  "sourceArchive": "data/deferred/ui-annotations-withdrawn-20261027/source",
+  "baselineImage": "personal-agent-workstation:0.6.3",
+  "baselineSourceMatches": [
+    {
+      "file": "workstation/controller/desktop.mjs",
+      "matches": true
+    },
+    {
+      "file": "workstation/controller/server.mjs",
+      "matches": true
+    },
+    {
+      "file": "workstation/rootfs/usr/local/bin/xiryn-desktop",
+      "matches": true
+    }
+  ],
+  "checks": {
+    "targetedUnitTests": 19,
+    "passed": 19,
+    "typecheck": true,
+    "guestJavaScriptSyntax": true,
+    "desktopBashSyntax": true
+  },
+  "main": {
+    "recordedAt": "2026-10-27T07:48:07.673Z",
+    "counts": {
+      "tasks": 12,
+      "attempts": 65,
+      "actions": 58,
+      "artifacts": 7,
+      "active": 0
+    },
+    "workstationImage": "personal-agent-workstation:0.6.3",
+    "pids": [25794, 26072],
+    "containers": [
+      {
+        "name": "/pa-f9fc3cad-ws-7oppZu1_Bot6",
+        "image": "personal-agent-workstation:0.6.3",
+        "status": "running"
+      },
+      {
+        "name": "/pa-f9fc3cad-viewer-7oppZu1_Bot6",
+        "image": "personal-agent-workstation:0.6.3",
+        "status": "running"
+      }
+    ],
+    "baselineMatches": [
+      {
+        "file": "workstation/controller/desktop.mjs",
+        "matches": true
+      },
+      {
+        "file": "workstation/controller/server.mjs",
+        "matches": true
+      },
+      {
+        "file": "workstation/rootfs/usr/local/bin/xiryn-desktop",
+        "matches": true
+      }
+    ],
+    "modelRequests": 0,
+    "taskSubmissions": 0,
+    "restarted": false
+  },
+  "scope": "Source withdrawal; no main deployment or new live GUI/model evaluation."
+}

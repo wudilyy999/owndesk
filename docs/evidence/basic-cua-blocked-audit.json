@@ -1,0 +1,58 @@
+{
+  "recordedAt": "2026-10-25T11:25:29.791784+00:00",
+  "previousGoalTurnClassification": "progress: private backup, real restore and0011→0015 clone migration verification",
+  "currentGoalTurnClassification": "no progress: readiness audit reconfirms the same missing human approval/configuration",
+  "sameBlockerObservedAcrossConsecutiveGoalTurns": 3,
+  "observations": [
+    {
+      "turn": "initial single-CUA delivery",
+      "evidence": "data/experiments/basic-cua-main-state.json",
+      "state": "preview stopped; provider0; backup/upgrade approval requested and unanswered"
+    },
+    {
+      "turn": "first goal continuation",
+      "evidence": "basic-cua-upgrade-rehearsal.json",
+      "state": "backup/clone migration completed; actual upgrade still not authorized; no provider configured"
+    },
+    {
+      "turn": "second goal continuation",
+      "evidence": "data/experiments/basic-cua-blocked-audit.json",
+      "state": "both ports refused; provider0/default unresolved; no approval reply"
+    }
+  ],
+  "pendingHumanInputs": [
+    "answer the existing request authorizing backup/version-paired main-preview upgrade",
+    "configure the existing cloudAPI and default model only in the restored local settings page"
+  ],
+  "existingProviderAndUncappedSpendingAuthorizationPreserved": true,
+  "noFurtherSafeRequiredBaseActionWithoutInput": true,
+  "noLiveProcessClaimedAsWait": true,
+  "goalComplete": false,
+  "realModelJudgmentEvaluated": false,
+  "fullDeploymentPassed": false,
+  "comparisonToXirynComplete": false,
+  "mainServicesChanged": false,
+  "newMigrationsAppliedToMain": false,
+  "current": {
+    "recordedAt": "2026-10-25T11:24:59.373Z",
+    "probes": [
+      {
+        "port": 6797,
+        "listening": false,
+        "error": "ECONNREFUSED"
+      },
+      {
+        "port": 6798,
+        "listening": false,
+        "error": "ECONNREFUSED"
+      }
+    ],
+    "configuredProviderCount": 0,
+    "defaultModelResolvable": false,
+    "businessMigrations": 12,
+    "activeTasks": 0,
+    "workstations": 0,
+    "mainServicesChanged": false,
+    "approvalReplyReceived": false
+  }
+}

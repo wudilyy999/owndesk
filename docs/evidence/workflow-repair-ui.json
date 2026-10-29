@@ -1,0 +1,11 @@
+{
+  "passed": true,
+  "database": "agent_repairui_c3746c0605004a0c9acb99ec9c0d5bba",
+  "directory": "data/experiments/agent_repairui_c3746c0605004a0c9acb99ec9c0d5bba",
+  "submittedTaskId": "976fc868-8997-411a-af87-8d771283c7e9",
+  "checks": [
+    "repair draft is owner-visible with explicit model-cost opt-in; checkbox/parameters/request key survive response loss and reload; original Task admission freezes selected model and one-decision budget",
+    "completed real GUI task shows repair state/new draft without claiming zero model calls; desktop/390px pages render without client errors"
+  ],
+  "scope": "C3 owner UI/admission against isolated cloned evidence; no worker or additional GUI/model execution"
+}

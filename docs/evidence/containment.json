@@ -1,0 +1,17 @@
+{
+  "passed": true,
+  "fixtureOnly": true,
+  "checks": [
+    {
+      "check": "G03 extension: cancellation removes the process boundary even when the controller is suspended",
+      "detail": {
+        "elapsedMs": 8436
+      }
+    },
+    {
+      "check": "G03 extension: a slow handoff does not block another workspace's cancellation; failed transfer removes the guest before quarantining"
+    }
+  ],
+  "recordedAt": "2026-10-24T19:52:02.533Z",
+  "directory": "data/experiments/agent_control_c425098b6b8a47d48066c58230e1e0a8"
+}

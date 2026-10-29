@@ -1,0 +1,1482 @@
+{
+  "database": "agent_compile_89b32692f49640c5b7887bb19091d06f",
+  "directory": "data/experiments/agent_compile_89b32692f49640c5b7887bb19091d06f/sol-1792978677037",
+  "taskId": "192d6ff2-fe9b-46a0-8547-e1ee35be77b9",
+  "sourceTaskId": "2935de0d-e34e-467a-bbdf-0f1135f5428b",
+  "model": "openai/gpt-6.1-sol",
+  "controlledProvider": false,
+  "state": {
+    "status": "completed",
+    "result": {
+      "files": [],
+      "summary": "已生成流程候选：Thunar 创建并重命名目录。等待独立样例验证，尚未启用。",
+      "workflow": {
+        "steps": 34,
+        "status": "verifying",
+        "versionId": "192d6ff2-fe9b-46a0-8547-e1ee35be77b9"
+      },
+      "verification": {
+        "grade": "schema_checked",
+        "unverified": [
+          "Candidate execution and cross-input reuse have not been verified."
+        ]
+      }
+    },
+    "error": null
+  },
+  "version": {
+    "id": "192d6ff2-fe9b-46a0-8547-e1ee35be77b9",
+    "workflowId": "192d6ff2-fe9b-46a0-8547-e1ee35be77b9",
+    "revision": 1,
+    "name": "Thunar 创建并重命名目录",
+    "sourceTaskId": "2935de0d-e34e-467a-bbdf-0f1135f5428b",
+    "compilationTaskId": "192d6ff2-fe9b-46a0-8547-e1ee35be77b9",
+    "compilationStatus": "completed",
+    "status": "verifying",
+    "environment": {
+      "locale": "C.UTF-8",
+      "application": "Thunar",
+      "guestProtocol": 6,
+      "workstationImageId": "sha256:c90794aae50fa9acdbea1a0dd8aae1b1d785023d438fc4fb2cd53616216770b3"
+    },
+    "validatedEnvironment": null,
+    "plan": {
+      "steps": [
+        {
+          "id": "outside-setup",
+          "label": "Resolve omitted outside-Thunar setup",
+          "reason": "The initial observation and pointer interaction occurred outside Thunar and their contents are unavailable. A human must resolve any necessary setup without inferring hidden actions.",
+          "evidence": [
+            1,
+            2
+          ],
+          "operation": "human_checkpoint"
+        },
+        {
+          "id": "open-thunar",
+          "label": "Open a fresh Thunar window at home",
+          "evidence": [
+            3
+          ],
+          "operation": "open_application",
+          "application": "Thunar"
+        },
+        {
+          "id": "observe-home",
+          "label": "Observe the fresh Thunar window",
+          "share": false,
+          "evidence": [],
+          "operation": "observe"
+        },
+        {
+          "id": "assert-home",
+          "label": "Confirm the home window title",
+          "window": {
+            "title": [
+              {
+                "literal": "xiryn - Thunar"
+              }
+            ],
+            "application": "Thunar"
+          },
+          "evidence": [
+            3,
+            4
+          ],
+          "operation": "assert"
+        },
+        {
+          "id": "focus-home-location",
+          "key": "l",
+          "when": {
+            "title": [
+              {
+                "literal": "xiryn - Thunar"
+              }
+            ],
+            "application": "Thunar"
+          },
+          "label": "Focus the location bar",
+          "evidence": [],
+          "modifiers": [
+            "ctrl"
+          ],
+          "operation": "key_press"
+        },
+        {
+          "id": "type-home",
+          "text": [
+            {
+              "literal": "/home/xiryn"
+            }
+          ],
+          "when": {
+            "title": [
+              {
+                "literal": "xiryn - Thunar"
+              }
+            ],
+            "application": "Thunar"
+          },
+          "label": "Set the explicit home path",
+          "evidence": [],
+          "operation": "key_type"
+        },
+        {
+          "id": "enter-home",
+          "key": "enter",
+          "when": {
+            "title": [
+              {
+                "literal": "xiryn - Thunar"
+              }
+            ],
+            "application": "Thunar"
+          },
+          "label": "Navigate to home",
+          "evidence": [],
+          "modifiers": [],
+          "operation": "key_press"
+        },
+        {
+          "id": "observe-home-location",
+          "label": "Observe home navigation result",
+          "share": false,
+          "evidence": [],
+          "operation": "observe"
+        },
+        {
+          "id": "create-parent",
+          "key": "n",
+          "when": {
+            "title": [
+              {
+                "literal": "xiryn - Thunar"
+              }
+            ],
+            "application": "Thunar"
+          },
+          "label": "Open the new folder dialog for the parent",
+          "evidence": [
+            4,
+            5
+          ],
+          "modifiers": [
+            "ctrl",
+            "shift"
+          ],
+          "operation": "key_press"
+        },
+        {
+          "id": "assert-parent-dialog",
+          "label": "Confirm the new folder dialog",
+          "window": {
+            "title": [
+              {
+                "literal": "Create New Folder"
+              }
+            ],
+            "application": "Thunar"
+          },
+          "evidence": [
+            5
+          ],
+          "operation": "assert"
+        },
+        {
+          "id": "type-parent",
+          "text": [
+            {
+              "parameter": "parentName"
+            }
+          ],
+          "when": {
+            "title": [
+              {
+                "literal": "Create New Folder"
+              }
+            ],
+            "application": "Thunar"
+          },
+          "label": "Enter the parameterized parent name",
+          "evidence": [
+            6
+          ],
+          "operation": "key_type"
+        },
+        {
+          "id": "submit-parent",
+          "key": "enter",
+          "when": {
+            "title": [
+              {
+                "literal": "Create New Folder"
+              }
+            ],
+            "application": "Thunar"
+          },
+          "label": "Create the parent directory",
+          "evidence": [
+            6
+          ],
+          "modifiers": [],
+          "operation": "key_press"
+        },
+        {
+          "id": "observe-parent-created",
+          "label": "Observe the parent creation result",
+          "share": false,
+          "evidence": [
+            7
+          ],
+          "operation": "observe"
+        },
+        {
+          "id": "focus-parent-location",
+          "key": "l",
+          "when": {
+            "title": [
+              {
+                "literal": "xiryn - Thunar"
+              }
+            ],
+            "application": "Thunar"
+          },
+          "label": "Focus location for explicit parent navigation",
+          "evidence": [],
+          "modifiers": [
+            "ctrl"
+          ],
+          "operation": "key_press"
+        },
+        {
+          "id": "type-parent-path",
+          "text": [
+            {
+              "literal": "/home/xiryn/"
+            },
+            {
+              "parameter": "parentName"
+            }
+          ],
+          "when": {
+            "title": [
+              {
+                "literal": "xiryn - Thunar"
+              }
+            ],
+            "application": "Thunar"
+          },
+          "label": "Enter the parameterized parent path",
+          "evidence": [],
+          "operation": "key_type"
+        },
+        {
+          "id": "enter-parent",
+          "key": "enter",
+          "when": {
+            "title": [
+              {
+                "literal": "xiryn - Thunar"
+              }
+            ],
+            "application": "Thunar"
+          },
+          "label": "Navigate into the parent directory",
+          "evidence": [
+            7,
+            8
+          ],
+          "modifiers": [],
+          "operation": "key_press"
+        },
+        {
+          "id": "observe-parent",
+          "label": "Observe parent navigation",
+          "share": false,
+          "evidence": [],
+          "operation": "observe"
+        },
+        {
+          "id": "assert-parent",
+          "label": "Confirm the parent window title",
+          "window": {
+            "title": [
+              {
+                "parameter": "parentName"
+              },
+              {
+                "literal": " - Thunar"
+              }
+            ],
+            "application": "Thunar"
+          },
+          "evidence": [
+            8,
+            9
+          ],
+          "operation": "assert"
+        },
+        {
+          "id": "create-draft",
+          "key": "n",
+          "when": {
+            "title": [
+              {
+                "parameter": "parentName"
+              },
+              {
+                "literal": " - Thunar"
+              }
+            ],
+            "application": "Thunar"
+          },
+          "label": "Open the new folder dialog for the draft",
+          "evidence": [
+            9,
+            10
+          ],
+          "modifiers": [
+            "ctrl",
+            "shift"
+          ],
+          "operation": "key_press"
+        },
+        {
+          "id": "assert-draft-dialog",
+          "label": "Confirm the draft creation dialog",
+          "window": {
+            "title": [
+              {
+                "literal": "Create New Folder"
+              }
+            ],
+            "application": "Thunar"
+          },
+          "evidence": [
+            10
+          ],
+          "operation": "assert"
+        },
+        {
+          "id": "type-draft",
+          "text": [
+            {
+              "parameter": "draftName"
+            }
+          ],
+          "when": {
+            "title": [
+              {
+                "literal": "Create New Folder"
+              }
+            ],
+            "application": "Thunar"
+          },
+          "label": "Enter the parameterized draft name",
+          "evidence": [
+            11
+          ],
+          "operation": "key_type"
+        },
+        {
+          "id": "submit-draft",
+          "key": "enter",
+          "when": {
+            "title": [
+              {
+                "literal": "Create New Folder"
+              }
+            ],
+            "application": "Thunar"
+          },
+          "label": "Create the draft directory",
+          "evidence": [
+            11
+          ],
+          "modifiers": [],
+          "operation": "key_press"
+        },
+        {
+          "id": "observe-draft-created",
+          "label": "Observe draft creation and parent view",
+          "share": false,
+          "evidence": [
+            12
+          ],
+          "operation": "observe"
+        },
+        {
+          "id": "select-draft-by-name",
+          "text": [
+            {
+              "parameter": "draftName"
+            }
+          ],
+          "when": {
+            "title": [
+              {
+                "parameter": "parentName"
+              },
+              {
+                "literal": " - Thunar"
+              }
+            ],
+            "application": "Thunar"
+          },
+          "label": "Select the draft using Thunar type-ahead search",
+          "evidence": [],
+          "operation": "key_type"
+        },
+        {
+          "id": "close-typeahead",
+          "key": "escape",
+          "when": {
+            "title": [
+              {
+                "parameter": "parentName"
+              },
+              {
+                "literal": " - Thunar"
+              }
+            ],
+            "application": "Thunar"
+          },
+          "label": "Close type-ahead search while retaining selection",
+          "evidence": [],
+          "modifiers": [],
+          "operation": "key_press"
+        },
+        {
+          "id": "observe-draft-selection",
+          "label": "Observe the freshly selected draft directory",
+          "share": false,
+          "evidence": [],
+          "operation": "observe"
+        },
+        {
+          "id": "open-rename",
+          "key": "f2",
+          "when": {
+            "title": [
+              {
+                "parameter": "parentName"
+              },
+              {
+                "literal": " - Thunar"
+              }
+            ],
+            "application": "Thunar"
+          },
+          "label": "Open Rename for the selected draft",
+          "evidence": [
+            13
+          ],
+          "modifiers": [],
+          "operation": "key_press"
+        },
+        {
+          "id": "assert-rename-target",
+          "label": "Confirm Rename targets the exact draft name",
+          "window": {
+            "title": [
+              {
+                "literal": "Rename \""
+              },
+              {
+                "parameter": "draftName"
+              },
+              {
+                "literal": "\""
+              }
+            ],
+            "application": "Thunar"
+          },
+          "evidence": [
+            13,
+            14
+          ],
+          "operation": "assert"
+        },
+        {
+          "id": "select-rename-text",
+          "key": "a",
+          "when": {
+            "title": [
+              {
+                "literal": "Rename \""
+              },
+              {
+                "parameter": "draftName"
+              },
+              {
+                "literal": "\""
+              }
+            ],
+            "application": "Thunar"
+          },
+          "label": "Select the entire existing name",
+          "evidence": [],
+          "modifiers": [
+            "ctrl"
+          ],
+          "operation": "key_press"
+        },
+        {
+          "id": "type-final-name",
+          "text": [
+            {
+              "parameter": "readyName"
+            }
+          ],
+          "when": {
+            "title": [
+              {
+                "literal": "Rename \""
+              },
+              {
+                "parameter": "draftName"
+              },
+              {
+                "literal": "\""
+              }
+            ],
+            "application": "Thunar"
+          },
+          "label": "Replace the draft name with the final name",
+          "evidence": [
+            14
+          ],
+          "operation": "key_type"
+        },
+        {
+          "id": "submit-rename",
+          "key": "enter",
+          "when": {
+            "title": [
+              {
+                "literal": "Rename \""
+              },
+              {
+                "parameter": "draftName"
+              },
+              {
+                "literal": "\""
+              }
+            ],
+            "application": "Thunar"
+          },
+          "label": "Confirm the directory rename",
+          "evidence": [
+            14
+          ],
+          "modifiers": [],
+          "operation": "key_press"
+        },
+        {
+          "id": "observe-rename-result",
+          "label": "Observe the result of renaming",
+          "share": false,
+          "evidence": [
+            15
+          ],
+          "operation": "observe"
+        },
+        {
+          "id": "assert-final-parent",
+          "label": "Confirm return to the parent directory",
+          "window": {
+            "title": [
+              {
+                "parameter": "parentName"
+              },
+              {
+                "literal": " - Thunar"
+              }
+            ],
+            "application": "Thunar"
+          },
+          "evidence": [
+            15,
+            16
+          ],
+          "operation": "assert"
+        },
+        {
+          "id": "share-final-view",
+          "label": "Share the final parent view for completion verification",
+          "share": true,
+          "evidence": [
+            16
+          ],
+          "operation": "observe"
+        }
+      ],
+      "completion": {
+        "root": [
+          {
+            "literal": "/home/xiryn/"
+          },
+          {
+            "parameter": "parentName"
+          }
+        ],
+        "absent": [
+          [
+            {
+              "parameter": "draftName"
+            }
+          ]
+        ],
+        "directories": [
+          [
+            {
+              "parameter": "readyName"
+            }
+          ]
+        ]
+      },
+      "parameters": [
+        {
+          "name": "parentName",
+          "label": "父目录名",
+          "sourceValue": "Flow-C0-1792950841215"
+        },
+        {
+          "name": "draftName",
+          "label": "初始目录名",
+          "sourceValue": "Draft"
+        },
+        {
+          "name": "readyName",
+          "label": "最终目录名",
+          "sourceValue": "Ready"
+        }
+      ],
+      "description": "Parameterized native Thunar candidate: explicitly navigate to the home directory, create and enter the parameterized parent, create the draft directory, explicitly select it by name, and rename it to the final name. Preserve omitted outside-Thunar setup as a human checkpoint. Final observation supports independent completion verification; compilation alone does not establish readiness.",
+      "environment": {
+        "locale": "C.UTF-8",
+        "application": "Thunar",
+        "guestProtocol": 6,
+        "workstationImageId": "sha256:c90794aae50fa9acdbea1a0dd8aae1b1d785023d438fc4fb2cd53616216770b3"
+      },
+      "sourceTaskId": "2935de0d-e34e-467a-bbdf-0f1135f5428b",
+      "schemaVersion": 1,
+      "sourceSegment": 1,
+      "sourceActionNumbers": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16
+      ]
+    },
+    "createdAt": "2026-10-26T01:37:58.909Z",
+    "importedPackage": null
+  },
+  "compilationMetrics": {
+    "taskId": "192d6ff2-fe9b-46a0-8547-e1ee35be77b9",
+    "database": "agent_compile_89b32692f49640c5b7887bb19091d06f",
+    "ownerId": "7dfb69a5-eceb-4dde-8a4e-985a4132ec7e",
+    "phase": "compilation",
+    "status": "completed",
+    "source": "c1-sol-switch",
+    "requestKey": "abdf13df-de8c-430c-999d-b986a3e881d3",
+    "createdAt": "2026-10-26T01:37:58.909Z",
+    "terminalAt": "2026-10-26T01:38:34.204Z",
+    "contract": {
+      "directoryTree": {
+        "root": "/home/xiryn/Flow-C0-1792950841215",
+        "absent": [
+          "Draft"
+        ],
+        "directories": [
+          "Ready"
+        ]
+      },
+      "requireHumanReview": false
+    },
+    "grade": "schema_checked",
+    "model": "openai/gpt-6.1-sol",
+    "plan": null,
+    "parameters": null,
+    "environment": null,
+    "workstationChannel": null,
+    "attempts": [
+      {
+        "segmentNo": 1,
+        "decisionNo": 1,
+        "attemptNo": 1,
+        "model": "openai/gpt-6.1-sol",
+        "status": "succeeded",
+        "usage": {
+          "input": 2371,
+          "cached": 0,
+          "output": 1917,
+          "missing": false,
+          "reasoning": 228
+        },
+        "costMicros": "23912",
+        "reconciledCostMicros": null,
+        "priceSnapshot": {
+          "kind": "priced",
+          "price": {
+            "long": {
+              "above": 272000,
+              "input": 4,
+              "cached": 0.2,
+              "output": 15
+            },
+            "input": 2,
+            "cached": 0.1,
+            "output": 10
+          },
+          "source": "catalog"
+        },
+        "startedAt": "2026-10-26T01:38:01.936Z",
+        "finishedAt": "2026-10-26T01:38:33.536Z"
+      }
+    ],
+    "actions": [],
+    "requests": []
+  },
+  "priorGeminiTaskId": "5b0ad29b-a729-439b-91a0-13f34fb090fc",
+  "oldUnknownPreserved": true,
+  "error": "{\"status\":\"waiting_user\",\"result\":null,\"error\":null}\n+ actual - expected\n\n+ 'waiting_user'\n- 'completed'\n",
+  "passed": false,
+  "runs": [
+    {
+      "taskId": "09eae96a-6f08-4216-bd9a-281050339f55",
+      "input": {
+        "agentId": "bd1686d3-f0e4-4647-801c-003931055812",
+        "goal": "真实Sol候选新参数验收 1",
+        "clientRequestId": "91997010-3544-4330-9edd-2ee5fa06570e",
+        "workflowExecution": {
+          "versionId": "192d6ff2-fe9b-46a0-8547-e1ee35be77b9",
+          "purpose": "verify",
+          "parameters": {
+            "parentName": "PA-Sol-0-sol-1792978677037",
+            "draftName": "Incoming-Sol",
+            "readyName": "Finished-Sol"
+          },
+          "maxActions": 160,
+          "maxDurationSeconds": 300
+        },
+        "completionContract": {
+          "requireHumanReview": false
+        },
+        "budget": {
+          "maxSteps": 1,
+          "maxCostMicros": 0
+        }
+      },
+      "state": {
+        "status": "waiting_user",
+        "result": null,
+        "error": null
+      },
+      "metrics": {
+        "taskId": "09eae96a-6f08-4216-bd9a-281050339f55",
+        "database": "agent_compile_89b32692f49640c5b7887bb19091d06f",
+        "ownerId": "7dfb69a5-eceb-4dde-8a4e-985a4132ec7e",
+        "phase": "validation",
+        "status": "waiting_user",
+        "source": "c2-sol-verify",
+        "requestKey": "91997010-3544-4330-9edd-2ee5fa06570e",
+        "createdAt": "2026-10-26T01:38:34.397Z",
+        "terminalAt": null,
+        "contract": {
+          "directoryTree": {
+            "root": "/home/xiryn/PA-Sol-0-sol-1792978677037",
+            "absent": [
+              "Incoming-Sol"
+            ],
+            "directories": [
+              "Finished-Sol"
+            ]
+          },
+          "requireHumanReview": false
+        },
+        "grade": null,
+        "model": "workflow/deterministic",
+        "plan": {
+          "steps": [
+            {
+              "id": "outside-setup",
+              "label": "Resolve omitted outside-Thunar setup",
+              "reason": "The initial observation and pointer interaction occurred outside Thunar and their contents are unavailable. A human must resolve any necessary setup without inferring hidden actions.",
+              "evidence": [
+                1,
+                2
+              ],
+              "operation": "human_checkpoint"
+            },
+            {
+              "id": "open-thunar",
+              "label": "Open a fresh Thunar window at home",
+              "evidence": [
+                3
+              ],
+              "operation": "open_application",
+              "application": "Thunar"
+            },
+            {
+              "id": "observe-home",
+              "label": "Observe the fresh Thunar window",
+              "share": false,
+              "evidence": [],
+              "operation": "observe"
+            },
+            {
+              "id": "assert-home",
+              "label": "Confirm the home window title",
+              "window": {
+                "title": [
+                  {
+                    "literal": "xiryn - Thunar"
+                  }
+                ],
+                "application": "Thunar"
+              },
+              "evidence": [
+                3,
+                4
+              ],
+              "operation": "assert"
+            },
+            {
+              "id": "focus-home-location",
+              "key": "l",
+              "when": {
+                "title": [
+                  {
+                    "literal": "xiryn - Thunar"
+                  }
+                ],
+                "application": "Thunar"
+              },
+              "label": "Focus the location bar",
+              "evidence": [],
+              "modifiers": [
+                "ctrl"
+              ],
+              "operation": "key_press"
+            },
+            {
+              "id": "type-home",
+              "text": [
+                {
+                  "literal": "/home/xiryn"
+                }
+              ],
+              "when": {
+                "title": [
+                  {
+                    "literal": "xiryn - Thunar"
+                  }
+                ],
+                "application": "Thunar"
+              },
+              "label": "Set the explicit home path",
+              "evidence": [],
+              "operation": "key_type"
+            },
+            {
+              "id": "enter-home",
+              "key": "enter",
+              "when": {
+                "title": [
+                  {
+                    "literal": "xiryn - Thunar"
+                  }
+                ],
+                "application": "Thunar"
+              },
+              "label": "Navigate to home",
+              "evidence": [],
+              "modifiers": [],
+              "operation": "key_press"
+            },
+            {
+              "id": "observe-home-location",
+              "label": "Observe home navigation result",
+              "share": false,
+              "evidence": [],
+              "operation": "observe"
+            },
+            {
+              "id": "create-parent",
+              "key": "n",
+              "when": {
+                "title": [
+                  {
+                    "literal": "xiryn - Thunar"
+                  }
+                ],
+                "application": "Thunar"
+              },
+              "label": "Open the new folder dialog for the parent",
+              "evidence": [
+                4,
+                5
+              ],
+              "modifiers": [
+                "ctrl",
+                "shift"
+              ],
+              "operation": "key_press"
+            },
+            {
+              "id": "assert-parent-dialog",
+              "label": "Confirm the new folder dialog",
+              "window": {
+                "title": [
+                  {
+                    "literal": "Create New Folder"
+                  }
+                ],
+                "application": "Thunar"
+              },
+              "evidence": [
+                5
+              ],
+              "operation": "assert"
+            },
+            {
+              "id": "type-parent",
+              "text": [
+                {
+                  "parameter": "parentName"
+                }
+              ],
+              "when": {
+                "title": [
+                  {
+                    "literal": "Create New Folder"
+                  }
+                ],
+                "application": "Thunar"
+              },
+              "label": "Enter the parameterized parent name",
+              "evidence": [
+                6
+              ],
+              "operation": "key_type"
+            },
+            {
+              "id": "submit-parent",
+              "key": "enter",
+              "when": {
+                "title": [
+                  {
+                    "literal": "Create New Folder"
+                  }
+                ],
+                "application": "Thunar"
+              },
+              "label": "Create the parent directory",
+              "evidence": [
+                6
+              ],
+              "modifiers": [],
+              "operation": "key_press"
+            },
+            {
+              "id": "observe-parent-created",
+              "label": "Observe the parent creation result",
+              "share": false,
+              "evidence": [
+                7
+              ],
+              "operation": "observe"
+            },
+            {
+              "id": "focus-parent-location",
+              "key": "l",
+              "when": {
+                "title": [
+                  {
+                    "literal": "xiryn - Thunar"
+                  }
+                ],
+                "application": "Thunar"
+              },
+              "label": "Focus location for explicit parent navigation",
+              "evidence": [],
+              "modifiers": [
+                "ctrl"
+              ],
+              "operation": "key_press"
+            },
+            {
+              "id": "type-parent-path",
+              "text": [
+                {
+                  "literal": "/home/xiryn/"
+                },
+                {
+                  "parameter": "parentName"
+                }
+              ],
+              "when": {
+                "title": [
+                  {
+                    "literal": "xiryn - Thunar"
+                  }
+                ],
+                "application": "Thunar"
+              },
+              "label": "Enter the parameterized parent path",
+              "evidence": [],
+              "operation": "key_type"
+            },
+            {
+              "id": "enter-parent",
+              "key": "enter",
+              "when": {
+                "title": [
+                  {
+                    "literal": "xiryn - Thunar"
+                  }
+                ],
+                "application": "Thunar"
+              },
+              "label": "Navigate into the parent directory",
+              "evidence": [
+                7,
+                8
+              ],
+              "modifiers": [],
+              "operation": "key_press"
+            },
+            {
+              "id": "observe-parent",
+              "label": "Observe parent navigation",
+              "share": false,
+              "evidence": [],
+              "operation": "observe"
+            },
+            {
+              "id": "assert-parent",
+              "label": "Confirm the parent window title",
+              "window": {
+                "title": [
+                  {
+                    "parameter": "parentName"
+                  },
+                  {
+                    "literal": " - Thunar"
+                  }
+                ],
+                "application": "Thunar"
+              },
+              "evidence": [
+                8,
+                9
+              ],
+              "operation": "assert"
+            },
+            {
+              "id": "create-draft",
+              "key": "n",
+              "when": {
+                "title": [
+                  {
+                    "parameter": "parentName"
+                  },
+                  {
+                    "literal": " - Thunar"
+                  }
+                ],
+                "application": "Thunar"
+              },
+              "label": "Open the new folder dialog for the draft",
+              "evidence": [
+                9,
+                10
+              ],
+              "modifiers": [
+                "ctrl",
+                "shift"
+              ],
+              "operation": "key_press"
+            },
+            {
+              "id": "assert-draft-dialog",
+              "label": "Confirm the draft creation dialog",
+              "window": {
+                "title": [
+                  {
+                    "literal": "Create New Folder"
+                  }
+                ],
+                "application": "Thunar"
+              },
+              "evidence": [
+                10
+              ],
+              "operation": "assert"
+            },
+            {
+              "id": "type-draft",
+              "text": [
+                {
+                  "parameter": "draftName"
+                }
+              ],
+              "when": {
+                "title": [
+                  {
+                    "literal": "Create New Folder"
+                  }
+                ],
+                "application": "Thunar"
+              },
+              "label": "Enter the parameterized draft name",
+              "evidence": [
+                11
+              ],
+              "operation": "key_type"
+            },
+            {
+              "id": "submit-draft",
+              "key": "enter",
+              "when": {
+                "title": [
+                  {
+                    "literal": "Create New Folder"
+                  }
+                ],
+                "application": "Thunar"
+              },
+              "label": "Create the draft directory",
+              "evidence": [
+                11
+              ],
+              "modifiers": [],
+              "operation": "key_press"
+            },
+            {
+              "id": "observe-draft-created",
+              "label": "Observe draft creation and parent view",
+              "share": false,
+              "evidence": [
+                12
+              ],
+              "operation": "observe"
+            },
+            {
+              "id": "select-draft-by-name",
+              "text": [
+                {
+                  "parameter": "draftName"
+                }
+              ],
+              "when": {
+                "title": [
+                  {
+                    "parameter": "parentName"
+                  },
+                  {
+                    "literal": " - Thunar"
+                  }
+                ],
+                "application": "Thunar"
+              },
+              "label": "Select the draft using Thunar type-ahead search",
+              "evidence": [],
+              "operation": "key_type"
+            },
+            {
+              "id": "close-typeahead",
+              "key": "escape",
+              "when": {
+                "title": [
+                  {
+                    "parameter": "parentName"
+                  },
+                  {
+                    "literal": " - Thunar"
+                  }
+                ],
+                "application": "Thunar"
+              },
+              "label": "Close type-ahead search while retaining selection",
+              "evidence": [],
+              "modifiers": [],
+              "operation": "key_press"
+            },
+            {
+              "id": "observe-draft-selection",
+              "label": "Observe the freshly selected draft directory",
+              "share": false,
+              "evidence": [],
+              "operation": "observe"
+            },
+            {
+              "id": "open-rename",
+              "key": "f2",
+              "when": {
+                "title": [
+                  {
+                    "parameter": "parentName"
+                  },
+                  {
+                    "literal": " - Thunar"
+                  }
+                ],
+                "application": "Thunar"
+              },
+              "label": "Open Rename for the selected draft",
+              "evidence": [
+                13
+              ],
+              "modifiers": [],
+              "operation": "key_press"
+            },
+            {
+              "id": "assert-rename-target",
+              "label": "Confirm Rename targets the exact draft name",
+              "window": {
+                "title": [
+                  {
+                    "literal": "Rename \""
+                  },
+                  {
+                    "parameter": "draftName"
+                  },
+                  {
+                    "literal": "\""
+                  }
+                ],
+                "application": "Thunar"
+              },
+              "evidence": [
+                13,
+                14
+              ],
+              "operation": "assert"
+            },
+            {
+              "id": "select-rename-text",
+              "key": "a",
+              "when": {
+                "title": [
+                  {
+                    "literal": "Rename \""
+                  },
+                  {
+                    "parameter": "draftName"
+                  },
+                  {
+                    "literal": "\""
+                  }
+                ],
+                "application": "Thunar"
+              },
+              "label": "Select the entire existing name",
+              "evidence": [],
+              "modifiers": [
+                "ctrl"
+              ],
+              "operation": "key_press"
+            },
+            {
+              "id": "type-final-name",
+              "text": [
+                {
+                  "parameter": "readyName"
+                }
+              ],
+              "when": {
+                "title": [
+                  {
+                    "literal": "Rename \""
+                  },
+                  {
+                    "parameter": "draftName"
+                  },
+                  {
+                    "literal": "\""
+                  }
+                ],
+                "application": "Thunar"
+              },
+              "label": "Replace the draft name with the final name",
+              "evidence": [
+                14
+              ],
+              "operation": "key_type"
+            },
+            {
+              "id": "submit-rename",
+              "key": "enter",
+              "when": {
+                "title": [
+                  {
+                    "literal": "Rename \""
+                  },
+                  {
+                    "parameter": "draftName"
+                  },
+                  {
+                    "literal": "\""
+                  }
+                ],
+                "application": "Thunar"
+              },
+              "label": "Confirm the directory rename",
+              "evidence": [
+                14
+              ],
+              "modifiers": [],
+              "operation": "key_press"
+            },
+            {
+              "id": "observe-rename-result",
+              "label": "Observe the result of renaming",
+              "share": false,
+              "evidence": [
+                15
+              ],
+              "operation": "observe"
+            },
+            {
+              "id": "assert-final-parent",
+              "label": "Confirm return to the parent directory",
+              "window": {
+                "title": [
+                  {
+                    "parameter": "parentName"
+                  },
+                  {
+                    "literal": " - Thunar"
+                  }
+                ],
+                "application": "Thunar"
+              },
+              "evidence": [
+                15,
+                16
+              ],
+              "operation": "assert"
+            },
+            {
+              "id": "share-final-view",
+              "label": "Share the final parent view for completion verification",
+              "share": true,
+              "evidence": [
+                16
+              ],
+              "operation": "observe"
+            }
+          ],
+          "completion": {
+            "root": [
+              {
+                "literal": "/home/xiryn/"
+              },
+              {
+                "parameter": "parentName"
+              }
+            ],
+            "absent": [
+              [
+                {
+                  "parameter": "draftName"
+                }
+              ]
+            ],
+            "directories": [
+              [
+                {
+                  "parameter": "readyName"
+                }
+              ]
+            ]
+          },
+          "parameters": [
+            {
+              "name": "parentName",
+              "label": "父目录名",
+              "sourceValue": "Flow-C0-1792950841215"
+            },
+            {
+              "name": "draftName",
+              "label": "初始目录名",
+              "sourceValue": "Draft"
+            },
+            {
+              "name": "readyName",
+              "label": "最终目录名",
+              "sourceValue": "Ready"
+            }
+          ],
+          "description": "Parameterized native Thunar candidate: explicitly navigate to the home directory, create and enter the parameterized parent, create the draft directory, explicitly select it by name, and rename it to the final name. Preserve omitted outside-Thunar setup as a human checkpoint. Final observation supports independent completion verification; compilation alone does not establish readiness.",
+          "environment": {
+            "locale": "C.UTF-8",
+            "application": "Thunar",
+            "guestProtocol": 6,
+            "workstationImageId": "sha256:c90794aae50fa9acdbea1a0dd8aae1b1d785023d438fc4fb2cd53616216770b3"
+          },
+          "sourceTaskId": "2935de0d-e34e-467a-bbdf-0f1135f5428b",
+          "schemaVersion": 1,
+          "sourceSegment": 1,
+          "sourceActionNumbers": [
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12,
+            13,
+            14,
+            15,
+            16
+          ]
+        },
+        "parameters": {
+          "draftName": "Incoming-Sol",
+          "readyName": "Finished-Sol",
+          "parentName": "PA-Sol-0-sol-1792978677037"
+        },
+        "environment": {
+          "locale": "C.UTF-8",
+          "application": "Thunar",
+          "guestProtocol": 6,
+          "workstationImageId": "sha256:f8d2fbb12dc081ce3704fbfd06df87cc13afa4049ca51e8ce5e298c41b6f9add"
+        },
+        "workstationChannel": null,
+        "attempts": [],
+        "actions": [],
+        "requests": [
+          {
+            "id": "09eae96a-6f08-4216-bd9a-281050339f55-s1-a1",
+            "kind": "takeover",
+            "status": "pending",
+            "createdAt": "2026-10-26T01:38:35.610Z",
+            "resolvedAt": null
+          }
+        ]
+      }
+    }
+  ],
+  "scope": "Owner-authorized Sol compilation plus three distinct native GUI parameter verification Tasks and one ready reuse; old Gemini attempts/source/main preserved, not full C4 or cloud/Xiryn comparison"
+}

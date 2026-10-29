@@ -1,0 +1,359 @@
+{
+  "scope": "All C2 attempt reports, including infrastructure/UI failures and synthetic certification. Per-report task IDs identify new tasks; cloned historical Tasks are not additional executions. No net-saving/cloud-compilation conclusion.",
+  "trials": [
+    {
+      "directory": "data/experiments/agent_flowcert_1350f2dd096d47739a1ebf8599eedb62",
+      "database": "agent_flowcert_1350f2dd096d47739a1ebf8599eedb62",
+      "passed": true,
+      "scope": "C2 certification transaction checks using synthetic checkpoint/receipt mutations of retained real samples; not new GUI tasks",
+      "checks": [
+        "Completing an early/manual result check does not count as a full execution sample or throw during completion",
+        "A fixed result with an unresolved action receipt does not certify the version",
+        "Three distinct complete checked traces on the same actual image certify the immutable version"
+      ]
+    },
+    {
+      "directory": "data/experiments/agent_flowcert_41c94dbee3b341e1862e2ac81faca2f5",
+      "database": "agent_flowcert_41c94dbee3b341e1862e2ac81faca2f5",
+      "passed": true,
+      "scope": "C2 certification transaction checks using synthetic checkpoint/receipt mutations of retained real samples; not new GUI tasks",
+      "checks": [
+        "Completing an early/manual result check does not count as a full execution sample or throw during completion",
+        "A fixed result with an unresolved action receipt does not certify the version",
+        "Three distinct complete checked traces on the same actual image certify the immutable version"
+      ]
+    },
+    {
+      "directory": "data/experiments/agent_flowcert_7f10b66e357d463ea310a37da5aacfac",
+      "database": "agent_flowcert_7f10b66e357d463ea310a37da5aacfac",
+      "passed": true,
+      "scope": "C2 certification transaction checks using synthetic checkpoint/receipt mutations of retained real samples; not new GUI tasks",
+      "checks": [
+        "Original executeAction dispatch authorizer rejects expired cached decisions and over-limit inputs before sending",
+        "Completing an early/manual result check does not count as a full execution sample or throw during completion",
+        "A fixed result with an unresolved action receipt does not certify the version",
+        "Three distinct complete checked traces on the same actual image certify the immutable version"
+      ]
+    },
+    {
+      "directory": "data/experiments/agent_flowcert_8a3991c4eae64b3b927c3832437c1d7e",
+      "database": "agent_flowcert_8a3991c4eae64b3b927c3832437c1d7e",
+      "passed": true,
+      "scope": "C2 certification transaction checks using synthetic checkpoint/receipt mutations of retained real samples; not new GUI tasks",
+      "checks": [
+        "Completing an early/manual result check does not count as a full execution sample or throw during completion",
+        "A fixed result with an unresolved action receipt does not certify the version",
+        "Three distinct complete checked traces on the same actual image certify the immutable version"
+      ]
+    },
+    {
+      "directory": "data/experiments/agent_flowcert_a981ca18b66c411d810904942302ddf1",
+      "database": "agent_flowcert_a981ca18b66c411d810904942302ddf1",
+      "passed": true,
+      "scope": "C2 certification transaction checks using synthetic checkpoint/receipt mutations of retained real samples; not new GUI tasks",
+      "checks": [
+        "Original executeAction dispatch authorizer rejects expired cached decisions and over-limit inputs before sending",
+        "Completing an early/manual result check does not count as a full execution sample or throw during completion",
+        "A fixed result with an unresolved action receipt does not certify the version",
+        "Three distinct complete checked traces on the same actual image certify the immutable version"
+      ]
+    },
+    {
+      "directory": "data/experiments/agent_flowcontrol_018d378f204b49ba8cfbc0fb78613575",
+      "database": "agent_flowcontrol_018d378f204b49ba8cfbc0fb78613575",
+      "passed": true,
+      "scope": "C2 native workflow cancellation, action limit, handback and real uncertain desktop effect; no model requests",
+      "tasks": [
+        "1b6df5ee-a4ad-40bc-943b-b4886badb52c",
+        "347ee5c3-4d20-4bd0-a4bd-b30d164d0ba1",
+        "695efd0b-ff49-443a-a4c3-885ab5dc3086",
+        "1274cca3-956c-436c-a19b-6b3d7e907ee6"
+      ],
+      "checks": [
+        {
+          "check": "real native action cancelled, workstation stopped/removed and action count stable",
+          "taskId": "1b6df5ee-a4ad-40bc-943b-b4886badb52c",
+          "passed": true
+        },
+        {
+          "check": "one-action hard limit cannot be bypassed by zero model calls or Continue; no additional desktop input",
+          "taskId": "347ee5c3-4d20-4bd0-a4bd-b30d164d0ba1",
+          "passed": true
+        },
+        {
+          "check": "takeover stops automatic input; explicit handback/new epoch/window movement observed and same workflow finishes with host checks",
+          "taskId": "695efd0b-ff49-443a-a4c3-885ab5dc3086",
+          "passed": true
+        },
+        {
+          "check": "real GUI directory effect before controller/container restart; unknown receipt remains blocked after Continue, no input replay",
+          "taskId": "1274cca3-956c-436c-a19b-6b3d7e907ee6",
+          "actionNo": 7,
+          "passed": true
+        }
+      ]
+    },
+    {
+      "directory": "data/experiments/agent_flowcontrol_83091083e85d4f8891e0d5ad98cb1b06",
+      "database": "agent_flowcontrol_83091083e85d4f8891e0d5ad98cb1b06",
+      "passed": true,
+      "scope": "C2 native workflow cancellation, action limit, handback and real uncertain desktop effect; no model requests",
+      "tasks": [
+        "4d824952-bd47-4bf2-a9f4-3a5ab025748d",
+        "b6c08529-a328-4eb8-8821-7d7450a8ebba",
+        "4c24d2dd-c139-4fdf-9b90-6e7c49771c7b",
+        "bc74e9f5-1ea9-4ce0-91be-9793f9c1f29a",
+        "6bff0af0-b57f-45aa-91aa-2518b5f71239"
+      ],
+      "checks": [
+        {
+          "check": "real native action cancelled, workstation stopped/removed and action count stable",
+          "taskId": "4d824952-bd47-4bf2-a9f4-3a5ab025748d",
+          "passed": true
+        },
+        {
+          "check": "one-action hard limit cannot be bypassed by zero model calls or Continue; no additional desktop input",
+          "taskId": "b6c08529-a328-4eb8-8821-7d7450a8ebba",
+          "passed": true
+        },
+        {
+          "check": "actual ten-second wall-time allowance stopped GUI input below action limit",
+          "taskId": "4c24d2dd-c139-4fdf-9b90-6e7c49771c7b",
+          "actions": 7,
+          "passed": true
+        },
+        {
+          "check": "takeover stops automatic input; explicit handback/new epoch/window movement observed and same workflow finishes with host checks",
+          "taskId": "bc74e9f5-1ea9-4ce0-91be-9793f9c1f29a",
+          "passed": true
+        },
+        {
+          "check": "real GUI directory effect before controller/container restart; unknown receipt remains blocked after Continue, no input replay",
+          "taskId": "6bff0af0-b57f-45aa-91aa-2518b5f71239",
+          "actionNo": 7,
+          "passed": true
+        }
+      ]
+    },
+    {
+      "directory": "data/experiments/agent_flowrun_2b122e03d4344f0985e94f316e77e1a1",
+      "database": "agent_flowrun_2b122e03d4344f0985e94f316e77e1a1",
+      "passed": true,
+      "scope": "C2 real native desktop execution of a controlled C1 candidate; no cloud compilation, general GUI reliability, control-boundary acceptance or Xiryn comparison claim",
+      "tasks": [
+        {
+          "taskId": "72588a59-b775-4a7b-a9fa-24b33764e9fc",
+          "status": "completed"
+        },
+        {
+          "taskId": "627bdad2-f6c5-4bd7-996e-a18c11499b82",
+          "status": "completed"
+        },
+        {
+          "taskId": "567e1984-ea6f-4c29-8fed-8b38cb8f7d2d",
+          "status": "completed"
+        },
+        {
+          "taskId": "768d80df-fe08-4836-8ed0-e9109f96a51a",
+          "status": "completed"
+        }
+      ],
+      "checks": [
+        {
+          "check": "candidate run/owner/parameter boundaries and immutable completion contract",
+          "passed": true
+        },
+        {
+          "check": "new GUI-only task 1: changed names/path and independent host directory check",
+          "taskId": "72588a59-b775-4a7b-a9fa-24b33764e9fc",
+          "actions": 27,
+          "purpose": "verify",
+          "passed": true
+        },
+        {
+          "check": "SIGKILL after real key_type receipt and before workflow checkpoint; original input identity recovered",
+          "taskId": "627bdad2-f6c5-4bd7-996e-a18c11499b82",
+          "passed": true
+        },
+        {
+          "check": "new GUI-only task 2: changed names/path and independent host directory check",
+          "taskId": "627bdad2-f6c5-4bd7-996e-a18c11499b82",
+          "actions": 27,
+          "purpose": "verify",
+          "passed": true
+        },
+        {
+          "check": "new GUI-only task 3: changed names/path and independent host directory check",
+          "taskId": "567e1984-ea6f-4c29-8fed-8b38cb8f7d2d",
+          "actions": 27,
+          "purpose": "verify",
+          "passed": true
+        },
+        {
+          "check": "new GUI-only task 4: changed names/path and independent host directory check",
+          "taskId": "768d80df-fe08-4836-8ed0-e9109f96a51a",
+          "actions": 27,
+          "purpose": "run",
+          "passed": true
+        },
+        {
+          "check": "three distinct checked samples certified the exact execution image separately from the historical source image; fourth task ran ready version",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "directory": "data/experiments/agent_flowrun_464f52b62fe04d2599adef992fb92c70",
+      "database": "agent_flowrun_464f52b62fe04d2599adef992fb92c70",
+      "passed": false,
+      "scope": "C2 real native desktop execution of a controlled C1 candidate; no cloud compilation, general GUI reliability, control-boundary acceptance or Xiryn comparison claim",
+      "tasks": [
+        {
+          "taskId": "53f3d9a9-7a56-4a86-acac-8aec2ee33cec",
+          "status": "needs_review"
+        }
+      ],
+      "checks": [
+        {
+          "check": "candidate run/owner/parameter boundaries and immutable completion contract",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "directory": "data/experiments/agent_flowrun_fdb648ed3cf940708071645b9ec99667",
+      "database": "agent_flowrun_fdb648ed3cf940708071645b9ec99667",
+      "passed": true,
+      "scope": "C2 real native desktop execution of a controlled C1 candidate; no cloud compilation, general GUI reliability, control-boundary acceptance or Xiryn comparison claim",
+      "tasks": [
+        {
+          "taskId": "71e74127-462f-4632-9f39-3be575e846e9",
+          "status": "completed"
+        },
+        {
+          "taskId": "14b02a8a-c347-47af-aa5d-7794b6560a22",
+          "status": "completed"
+        },
+        {
+          "taskId": "c3faeda0-85aa-4958-9314-2ff8a9eae653",
+          "status": "completed"
+        },
+        {
+          "taskId": "ba292511-9c78-4a5c-9607-2b4714b967ba",
+          "status": "completed"
+        }
+      ],
+      "checks": [
+        {
+          "check": "candidate run/owner/parameter boundaries and immutable completion contract",
+          "passed": true
+        },
+        {
+          "check": "new GUI-only task 1: changed names/path and independent host directory check",
+          "taskId": "71e74127-462f-4632-9f39-3be575e846e9",
+          "actions": 27,
+          "purpose": "verify",
+          "passed": true
+        },
+        {
+          "check": "SIGKILL after real key_type receipt and before workflow checkpoint; original input identity recovered",
+          "taskId": "14b02a8a-c347-47af-aa5d-7794b6560a22",
+          "passed": true
+        },
+        {
+          "check": "new GUI-only task 2: changed names/path and independent host directory check",
+          "taskId": "14b02a8a-c347-47af-aa5d-7794b6560a22",
+          "actions": 27,
+          "purpose": "verify",
+          "passed": true
+        },
+        {
+          "check": "new GUI-only task 3: changed names/path and independent host directory check",
+          "taskId": "c3faeda0-85aa-4958-9314-2ff8a9eae653",
+          "actions": 27,
+          "purpose": "verify",
+          "passed": true
+        },
+        {
+          "check": "new GUI-only task 4: changed names/path and independent host directory check",
+          "taskId": "ba292511-9c78-4a5c-9607-2b4714b967ba",
+          "actions": 27,
+          "purpose": "run",
+          "passed": true
+        },
+        {
+          "check": "three distinct checked samples certified the exact execution image separately from the historical source image; fourth task ran ready version",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "directory": "data/experiments/agent_flowui_1b5156a382924a1e87d60eae391c7b02",
+      "database": "agent_flowui_1b5156a382924a1e87d60eae391c7b02",
+      "passed": false,
+      "scope": "C2 owner Web ready-version execution and actual native GUI task; no cloud compilation or overall product comparison",
+      "taskId": "c0bd0d9f-cdb0-46b4-baca-1321c5ffcf47",
+      "checks": [
+        {
+          "check": "ready-version form, desktop/390px layout, pending parameters and request key survive response loss/reload; second POST truly accepted",
+          "taskId": "c0bd0d9f-cdb0-46b4-baca-1321c5ffcf47",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "directory": "data/experiments/agent_flowui_503fce3cec7b4a00be014980588cba85",
+      "database": "agent_flowui_503fce3cec7b4a00be014980588cba85",
+      "passed": true,
+      "scope": "C2 owner Web ready-version execution and actual native GUI task; no cloud compilation or overall product comparison",
+      "taskId": "d1ccf7b1-e133-4aee-a0bf-ee1c46f2631d",
+      "checks": [
+        {
+          "check": "ready-version form, desktop/390px layout, pending parameters and request key survive response loss/reload; second POST truly accepted",
+          "taskId": "d1ccf7b1-e133-4aee-a0bf-ee1c46f2631d",
+          "passed": true
+        },
+        {
+          "check": "real Web-admitted task performed GUI actions, fixed version/contract result passed, zero model calls and completed step progress visible",
+          "taskId": "d1ccf7b1-e133-4aee-a0bf-ee1c46f2631d",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "directory": "data/experiments/agent_flowui_b570aff475054cd987ab0ba518a9865c",
+      "database": "agent_flowui_b570aff475054cd987ab0ba518a9865c",
+      "passed": false,
+      "scope": "C2 owner Web ready-version execution and actual native GUI task; no cloud compilation or overall product comparison",
+      "checks": []
+    },
+    {
+      "directory": "data/experiments/agent_flowui_d286e2afbad748c98ed061b71787eaa8",
+      "database": "agent_flowui_d286e2afbad748c98ed061b71787eaa8",
+      "passed": false,
+      "scope": "C2 owner Web ready-version execution and actual native GUI task; no cloud compilation or overall product comparison",
+      "taskId": "4a2886fc-c382-4666-bad4-ef16a53746e1",
+      "checks": [
+        {
+          "check": "ready-version form, desktop/390px layout, pending parameters and request key survive response loss/reload; second POST truly accepted",
+          "taskId": "4a2886fc-c382-4666-bad4-ef16a53746e1",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "directory": "data/experiments/agent_flowui_e87d23ef1f954892a278a6610d12e485",
+      "database": "agent_flowui_e87d23ef1f954892a278a6610d12e485",
+      "passed": false,
+      "scope": "C2 owner Web ready-version execution and actual native GUI task; no cloud compilation or overall product comparison",
+      "checks": []
+    },
+    {
+      "directory": "data/experiments/agent_flowui_e9e1b517c68048b4ace3a80e617c5b90",
+      "database": "agent_flowui_e9e1b517c68048b4ace3a80e617c5b90",
+      "passed": false,
+      "scope": "C2 owner Web ready-version execution and actual native GUI task; no cloud compilation or overall product comparison",
+      "checks": []
+    }
+  ]
+}

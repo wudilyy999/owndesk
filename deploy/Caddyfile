@@ -1,0 +1,15 @@
+{
+	log default {
+		format filter {
+			wrap json
+			request>headers>Sec-Websocket-Protocol delete
+		}
+	}
+}
+
+{$APP_HOSTNAME} {
+	reverse_proxy /desktop/* worker:6798
+	reverse_proxy web:6797 {
+		flush_interval -1
+	}
+}

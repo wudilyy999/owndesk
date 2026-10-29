@@ -1,0 +1,7 @@
+#!/bin/bash
+# Prints a JPEG screenshot of the desktop, pointer included, as base64
+set -eu
+mkdir -p /tmp/owndesk
+shot=/tmp/owndesk/shot.jpg
+scrot --overwrite --pointer --quality 70 --silent "$shot"
+base64 -w0 "$shot"

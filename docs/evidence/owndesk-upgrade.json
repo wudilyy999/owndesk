@@ -1,0 +1,77 @@
+{
+  "product": "OwnDesk",
+  "recordedAt": "2026-10-29T14:37:20.660626+00:00",
+  "passed": true,
+  "deployment": {
+    "webPort": 6797,
+    "workerPort": 6798,
+    "applicationVersion": "0.17.0-dev",
+    "sqlSchema": "0018",
+    "workstationImage": "owndesk-workstation:0.6.5",
+    "workstationImageId": "f3842ddb48f4",
+    "guestProtocol": 6,
+    "applicationRuntime": "local host processes; production Next build and current source worker",
+    "desktopRuntime": "Docker workstation and separate read-only viewer",
+    "currentHome": "/home/agent",
+    "browserProfile": ".config/owndesk-browser"
+  },
+  "validation": {
+    "productionImagePackageCheck": true,
+    "restoredDatabaseTables": 47,
+    "postStartupUnchangedPublicTables": 29,
+    "counts": {
+      "tasks": 12,
+      "model_attempts": 65,
+      "actions": 58,
+      "artifacts": 7
+    },
+    "preservedHomeFiles": 621,
+    "existingOwnerLogin": true,
+    "artifactDownloadBytesMatch": true,
+    "liveDesktop": true,
+    "idleTakeoverMouseInputAndReturn": true,
+    "readOnlyAfterReturn": true,
+    "modelCalls": 0,
+    "newTasks": 0
+  },
+  "cleanup": {
+    "passed": true,
+    "stoppedOldContainersRemoved": 22,
+    "oldTopLevelImageReferencesRemoved": 18,
+    "removedBuildBytes": 1545891336,
+    "volumesRemoved": 0,
+    "rollbackArchivesPreserved": true,
+    "sourceAndReportsPreserved": true,
+    "unrelatedResourcesPreserved": true
+  },
+  "storage": {
+    "dockerImageTotalBeforeDeletionGB": 11.48,
+    "dockerImageTotalAfterDeletionGB": 5.439,
+    "hostAvailableBytes": 52282679296,
+    "all98DataVolumesPreserved": true
+  },
+  "backups": {
+    "privateAuditDirectory": "data/backups/owndesk-upgrade-2026-10-29T13-28-25-524Z",
+    "databaseDumpRestoredAndCompared": true,
+    "homeArtifactsOldWebAndRuntimeImagesArchived": true,
+    "keysStoredSeparatelyWithRestrictedPermissions": true,
+    "privateArchiveExcludedFromPublicRelease": true
+  },
+  "shutdown": {
+    "webTermTimeoutSeconds": 50,
+    "workerTermTimeoutSeconds": 50,
+    "drainedProcessesStopped": true,
+    "webGraceful": false,
+    "workerGraceful": false,
+    "activeTasks": 0,
+    "pendingModelRequests": 0,
+    "desktopStopped": true,
+    "note": "Old Web persistent streams and old worker shutdown did not finish in 50 seconds. Terminated only the drained old processes; explicitly stopped their desktop pair before backup."
+  },
+  "scope": [
+    "Local deployment and migration verified; current host path retained for historical artifact references.",
+    "No new paid model requests or broad test-suite reruns.",
+    "New Compose Web/worker images and real VPS deployment remain a separate release check.",
+    "Original source attribution, licenses, historical reports and unknown-fee records preserved."
+  ]
+}

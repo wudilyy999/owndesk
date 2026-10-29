@@ -1,0 +1,21 @@
+{
+  "originalTask": "b1dbac86-202c-4dcc-81f4-92c360466d6e",
+  "actual": [
+    {
+      "text": "已完成",
+      "codepoints": [
+        "5df2",
+        "5b8c",
+        "6210"
+      ]
+    }
+  ],
+  "defaultLocaleListing": "PA-Production-2-1792959806229/\nPA-Production-2-1792959806229/\\345\\267\\262\\345\\256\\214\\346\\210\\220/\n",
+  "utf8LocaleListing": "PA-Production-2-1792959806229/\nPA-Production-2-1792959806229/已完成/\n",
+  "diagnosis": "GNU tar C locale quotes UTF-8 filenames; original GUI bytes are correct. No evidence for changing xdotool or guest input.",
+  "checksPassed": true,
+  "scope": "Read-only original retained home, original production worker image; isolated tar snapshot, no new Task/input/model",
+  "macHostUtf8Listing": "PA-Production-2-1792959806229/\nPA-Production-2-1792959806229/已完成/\n",
+  "macHostNativeTarPassed": true,
+  "additionalInspectionFailure": "Old-image alias existed on default engine only; changed read-only inspection to retained native image ID, no Task/model created"
+}

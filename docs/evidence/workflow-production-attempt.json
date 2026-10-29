@@ -1,0 +1,100 @@
+{
+  "passed": false,
+  "directory": "data/experiments/pa-linux-1792959408122/attempt-1792975364751",
+  "checks": [
+    {
+      "check": "Fresh rootful Linux Docker: absent policy rejected; scoped bridge/firewall initialized and live rules verified",
+      "detail": {
+        "ready": true,
+        "policy": "private-v1",
+        "name": "pa-82db58a5-egress",
+        "bridge": "pag82db58a5",
+        "subnet": "172.30.201.0/24",
+        "controlIPs": [
+          "127.0.0.1",
+          "93.184.216.9"
+        ]
+      }
+    },
+    {
+      "check": "Production Linux Compose: migrations/one-owner init, HTTPS chain validation, owner settings and private DB/Web/worker; only worker mounts Docker"
+    },
+    {
+      "check": "Optimized production Web imports the reviewed package into an unverified source-less draft; no Task/workstation/provider configuration created",
+      "detail": {
+        "versionId": "1cc861a1-6c43-4f02-bfa8-fd4adeaeca9c",
+        "packageId": "b586471c-5906-4391-9ef9-73ef5186c220",
+        "tasks": 0,
+        "workstations": 0,
+        "providers": 0
+      }
+    },
+    {
+      "check": "Production GUI workflow 1: changed parameters/host directory check/27 actions, local version verifying",
+      "detail": {
+        "taskId": "78cd2d71-598c-43ff-b510-5ac07d2cf735",
+        "versionId": "1cc861a1-6c43-4f02-bfa8-fd4adeaeca9c"
+      }
+    },
+    {
+      "check": "Production GUI workflow 2: changed parameters/host directory check/27 actions, local version verifying",
+      "detail": {
+        "taskId": "669700bb-b4cb-4c3b-aa8c-fba756af4fc5",
+        "versionId": "1cc861a1-6c43-4f02-bfa8-fd4adeaeca9c"
+      }
+    },
+    {
+      "check": "Production GUI workflow 3: changed parameters/host directory check/27 actions, local version ready",
+      "detail": {
+        "taskId": "35639238-5bec-4443-9d7b-7f14fbd53994",
+        "versionId": "1cc861a1-6c43-4f02-bfa8-fd4adeaeca9c"
+      }
+    },
+    {
+      "check": "Production GUI workflow 4: changed parameters/host directory check/27 actions, local version ready",
+      "detail": {
+        "taskId": "069fca92-df4a-4062-a470-8aa2498a8bd8",
+        "versionId": "1cc861a1-6c43-4f02-bfa8-fd4adeaeca9c"
+      }
+    }
+  ],
+  "recordedAt": "2026-10-26T00:46:41.141Z",
+  "applicationVersion": "0.17.0-dev",
+  "scope": "CUA workflow import/revalidation/ready reuse in guarded rootful Linux production containers",
+  "actualTasks": 4,
+  "completed": 4,
+  "cancelled": 0,
+  "taskResults": [
+    {
+      "taskId": "78cd2d71-598c-43ff-b510-5ac07d2cf735",
+      "status": "completed"
+    },
+    {
+      "taskId": "669700bb-b4cb-4c3b-aa8c-fba756af4fc5",
+      "status": "completed"
+    },
+    {
+      "taskId": "35639238-5bec-4443-9d7b-7f14fbd53994",
+      "status": "completed"
+    },
+    {
+      "taskId": "069fca92-df4a-4062-a470-8aa2498a8bd8",
+      "status": "completed"
+    }
+  ],
+  "taskCountGate": 4,
+  "ordinaryPublicDnsEvaluated": false,
+  "fullDeploymentPassed": false,
+  "runtimeMetadata": {
+    "version": "0.17.0-dev",
+    "businessMigrations": 19
+  },
+  "controlledProvider": false,
+  "modelRequests": 0,
+  "independentWorkflowInstallation": true,
+  "realModelJudgmentEvaluated": false,
+  "actualCloudProviderEvaluated": false,
+  "fullRestoreEvaluated": false,
+  "hostKind": "dedicated rootful Linux VM with its own kernel; isolated Colima profile",
+  "mainLocalDeploymentUnchanged": true
+}

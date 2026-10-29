@@ -1,0 +1,1 @@
+ALTER TABLE "task_model_decisions" ADD COLUMN "uncertain_attempts" integer DEFAULT 0 NOT NULL;

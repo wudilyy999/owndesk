@@ -1,0 +1,14 @@
+{
+  "health": {
+    "ready": true,
+    "version": "0.15.1-dev"
+  },
+  "migrations": 16,
+  "activeTasks": 0,
+  "originalCloudCompilation": {
+    "status": "needs_review",
+    "attempts": 1,
+    "unknown": 1
+  },
+  "scope": "Main preview and original C1 unknown request rechecked after C4; no main upgrade/restart/migration or additional cloud attempt"
+}

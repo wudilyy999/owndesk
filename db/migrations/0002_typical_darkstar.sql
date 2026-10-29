@@ -1,0 +1,1 @@
+ALTER TABLE "tasks" ADD COLUMN "cancel_workflow_pending" boolean DEFAULT false NOT NULL;

@@ -1,0 +1,21 @@
+{
+  "passed": true,
+  "checks": [
+    {
+      "check": "DOM fill + desktop keyboard login share one headed browser",
+      "passed": true
+    },
+    {
+      "check": "DOM download, browser screenshot and desktop screenshot share report session",
+      "passed": true,
+      "downloads": 1
+    },
+    {
+      "check": "Cookie survives container restart; no workstation ports published",
+      "passed": true,
+      "browser": "Chromium 156.0.8078.47 built on Debian GNU/Linux 13 (trixie)"
+    }
+  ],
+  "recordedAt": "2026-10-24T18:37:45.994Z",
+  "evidencePath": "data/experiments/g02-1792867060965"
+}

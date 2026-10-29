@@ -1,0 +1,68 @@
+{
+  "passed": true,
+  "controlledProvider": true,
+  "realModelJudgmentEvaluated": false,
+  "controlledWebsite": true,
+  "guestFillEvaluated": true,
+  "guestFillTasksEvaluated": 13,
+  "checks": [
+    {
+      "check": "Real owner approval UI binds exact origin/version/two targets; matched and masked login fills once, independently signs in once; deleted-item replay uses host receipt without decrypt/retype; fresh DOM replaces automatic screenshots; auth/Origin/secret-in-approval rejected",
+      "taskId": "0ef97e47-30be-4c5b-91b1-339e10daaae9"
+    },
+    {
+      "check": "Actual secure OTP form feeds only an item reference; one approved code input and sign-in; consumed task-scoped code removed while release audit remains",
+      "taskId": "a4aa54d7-434f-41be-8814-3f46b5327481"
+    },
+    {
+      "check": "Changed descriptor is rejected before typing; expired/revision-changed grants cannot approve or release values; wrong exact origin never obtains a grant; all have zero inputs",
+      "taskIds": [
+        "09598705-2e95-45e8-83cd-9d7ce4e9cf97",
+        "8c71b87a-0d96-43fe-a339-109cd597dd7a"
+      ]
+    },
+    {
+      "check": "SIGKILL during approval wait preserves decision but fences old grant; owner declines it, fresh observation/epoch obtains a distinct approval and fills once",
+      "taskId": "26abfef3-878b-4bb1-a6e1-b098355044ee"
+    },
+    {
+      "check": "guest_receipt: deterministic receipt/checkpoint interruption; restart never releases or types twice; known receipts survive deleted items; lost receipt requires explicit continue/cancel, not completion",
+      "taskId": "fa05e789-fae3-446c-8174-7b5d02abfbce"
+    },
+    {
+      "check": "host_receipt: deterministic receipt/checkpoint interruption; restart never releases or types twice; known receipts survive deleted items; lost receipt requires explicit continue/cancel, not completion",
+      "taskId": "9d33050f-5d83-4888-92c6-6a2a2faa0327"
+    },
+    {
+      "check": "lost_receipt: deterministic receipt/checkpoint interruption; restart never releases or types twice; known receipts survive deleted items; lost receipt requires explicit continue/cancel, not completion",
+      "taskId": "29739809-ff19-4407-8469-43300c2b6a85"
+    },
+    {
+      "check": "partial: only known first field entered; safe attempted/filled details reach review, raw fill arguments absent; continue does not resubmit or refill",
+      "taskId": "2795ca8e-4100-4ee1-ab0c-8abf8a0e337e"
+    },
+    {
+      "check": "timeout: only known first field entered; safe attempted/filled details reach review, raw fill arguments absent; continue does not resubmit or refill",
+      "taskId": "78f65197-e370-434e-9686-0302a6574555"
+    },
+    {
+      "check": "Cancellation during blocked second field ends actual guest processes; task becomes cancelled with no later form submission",
+      "taskId": "af543a50-a238-438b-9f76-900edd4cf4eb"
+    },
+    {
+      "check": "Sample username/password/code values absent from all public/DBOS tables and model requests; post-logout approval rejected; controlled target site legitimately sees input values, guest-code secrecy not claimed"
+    },
+    {
+      "check": "Actual thirteen-task coverage gate: twelve completed explicit outcomes, one real cancellation; an entry point or generic suite alone cannot pass the fill acceptance",
+      "taskCount": 13
+    },
+    {
+      "check": "Provider key encrypted at rest, local config overrides env, masked settings view; plaintext key absent from task/DBOS records"
+    },
+    {
+      "check": "Completed Web/worker logs, actual guest journals/controller logs and model requests contain no sample secret values; website inputs are independently counted and matched"
+    }
+  ],
+  "directory": "data/experiments/agent_runtime_fd2369d6193943f08f277ff26682018e",
+  "recordedAt": "2026-10-25T02:00:19.976Z"
+}

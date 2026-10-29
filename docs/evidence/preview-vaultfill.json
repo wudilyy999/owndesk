@@ -1,0 +1,14 @@
+{
+  "passed": true,
+  "applicationVersion": "0.8.0-dev",
+  "migration": "0011",
+  "workstationImage": "personal-agent-workstation:0.2.0",
+  "workstationImageId": "441e717eefd1",
+  "scope": "Production owner settings/API and applied schema/worker health; actual guest fill verified separately by runtime-vaultfill; real models and cloud deployment not evaluated",
+  "checks": [
+    "Owner mobile/desktop production UI, masked sample create/replace/delete, anonymous/post-logout rejection; sample cleaned",
+    "Main database has migration 0011, five completed fixture tasks, zero vault items and zero routines; original keys/config unchanged apart from workstation image"
+  ],
+  "directory": "data/experiments/vaultfill-preview-1792893993805",
+  "recordedAt": "2026-10-25T02:06:35.300Z"
+}

@@ -1,0 +1,38 @@
+{
+  "passed": false,
+  "directory": "data/experiments/pa-linux-1792926302902/attempt-1792926444932",
+  "checks": [
+    {
+      "check": "Fresh rootful Linux Docker: absent policy rejected; scoped bridge/firewall initialized and live rules verified",
+      "detail": {
+        "ready": true,
+        "policy": "private-v1",
+        "name": "pa-2e1dfc58-egress",
+        "bridge": "pag2e1dfc58",
+        "subnet": "172.30.200.0/24",
+        "controlIPs": [
+          "127.0.0.1",
+          "93.184.216.9"
+        ]
+      }
+    },
+    {
+      "check": "Production Linux Compose: migrations/one-owner init, HTTPS chain validation, owner settings and private DB/Web/worker; only worker mounts Docker"
+    }
+  ],
+  "recordedAt": "2026-10-25T11:11:15.525Z",
+  "applicationVersion": "0.15.1-dev",
+  "scope": "single-agent production-container controlled delivery",
+  "actualTasks": 2,
+  "completed": 1,
+  "cancelled": 1,
+  "taskCountGate": 2,
+  "ordinaryPublicDnsEvaluated": false,
+  "fullDeploymentPassed": false,
+  "controlledProvider": true,
+  "realModelJudgmentEvaluated": false,
+  "actualCloudProviderEvaluated": false,
+  "fullRestoreEvaluated": false,
+  "hostKind": "dedicated rootful Linux VM with its own kernel; isolated Colima profile",
+  "mainLocalDeploymentUnchanged": true
+}

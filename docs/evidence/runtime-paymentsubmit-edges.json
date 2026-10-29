@@ -1,0 +1,80 @@
+{
+  "passed": true,
+  "controlledProvider": true,
+  "realModelJudgmentEvaluated": false,
+  "applicationVersion": "0.12.0-dev",
+  "guestProtocolVersion": 5,
+  "workstationImage": "personal-agent-workstation:0.5.0",
+  "migration": "0012",
+  "controlledWebsite": true,
+  "paymentSubmissionControlledEvaluated": false,
+  "paymentSubmissionRecoveryEvaluated": false,
+  "paymentSubmissionEdgesEvaluated": true,
+  "focusedLostReceiptOnly": false,
+  "focusedEdgesOnly": true,
+  "paymentTasksEvaluated": 11,
+  "realPaymentEvaluated": false,
+  "independentSettlementVerified": false,
+  "checks": [
+    {
+      "check": "Actual old guest4 image with a new container label is rejected by its real health; no task/model call or secret release",
+      "agentId": "HZUK9w0Wv82u"
+    },
+    {
+      "check": "UPI-only fill, distinct final approval, one independently matched submission and page result",
+      "taskId": "3c6877fa-b461-411c-be51-a31cc3d65f5b"
+    },
+    {
+      "check": "Real submit tool after declined fill is rejected for missing complete preparation receipt; no final approval, marker, inputs or click",
+      "taskId": "2c7c06fd-febf-478f-bc6f-40ba5b88f076"
+    },
+    {
+      "check": "Actual cross_site DOM change after snapshot rejected before dispatch; zero marker/click",
+      "taskId": "e197a63e-ee6d-4eac-a872-222ecebbf5a0"
+    },
+    {
+      "check": "Actual special_control DOM change after snapshot rejected before dispatch; zero marker/click",
+      "taskId": "809c6955-c21e-46d1-8662-3280acc86a78"
+    },
+    {
+      "check": "Actual iframe DOM change after snapshot rejected before dispatch; zero marker/click",
+      "taskId": "b55c08a0-dfc1-4599-acde-ad6d1b216788"
+    },
+    {
+      "check": "Marker committed before native Docker send; process-group SIGKILL, proxy death and breakpoint removal before restart; continue/cancel review with no click or fabricated result and one attempt",
+      "taskId": "438eb28e-de68-4468-8108-b95c44f62658"
+    },
+    {
+      "check": "Button changes after host final inspection/marker and before guest execution; guest rejects before effect with one marker and zero clicks",
+      "taskId": "311916b0-813f-47a1-bbed-2c3e21a30a47"
+    },
+    {
+      "check": "result_missing: observed result references changed before actual read; invalid evidence not persisted, payment remains one submission/marker",
+      "taskId": "3415223e-a841-442b-922a-e43adad8b306"
+    },
+    {
+      "check": "result_amount: observed result references changed before actual read; invalid evidence not persisted, payment remains one submission/marker",
+      "taskId": "5d3aba8d-9d25-447b-a688-d6bf7ed17811"
+    },
+    {
+      "check": "result_merchant: observed result references changed before actual read; invalid evidence not persisted, payment remains one submission/marker",
+      "taskId": "61e239bd-dcb1-4ead-8e07-a8d53eb9cf47"
+    },
+    {
+      "check": "Host receipt committed before blocked framework checkpoint; SIGKILL/restart adopts durable result with one click/marker and fresh page evidence",
+      "taskId": "4dfd31c1-2526-407f-8b36-cc6baa9d6f97"
+    },
+    {
+      "check": "Eleven actual edge tasks, all completed: UPI, missing fill, three unsupported targets, before-send interruption, guest-side recheck, three invalid results and host-checkpoint recovery",
+      "taskCount": 11
+    },
+    {
+      "check": "Provider key encrypted at rest, local config overrides env, masked settings view; plaintext key absent from task/DBOS records"
+    },
+    {
+      "check": "Completed Web/worker logs, actual guest journals/controller logs and model requests contain no sample secret values; website inputs are independently counted and matched"
+    }
+  ],
+  "directory": "data/experiments/agent_runtime_d54f0a82ab7341cfb714394600556f49",
+  "recordedAt": "2026-10-25T09:29:45.847Z"
+}

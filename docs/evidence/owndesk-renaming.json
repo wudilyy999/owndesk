@@ -1,0 +1,58 @@
+{
+  "date": "2026-10-29",
+  "productName": "OwnDesk",
+  "packageName": "owndesk",
+  "status": "source-renaming-verified-main-not-migrated",
+  "scope": [
+    "UI metadata/login/sidebar/export",
+    "npm manifests and lock names",
+    "default image names and deployment templates",
+    "Linux user/home/scripts/browser/controller paths",
+    "environment settings and model screenshot metadata",
+    "source comments/tests/current documentation"
+  ],
+  "checks": {
+    "typecheck": true,
+    "targetedUnitChecks": 45,
+    "initialTargetedPasses": 44,
+    "initialTargetedFailures": 1,
+    "correctedDesktopToolChecks": 2,
+    "initialFailureReason": "An obsolete annotation-withdrawal assertion also forbade the subsequently accepted AT-SPI dependencies; narrowed to withdrawn annotation/OCR code and asserted required AT-SPI packages.",
+    "browserChecks": [
+      "Cold desktop starts without Chromium or an about:blank tab",
+      "Human browser launcher opens the target in one tab; agent /open stays fenced",
+      "Warm handback preserves the original page and boot; desktop launch is rejected during agent/quiescing control",
+      "Cold restart returns to the desktop without reopening a blank browser",
+      "Concurrent journaled browser opens share one browser and produce two separate target tabs, without a spare blank tab; DOM and screenshot remain usable"
+    ],
+    "nativeChecks": [
+      "clean image boots with required native dependencies, guest6/capability, Node24 and shipped license notices; packaged native sources byte-match current files; original screenshot and native hierarchy are usable"
+    ],
+    "validationImageMode": "current source/rootfs over retained 0.6.5 dependency layers; not a clean production build",
+    "cleanProductionBuildPerformed": false,
+    "paidModelRequests": 0,
+    "businessTaskSubmissions": 0,
+    "originalEvidenceFilesByteIdentical": 188,
+    "originalCopyrightNoticeByteIdentical": true,
+    "upstreamSourcePathsPreserved": true,
+    "mainEnvMetadataUnchanged": true,
+    "originalRunningContainersUnchanged": true,
+    "temporaryContainersRemoved": 2,
+    "temporaryImageRemoved": true,
+    "mainHealth": {
+      "ready": true,
+      "version": "0.17.0-dev"
+    }
+  },
+  "sourceEvidence": {
+    "browser": "data/experiments/pa-browser-startup-65da1094/result.json",
+    "native": "data/experiments/atspi-native-package-1793278383554/result.json",
+    "backupDirectory": "data/backups/owndesk-rename-20261029-204502"
+  },
+  "compatibility": [
+    "Existing DBOS application identity, Docker ownership labels, snapshot format and browser storage keys remain stable.",
+    "Original evidence and private backups preserve actual historical names.",
+    "New images and guest user/home/scripts require explicit paired deployment.",
+    "Original running installation and working-directory path were not migrated."
+  ]
+}

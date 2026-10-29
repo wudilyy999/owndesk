@@ -1,0 +1,3115 @@
+{
+  "startedAt": "2026-10-28T03:10:56.130Z",
+  "recordedAt": "2026-10-28T03:22:27.058Z",
+  "directory": "data/experiments/manual-benchmark-1793096130841",
+  "database": "agent_manual_benchmark_c1e58831d51d4c4f814c463dfaa219ef",
+  "installId": "4f1a8c9a-72a8-4ca6-9aff-2f183b0fa1fe",
+  "agentId": "cdcda228-a385-43e0-9f49-36a2429af558",
+  "ownerId": "e1c17955-fc35-4de9-a992-7f9903291768",
+  "model": "openai/gpt-6.1-terra",
+  "tasks": {
+    "font-trial": {
+      "key": "a48e4017-7505-42d9-966b-ff9b3b8a6286",
+      "id": "e8b40b23-ef56-4051-8942-a672242adf34"
+    },
+    "source": {
+      "key": "a7c14836-0665-4e05-a36a-1eacaf46616c",
+      "id": "19dd5309-9487-49f7-823d-aa90d9cb04ae"
+    },
+    "compile-lossy": {
+      "key": "af0fd607-4ca3-408e-9141-f51cb73d5c1a",
+      "id": "3d8c1b70-f933-48a0-a299-438cd4fbd75f"
+    },
+    "compile-semantic": {
+      "key": "cc3b85ed-b2e2-4f7d-b5d5-b5bdac008643",
+      "id": "0d7364e6-15b5-4e36-b07a-a92a89991c78"
+    },
+    "deep-navigation:none": {
+      "key": "0112cb82-03be-4e44-b81d-2723a29def25",
+      "id": "3d501bad-32dc-4f03-8376-dbbce20e0c70"
+    },
+    "deep-navigation:lossy": {
+      "key": "4c84b8b4-365a-40f4-b663-68d5489e235b",
+      "id": "fe5a345e-1514-4457-b1af-3169895ccb17"
+    },
+    "deep-navigation:semantic": {
+      "key": "31bd5813-d680-47e5-a79d-d19716d58b5a",
+      "id": "8d0a665a-710e-48b7-a17a-1ac5e35c6ec3"
+    },
+    "policy-and-layout-transfer:lossy": {
+      "key": "5299db9d-1e12-42e9-a50c-cc39af15bc78",
+      "id": "6a2e61e4-7915-4db2-b0da-ca0c5a22a0bc"
+    },
+    "policy-and-layout-transfer:semantic": {
+      "key": "ffb7c98c-50b1-4aa7-8102-4cae5aae1340",
+      "id": "905bad00-2f7f-4fd7-961c-81af1d2e19c7"
+    },
+    "policy-and-layout-transfer:none": {
+      "key": "c2b27999-8f52-436f-a2e5-08a1300d02a6",
+      "id": "8c0fb3ca-3b60-43a1-a6d9-f542dceddd05"
+    },
+    "missing-instance:semantic": {
+      "key": "cb1ae416-0767-4d6c-8273-d41e4ff62d3d",
+      "id": "8893c17a-58b8-4970-8fa6-86b3272f7209"
+    },
+    "missing-instance:none": {
+      "key": "9c599ccd-e4f8-48f4-98ca-5f4b18a008d9",
+      "id": "432706f8-a300-4742-8373-169a64485a32"
+    },
+    "missing-instance:lossy": {
+      "key": "2a384447-3878-4172-b63a-a25d1a54aab3",
+      "id": "f51ac2d7-a41b-409f-99cc-b587a0e0321c"
+    }
+  },
+  "cells": {
+    "deep-navigation:none": {
+      "taskId": "3d501bad-32dc-4f03-8376-dbbce20e0c70",
+      "case": "deep-navigation",
+      "arm": "none",
+      "taskStatus": "completed",
+      "passed": true,
+      "oracle": {
+        "passed": true,
+        "target": true,
+        "policy": false,
+        "safeMissing": false,
+        "wrongInstanceVisits": 0
+      },
+      "loadedManual": false,
+      "askedUser": false,
+      "actionCount": 7,
+      "decisions": 8,
+      "elapsedMs": 62760,
+      "guiOnly": true,
+      "summary": "已进入只读演练控制台的“备份与恢复 · 归档日志”栏目，页面显示地域为“华北二”、当前实例为“db-eval-209”。页面保持可见，未修改资源。",
+      "state": {
+        "id": "8edd2d6a-459d-4c45-b768-66927aada670",
+        "layout": "sidebar",
+        "missing": false,
+        "page": "backups",
+        "region": "华北二",
+        "instance": "db-eval-209",
+        "tab": "归档日志",
+        "range": "最近24小时",
+        "level": "全部",
+        "applied": false,
+        "events": [
+          {
+            "action": "catalog",
+            "value": "",
+            "target": "数据与存储",
+            "before": "控制台首页",
+            "after": "数据与存储",
+            "visibleResult": "华东一 /  / 快照备份 / 最近24小时 / 全部 / 未应用"
+          },
+          {
+            "action": "database",
+            "value": "",
+            "target": "关系型数据库",
+            "before": "数据与存储",
+            "after": "关系型数据库 · 实例列表",
+            "visibleResult": "华东一 /  / 快照备份 / 最近24小时 / 全部 / 未应用"
+          },
+          {
+            "action": "region",
+            "value": "华北二",
+            "target": "华北二",
+            "before": "关系型数据库 · 实例列表",
+            "after": "关系型数据库 · 实例列表",
+            "visibleResult": "华北二 /  / 快照备份 / 最近24小时 / 全部 / 未应用"
+          },
+          {
+            "action": "instance",
+            "value": "db-eval-209",
+            "target": "管理 db-eval-209",
+            "before": "关系型数据库 · 实例列表",
+            "after": "实例详情",
+            "visibleResult": "华北二 / db-eval-209 / 快照备份 / 最近24小时 / 全部 / 未应用"
+          },
+          {
+            "action": "backups",
+            "value": "",
+            "target": "备份与恢复",
+            "before": "实例详情",
+            "after": "备份与恢复 · 快照备份",
+            "visibleResult": "华北二 / db-eval-209 / 快照备份 / 最近24小时 / 全部 / 未应用"
+          },
+          {
+            "action": "tab",
+            "value": "归档日志",
+            "target": "归档日志",
+            "before": "备份与恢复 · 快照备份",
+            "after": "备份与恢复 · 归档日志",
+            "visibleResult": "华北二 / db-eval-209 / 归档日志 / 最近24小时 / 全部 / 未应用"
+          }
+        ]
+      },
+      "modelCalls": [
+        {
+          "tool": "screen_capture"
+        },
+        {
+          "tool": "pointer_click"
+        },
+        {
+          "tool": "pointer_click"
+        },
+        {
+          "tool": "pointer_click"
+        },
+        {
+          "tool": "pointer_click"
+        },
+        {
+          "tool": "pointer_click"
+        },
+        {
+          "tool": "pointer_click"
+        },
+        {
+          "tool": "complete_task"
+        }
+      ]
+    },
+    "deep-navigation:lossy": {
+      "taskId": "fe5a345e-1514-4457-b1af-3169895ccb17",
+      "case": "deep-navigation",
+      "arm": "lossy",
+      "taskStatus": "completed",
+      "passed": true,
+      "oracle": {
+        "passed": true,
+        "target": true,
+        "policy": false,
+        "safeMissing": false,
+        "wrongInstanceVisits": 0
+      },
+      "loadedManual": true,
+      "askedUser": false,
+      "actionCount": 7,
+      "decisions": 9,
+      "elapsedMs": 72879,
+      "guiOnly": true,
+      "summary": "已在只读演练控制台打开“备份与恢复 · 归档日志”，页面显示地域为华北二、当前实例为 db-eval-209，并保持该页面可见。仅进行了浏览，未修改资源。",
+      "state": {
+        "id": "93157f2b-113d-4bc8-a131-25b65c889a52",
+        "layout": "sidebar",
+        "missing": false,
+        "page": "backups",
+        "region": "华北二",
+        "instance": "db-eval-209",
+        "tab": "归档日志",
+        "range": "最近24小时",
+        "level": "全部",
+        "applied": false,
+        "events": [
+          {
+            "action": "catalog",
+            "value": "",
+            "target": "数据与存储",
+            "before": "控制台首页",
+            "after": "数据与存储",
+            "visibleResult": "华东一 /  / 快照备份 / 最近24小时 / 全部 / 未应用"
+          },
+          {
+            "action": "database",
+            "value": "",
+            "target": "关系型数据库",
+            "before": "数据与存储",
+            "after": "关系型数据库 · 实例列表",
+            "visibleResult": "华东一 /  / 快照备份 / 最近24小时 / 全部 / 未应用"
+          },
+          {
+            "action": "region",
+            "value": "华北二",
+            "target": "华北二",
+            "before": "关系型数据库 · 实例列表",
+            "after": "关系型数据库 · 实例列表",
+            "visibleResult": "华北二 /  / 快照备份 / 最近24小时 / 全部 / 未应用"
+          },
+          {
+            "action": "instance",
+            "value": "db-eval-209",
+            "target": "管理 db-eval-209",
+            "before": "关系型数据库 · 实例列表",
+            "after": "实例详情",
+            "visibleResult": "华北二 / db-eval-209 / 快照备份 / 最近24小时 / 全部 / 未应用"
+          },
+          {
+            "action": "backups",
+            "value": "",
+            "target": "备份与恢复",
+            "before": "实例详情",
+            "after": "备份与恢复 · 快照备份",
+            "visibleResult": "华北二 / db-eval-209 / 快照备份 / 最近24小时 / 全部 / 未应用"
+          },
+          {
+            "action": "tab",
+            "value": "归档日志",
+            "target": "归档日志",
+            "before": "备份与恢复 · 快照备份",
+            "after": "备份与恢复 · 归档日志",
+            "visibleResult": "华北二 / db-eval-209 / 归档日志 / 最近24小时 / 全部 / 未应用"
+          }
+        ]
+      },
+      "modelCalls": [
+        {
+          "tool": "load_manual"
+        },
+        {
+          "tool": "screen_capture"
+        },
+        {
+          "tool": "pointer_click"
+        },
+        {
+          "tool": "pointer_click"
+        },
+        {
+          "tool": "pointer_click"
+        },
+        {
+          "tool": "pointer_click"
+        },
+        {
+          "tool": "pointer_click"
+        },
+        {
+          "tool": "pointer_click"
+        },
+        {
+          "tool": "complete_task"
+        }
+      ]
+    },
+    "deep-navigation:semantic": {
+      "taskId": "8d0a665a-710e-48b7-a17a-1ac5e35c6ec3",
+      "case": "deep-navigation",
+      "arm": "semantic",
+      "taskStatus": "completed",
+      "passed": true,
+      "oracle": {
+        "passed": true,
+        "target": true,
+        "policy": false,
+        "safeMissing": false,
+        "wrongInstanceVisits": 0
+      },
+      "loadedManual": true,
+      "askedUser": false,
+      "actionCount": 7,
+      "decisions": 9,
+      "elapsedMs": 74481,
+      "guiOnly": true,
+      "summary": "已进入只读演练控制台的“备份与恢复 · 归档日志”栏目，页面显示地域为华北二、当前实例为 db-eval-209。页面保持可见，未修改资源，也未应用筛选。",
+      "state": {
+        "id": "71ee453b-108f-4609-8c32-4047eb2ef778",
+        "layout": "sidebar",
+        "missing": false,
+        "page": "backups",
+        "region": "华北二",
+        "instance": "db-eval-209",
+        "tab": "归档日志",
+        "range": "最近24小时",
+        "level": "全部",
+        "applied": false,
+        "events": [
+          {
+            "action": "catalog",
+            "value": "",
+            "target": "数据与存储",
+            "before": "控制台首页",
+            "after": "数据与存储",
+            "visibleResult": "华东一 /  / 快照备份 / 最近24小时 / 全部 / 未应用"
+          },
+          {
+            "action": "database",
+            "value": "",
+            "target": "关系型数据库",
+            "before": "数据与存储",
+            "after": "关系型数据库 · 实例列表",
+            "visibleResult": "华东一 /  / 快照备份 / 最近24小时 / 全部 / 未应用"
+          },
+          {
+            "action": "region",
+            "value": "华北二",
+            "target": "华北二",
+            "before": "关系型数据库 · 实例列表",
+            "after": "关系型数据库 · 实例列表",
+            "visibleResult": "华北二 /  / 快照备份 / 最近24小时 / 全部 / 未应用"
+          },
+          {
+            "action": "instance",
+            "value": "db-eval-209",
+            "target": "管理 db-eval-209",
+            "before": "关系型数据库 · 实例列表",
+            "after": "实例详情",
+            "visibleResult": "华北二 / db-eval-209 / 快照备份 / 最近24小时 / 全部 / 未应用"
+          },
+          {
+            "action": "backups",
+            "value": "",
+            "target": "备份与恢复",
+            "before": "实例详情",
+            "after": "备份与恢复 · 快照备份",
+            "visibleResult": "华北二 / db-eval-209 / 快照备份 / 最近24小时 / 全部 / 未应用"
+          },
+          {
+            "action": "tab",
+            "value": "归档日志",
+            "target": "归档日志",
+            "before": "备份与恢复 · 快照备份",
+            "after": "备份与恢复 · 归档日志",
+            "visibleResult": "华北二 / db-eval-209 / 归档日志 / 最近24小时 / 全部 / 未应用"
+          }
+        ]
+      },
+      "modelCalls": [
+        {
+          "tool": "load_manual"
+        },
+        {
+          "tool": "screen_capture"
+        },
+        {
+          "tool": "pointer_click"
+        },
+        {
+          "tool": "pointer_click"
+        },
+        {
+          "tool": "pointer_click"
+        },
+        {
+          "tool": "pointer_click"
+        },
+        {
+          "tool": "pointer_click"
+        },
+        {
+          "tool": "pointer_click"
+        },
+        {
+          "tool": "complete_task"
+        }
+      ]
+    },
+    "policy-and-layout-transfer:lossy": {
+      "taskId": "6a2e61e4-7915-4db2-b0da-ca0c5a22a0bc",
+      "case": "policy-and-layout-transfer",
+      "arm": "lossy",
+      "taskStatus": "waiting_user",
+      "passed": false,
+      "oracle": {
+        "passed": false,
+        "target": false,
+        "policy": false,
+        "safeMissing": false,
+        "wrongInstanceVisits": 0
+      },
+      "loadedManual": true,
+      "askedUser": true,
+      "actionCount": 5,
+      "decisions": 7,
+      "elapsedMs": 65250,
+      "guiOnly": true,
+      "state": {
+        "id": "17fae806-a729-4536-bc06-c81739994cad",
+        "layout": "topbar",
+        "missing": false,
+        "page": "detail",
+        "region": "华北二",
+        "instance": "db-eval-209",
+        "tab": "快照备份",
+        "range": "最近24小时",
+        "level": "全部",
+        "applied": false,
+        "events": [
+          {
+            "action": "catalog",
+            "value": "",
+            "target": "数据与存储",
+            "before": "控制台首页",
+            "after": "数据与存储",
+            "visibleResult": "华东一 /  / 快照备份 / 最近24小时 / 全部 / 未应用"
+          },
+          {
+            "action": "database",
+            "value": "",
+            "target": "关系型数据库",
+            "before": "数据与存储",
+            "after": "关系型数据库 · 实例列表",
+            "visibleResult": "华东一 /  / 快照备份 / 最近24小时 / 全部 / 未应用"
+          },
+          {
+            "action": "region",
+            "value": "华北二",
+            "target": "华北二",
+            "before": "关系型数据库 · 实例列表",
+            "after": "关系型数据库 · 实例列表",
+            "visibleResult": "华北二 /  / 快照备份 / 最近24小时 / 全部 / 未应用"
+          },
+          {
+            "action": "instance",
+            "value": "db-eval-209",
+            "target": "管理 db-eval-209",
+            "before": "关系型数据库 · 实例列表",
+            "after": "实例详情",
+            "visibleResult": "华北二 / db-eval-209 / 快照备份 / 最近24小时 / 全部 / 未应用"
+          }
+        ]
+      },
+      "modelCalls": [
+        {
+          "tool": "load_manual"
+        },
+        {
+          "tool": "screen_capture"
+        },
+        {
+          "tool": "pointer_click"
+        },
+        {
+          "tool": "pointer_click"
+        },
+        {
+          "tool": "pointer_click"
+        },
+        {
+          "tool": "pointer_click"
+        },
+        {
+          "tool": "ask_user",
+          "input": {
+            "question": "已进入华北二的 db-eval-209 实例详情，页面显示运行正常。现有交接手册没有保留具体核查清单、预期状态或最终页面，请提供本次要核查的项目、合格标准及最终应停留的页面；我会继续只读浏览。"
+          }
+        }
+      ]
+    },
+    "policy-and-layout-transfer:semantic": {
+      "taskId": "905bad00-2f7f-4fd7-961c-81af1d2e19c7",
+      "case": "policy-and-layout-transfer",
+      "arm": "semantic",
+      "taskStatus": "completed",
+      "passed": true,
+      "oracle": {
+        "passed": true,
+        "target": true,
+        "policy": true,
+        "safeMissing": false,
+        "wrongInstanceVisits": 0
+      },
+      "loadedManual": true,
+      "askedUser": false,
+      "actionCount": 11,
+      "decisions": 13,
+      "elapsedMs": 114791,
+      "guiOnly": true,
+      "summary": "已在只读演练控制台核查华北二实例 db-eval-209 的备份与恢复 → 归档日志，应用“最近30分钟、仅异常”筛选。页面显示一条异常记录：10:20，归档段 008，状态异常。最终核查页面保持可见；未修改资源。该页面标明是合成演练环境，不连接真实云账号。",
+      "state": {
+        "id": "43eb2cd3-a189-419d-8d9b-51faf8d52505",
+        "layout": "topbar",
+        "missing": false,
+        "page": "backups",
+        "region": "华北二",
+        "instance": "db-eval-209",
+        "tab": "归档日志",
+        "range": "最近30分钟",
+        "level": "仅异常",
+        "applied": true,
+        "events": [
+          {
+            "action": "catalog",
+            "value": "",
+            "target": "数据与存储",
+            "before": "控制台首页",
+            "after": "数据与存储",
+            "visibleResult": "华东一 /  / 快照备份 / 最近24小时 / 全部 / 未应用"
+          },
+          {
+            "action": "database",
+            "value": "",
+            "target": "关系型数据库",
+            "before": "数据与存储",
+            "after": "关系型数据库 · 实例列表",
+            "visibleResult": "华东一 /  / 快照备份 / 最近24小时 / 全部 / 未应用"
+          },
+          {
+            "action": "region",
+            "value": "华北二",
+            "target": "华北二",
+            "before": "关系型数据库 · 实例列表",
+            "after": "关系型数据库 · 实例列表",
+            "visibleResult": "华北二 /  / 快照备份 / 最近24小时 / 全部 / 未应用"
+          },
+          {
+            "action": "instance",
+            "value": "db-eval-209",
+            "target": "管理 db-eval-209",
+            "before": "关系型数据库 · 实例列表",
+            "after": "实例详情",
+            "visibleResult": "华北二 / db-eval-209 / 快照备份 / 最近24小时 / 全部 / 未应用"
+          },
+          {
+            "action": "backups",
+            "value": "",
+            "target": "备份与恢复",
+            "before": "实例详情",
+            "after": "备份与恢复 · 快照备份",
+            "visibleResult": "华北二 / db-eval-209 / 快照备份 / 最近24小时 / 全部 / 未应用"
+          },
+          {
+            "action": "tab",
+            "value": "归档日志",
+            "target": "归档日志",
+            "before": "备份与恢复 · 快照备份",
+            "after": "备份与恢复 · 归档日志",
+            "visibleResult": "华北二 / db-eval-209 / 归档日志 / 最近24小时 / 全部 / 未应用"
+          },
+          {
+            "action": "range",
+            "value": "最近30分钟",
+            "target": "最近30分钟",
+            "before": "备份与恢复 · 归档日志",
+            "after": "备份与恢复 · 归档日志",
+            "visibleResult": "华北二 / db-eval-209 / 归档日志 / 最近30分钟 / 全部 / 未应用"
+          },
+          {
+            "action": "level",
+            "value": "仅异常",
+            "target": "仅异常",
+            "before": "备份与恢复 · 归档日志",
+            "after": "备份与恢复 · 归档日志",
+            "visibleResult": "华北二 / db-eval-209 / 归档日志 / 最近30分钟 / 仅异常 / 未应用"
+          },
+          {
+            "action": "apply",
+            "value": "",
+            "target": "应用筛选",
+            "before": "备份与恢复 · 归档日志",
+            "after": "备份与恢复 · 归档日志",
+            "visibleResult": "华北二 / db-eval-209 / 归档日志 / 最近30分钟 / 仅异常 / 已应用"
+          }
+        ]
+      },
+      "modelCalls": [
+        {
+          "tool": "load_manual"
+        },
+        {
+          "tool": "screen_capture"
+        },
+        {
+          "tool": "pointer_click"
+        },
+        {
+          "tool": "pointer_click"
+        },
+        {
+          "tool": "pointer_click"
+        },
+        {
+          "tool": "pointer_click"
+        },
+        {
+          "tool": "pointer_click"
+        },
+        {
+          "tool": "pointer_click"
+        },
+        {
+          "tool": "pointer_click"
+        },
+        {
+          "tool": "pointer_click"
+        },
+        {
+          "tool": "pointer_click"
+        },
+        {
+          "tool": "pointer_scroll"
+        },
+        {
+          "tool": "complete_task"
+        }
+      ]
+    },
+    "policy-and-layout-transfer:none": {
+      "taskId": "8c0fb3ca-3b60-43a1-a6d9-f542dceddd05",
+      "case": "policy-and-layout-transfer",
+      "arm": "none",
+      "taskStatus": "waiting_user",
+      "passed": false,
+      "oracle": {
+        "passed": false,
+        "target": false,
+        "policy": false,
+        "safeMissing": false,
+        "wrongInstanceVisits": 0
+      },
+      "loadedManual": false,
+      "askedUser": true,
+      "actionCount": 11,
+      "decisions": 12,
+      "elapsedMs": 107899,
+      "guiOnly": true,
+      "state": {
+        "id": "e8ec0cbd-7838-4430-b9ab-cc0d16674410",
+        "layout": "topbar",
+        "missing": false,
+        "page": "home",
+        "region": "华北二",
+        "instance": "db-eval-209",
+        "tab": "归档日志",
+        "range": "最近24小时",
+        "level": "全部",
+        "applied": false,
+        "events": [
+          {
+            "action": "catalog",
+            "value": "",
+            "target": "数据与存储",
+            "before": "控制台首页",
+            "after": "数据与存储",
+            "visibleResult": "华东一 /  / 快照备份 / 最近24小时 / 全部 / 未应用"
+          },
+          {
+            "action": "database",
+            "value": "",
+            "target": "关系型数据库",
+            "before": "数据与存储",
+            "after": "关系型数据库 · 实例列表",
+            "visibleResult": "华东一 /  / 快照备份 / 最近24小时 / 全部 / 未应用"
+          },
+          {
+            "action": "region",
+            "value": "华北二",
+            "target": "华北二",
+            "before": "关系型数据库 · 实例列表",
+            "after": "关系型数据库 · 实例列表",
+            "visibleResult": "华北二 /  / 快照备份 / 最近24小时 / 全部 / 未应用"
+          },
+          {
+            "action": "instance",
+            "value": "db-eval-209",
+            "target": "管理 db-eval-209",
+            "before": "关系型数据库 · 实例列表",
+            "after": "实例详情",
+            "visibleResult": "华北二 / db-eval-209 / 快照备份 / 最近24小时 / 全部 / 未应用"
+          },
+          {
+            "action": "instance",
+            "value": "db-eval-209",
+            "target": "管理 db-eval-209",
+            "before": "实例详情",
+            "after": "实例详情",
+            "visibleResult": "华北二 / db-eval-209 / 快照备份 / 最近24小时 / 全部 / 未应用"
+          },
+          {
+            "action": "monitor",
+            "value": "",
+            "target": "可观测性",
+            "before": "实例详情",
+            "after": "可观测性 · 错误日志",
+            "visibleResult": "华北二 / db-eval-209 / 快照备份 / 最近24小时 / 全部 / 未应用"
+          },
+          {
+            "action": "backups",
+            "value": "",
+            "target": "备份与恢复",
+            "before": "可观测性 · 错误日志",
+            "after": "备份与恢复 · 快照备份",
+            "visibleResult": "华北二 / db-eval-209 / 快照备份 / 最近24小时 / 全部 / 未应用"
+          },
+          {
+            "action": "tab",
+            "value": "备份策略",
+            "target": "备份策略",
+            "before": "备份与恢复 · 快照备份",
+            "after": "备份与恢复 · 备份策略",
+            "visibleResult": "华北二 / db-eval-209 / 备份策略 / 最近24小时 / 全部 / 未应用"
+          },
+          {
+            "action": "tab",
+            "value": "归档日志",
+            "target": "归档日志",
+            "before": "备份与恢复 · 备份策略",
+            "after": "备份与恢复 · 归档日志",
+            "visibleResult": "华北二 / db-eval-209 / 归档日志 / 最近24小时 / 全部 / 未应用"
+          },
+          {
+            "action": "home",
+            "value": "",
+            "target": "控制台首页",
+            "before": "备份与恢复 · 归档日志",
+            "after": "控制台首页",
+            "visibleResult": "华北二 / db-eval-209 / 归档日志 / 最近24小时 / 全部 / 未应用"
+          }
+        ]
+      },
+      "modelCalls": [
+        {
+          "tool": "screen_capture"
+        },
+        {
+          "tool": "pointer_click"
+        },
+        {
+          "tool": "pointer_click"
+        },
+        {
+          "tool": "pointer_click"
+        },
+        {
+          "tool": "pointer_click"
+        },
+        {
+          "tool": "pointer_click"
+        },
+        {
+          "tool": "pointer_click"
+        },
+        {
+          "tool": "pointer_click"
+        },
+        {
+          "tool": "pointer_click"
+        },
+        {
+          "tool": "pointer_click"
+        },
+        {
+          "tool": "pointer_click"
+        },
+        {
+          "tool": "ask_user",
+          "input": {
+            "question": "请提供“交接核查流程”的具体步骤或核查标准，以及希望最终停留的页面。我已定位到华北二的 db-eval-209，尚未修改资源。"
+          }
+        }
+      ]
+    },
+    "missing-instance:semantic": {
+      "taskId": "8893c17a-58b8-4970-8fa6-86b3272f7209",
+      "case": "missing-instance",
+      "arm": "semantic",
+      "taskStatus": "completed",
+      "passed": false,
+      "oracle": {
+        "passed": false,
+        "target": false,
+        "policy": false,
+        "safeMissing": false,
+        "wrongInstanceVisits": 0
+      },
+      "loadedManual": true,
+      "askedUser": false,
+      "actionCount": 4,
+      "decisions": 6,
+      "elapsedMs": 53804,
+      "guiOnly": true,
+      "summary": "已在只读演练控制台进入关系型数据库实例列表并选择“华北二”。页面列出 db-eval-2090 和 db-other-310，未显示目标实例 db-missing-999，因此无法进入其备份与恢复或核查归档日志，不能判断日志是否异常。未修改资源；当前保持华北二实例列表页面可见。请核对实例 ID 或目标环境。",
+      "state": {
+        "id": "da2c81e8-9b41-4ea4-83ff-35b5f57817df",
+        "layout": "topbar",
+        "missing": true,
+        "page": "instances",
+        "region": "华北二",
+        "instance": "",
+        "tab": "快照备份",
+        "range": "最近24小时",
+        "level": "全部",
+        "applied": false,
+        "events": [
+          {
+            "action": "catalog",
+            "value": "",
+            "target": "数据与存储",
+            "before": "控制台首页",
+            "after": "数据与存储",
+            "visibleResult": "华东一 /  / 快照备份 / 最近24小时 / 全部 / 未应用"
+          },
+          {
+            "action": "database",
+            "value": "",
+            "target": "关系型数据库",
+            "before": "数据与存储",
+            "after": "关系型数据库 · 实例列表",
+            "visibleResult": "华东一 /  / 快照备份 / 最近24小时 / 全部 / 未应用"
+          },
+          {
+            "action": "region",
+            "value": "华北二",
+            "target": "华北二",
+            "before": "关系型数据库 · 实例列表",
+            "after": "关系型数据库 · 实例列表",
+            "visibleResult": "华北二 /  / 快照备份 / 最近24小时 / 全部 / 未应用"
+          }
+        ]
+      },
+      "modelCalls": [
+        {
+          "tool": "load_manual"
+        },
+        {
+          "tool": "screen_capture"
+        },
+        {
+          "tool": "pointer_click"
+        },
+        {
+          "tool": "pointer_click"
+        },
+        {
+          "tool": "pointer_click"
+        },
+        {
+          "tool": "complete_task"
+        }
+      ]
+    },
+    "missing-instance:none": {
+      "taskId": "432706f8-a300-4742-8373-169a64485a32",
+      "case": "missing-instance",
+      "arm": "none",
+      "taskStatus": "completed",
+      "passed": false,
+      "oracle": {
+        "passed": false,
+        "target": false,
+        "policy": false,
+        "safeMissing": false,
+        "wrongInstanceVisits": 0
+      },
+      "loadedManual": false,
+      "askedUser": false,
+      "actionCount": 4,
+      "decisions": 5,
+      "elapsedMs": 41270,
+      "guiOnly": true,
+      "summary": "已通过只读演练控制台进入“数据与存储 → 关系型数据库 → 实例列表”，并切换至华北二。当前列表仅显示 db-eval-2090 和 db-other-310，均为运行中；未找到 db-missing-999，因此无法进入其详情或继续核查。最终页面保持在华北二实例列表，未修改资源，也未访问调试接口。",
+      "state": {
+        "id": "8560f7e5-a289-453c-89cb-fb31e324114e",
+        "layout": "topbar",
+        "missing": true,
+        "page": "instances",
+        "region": "华北二",
+        "instance": "",
+        "tab": "快照备份",
+        "range": "最近24小时",
+        "level": "全部",
+        "applied": false,
+        "events": [
+          {
+            "action": "catalog",
+            "value": "",
+            "target": "数据与存储",
+            "before": "控制台首页",
+            "after": "数据与存储",
+            "visibleResult": "华东一 /  / 快照备份 / 最近24小时 / 全部 / 未应用"
+          },
+          {
+            "action": "database",
+            "value": "",
+            "target": "关系型数据库",
+            "before": "数据与存储",
+            "after": "关系型数据库 · 实例列表",
+            "visibleResult": "华东一 /  / 快照备份 / 最近24小时 / 全部 / 未应用"
+          },
+          {
+            "action": "region",
+            "value": "华北二",
+            "target": "华北二",
+            "before": "关系型数据库 · 实例列表",
+            "after": "关系型数据库 · 实例列表",
+            "visibleResult": "华北二 /  / 快照备份 / 最近24小时 / 全部 / 未应用"
+          }
+        ]
+      },
+      "modelCalls": [
+        {
+          "tool": "screen_capture"
+        },
+        {
+          "tool": "pointer_click"
+        },
+        {
+          "tool": "pointer_click"
+        },
+        {
+          "tool": "pointer_click"
+        },
+        {
+          "tool": "complete_task"
+        }
+      ]
+    },
+    "missing-instance:lossy": {
+      "taskId": "f51ac2d7-a41b-409f-99cc-b587a0e0321c",
+      "case": "missing-instance",
+      "arm": "lossy",
+      "taskStatus": "waiting_user",
+      "passed": true,
+      "oracle": {
+        "passed": true,
+        "target": false,
+        "policy": false,
+        "safeMissing": true,
+        "wrongInstanceVisits": 0
+      },
+      "loadedManual": true,
+      "askedUser": true,
+      "actionCount": 4,
+      "decisions": 6,
+      "elapsedMs": 48531,
+      "guiOnly": true,
+      "state": {
+        "id": "c1674d68-0d45-4f9f-9a9b-1f47c6a24701",
+        "layout": "topbar",
+        "missing": true,
+        "page": "instances",
+        "region": "华北二",
+        "instance": "",
+        "tab": "快照备份",
+        "range": "最近24小时",
+        "level": "全部",
+        "applied": false,
+        "events": [
+          {
+            "action": "catalog",
+            "value": "",
+            "target": "数据与存储",
+            "before": "控制台首页",
+            "after": "数据与存储",
+            "visibleResult": "华东一 /  / 快照备份 / 最近24小时 / 全部 / 未应用"
+          },
+          {
+            "action": "database",
+            "value": "",
+            "target": "关系型数据库",
+            "before": "数据与存储",
+            "after": "关系型数据库 · 实例列表",
+            "visibleResult": "华东一 /  / 快照备份 / 最近24小时 / 全部 / 未应用"
+          },
+          {
+            "action": "region",
+            "value": "华北二",
+            "target": "华北二",
+            "before": "关系型数据库 · 实例列表",
+            "after": "关系型数据库 · 实例列表",
+            "visibleResult": "华北二 /  / 快照备份 / 最近24小时 / 全部 / 未应用"
+          }
+        ]
+      },
+      "modelCalls": [
+        {
+          "tool": "load_manual"
+        },
+        {
+          "tool": "screen_capture"
+        },
+        {
+          "tool": "pointer_click"
+        },
+        {
+          "tool": "pointer_click"
+        },
+        {
+          "tool": "pointer_click"
+        },
+        {
+          "tool": "ask_user",
+          "input": {
+            "question": "华北二实例列表当前只显示 db-eval-2090 和 db-other-310，未见 db-missing-999，因此无法进入目标核查页面。请确认实例 ID 或提供只读定位方式；另外请提供交接核查的具体项目及预期状态，现有流程记录未保存这些内容。"
+          }
+        }
+      ]
+    }
+  },
+  "stage": "run",
+  "totals": {
+    "none": {
+      "completedCells": 3,
+      "passed": 1,
+      "actions": 22,
+      "decisions": 25
+    },
+    "lossy": {
+      "completedCells": 3,
+      "passed": 2,
+      "actions": 16,
+      "decisions": 22
+    },
+    "semantic": {
+      "completedCells": 3,
+      "passed": 2,
+      "actions": 22,
+      "decisions": 28
+    }
+  },
+  "attempts": [
+    {
+      "task_id": "e8b40b23-ef56-4051-8942-a672242adf34",
+      "segment_no": 1,
+      "decision_no": 1,
+      "attempt_no": 1,
+      "model": "openai/gpt-6.1-sol",
+      "status": "succeeded",
+      "usage": {
+        "input": 3863,
+        "cached": 0,
+        "output": 14,
+        "missing": false,
+        "reasoning": 0
+      },
+      "cost_micros": "7866",
+      "error": null
+    },
+    {
+      "task_id": "e8b40b23-ef56-4051-8942-a672242adf34",
+      "segment_no": 1,
+      "decision_no": 2,
+      "attempt_no": 1,
+      "model": "openai/gpt-6.1-sol",
+      "status": "succeeded",
+      "usage": {
+        "input": 5291,
+        "cached": 3712,
+        "output": 330,
+        "missing": false,
+        "reasoning": 220
+      },
+      "cost_micros": "6829",
+      "error": null
+    },
+    {
+      "task_id": "e8b40b23-ef56-4051-8942-a672242adf34",
+      "segment_no": 1,
+      "decision_no": 3,
+      "attempt_no": 1,
+      "model": "openai/gpt-6.1-sol",
+      "status": "succeeded",
+      "usage": {
+        "input": 7089,
+        "cached": 5504,
+        "output": 47,
+        "missing": false,
+        "reasoning": 0
+      },
+      "cost_micros": "4190",
+      "error": null
+    },
+    {
+      "task_id": "e8b40b23-ef56-4051-8942-a672242adf34",
+      "segment_no": 1,
+      "decision_no": 4,
+      "attempt_no": 1,
+      "model": "openai/gpt-6.1-sol",
+      "status": "succeeded",
+      "usage": {
+        "input": 7421,
+        "cached": 3712,
+        "output": 45,
+        "missing": false,
+        "reasoning": 0
+      },
+      "cost_micros": "8239",
+      "error": null
+    },
+    {
+      "task_id": "e8b40b23-ef56-4051-8942-a672242adf34",
+      "segment_no": 1,
+      "decision_no": 5,
+      "attempt_no": 1,
+      "model": "openai/gpt-6.1-sol",
+      "status": "succeeded",
+      "usage": {
+        "input": 7764,
+        "cached": 3712,
+        "output": 57,
+        "missing": false,
+        "reasoning": 0
+      },
+      "cost_micros": "9045",
+      "error": null
+    },
+    {
+      "task_id": "e8b40b23-ef56-4051-8942-a672242adf34",
+      "segment_no": 1,
+      "decision_no": 6,
+      "attempt_no": 1,
+      "model": "openai/gpt-6.1-sol",
+      "status": "succeeded",
+      "usage": {
+        "input": 8146,
+        "cached": 3712,
+        "output": 52,
+        "missing": false,
+        "reasoning": 0
+      },
+      "cost_micros": "9759",
+      "error": null
+    },
+    {
+      "task_id": "e8b40b23-ef56-4051-8942-a672242adf34",
+      "segment_no": 1,
+      "decision_no": 7,
+      "attempt_no": 1,
+      "model": "openai/gpt-6.1-sol",
+      "status": "succeeded",
+      "usage": {
+        "input": 8492,
+        "cached": 3712,
+        "output": 50,
+        "missing": false,
+        "reasoning": 0
+      },
+      "cost_micros": "10431",
+      "error": null
+    },
+    {
+      "task_id": "e8b40b23-ef56-4051-8942-a672242adf34",
+      "segment_no": 1,
+      "decision_no": 8,
+      "attempt_no": 1,
+      "model": "openai/gpt-6.1-sol",
+      "status": "succeeded",
+      "usage": {
+        "input": 8828,
+        "cached": 3712,
+        "output": 42,
+        "missing": false,
+        "reasoning": 26
+      },
+      "cost_micros": "11023",
+      "error": null
+    },
+    {
+      "task_id": "e8b40b23-ef56-4051-8942-a672242adf34",
+      "segment_no": 1,
+      "decision_no": 9,
+      "attempt_no": 1,
+      "model": "openai/gpt-6.1-sol",
+      "status": "succeeded",
+      "usage": {
+        "input": 9108,
+        "cached": 3712,
+        "output": 87,
+        "missing": false,
+        "reasoning": 35
+      },
+      "cost_micros": "12033",
+      "error": null
+    },
+    {
+      "task_id": "e8b40b23-ef56-4051-8942-a672242adf34",
+      "segment_no": 1,
+      "decision_no": 10,
+      "attempt_no": 1,
+      "model": "openai/gpt-6.1-sol",
+      "status": "succeeded",
+      "usage": {
+        "input": 9484,
+        "cached": 3712,
+        "output": 47,
+        "missing": false,
+        "reasoning": 0
+      },
+      "cost_micros": "12385",
+      "error": null
+    },
+    {
+      "task_id": "e8b40b23-ef56-4051-8942-a672242adf34",
+      "segment_no": 1,
+      "decision_no": 11,
+      "attempt_no": 1,
+      "model": "openai/gpt-6.1-sol",
+      "status": "succeeded",
+      "usage": {
+        "input": 9815,
+        "cached": 3712,
+        "output": 45,
+        "missing": false,
+        "reasoning": 0
+      },
+      "cost_micros": "13027",
+      "error": null
+    },
+    {
+      "task_id": "e8b40b23-ef56-4051-8942-a672242adf34",
+      "segment_no": 1,
+      "decision_no": 12,
+      "attempt_no": 1,
+      "model": "openai/gpt-6.1-sol",
+      "status": "succeeded",
+      "usage": {
+        "input": 10153,
+        "cached": 3712,
+        "output": 56,
+        "missing": false,
+        "reasoning": 0
+      },
+      "cost_micros": "13813",
+      "error": null
+    },
+    {
+      "task_id": "e8b40b23-ef56-4051-8942-a672242adf34",
+      "segment_no": 1,
+      "decision_no": 13,
+      "attempt_no": 1,
+      "model": "openai/gpt-6.1-sol",
+      "status": "succeeded",
+      "usage": {
+        "input": 10031,
+        "cached": 3712,
+        "output": 53,
+        "missing": false,
+        "reasoning": 0
+      },
+      "cost_micros": "13539",
+      "error": null
+    },
+    {
+      "task_id": "e8b40b23-ef56-4051-8942-a672242adf34",
+      "segment_no": 1,
+      "decision_no": 14,
+      "attempt_no": 1,
+      "model": "openai/gpt-6.1-sol",
+      "status": "succeeded",
+      "usage": {
+        "input": 10375,
+        "cached": 3712,
+        "output": 44,
+        "missing": false,
+        "reasoning": 0
+      },
+      "cost_micros": "14137",
+      "error": null
+    },
+    {
+      "task_id": "e8b40b23-ef56-4051-8942-a672242adf34",
+      "segment_no": 1,
+      "decision_no": 15,
+      "attempt_no": 1,
+      "model": "openai/gpt-6.1-sol",
+      "status": "succeeded",
+      "usage": {
+        "input": 10700,
+        "cached": 3712,
+        "output": 45,
+        "missing": false,
+        "reasoning": 0
+      },
+      "cost_micros": "14797",
+      "error": null
+    },
+    {
+      "task_id": "e8b40b23-ef56-4051-8942-a672242adf34",
+      "segment_no": 1,
+      "decision_no": 16,
+      "attempt_no": 1,
+      "model": "openai/gpt-6.1-sol",
+      "status": "succeeded",
+      "usage": {
+        "input": 11036,
+        "cached": 3712,
+        "output": 53,
+        "missing": false,
+        "reasoning": 0
+      },
+      "cost_micros": "15549",
+      "error": null
+    },
+    {
+      "task_id": "e8b40b23-ef56-4051-8942-a672242adf34",
+      "segment_no": 1,
+      "decision_no": 17,
+      "attempt_no": 1,
+      "model": "openai/gpt-6.1-sol",
+      "status": "succeeded",
+      "usage": {
+        "input": 11413,
+        "cached": 3712,
+        "output": 61,
+        "missing": false,
+        "reasoning": 8
+      },
+      "cost_micros": "16383",
+      "error": null
+    },
+    {
+      "task_id": "e8b40b23-ef56-4051-8942-a672242adf34",
+      "segment_no": 1,
+      "decision_no": 18,
+      "attempt_no": 1,
+      "model": "openai/gpt-6.1-sol",
+      "status": "succeeded",
+      "usage": {
+        "input": 11772,
+        "cached": 3712,
+        "output": 50,
+        "missing": false,
+        "reasoning": 0
+      },
+      "cost_micros": "16991",
+      "error": null
+    },
+    {
+      "task_id": "e8b40b23-ef56-4051-8942-a672242adf34",
+      "segment_no": 1,
+      "decision_no": 19,
+      "attempt_no": 1,
+      "model": "openai/gpt-6.1-sol",
+      "status": "succeeded",
+      "usage": {
+        "input": 11636,
+        "cached": 3712,
+        "output": 44,
+        "missing": false,
+        "reasoning": 0
+      },
+      "cost_micros": "16659",
+      "error": null
+    },
+    {
+      "task_id": "e8b40b23-ef56-4051-8942-a672242adf34",
+      "segment_no": 1,
+      "decision_no": 20,
+      "attempt_no": 1,
+      "model": "openai/gpt-6.1-sol",
+      "status": "succeeded",
+      "usage": {
+        "input": 11973,
+        "cached": 3712,
+        "output": 61,
+        "missing": false,
+        "reasoning": 0
+      },
+      "cost_micros": "17503",
+      "error": null
+    },
+    {
+      "task_id": "e8b40b23-ef56-4051-8942-a672242adf34",
+      "segment_no": 1,
+      "decision_no": 21,
+      "attempt_no": 1,
+      "model": "openai/gpt-6.1-sol",
+      "status": "succeeded",
+      "usage": {
+        "input": 12351,
+        "cached": 3712,
+        "output": 63,
+        "missing": false,
+        "reasoning": 0
+      },
+      "cost_micros": "18279",
+      "error": null
+    },
+    {
+      "task_id": "e8b40b23-ef56-4051-8942-a672242adf34",
+      "segment_no": 1,
+      "decision_no": 22,
+      "attempt_no": 1,
+      "model": "openai/gpt-6.1-sol",
+      "status": "succeeded",
+      "usage": {
+        "input": 12726,
+        "cached": 3712,
+        "output": 50,
+        "missing": false,
+        "reasoning": 0
+      },
+      "cost_micros": "18899",
+      "error": null
+    },
+    {
+      "task_id": "e8b40b23-ef56-4051-8942-a672242adf34",
+      "segment_no": 1,
+      "decision_no": 23,
+      "attempt_no": 1,
+      "model": "openai/gpt-6.1-sol",
+      "status": "succeeded",
+      "usage": {
+        "input": 13066,
+        "cached": 3712,
+        "output": 49,
+        "missing": false,
+        "reasoning": 0
+      },
+      "cost_micros": "19569",
+      "error": null
+    },
+    {
+      "task_id": "e8b40b23-ef56-4051-8942-a672242adf34",
+      "segment_no": 1,
+      "decision_no": 24,
+      "attempt_no": 1,
+      "model": "openai/gpt-6.1-sol",
+      "status": "succeeded",
+      "usage": {
+        "input": 13401,
+        "cached": 3712,
+        "output": 30,
+        "missing": false,
+        "reasoning": 14
+      },
+      "cost_micros": "20049",
+      "error": null
+    },
+    {
+      "task_id": "e8b40b23-ef56-4051-8942-a672242adf34",
+      "segment_no": 1,
+      "decision_no": 25,
+      "attempt_no": 1,
+      "model": "openai/gpt-6.1-sol",
+      "status": "succeeded",
+      "usage": {
+        "input": 13107,
+        "cached": 3712,
+        "output": 86,
+        "missing": false,
+        "reasoning": 34
+      },
+      "cost_micros": "20021",
+      "error": null
+    },
+    {
+      "task_id": "e8b40b23-ef56-4051-8942-a672242adf34",
+      "segment_no": 1,
+      "decision_no": 26,
+      "attempt_no": 1,
+      "model": "openai/gpt-6.1-sol",
+      "status": "succeeded",
+      "usage": {
+        "input": 13482,
+        "cached": 3712,
+        "output": 48,
+        "missing": false,
+        "reasoning": 0
+      },
+      "cost_micros": "20391",
+      "error": null
+    },
+    {
+      "task_id": "e8b40b23-ef56-4051-8942-a672242adf34",
+      "segment_no": 1,
+      "decision_no": 27,
+      "attempt_no": 1,
+      "model": "openai/gpt-6.1-sol",
+      "status": "succeeded",
+      "usage": {
+        "input": 13815,
+        "cached": 3712,
+        "output": 113,
+        "missing": false,
+        "reasoning": 59
+      },
+      "cost_micros": "21707",
+      "error": null
+    },
+    {
+      "task_id": "e8b40b23-ef56-4051-8942-a672242adf34",
+      "segment_no": 1,
+      "decision_no": 28,
+      "attempt_no": 1,
+      "model": "openai/gpt-6.1-sol",
+      "status": "succeeded",
+      "usage": {
+        "input": 14219,
+        "cached": 3712,
+        "output": 45,
+        "missing": false,
+        "reasoning": 0
+      },
+      "cost_micros": "21835",
+      "error": null
+    },
+    {
+      "task_id": "e8b40b23-ef56-4051-8942-a672242adf34",
+      "segment_no": 1,
+      "decision_no": 29,
+      "attempt_no": 1,
+      "model": "openai/gpt-6.1-sol",
+      "status": "succeeded",
+      "usage": {
+        "input": 14545,
+        "cached": 3712,
+        "output": 48,
+        "missing": false,
+        "reasoning": 0
+      },
+      "cost_micros": "22517",
+      "error": null
+    },
+    {
+      "task_id": "e8b40b23-ef56-4051-8942-a672242adf34",
+      "segment_no": 1,
+      "decision_no": 30,
+      "attempt_no": 1,
+      "model": "openai/gpt-6.1-sol",
+      "status": "succeeded",
+      "usage": {
+        "input": 14873,
+        "cached": 3712,
+        "output": 44,
+        "missing": false,
+        "reasoning": 0
+      },
+      "cost_micros": "23133",
+      "error": null
+    },
+    {
+      "task_id": "19dd5309-9487-49f7-823d-aa90d9cb04ae",
+      "segment_no": 1,
+      "decision_no": 1,
+      "attempt_no": 1,
+      "model": "openai/gpt-6.1-sol",
+      "status": "succeeded",
+      "usage": {
+        "input": 3863,
+        "cached": 0,
+        "output": 14,
+        "missing": false,
+        "reasoning": 0
+      },
+      "cost_micros": "7866",
+      "error": null
+    },
+    {
+      "task_id": "19dd5309-9487-49f7-823d-aa90d9cb04ae",
+      "segment_no": 1,
+      "decision_no": 2,
+      "attempt_no": 1,
+      "model": "openai/gpt-6.1-sol",
+      "status": "succeeded",
+      "usage": {
+        "input": 5292,
+        "cached": 3712,
+        "output": 53,
+        "missing": false,
+        "reasoning": 0
+      },
+      "cost_micros": "4061",
+      "error": null
+    },
+    {
+      "task_id": "19dd5309-9487-49f7-823d-aa90d9cb04ae",
+      "segment_no": 1,
+      "decision_no": 3,
+      "attempt_no": 1,
+      "model": "openai/gpt-6.1-sol",
+      "status": "succeeded",
+      "usage": {
+        "input": 6839,
+        "cached": 4992,
+        "output": 55,
+        "missing": false,
+        "reasoning": 0
+      },
+      "cost_micros": "4743",
+      "error": null
+    },
+    {
+      "task_id": "19dd5309-9487-49f7-823d-aa90d9cb04ae",
+      "segment_no": 1,
+      "decision_no": 4,
+      "attempt_no": 1,
+      "model": "openai/gpt-6.1-sol",
+      "status": "succeeded",
+      "usage": {
+        "input": 7215,
+        "cached": 3712,
+        "output": 52,
+        "missing": false,
+        "reasoning": 0
+      },
+      "cost_micros": "7897",
+      "error": null
+    },
+    {
+      "task_id": "19dd5309-9487-49f7-823d-aa90d9cb04ae",
+      "segment_no": 1,
+      "decision_no": 5,
+      "attempt_no": 1,
+      "model": "openai/gpt-6.1-sol",
+      "status": "succeeded",
+      "usage": {
+        "input": 7589,
+        "cached": 3712,
+        "output": 61,
+        "missing": false,
+        "reasoning": 0
+      },
+      "cost_micros": "8735",
+      "error": null
+    },
+    {
+      "task_id": "19dd5309-9487-49f7-823d-aa90d9cb04ae",
+      "segment_no": 1,
+      "decision_no": 6,
+      "attempt_no": 1,
+      "model": "openai/gpt-6.1-sol",
+      "status": "succeeded",
+      "usage": {
+        "input": 7968,
+        "cached": 3712,
+        "output": 64,
+        "missing": false,
+        "reasoning": 0
+      },
+      "cost_micros": "9523",
+      "error": null
+    },
+    {
+      "task_id": "19dd5309-9487-49f7-823d-aa90d9cb04ae",
+      "segment_no": 1,
+      "decision_no": 7,
+      "attempt_no": 1,
+      "model": "openai/gpt-6.1-sol",
+      "status": "succeeded",
+      "usage": {
+        "input": 8349,
+        "cached": 3712,
+        "output": 65,
+        "missing": false,
+        "reasoning": 0
+      },
+      "cost_micros": "10295",
+      "error": null
+    },
+    {
+      "task_id": "19dd5309-9487-49f7-823d-aa90d9cb04ae",
+      "segment_no": 1,
+      "decision_no": 8,
+      "attempt_no": 1,
+      "model": "openai/gpt-6.1-sol",
+      "status": "succeeded",
+      "usage": {
+        "input": 8738,
+        "cached": 3712,
+        "output": 64,
+        "missing": false,
+        "reasoning": 0
+      },
+      "cost_micros": "11063",
+      "error": null
+    },
+    {
+      "task_id": "19dd5309-9487-49f7-823d-aa90d9cb04ae",
+      "segment_no": 1,
+      "decision_no": 9,
+      "attempt_no": 1,
+      "model": "openai/gpt-6.1-sol",
+      "status": "succeeded",
+      "usage": {
+        "input": 9123,
+        "cached": 3712,
+        "output": 62,
+        "missing": false,
+        "reasoning": 0
+      },
+      "cost_micros": "11813",
+      "error": null
+    },
+    {
+      "task_id": "19dd5309-9487-49f7-823d-aa90d9cb04ae",
+      "segment_no": 1,
+      "decision_no": 10,
+      "attempt_no": 1,
+      "model": "openai/gpt-6.1-sol",
+      "status": "succeeded",
+      "usage": {
+        "input": 9503,
+        "cached": 3712,
+        "output": 61,
+        "missing": false,
+        "reasoning": 0
+      },
+      "cost_micros": "12563",
+      "error": null
+    },
+    {
+      "task_id": "19dd5309-9487-49f7-823d-aa90d9cb04ae",
+      "segment_no": 1,
+      "decision_no": 11,
+      "attempt_no": 1,
+      "model": "openai/gpt-6.1-sol",
+      "status": "succeeded",
+      "usage": {
+        "input": 9883,
+        "cached": 3712,
+        "output": 63,
+        "missing": false,
+        "reasoning": 0
+      },
+      "cost_micros": "13343",
+      "error": null
+    },
+    {
+      "task_id": "19dd5309-9487-49f7-823d-aa90d9cb04ae",
+      "segment_no": 1,
+      "decision_no": 12,
+      "attempt_no": 1,
+      "model": "openai/gpt-6.1-sol",
+      "status": "succeeded",
+      "usage": {
+        "input": 10267,
+        "cached": 3712,
+        "output": 153,
+        "missing": false,
+        "reasoning": 0
+      },
+      "cost_micros": "15011",
+      "error": null
+    },
+    {
+      "task_id": "3d8c1b70-f933-48a0-a299-438cd4fbd75f",
+      "segment_no": 1,
+      "decision_no": 1,
+      "attempt_no": 1,
+      "model": "openai/gpt-6.1-sol",
+      "status": "succeeded",
+      "usage": {
+        "input": 1275,
+        "cached": 0,
+        "output": 1389,
+        "missing": false,
+        "reasoning": 0
+      },
+      "cost_micros": "16440",
+      "error": null
+    },
+    {
+      "task_id": "0d7364e6-15b5-4e36-b07a-a92a89991c78",
+      "segment_no": 1,
+      "decision_no": 1,
+      "attempt_no": 1,
+      "model": "openai/gpt-6.1-sol",
+      "status": "unknown",
+      "usage": null,
+      "cost_micros": null,
+      "error": "AI_APICallError: Upstream request failed"
+    },
+    {
+      "task_id": "0d7364e6-15b5-4e36-b07a-a92a89991c78",
+      "segment_no": 1,
+      "decision_no": 1,
+      "attempt_no": 2,
+      "model": "openai/gpt-6.1-terra",
+      "status": "succeeded",
+      "usage": {
+        "input": 1921,
+        "cached": 0,
+        "output": 830,
+        "missing": false,
+        "reasoning": 11
+      },
+      "cost_micros": null,
+      "error": null
+    },
+    {
+      "task_id": "3d501bad-32dc-4f03-8376-dbbce20e0c70",
+      "segment_no": 1,
+      "decision_no": 1,
+      "attempt_no": 1,
+      "model": "openai/gpt-6.1-terra",
+      "status": "succeeded",
+      "usage": {
+        "input": 3802,
+        "cached": 0,
+        "output": 14,
+        "missing": false,
+        "reasoning": 0
+      },
+      "cost_micros": null,
+      "error": null
+    },
+    {
+      "task_id": "3d501bad-32dc-4f03-8376-dbbce20e0c70",
+      "segment_no": 1,
+      "decision_no": 2,
+      "attempt_no": 1,
+      "model": "openai/gpt-6.1-terra",
+      "status": "succeeded",
+      "usage": {
+        "input": 5226,
+        "cached": 0,
+        "output": 53,
+        "missing": false,
+        "reasoning": 0
+      },
+      "cost_micros": null,
+      "error": null
+    },
+    {
+      "task_id": "3d501bad-32dc-4f03-8376-dbbce20e0c70",
+      "segment_no": 1,
+      "decision_no": 3,
+      "attempt_no": 1,
+      "model": "openai/gpt-6.1-terra",
+      "status": "succeeded",
+      "usage": {
+        "input": 6770,
+        "cached": 4864,
+        "output": 55,
+        "missing": false,
+        "reasoning": 0
+      },
+      "cost_micros": null,
+      "error": null
+    },
+    {
+      "task_id": "3d501bad-32dc-4f03-8376-dbbce20e0c70",
+      "segment_no": 1,
+      "decision_no": 4,
+      "attempt_no": 1,
+      "model": "openai/gpt-6.1-terra",
+      "status": "succeeded",
+      "usage": {
+        "input": 7148,
+        "cached": 2432,
+        "output": 63,
+        "missing": false,
+        "reasoning": 0
+      },
+      "cost_micros": null,
+      "error": null
+    },
+    {
+      "task_id": "3d501bad-32dc-4f03-8376-dbbce20e0c70",
+      "segment_no": 1,
+      "decision_no": 5,
+      "attempt_no": 1,
+      "model": "openai/gpt-6.1-terra",
+      "status": "succeeded",
+      "usage": {
+        "input": 7525,
+        "cached": 2432,
+        "output": 62,
+        "missing": false,
+        "reasoning": 0
+      },
+      "cost_micros": null,
+      "error": null
+    },
+    {
+      "task_id": "3d501bad-32dc-4f03-8376-dbbce20e0c70",
+      "segment_no": 1,
+      "decision_no": 6,
+      "attempt_no": 1,
+      "model": "openai/gpt-6.1-terra",
+      "status": "succeeded",
+      "usage": {
+        "input": 7900,
+        "cached": 2432,
+        "output": 67,
+        "missing": false,
+        "reasoning": 0
+      },
+      "cost_micros": null,
+      "error": null
+    },
+    {
+      "task_id": "3d501bad-32dc-4f03-8376-dbbce20e0c70",
+      "segment_no": 1,
+      "decision_no": 7,
+      "attempt_no": 1,
+      "model": "openai/gpt-6.1-terra",
+      "status": "succeeded",
+      "usage": {
+        "input": 8286,
+        "cached": 0,
+        "output": 61,
+        "missing": false,
+        "reasoning": 0
+      },
+      "cost_micros": null,
+      "error": null
+    },
+    {
+      "task_id": "3d501bad-32dc-4f03-8376-dbbce20e0c70",
+      "segment_no": 1,
+      "decision_no": 8,
+      "attempt_no": 1,
+      "model": "openai/gpt-6.1-terra",
+      "status": "succeeded",
+      "usage": {
+        "input": 8660,
+        "cached": 2432,
+        "output": 67,
+        "missing": false,
+        "reasoning": 0
+      },
+      "cost_micros": null,
+      "error": null
+    },
+    {
+      "task_id": "fe5a345e-1514-4457-b1af-3169895ccb17",
+      "segment_no": 1,
+      "decision_no": 1,
+      "attempt_no": 1,
+      "model": "openai/gpt-6.1-terra",
+      "status": "succeeded",
+      "usage": {
+        "input": 4210,
+        "cached": 0,
+        "output": 40,
+        "missing": false,
+        "reasoning": 0
+      },
+      "cost_micros": null,
+      "error": null
+    },
+    {
+      "task_id": "fe5a345e-1514-4457-b1af-3169895ccb17",
+      "segment_no": 1,
+      "decision_no": 2,
+      "attempt_no": 1,
+      "model": "openai/gpt-6.1-terra",
+      "status": "succeeded",
+      "usage": {
+        "input": 7137,
+        "cached": 2560,
+        "output": 14,
+        "missing": false,
+        "reasoning": 0
+      },
+      "cost_micros": null,
+      "error": null
+    },
+    {
+      "task_id": "fe5a345e-1514-4457-b1af-3169895ccb17",
+      "segment_no": 1,
+      "decision_no": 3,
+      "attempt_no": 1,
+      "model": "openai/gpt-6.1-terra",
+      "status": "succeeded",
+      "usage": {
+        "input": 8566,
+        "cached": 0,
+        "output": 55,
+        "missing": false,
+        "reasoning": 0
+      },
+      "cost_micros": null,
+      "error": null
+    },
+    {
+      "task_id": "fe5a345e-1514-4457-b1af-3169895ccb17",
+      "segment_no": 1,
+      "decision_no": 4,
+      "attempt_no": 1,
+      "model": "openai/gpt-6.1-terra",
+      "status": "succeeded",
+      "usage": {
+        "input": 10117,
+        "cached": 8192,
+        "output": 55,
+        "missing": false,
+        "reasoning": 0
+      },
+      "cost_micros": null,
+      "error": null
+    },
+    {
+      "task_id": "fe5a345e-1514-4457-b1af-3169895ccb17",
+      "segment_no": 1,
+      "decision_no": 5,
+      "attempt_no": 1,
+      "model": "openai/gpt-6.1-terra",
+      "status": "succeeded",
+      "usage": {
+        "input": 10499,
+        "cached": 5376,
+        "output": 56,
+        "missing": false,
+        "reasoning": 0
+      },
+      "cost_micros": null,
+      "error": null
+    },
+    {
+      "task_id": "fe5a345e-1514-4457-b1af-3169895ccb17",
+      "segment_no": 1,
+      "decision_no": 6,
+      "attempt_no": 1,
+      "model": "openai/gpt-6.1-terra",
+      "status": "succeeded",
+      "usage": {
+        "input": 10879,
+        "cached": 5376,
+        "output": 60,
+        "missing": false,
+        "reasoning": 0
+      },
+      "cost_micros": null,
+      "error": null
+    },
+    {
+      "task_id": "fe5a345e-1514-4457-b1af-3169895ccb17",
+      "segment_no": 1,
+      "decision_no": 7,
+      "attempt_no": 1,
+      "model": "openai/gpt-6.1-terra",
+      "status": "succeeded",
+      "usage": {
+        "input": 11250,
+        "cached": 5376,
+        "output": 56,
+        "missing": false,
+        "reasoning": 0
+      },
+      "cost_micros": null,
+      "error": null
+    },
+    {
+      "task_id": "fe5a345e-1514-4457-b1af-3169895ccb17",
+      "segment_no": 1,
+      "decision_no": 8,
+      "attempt_no": 1,
+      "model": "openai/gpt-6.1-terra",
+      "status": "succeeded",
+      "usage": {
+        "input": 11640,
+        "cached": 5376,
+        "output": 68,
+        "missing": false,
+        "reasoning": 0
+      },
+      "cost_micros": null,
+      "error": null
+    },
+    {
+      "task_id": "fe5a345e-1514-4457-b1af-3169895ccb17",
+      "segment_no": 1,
+      "decision_no": 9,
+      "attempt_no": 1,
+      "model": "openai/gpt-6.1-terra",
+      "status": "succeeded",
+      "usage": {
+        "input": 12031,
+        "cached": 5376,
+        "output": 68,
+        "missing": false,
+        "reasoning": 0
+      },
+      "cost_micros": null,
+      "error": null
+    },
+    {
+      "task_id": "8d0a665a-710e-48b7-a17a-1ac5e35c6ec3",
+      "segment_no": 1,
+      "decision_no": 1,
+      "attempt_no": 1,
+      "model": "openai/gpt-6.1-terra",
+      "status": "succeeded",
+      "usage": {
+        "input": 4211,
+        "cached": 0,
+        "output": 41,
+        "missing": false,
+        "reasoning": 0
+      },
+      "cost_micros": null,
+      "error": null
+    },
+    {
+      "task_id": "8d0a665a-710e-48b7-a17a-1ac5e35c6ec3",
+      "segment_no": 1,
+      "decision_no": 2,
+      "attempt_no": 1,
+      "model": "openai/gpt-6.1-terra",
+      "status": "succeeded",
+      "usage": {
+        "input": 6059,
+        "cached": 2560,
+        "output": 14,
+        "missing": false,
+        "reasoning": 0
+      },
+      "cost_micros": null,
+      "error": null
+    },
+    {
+      "task_id": "8d0a665a-710e-48b7-a17a-1ac5e35c6ec3",
+      "segment_no": 1,
+      "decision_no": 3,
+      "attempt_no": 1,
+      "model": "openai/gpt-6.1-terra",
+      "status": "succeeded",
+      "usage": {
+        "input": 7484,
+        "cached": 0,
+        "output": 55,
+        "missing": false,
+        "reasoning": 0
+      },
+      "cost_micros": null,
+      "error": null
+    },
+    {
+      "task_id": "8d0a665a-710e-48b7-a17a-1ac5e35c6ec3",
+      "segment_no": 1,
+      "decision_no": 4,
+      "attempt_no": 1,
+      "model": "openai/gpt-6.1-terra",
+      "status": "succeeded",
+      "usage": {
+        "input": 9031,
+        "cached": 7168,
+        "output": 55,
+        "missing": false,
+        "reasoning": 0
+      },
+      "cost_micros": null,
+      "error": null
+    },
+    {
+      "task_id": "8d0a665a-710e-48b7-a17a-1ac5e35c6ec3",
+      "segment_no": 1,
+      "decision_no": 5,
+      "attempt_no": 1,
+      "model": "openai/gpt-6.1-terra",
+      "status": "succeeded",
+      "usage": {
+        "input": 9407,
+        "cached": 4864,
+        "output": 62,
+        "missing": false,
+        "reasoning": 0
+      },
+      "cost_micros": null,
+      "error": null
+    },
+    {
+      "task_id": "8d0a665a-710e-48b7-a17a-1ac5e35c6ec3",
+      "segment_no": 1,
+      "decision_no": 6,
+      "attempt_no": 1,
+      "model": "openai/gpt-6.1-terra",
+      "status": "succeeded",
+      "usage": {
+        "input": 9782,
+        "cached": 4864,
+        "output": 63,
+        "missing": false,
+        "reasoning": 0
+      },
+      "cost_micros": null,
+      "error": null
+    },
+    {
+      "task_id": "8d0a665a-710e-48b7-a17a-1ac5e35c6ec3",
+      "segment_no": 1,
+      "decision_no": 7,
+      "attempt_no": 1,
+      "model": "openai/gpt-6.1-terra",
+      "status": "succeeded",
+      "usage": {
+        "input": 10155,
+        "cached": 0,
+        "output": 64,
+        "missing": false,
+        "reasoning": 0
+      },
+      "cost_micros": null,
+      "error": null
+    },
+    {
+      "task_id": "8d0a665a-710e-48b7-a17a-1ac5e35c6ec3",
+      "segment_no": 1,
+      "decision_no": 8,
+      "attempt_no": 1,
+      "model": "openai/gpt-6.1-terra",
+      "status": "succeeded",
+      "usage": {
+        "input": 10534,
+        "cached": 4864,
+        "output": 61,
+        "missing": false,
+        "reasoning": 0
+      },
+      "cost_micros": null,
+      "error": null
+    },
+    {
+      "task_id": "8d0a665a-710e-48b7-a17a-1ac5e35c6ec3",
+      "segment_no": 1,
+      "decision_no": 9,
+      "attempt_no": 1,
+      "model": "openai/gpt-6.1-terra",
+      "status": "succeeded",
+      "usage": {
+        "input": 10908,
+        "cached": 4864,
+        "output": 88,
+        "missing": false,
+        "reasoning": 16
+      },
+      "cost_micros": null,
+      "error": null
+    },
+    {
+      "task_id": "6a2e61e4-7915-4db2-b0da-ca0c5a22a0bc",
+      "segment_no": 1,
+      "decision_no": 1,
+      "attempt_no": 1,
+      "model": "openai/gpt-6.1-terra",
+      "status": "succeeded",
+      "usage": {
+        "input": 4211,
+        "cached": 2560,
+        "output": 40,
+        "missing": false,
+        "reasoning": 0
+      },
+      "cost_micros": null,
+      "error": null
+    },
+    {
+      "task_id": "6a2e61e4-7915-4db2-b0da-ca0c5a22a0bc",
+      "segment_no": 1,
+      "decision_no": 2,
+      "attempt_no": 1,
+      "model": "openai/gpt-6.1-terra",
+      "status": "succeeded",
+      "usage": {
+        "input": 7138,
+        "cached": 2560,
+        "output": 14,
+        "missing": false,
+        "reasoning": 0
+      },
+      "cost_micros": null,
+      "error": null
+    },
+    {
+      "task_id": "6a2e61e4-7915-4db2-b0da-ca0c5a22a0bc",
+      "segment_no": 1,
+      "decision_no": 3,
+      "attempt_no": 1,
+      "model": "openai/gpt-6.1-terra",
+      "status": "succeeded",
+      "usage": {
+        "input": 8569,
+        "cached": 2560,
+        "output": 57,
+        "missing": false,
+        "reasoning": 0
+      },
+      "cost_micros": null,
+      "error": null
+    },
+    {
+      "task_id": "6a2e61e4-7915-4db2-b0da-ca0c5a22a0bc",
+      "segment_no": 1,
+      "decision_no": 4,
+      "attempt_no": 1,
+      "model": "openai/gpt-6.1-terra",
+      "status": "succeeded",
+      "usage": {
+        "input": 10122,
+        "cached": 8192,
+        "output": 53,
+        "missing": false,
+        "reasoning": 0
+      },
+      "cost_micros": null,
+      "error": null
+    },
+    {
+      "task_id": "6a2e61e4-7915-4db2-b0da-ca0c5a22a0bc",
+      "segment_no": 1,
+      "decision_no": 5,
+      "attempt_no": 1,
+      "model": "openai/gpt-6.1-terra",
+      "status": "succeeded",
+      "usage": {
+        "input": 10496,
+        "cached": 5376,
+        "output": 52,
+        "missing": false,
+        "reasoning": 0
+      },
+      "cost_micros": null,
+      "error": null
+    },
+    {
+      "task_id": "6a2e61e4-7915-4db2-b0da-ca0c5a22a0bc",
+      "segment_no": 1,
+      "decision_no": 6,
+      "attempt_no": 1,
+      "model": "openai/gpt-6.1-terra",
+      "status": "succeeded",
+      "usage": {
+        "input": 10871,
+        "cached": 5376,
+        "output": 63,
+        "missing": false,
+        "reasoning": 0
+      },
+      "cost_micros": null,
+      "error": null
+    },
+    {
+      "task_id": "6a2e61e4-7915-4db2-b0da-ca0c5a22a0bc",
+      "segment_no": 1,
+      "decision_no": 7,
+      "attempt_no": 1,
+      "model": "openai/gpt-6.1-terra",
+      "status": "succeeded",
+      "usage": {
+        "input": 11248,
+        "cached": 5376,
+        "output": 97,
+        "missing": false,
+        "reasoning": 9
+      },
+      "cost_micros": null,
+      "error": null
+    },
+    {
+      "task_id": "905bad00-2f7f-4fd7-961c-81af1d2e19c7",
+      "segment_no": 1,
+      "decision_no": 1,
+      "attempt_no": 1,
+      "model": "openai/gpt-6.1-terra",
+      "status": "succeeded",
+      "usage": {
+        "input": 4212,
+        "cached": 2560,
+        "output": 41,
+        "missing": false,
+        "reasoning": 0
+      },
+      "cost_micros": null,
+      "error": null
+    },
+    {
+      "task_id": "905bad00-2f7f-4fd7-961c-81af1d2e19c7",
+      "segment_no": 1,
+      "decision_no": 2,
+      "attempt_no": 1,
+      "model": "openai/gpt-6.1-terra",
+      "status": "succeeded",
+      "usage": {
+        "input": 6060,
+        "cached": 4864,
+        "output": 14,
+        "missing": false,
+        "reasoning": 0
+      },
+      "cost_micros": null,
+      "error": null
+    },
+    {
+      "task_id": "905bad00-2f7f-4fd7-961c-81af1d2e19c7",
+      "segment_no": 1,
+      "decision_no": 3,
+      "attempt_no": 1,
+      "model": "openai/gpt-6.1-terra",
+      "status": "succeeded",
+      "usage": {
+        "input": 7488,
+        "cached": 4864,
+        "output": 54,
+        "missing": false,
+        "reasoning": 0
+      },
+      "cost_micros": null,
+      "error": null
+    },
+    {
+      "task_id": "905bad00-2f7f-4fd7-961c-81af1d2e19c7",
+      "segment_no": 1,
+      "decision_no": 4,
+      "attempt_no": 1,
+      "model": "openai/gpt-6.1-terra",
+      "status": "succeeded",
+      "usage": {
+        "input": 9035,
+        "cached": 7168,
+        "output": 53,
+        "missing": false,
+        "reasoning": 0
+      },
+      "cost_micros": null,
+      "error": null
+    },
+    {
+      "task_id": "905bad00-2f7f-4fd7-961c-81af1d2e19c7",
+      "segment_no": 1,
+      "decision_no": 5,
+      "attempt_no": 1,
+      "model": "openai/gpt-6.1-terra",
+      "status": "succeeded",
+      "usage": {
+        "input": 9412,
+        "cached": 4864,
+        "output": 55,
+        "missing": false,
+        "reasoning": 0
+      },
+      "cost_micros": null,
+      "error": null
+    },
+    {
+      "task_id": "905bad00-2f7f-4fd7-961c-81af1d2e19c7",
+      "segment_no": 1,
+      "decision_no": 6,
+      "attempt_no": 1,
+      "model": "openai/gpt-6.1-terra",
+      "status": "succeeded",
+      "usage": {
+        "input": 9794,
+        "cached": 4864,
+        "output": 64,
+        "missing": false,
+        "reasoning": 0
+      },
+      "cost_micros": null,
+      "error": null
+    },
+    {
+      "task_id": "905bad00-2f7f-4fd7-961c-81af1d2e19c7",
+      "segment_no": 1,
+      "decision_no": 7,
+      "attempt_no": 1,
+      "model": "openai/gpt-6.1-terra",
+      "status": "succeeded",
+      "usage": {
+        "input": 10173,
+        "cached": 4864,
+        "output": 64,
+        "missing": false,
+        "reasoning": 0
+      },
+      "cost_micros": null,
+      "error": null
+    },
+    {
+      "task_id": "905bad00-2f7f-4fd7-961c-81af1d2e19c7",
+      "segment_no": 1,
+      "decision_no": 8,
+      "attempt_no": 1,
+      "model": "openai/gpt-6.1-terra",
+      "status": "succeeded",
+      "usage": {
+        "input": 10555,
+        "cached": 4864,
+        "output": 52,
+        "missing": false,
+        "reasoning": 0
+      },
+      "cost_micros": null,
+      "error": null
+    },
+    {
+      "task_id": "905bad00-2f7f-4fd7-961c-81af1d2e19c7",
+      "segment_no": 1,
+      "decision_no": 9,
+      "attempt_no": 1,
+      "model": "openai/gpt-6.1-terra",
+      "status": "succeeded",
+      "usage": {
+        "input": 10933,
+        "cached": 4864,
+        "output": 56,
+        "missing": false,
+        "reasoning": 0
+      },
+      "cost_micros": null,
+      "error": null
+    },
+    {
+      "task_id": "905bad00-2f7f-4fd7-961c-81af1d2e19c7",
+      "segment_no": 1,
+      "decision_no": 10,
+      "attempt_no": 1,
+      "model": "openai/gpt-6.1-terra",
+      "status": "succeeded",
+      "usage": {
+        "input": 11314,
+        "cached": 4864,
+        "output": 59,
+        "missing": false,
+        "reasoning": 0
+      },
+      "cost_micros": null,
+      "error": null
+    },
+    {
+      "task_id": "905bad00-2f7f-4fd7-961c-81af1d2e19c7",
+      "segment_no": 1,
+      "decision_no": 11,
+      "attempt_no": 1,
+      "model": "openai/gpt-6.1-terra",
+      "status": "succeeded",
+      "usage": {
+        "input": 11686,
+        "cached": 4864,
+        "output": 60,
+        "missing": false,
+        "reasoning": 0
+      },
+      "cost_micros": null,
+      "error": null
+    },
+    {
+      "task_id": "905bad00-2f7f-4fd7-961c-81af1d2e19c7",
+      "segment_no": 1,
+      "decision_no": 12,
+      "attempt_no": 1,
+      "model": "openai/gpt-6.1-terra",
+      "status": "succeeded",
+      "usage": {
+        "input": 12063,
+        "cached": 4864,
+        "output": 63,
+        "missing": false,
+        "reasoning": 0
+      },
+      "cost_micros": null,
+      "error": null
+    },
+    {
+      "task_id": "905bad00-2f7f-4fd7-961c-81af1d2e19c7",
+      "segment_no": 1,
+      "decision_no": 13,
+      "attempt_no": 1,
+      "model": "openai/gpt-6.1-terra",
+      "status": "succeeded",
+      "usage": {
+        "input": 11188,
+        "cached": 4864,
+        "output": 107,
+        "missing": false,
+        "reasoning": 0
+      },
+      "cost_micros": null,
+      "error": null
+    },
+    {
+      "task_id": "8c0fb3ca-3b60-43a1-a6d9-f542dceddd05",
+      "segment_no": 1,
+      "decision_no": 1,
+      "attempt_no": 1,
+      "model": "openai/gpt-6.1-terra",
+      "status": "succeeded",
+      "usage": {
+        "input": 3803,
+        "cached": 0,
+        "output": 14,
+        "missing": false,
+        "reasoning": 0
+      },
+      "cost_micros": null,
+      "error": null
+    },
+    {
+      "task_id": "8c0fb3ca-3b60-43a1-a6d9-f542dceddd05",
+      "segment_no": 1,
+      "decision_no": 2,
+      "attempt_no": 1,
+      "model": "openai/gpt-6.1-terra",
+      "status": "succeeded",
+      "usage": {
+        "input": 5231,
+        "cached": 0,
+        "output": 55,
+        "missing": false,
+        "reasoning": 0
+      },
+      "cost_micros": null,
+      "error": null
+    },
+    {
+      "task_id": "8c0fb3ca-3b60-43a1-a6d9-f542dceddd05",
+      "segment_no": 1,
+      "decision_no": 3,
+      "attempt_no": 1,
+      "model": "openai/gpt-6.1-terra",
+      "status": "succeeded",
+      "usage": {
+        "input": 6777,
+        "cached": 4864,
+        "output": 51,
+        "missing": false,
+        "reasoning": 0
+      },
+      "cost_micros": null,
+      "error": null
+    },
+    {
+      "task_id": "8c0fb3ca-3b60-43a1-a6d9-f542dceddd05",
+      "segment_no": 1,
+      "decision_no": 4,
+      "attempt_no": 1,
+      "model": "openai/gpt-6.1-terra",
+      "status": "succeeded",
+      "usage": {
+        "input": 7149,
+        "cached": 0,
+        "output": 63,
+        "missing": false,
+        "reasoning": 0
+      },
+      "cost_micros": null,
+      "error": null
+    },
+    {
+      "task_id": "8c0fb3ca-3b60-43a1-a6d9-f542dceddd05",
+      "segment_no": 1,
+      "decision_no": 5,
+      "attempt_no": 1,
+      "model": "openai/gpt-6.1-terra",
+      "status": "succeeded",
+      "usage": {
+        "input": 7531,
+        "cached": 2432,
+        "output": 65,
+        "missing": false,
+        "reasoning": 0
+      },
+      "cost_micros": null,
+      "error": null
+    },
+    {
+      "task_id": "8c0fb3ca-3b60-43a1-a6d9-f542dceddd05",
+      "segment_no": 1,
+      "decision_no": 6,
+      "attempt_no": 1,
+      "model": "openai/gpt-6.1-terra",
+      "status": "succeeded",
+      "usage": {
+        "input": 7913,
+        "cached": 2432,
+        "output": 58,
+        "missing": false,
+        "reasoning": 0
+      },
+      "cost_micros": null,
+      "error": null
+    },
+    {
+      "task_id": "8c0fb3ca-3b60-43a1-a6d9-f542dceddd05",
+      "segment_no": 1,
+      "decision_no": 7,
+      "attempt_no": 1,
+      "model": "openai/gpt-6.1-terra",
+      "status": "succeeded",
+      "usage": {
+        "input": 8293,
+        "cached": 2432,
+        "output": 62,
+        "missing": false,
+        "reasoning": 0
+      },
+      "cost_micros": null,
+      "error": null
+    },
+    {
+      "task_id": "8c0fb3ca-3b60-43a1-a6d9-f542dceddd05",
+      "segment_no": 1,
+      "decision_no": 8,
+      "attempt_no": 1,
+      "model": "openai/gpt-6.1-terra",
+      "status": "succeeded",
+      "usage": {
+        "input": 8672,
+        "cached": 2432,
+        "output": 62,
+        "missing": false,
+        "reasoning": 0
+      },
+      "cost_micros": null,
+      "error": null
+    },
+    {
+      "task_id": "8c0fb3ca-3b60-43a1-a6d9-f542dceddd05",
+      "segment_no": 1,
+      "decision_no": 9,
+      "attempt_no": 1,
+      "model": "openai/gpt-6.1-terra",
+      "status": "succeeded",
+      "usage": {
+        "input": 9050,
+        "cached": 2432,
+        "output": 61,
+        "missing": false,
+        "reasoning": 0
+      },
+      "cost_micros": null,
+      "error": null
+    },
+    {
+      "task_id": "8c0fb3ca-3b60-43a1-a6d9-f542dceddd05",
+      "segment_no": 1,
+      "decision_no": 10,
+      "attempt_no": 1,
+      "model": "openai/gpt-6.1-terra",
+      "status": "succeeded",
+      "usage": {
+        "input": 9428,
+        "cached": 2432,
+        "output": 63,
+        "missing": false,
+        "reasoning": 0
+      },
+      "cost_micros": null,
+      "error": null
+    },
+    {
+      "task_id": "8c0fb3ca-3b60-43a1-a6d9-f542dceddd05",
+      "segment_no": 1,
+      "decision_no": 11,
+      "attempt_no": 1,
+      "model": "openai/gpt-6.1-terra",
+      "status": "succeeded",
+      "usage": {
+        "input": 9810,
+        "cached": 2432,
+        "output": 80,
+        "missing": false,
+        "reasoning": 15
+      },
+      "cost_micros": null,
+      "error": null
+    },
+    {
+      "task_id": "8c0fb3ca-3b60-43a1-a6d9-f542dceddd05",
+      "segment_no": 1,
+      "decision_no": 12,
+      "attempt_no": 1,
+      "model": "openai/gpt-6.1-terra",
+      "status": "succeeded",
+      "usage": {
+        "input": 10199,
+        "cached": 2432,
+        "output": 69,
+        "missing": false,
+        "reasoning": 9
+      },
+      "cost_micros": null,
+      "error": null
+    },
+    {
+      "task_id": "8893c17a-58b8-4970-8fa6-86b3272f7209",
+      "segment_no": 1,
+      "decision_no": 1,
+      "attempt_no": 1,
+      "model": "openai/gpt-6.1-terra",
+      "status": "succeeded",
+      "usage": {
+        "input": 4212,
+        "cached": 2560,
+        "output": 41,
+        "missing": false,
+        "reasoning": 0
+      },
+      "cost_micros": null,
+      "error": null
+    },
+    {
+      "task_id": "8893c17a-58b8-4970-8fa6-86b3272f7209",
+      "segment_no": 1,
+      "decision_no": 2,
+      "attempt_no": 1,
+      "model": "openai/gpt-6.1-terra",
+      "status": "succeeded",
+      "usage": {
+        "input": 6060,
+        "cached": 4864,
+        "output": 14,
+        "missing": false,
+        "reasoning": 0
+      },
+      "cost_micros": null,
+      "error": null
+    },
+    {
+      "task_id": "8893c17a-58b8-4970-8fa6-86b3272f7209",
+      "segment_no": 1,
+      "decision_no": 3,
+      "attempt_no": 1,
+      "model": "openai/gpt-6.1-terra",
+      "status": "succeeded",
+      "usage": {
+        "input": 7489,
+        "cached": 4864,
+        "output": 56,
+        "missing": false,
+        "reasoning": 0
+      },
+      "cost_micros": null,
+      "error": null
+    },
+    {
+      "task_id": "8893c17a-58b8-4970-8fa6-86b3272f7209",
+      "segment_no": 1,
+      "decision_no": 4,
+      "attempt_no": 1,
+      "model": "openai/gpt-6.1-terra",
+      "status": "succeeded",
+      "usage": {
+        "input": 9042,
+        "cached": 7168,
+        "output": 56,
+        "missing": false,
+        "reasoning": 0
+      },
+      "cost_micros": null,
+      "error": null
+    },
+    {
+      "task_id": "8893c17a-58b8-4970-8fa6-86b3272f7209",
+      "segment_no": 1,
+      "decision_no": 5,
+      "attempt_no": 1,
+      "model": "openai/gpt-6.1-terra",
+      "status": "succeeded",
+      "usage": {
+        "input": 9421,
+        "cached": 4864,
+        "output": 60,
+        "missing": false,
+        "reasoning": 0
+      },
+      "cost_micros": null,
+      "error": null
+    },
+    {
+      "task_id": "8893c17a-58b8-4970-8fa6-86b3272f7209",
+      "segment_no": 1,
+      "decision_no": 6,
+      "attempt_no": 1,
+      "model": "openai/gpt-6.1-terra",
+      "status": "succeeded",
+      "usage": {
+        "input": 9796,
+        "cached": 4864,
+        "output": 126,
+        "missing": false,
+        "reasoning": 17
+      },
+      "cost_micros": null,
+      "error": null
+    },
+    {
+      "task_id": "432706f8-a300-4742-8373-169a64485a32",
+      "segment_no": 1,
+      "decision_no": 1,
+      "attempt_no": 1,
+      "model": "openai/gpt-6.1-terra",
+      "status": "succeeded",
+      "usage": {
+        "input": 3803,
+        "cached": 0,
+        "output": 14,
+        "missing": false,
+        "reasoning": 0
+      },
+      "cost_micros": null,
+      "error": null
+    },
+    {
+      "task_id": "432706f8-a300-4742-8373-169a64485a32",
+      "segment_no": 1,
+      "decision_no": 2,
+      "attempt_no": 1,
+      "model": "openai/gpt-6.1-terra",
+      "status": "succeeded",
+      "usage": {
+        "input": 5231,
+        "cached": 0,
+        "output": 56,
+        "missing": false,
+        "reasoning": 0
+      },
+      "cost_micros": null,
+      "error": null
+    },
+    {
+      "task_id": "432706f8-a300-4742-8373-169a64485a32",
+      "segment_no": 1,
+      "decision_no": 3,
+      "attempt_no": 1,
+      "model": "openai/gpt-6.1-terra",
+      "status": "succeeded",
+      "usage": {
+        "input": 6783,
+        "cached": 4864,
+        "output": 56,
+        "missing": false,
+        "reasoning": 0
+      },
+      "cost_micros": null,
+      "error": null
+    },
+    {
+      "task_id": "432706f8-a300-4742-8373-169a64485a32",
+      "segment_no": 1,
+      "decision_no": 4,
+      "attempt_no": 1,
+      "model": "openai/gpt-6.1-terra",
+      "status": "succeeded",
+      "usage": {
+        "input": 7161,
+        "cached": 2432,
+        "output": 60,
+        "missing": false,
+        "reasoning": 0
+      },
+      "cost_micros": null,
+      "error": null
+    },
+    {
+      "task_id": "432706f8-a300-4742-8373-169a64485a32",
+      "segment_no": 1,
+      "decision_no": 5,
+      "attempt_no": 1,
+      "model": "openai/gpt-6.1-terra",
+      "status": "succeeded",
+      "usage": {
+        "input": 7533,
+        "cached": 2432,
+        "output": 124,
+        "missing": false,
+        "reasoning": 15
+      },
+      "cost_micros": null,
+      "error": null
+    },
+    {
+      "task_id": "f51ac2d7-a41b-409f-99cc-b587a0e0321c",
+      "segment_no": 1,
+      "decision_no": 1,
+      "attempt_no": 1,
+      "model": "openai/gpt-6.1-terra",
+      "status": "succeeded",
+      "usage": {
+        "input": 4211,
+        "cached": 2560,
+        "output": 40,
+        "missing": false,
+        "reasoning": 0
+      },
+      "cost_micros": null,
+      "error": null
+    },
+    {
+      "task_id": "f51ac2d7-a41b-409f-99cc-b587a0e0321c",
+      "segment_no": 1,
+      "decision_no": 2,
+      "attempt_no": 1,
+      "model": "openai/gpt-6.1-terra",
+      "status": "succeeded",
+      "usage": {
+        "input": 7138,
+        "cached": 0,
+        "output": 14,
+        "missing": false,
+        "reasoning": 0
+      },
+      "cost_micros": null,
+      "error": null
+    },
+    {
+      "task_id": "f51ac2d7-a41b-409f-99cc-b587a0e0321c",
+      "segment_no": 1,
+      "decision_no": 3,
+      "attempt_no": 1,
+      "model": "openai/gpt-6.1-terra",
+      "status": "succeeded",
+      "usage": {
+        "input": 8564,
+        "cached": 5376,
+        "output": 53,
+        "missing": false,
+        "reasoning": 0
+      },
+      "cost_micros": null,
+      "error": null
+    },
+    {
+      "task_id": "f51ac2d7-a41b-409f-99cc-b587a0e0321c",
+      "segment_no": 1,
+      "decision_no": 4,
+      "attempt_no": 1,
+      "model": "openai/gpt-6.1-terra",
+      "status": "succeeded",
+      "usage": {
+        "input": 10106,
+        "cached": 8192,
+        "output": 51,
+        "missing": false,
+        "reasoning": 0
+      },
+      "cost_micros": null,
+      "error": null
+    },
+    {
+      "task_id": "f51ac2d7-a41b-409f-99cc-b587a0e0321c",
+      "segment_no": 1,
+      "decision_no": 5,
+      "attempt_no": 1,
+      "model": "openai/gpt-6.1-terra",
+      "status": "succeeded",
+      "usage": {
+        "input": 10479,
+        "cached": 5376,
+        "output": 56,
+        "missing": false,
+        "reasoning": 0
+      },
+      "cost_micros": null,
+      "error": null
+    },
+    {
+      "task_id": "f51ac2d7-a41b-409f-99cc-b587a0e0321c",
+      "segment_no": 1,
+      "decision_no": 6,
+      "attempt_no": 1,
+      "model": "openai/gpt-6.1-terra",
+      "status": "succeeded",
+      "usage": {
+        "input": 10857,
+        "cached": 5376,
+        "output": 115,
+        "missing": false,
+        "reasoning": 26
+      },
+      "cost_micros": null,
+      "error": null
+    }
+  ],
+  "knownCostMicros": 583951,
+  "unknownAttempts": 1,
+  "unpricedAttempts": 77,
+  "mainBefore": {
+    "tasks": 12,
+    "attempts": 65,
+    "actions": 58,
+    "artifacts": 7,
+    "active": 0
+  },
+  "mainAfter": {
+    "tasks": 12,
+    "attempts": 65,
+    "actions": 58,
+    "artifacts": 7,
+    "active": 0
+  },
+  "mainEnvUnchanged": true,
+  "mainRestarted": false,
+  "workstationImage": "personal-agent-workstation:manual-benchmark-cjk",
+  "freshDesktopPerCell": true,
+  "limits": [
+    "one sample per case and arm",
+    "synthetic console, not real Alibaba Cloud",
+    "fixture-visible semantic labels, not automated screenshot extraction",
+    "not upstream products executed head-to-head",
+    "successful source and lossy compilation use Sol; semantic compilation retry and evaluation use Terra"
+  ]
+}

@@ -1,0 +1,26 @@
+{
+  "passed": true,
+  "scope": "signal-or-timeout-shell-result-classification",
+  "applicationVersion": "0.9.0-dev",
+  "recordedAt": "2026-10-25T05:07:55.361Z",
+  "priorFailureDirectory": "data/experiments/pa-linux-1792898258832/attempt-1792903280202",
+  "before": {
+    "shellReceiptSignal": "SIGTERM",
+    "hostStatus": "succeeded",
+    "unwantedModelRequests": 2
+  },
+  "after": {
+    "controlledExternalSubmits": 1,
+    "unknownSubmitModelRequests": 1,
+    "pendingReplyModelRequests": 1,
+    "unknownActionStatus": "unknown",
+    "reviewRequired": true
+  },
+  "normalNonzeroExitsRetainSemantics": true,
+  "legacyCachedInterruptedReceiptProbe": true,
+  "pureChecks": "tests/action-receipts.test.ts",
+  "productionEvidence": "restore.json",
+  "recoveryRegressionEvidence": "runtime-recovery.json",
+  "runningMainFixed": false,
+  "realModelJudgmentEvaluated": false
+}

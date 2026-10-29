@@ -1,0 +1,26 @@
+{
+  "passed": true,
+  "fixtureOnly": true,
+  "checks": [
+    {
+      "check": "Desktop transport: zero published guest/viewer ports; immutable viewer has no network"
+    },
+    {
+      "check": "G03: server-enforced readonly accepts a raw input-capable RFB client but discards its input; control ticket denied; ticket single-use"
+    },
+    {
+      "check": "G03: manual input works only after human-ready; handback revokes old socket/ticket, releases held keys/buttons and rejects stale model epoch"
+    },
+    {
+      "check": "Desktop transport: reconnects clean up remote relays; nonbinary client frames terminate"
+    },
+    {
+      "check": "G03: logout revokes an existing desktop connection"
+    },
+    {
+      "check": "Desktop transport upgrade: legacy published guest/viewer rejected before start; explicit recreation succeeds"
+    }
+  ],
+  "recordedAt": "2026-10-25T02:39:10.373Z",
+  "directory": "data/experiments/agent_control_682002930074417594516d9b89be945f"
+}

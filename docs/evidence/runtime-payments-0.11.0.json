@@ -1,0 +1,133 @@
+{
+  "passed": true,
+  "controlledProvider": true,
+  "realModelJudgmentEvaluated": false,
+  "applicationVersion": "0.11.0-dev",
+  "guestProtocolVersion": 4,
+  "workstationImage": "personal-agent-workstation:0.4.0",
+  "controlledWebsite": true,
+  "paymentPreparationEvaluated": true,
+  "paymentTasksEvaluated": 15,
+  "paymentSubmissionEvaluated": false,
+  "realPaymentEvaluated": false,
+  "checks": [
+    {
+      "check": "Actual old guest3 image with a new container label is rejected by its real health; no task/model call or secret release",
+      "agentId": "xiRAU4u9JD5W"
+    },
+    {
+      "check": "Card: actual mobile/desktop owner choice plus separate six-field approval; authenticated/Origin/version/offered-reference gates; generic/forged approval rejected; one release, no submit; new-action reuse rejected while known receipt survives item deletion",
+      "taskId": "0c7e4644-6b08-4670-981c-391f774f2bda",
+      "state": {
+        "mode": "normal",
+        "events": [
+          {
+            "field": "number",
+            "matched": true,
+            "masked": true
+          },
+          {
+            "field": "expiry",
+            "matched": true,
+            "masked": true
+          },
+          {
+            "field": "expiry_month",
+            "matched": true,
+            "masked": true
+          },
+          {
+            "field": "expiry_year",
+            "matched": true,
+            "masked": true
+          },
+          {
+            "field": "expiry_year_short",
+            "matched": true,
+            "masked": true
+          },
+          {
+            "field": "name",
+            "matched": true,
+            "masked": true
+          }
+        ],
+        "changed": false,
+        "submissions": 0,
+        "signedIn": false,
+        "merchant": "Fixture Store",
+        "amount": "USD 12.00",
+        "manualActions": 0
+      }
+    },
+    {
+      "check": "pay_upi: selected exact-origin method actually filled once; temporary card uses secure form, reference-only wakeup and ciphertext cleanup; no automatic submit",
+      "taskId": "87674d92-7e97-4abc-97b2-04b9077fa4ac"
+    },
+    {
+      "check": "pay_provision: selected exact-origin method actually filled once; temporary card uses secure form, reference-only wakeup and ciphertext cleanup; no automatic submit",
+      "taskId": "d80abcef-4db4-43c2-94ad-79c86ea33110"
+    },
+    {
+      "check": "Decline: immutable explicit decision; no secret release, fill or submit",
+      "taskId": "76d240f9-adf5-44a5-b429-0e3074d53945"
+    },
+    {
+      "check": "Cancel while choosing payment method: actual workstation stopped/removed before terminal task; no sensitive dispatch",
+      "taskId": "418a0e79-4db1-4751-b417-0b38caaca125"
+    },
+    {
+      "check": "mismatch: independent source/context/version/expiry rejection; no release, input, submit or automatic regeneration",
+      "taskId": "5a57a75b-765c-44f4-b62e-4d7cac9bb11f"
+    },
+    {
+      "check": "amount_changed: independent source/context/version/expiry rejection; no release, input, submit or automatic regeneration",
+      "taskId": "7971cd0f-b3e6-4951-bada-8c234243d44e"
+    },
+    {
+      "check": "release_changed: independent source/context/version/expiry rejection; no release, input, submit or automatic regeneration",
+      "taskId": "00208c1f-5a82-4ced-b812-11591b17c456"
+    },
+    {
+      "check": "revision: independent source/context/version/expiry rejection; no release, input, submit or automatic regeneration",
+      "taskId": "72836848-250c-4500-89da-ae78ed88d37f"
+    },
+    {
+      "check": "expired: independent source/context/version/expiry rejection; no release, input, submit or automatic regeneration",
+      "taskId": "c0ae6e2e-2ab2-4d7a-a176-a4ee1fdf3d83"
+    },
+    {
+      "check": "cross_task: independent source/context/version/expiry rejection; no release, input, submit or automatic regeneration",
+      "taskId": "a5440d72-1235-4a64-8290-001649bdf97c"
+    },
+    {
+      "check": "Amount changes synchronously after first PAN input: guest rechecks approved text before each later field; partial review stops remaining fields and never submits/retypes",
+      "taskId": "1953cbcf-a6f0-47db-93e2-dec993e1d8c6"
+    },
+    {
+      "check": "Takeover choice, real control request and DBOS wakeup roll back together on injected failure; retry creates one handoff; worker SIGKILL preserves human wait; actual desktop keyboard performs a labelled manual simulation then handback, no vault release",
+      "taskId": "a644e379-8ffd-4351-83da-d5b9e81f3b74",
+      "manualSimulatedSubmissions": 1
+    },
+    {
+      "check": "Payment-choice wait survives worker SIGKILL without a new model bill; old epoch approval rejected, explicit decline/new observation/new request permits one fill",
+      "taskId": "ebec57bb-0948-4bc4-a815-c6f90c855bc1"
+    },
+    {
+      "check": "Sensitive payment fill effect plus lost receipt/worker SIGKILL remains unknown, with one release/consumption; continue does not decrypt/fill/submit again",
+      "taskId": "dacb0f11-e750-4f42-8afa-9223367e1a78"
+    },
+    {
+      "check": "Fifteen actual payment-preparation tasks (14 complete,1 actual cancel); full PAN/holder/UPI samples absent from public/DBOS/model/guest/worker/Web records; expiry remains intentionally disclosed metadata; no actual payments or automatic payment submissions evaluated",
+      "taskCount": 15
+    },
+    {
+      "check": "Provider key encrypted at rest, local config overrides env, masked settings view; plaintext key absent from task/DBOS records"
+    },
+    {
+      "check": "Completed Web/worker logs contain no sample vault plaintext; storage/provisioning slice does not evaluate guest filling"
+    }
+  ],
+  "directory": "data/experiments/agent_runtime_66c0ffc6d6cc48aba8b42596543d2282",
+  "recordedAt": "2026-10-25T08:17:07.984Z"
+}

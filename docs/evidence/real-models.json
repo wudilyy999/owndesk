@@ -1,0 +1,201 @@
+{
+  "recordedAt": "2026-10-25T12:04:30.270Z",
+  "agentId": "7oppZu1_Bot6",
+  "singleAgent": true,
+  "defaultModel": "openai/gpt-6.1-sol",
+  "gpt": {
+    "taskId": "8019eee0-5aeb-4d29-9651-66a0ee78e180",
+    "model": "openai/gpt-6.1-sol",
+    "status": "completed",
+    "actions": [
+      {
+        "kind": "browser_open",
+        "status": "succeeded"
+      },
+      {
+        "kind": "browser_screenshot",
+        "status": "succeeded"
+      },
+      {
+        "kind": "browser_observe",
+        "status": "succeeded"
+      },
+      {
+        "kind": "key_press",
+        "status": "succeeded"
+      },
+      {
+        "kind": "browser_observe",
+        "status": "succeeded"
+      },
+      {
+        "kind": "fs_write",
+        "status": "succeeded"
+      },
+      {
+        "kind": "fs_read",
+        "status": "succeeded"
+      }
+    ],
+    "artifacts": [
+      {
+        "id": "8019eee0-5aeb-4d29-9651-66a0ee78e180-s1-a8-f0",
+        "taskId": "8019eee0-5aeb-4d29-9651-66a0ee78e180",
+        "name": "acceptance-gpt.md",
+        "storagePath": "8019eee0-5aeb-4d29-9651-66a0ee78e180/8019eee0-5aeb-4d29-9651-66a0ee78e180-s1-a8-f0",
+        "mediaType": "text/markdown",
+        "size": 872,
+        "verification": {
+          "grade": "file_copied",
+          "checks": {
+            "bytes": 872,
+            "regularFile": true
+          },
+          "unverified": ["Business contents have not been independently validated."]
+        },
+        "createdAt": "2026-10-25T12:00:39.787Z"
+      }
+    ],
+    "usage": {
+      "decisions": 8,
+      "known_cost_micros": "35439",
+      "unknown_cost_attempts": 0,
+      "uncertain_attempts": 0
+    }
+  },
+  "gemini": {
+    "taskId": "ef518688-00d8-4999-a83c-b18590277194",
+    "model": "custom/gemini-3.8-flash-high",
+    "status": "completed",
+    "actions": [
+      {
+        "kind": "browser_open",
+        "status": "succeeded"
+      },
+      {
+        "kind": "browser_screenshot",
+        "status": "succeeded"
+      },
+      {
+        "kind": "browser_observe",
+        "status": "succeeded"
+      },
+      {
+        "kind": "pointer_click",
+        "status": "succeeded"
+      },
+      {
+        "kind": "key_press",
+        "status": "succeeded"
+      },
+      {
+        "kind": "browser_observe",
+        "status": "succeeded"
+      },
+      {
+        "kind": "fs_write",
+        "status": "succeeded"
+      },
+      {
+        "kind": "fs_read",
+        "status": "succeeded"
+      }
+    ],
+    "artifacts": [
+      {
+        "id": "ef518688-00d8-4999-a83c-b18590277194-s1-a9-f0",
+        "taskId": "ef518688-00d8-4999-a83c-b18590277194",
+        "name": "acceptance-gemini.md",
+        "storagePath": "ef518688-00d8-4999-a83c-b18590277194/ef518688-00d8-4999-a83c-b18590277194-s1-a9-f0",
+        "mediaType": "text/markdown",
+        "size": 461,
+        "verification": {
+          "grade": "file_copied",
+          "checks": {
+            "bytes": 461,
+            "regularFile": true
+          },
+          "unverified": ["Business contents have not been independently validated."]
+        },
+        "createdAt": "2026-10-25T12:02:21.179Z"
+      }
+    ],
+    "usage": {
+      "decisions": 9,
+      "known_cost_micros": "0",
+      "unknown_cost_attempts": 9,
+      "uncertain_attempts": 0
+    }
+  },
+  "artifactsIndependentlyDownloadedAndTitleSourceChecked": true,
+  "pageErrors": [],
+  "mobileViewportOverflow": false,
+  "ordinaryPublicHttpsInLocalGuest": true,
+  "guardedLinuxCloudDeployment": false,
+  "scope": "two real configured gateway models in upgraded local development preview; not guarded Linux cloud deployment",
+  "passed": true,
+  "directory": "data/experiments/real-model-1792929593302",
+  "applicationVersion": "0.15.1-dev",
+  "migration": "0015",
+  "guestProtocolVersion": 5,
+  "controlledProvider": false,
+  "realModelJudgmentEvaluated": true,
+  "judgmentScope": "two read-only public-page screenshot/DOM/keyboard/file tasks, one per model; not general website success rate",
+  "actualTasks": 2,
+  "completed": 2,
+  "cancelled": 0,
+  "failed": 0,
+  "screenshotsVisuallyInspected": true,
+  "screenshotScope": "actual completed desktop and390px mobile preview; DOM observation/title/source and artifact bytes checked separately",
+  "metadata": {
+    "recordedAt": "2026-10-25T12:06:42.879Z",
+    "health": {
+      "ready": true,
+      "version": "0.15.1-dev"
+    },
+    "webLoginStatus": 200,
+    "businessMigrations": 16,
+    "workstationImage": "personal-agent-workstation:0.5.0",
+    "defaultModel": "openai/gpt-6.1-sol",
+    "agent": {
+      "id": "7oppZu1_Bot6",
+      "name": "Personal Assistant",
+      "model": null
+    },
+    "mainTaskStates": [
+      {
+        "status": "completed",
+        "count": 7
+      }
+    ],
+    "liveTasks": 0,
+    "encryptedProviderSettings": 2,
+    "taskAndFrameworkTablesScanned": 44,
+    "plaintextCredentialAbsentFromDatabaseJournalsAndRuntimeLogs": true,
+    "localGuestUsesLinuxNetworkGuard": false,
+    "realModelAttempts": [
+      {
+        "id": "8019eee0-5aeb-4d29-9651-66a0ee78e180",
+        "model": "openai/gpt-6.1-sol",
+        "attempts": 8,
+        "estimated_cost_micros": "35439",
+        "unpriced": 0,
+        "not_succeeded": 0
+      },
+      {
+        "id": "ef518688-00d8-4999-a83c-b18590277194",
+        "model": "custom/gemini-3.8-flash-high",
+        "attempts": 9,
+        "estimated_cost_micros": null,
+        "unpriced": 9,
+        "not_succeeded": 0
+      }
+    ]
+  },
+  "sourceObservedAtRefresh": true,
+  "sensitiveDataCheck": "44 business/auth/DBOS tables scanned in database; runtime logs and.env scanned; provider values encrypted; plaintext absent",
+  "credentialInputException": "owner explicitly supplied gateway credential in chat and authorized configuration; stored through authenticated local settings API; raw value never written to scripts/docs/logs or.env",
+  "productionCloudNetworkIsolationEvaluated": false,
+  "matchedXirynComparisonEvaluated": false,
+  "productObjectiveComplete": false
+}

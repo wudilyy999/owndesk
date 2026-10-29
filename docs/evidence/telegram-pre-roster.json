@@ -1,0 +1,35 @@
+{
+  "passed": true,
+  "controlledTelegram": true,
+  "controlledProvider": true,
+  "realTelegramConnectivityEvaluated": false,
+  "realModelJudgmentEvaluated": false,
+  "checks": [
+    {
+      "check": "Owner-only encrypted token/pairing, expiring one-time private pairing; foreign/group updates consumed without tasks or replies"
+    },
+    {
+      "check": "Exact crash after task/DBOS enqueue commit and before inbox/cursor commit; replay reuses one task/workflow and sends a completion notification"
+    },
+    {
+      "check": "Telegram /stop, even when sent as a reply, uses actual cancellation and emits terminal notification; webhook transport conflict leaves worker health/control available"
+    },
+    {
+      "check": "Production model/desktop runtime from phone: question notification, worker restart while waiting, native reply, model completion, then same-thread follow-up with historical answer"
+    },
+    {
+      "check": "Callback binds paired sender/private chat/bot message/outbox generation/request version; foreign sender and stale version rejected, current completion decision recorded"
+    },
+    {
+      "check": "Outbound intent journal survives worker kill; delivered-but-disconnected and in-flight sends become unknown without blind resend; explicit consent retries; explicit 429 safely retried; token-echoing errors scrubbed"
+    },
+    {
+      "check": "Unpair rotates transport generation; old callbacks/retry entries cannot act; expired pair code rejected and rotated one-time code succeeds"
+    },
+    {
+      "check": "Actual owner mobile settings UI: status, unpair/re-pair and target selection; unauthenticated/foreign-Origin/internal-token mutation and unacknowledged retry rejected; token absent from status"
+    }
+  ],
+  "directory": "data/experiments/agent_telegram_3846f996a9a843439b3d2e15ab08ebb4",
+  "recordedAt": "2026-10-24T22:30:31.168Z"
+}

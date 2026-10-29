@@ -1,0 +1,694 @@
+{
+  "passed": true,
+  "database": "agent_repaircontrol_f1759fb247a843c1852a2012e3c0efd4",
+  "directory": "data/experiments/agent_repaircontrol_f1759fb247a843c1852a2012e3c0efd4",
+  "checks": [
+    {
+      "check": "real takeover while model pending, late response and explicit handback discard old candidate without a second request or patch input",
+      "taskId": "97222c68-f7f5-4eaa-8330-e1075cb20d94",
+      "passed": true
+    },
+    {
+      "check": "real wall-time deadline expires during model call; saved candidate never dispatches any additional GUI action",
+      "taskId": "34a651d6-66b4-47ee-8ddf-545742c1c153",
+      "passed": true
+    },
+    {
+      "check": "cancellation aborts an actual pending repair call, stops desktop input and preserves the unknown attempt instead of replaying",
+      "taskId": "86cd58de-474d-4096-8d68-c1c85433bf06",
+      "passed": true
+    }
+  ],
+  "results": [
+    {
+      "taskId": "97222c68-f7f5-4eaa-8330-e1075cb20d94",
+      "state": {
+        "status": "cancelled"
+      },
+      "run": {
+        "task_id": "97222c68-f7f5-4eaa-8330-e1075cb20d94",
+        "version_id": "2d321b20-34f5-4407-bb7f-03c66ddb208d",
+        "purpose": "run",
+        "parameters": {
+          "draftName": "Draft",
+          "readyName": "Ready",
+          "parentName": "PA-C3-control-handback-1792956210543"
+        },
+        "checkpoint": {
+          "step": 4,
+          "frame": null,
+          "phase": "blocked",
+          "bootId": "69f8fade-4389-475f-8ecf-8c4e6f343cd6",
+          "repair": {
+            "step": 4,
+            "epoch": 2,
+            "bootId": "69f8fade-4389-475f-8ecf-8c4e6f343cd6",
+            "cursor": 0,
+            "reason": "Control or workstation boot changed during repair; discard the old candidate and inspect the current checkpoint.",
+            "status": "rejected",
+            "failure": "Expected Thunar window xiryn - Thunar; observed Create New Folder. No input was sent for this step.",
+            "decisionNo": 20,
+            "observationActionNo": 19
+          },
+          "blockedReason": "Control or workstation boot changed during repair; discard the old candidate and inspect the current checkpoint.",
+          "waitStartedAt": 1792956224390
+        },
+        "environment": {
+          "locale": "C.UTF-8",
+          "application": "Thunar",
+          "guestProtocol": 6,
+          "workstationImageId": "sha256:f8d2fbb12dc081ce3704fbfd06df87cc13afa4049ca51e8ce5e298c41b6f9add"
+        },
+        "started_at": "2026-10-25T19:23:34.013Z",
+        "completed_at": null,
+        "created_at": "2026-10-25T19:23:30.876Z"
+      },
+      "attempts": [
+        {
+          "decision_no": 20,
+          "status": "succeeded",
+          "cost_micros": "0",
+          "error": null
+        }
+      ],
+      "requests": [
+        {
+          "kind": "takeover",
+          "status": "resolved",
+          "payload": {
+            "reason": "受控测试：模型修订请求期间接管，再显式交还"
+          },
+          "decision": "handback"
+        },
+        {
+          "kind": "review",
+          "status": "cancelled",
+          "payload": {
+            "reason": "Control or workstation boot changed during repair; discard the old candidate and inspect the current checkpoint.",
+            "message": "The workflow is stopped. Inspect or manually complete the directory task, then continue to run its fixed result check. Previous uncertain input will not be repeated.",
+            "purpose": "workflow_review",
+            "nextStep": "按键 l",
+            "workflowStep": 4
+          },
+          "decision": null
+        }
+      ],
+      "actions": [
+        {
+          "action_no": 1,
+          "kind": "desktop_open_application",
+          "input": {
+            "application": "Thunar"
+          },
+          "status": "succeeded"
+        },
+        {
+          "action_no": 2,
+          "kind": "screen_capture",
+          "input": {},
+          "status": "succeeded"
+        },
+        {
+          "action_no": 3,
+          "kind": "key_press",
+          "input": {
+            "key": "n",
+            "modifiers": [
+              "ctrl",
+              "shift"
+            ],
+            "observationId": "361ce06a-534f-440e-98db-f714c29e38b8"
+          },
+          "status": "succeeded"
+        },
+        {
+          "action_no": 4,
+          "kind": "screen_capture",
+          "input": {},
+          "status": "succeeded"
+        },
+        {
+          "action_no": 5,
+          "kind": "key_type",
+          "input": {
+            "text": "PA-C3-control-handback-1792956210543",
+            "observationId": "742d9430-126e-4a4e-a088-f193c2422699"
+          },
+          "status": "succeeded"
+        },
+        {
+          "action_no": 6,
+          "kind": "screen_capture",
+          "input": {},
+          "status": "succeeded"
+        },
+        {
+          "action_no": 7,
+          "kind": "key_press",
+          "input": {
+            "key": "enter",
+            "modifiers": [],
+            "observationId": "45d8f782-eba6-497a-b742-183236e4d52c"
+          },
+          "status": "succeeded"
+        },
+        {
+          "action_no": 8,
+          "kind": "screen_capture",
+          "input": {},
+          "status": "succeeded"
+        },
+        {
+          "action_no": 9,
+          "kind": "screen_capture",
+          "input": {},
+          "status": "succeeded"
+        },
+        {
+          "action_no": 10,
+          "kind": "screen_capture",
+          "input": {},
+          "status": "succeeded"
+        },
+        {
+          "action_no": 11,
+          "kind": "screen_capture",
+          "input": {},
+          "status": "succeeded"
+        },
+        {
+          "action_no": 12,
+          "kind": "screen_capture",
+          "input": {},
+          "status": "succeeded"
+        },
+        {
+          "action_no": 13,
+          "kind": "screen_capture",
+          "input": {},
+          "status": "succeeded"
+        },
+        {
+          "action_no": 14,
+          "kind": "screen_capture",
+          "input": {},
+          "status": "succeeded"
+        },
+        {
+          "action_no": 15,
+          "kind": "screen_capture",
+          "input": {},
+          "status": "succeeded"
+        },
+        {
+          "action_no": 16,
+          "kind": "screen_capture",
+          "input": {},
+          "status": "succeeded"
+        },
+        {
+          "action_no": 17,
+          "kind": "screen_capture",
+          "input": {},
+          "status": "succeeded"
+        },
+        {
+          "action_no": 18,
+          "kind": "screen_capture",
+          "input": {},
+          "status": "succeeded"
+        },
+        {
+          "action_no": 19,
+          "kind": "screen_capture",
+          "input": {},
+          "status": "succeeded"
+        },
+        {
+          "action_no": 20,
+          "kind": "screen_capture",
+          "input": {},
+          "status": "succeeded"
+        }
+      ]
+    },
+    {
+      "taskId": "34a651d6-66b4-47ee-8ddf-545742c1c153",
+      "state": {
+        "status": "cancelled"
+      },
+      "run": {
+        "task_id": "34a651d6-66b4-47ee-8ddf-545742c1c153",
+        "version_id": "2d321b20-34f5-4407-bb7f-03c66ddb208d",
+        "purpose": "run",
+        "parameters": {
+          "draftName": "Draft",
+          "readyName": "Ready",
+          "parentName": "PA-C3-control-deadline-1792956243220"
+        },
+        "checkpoint": {
+          "step": 4,
+          "frame": null,
+          "phase": "blocked",
+          "bootId": "9a256046-839c-43df-b62b-196dde81992c",
+          "repair": {
+            "step": 4,
+            "epoch": 10,
+            "steps": [
+              {
+                "id": "control-dismiss",
+                "key": "escape",
+                "when": {
+                  "title": [
+                    {
+                      "literal": "Create New Folder"
+                    }
+                  ],
+                  "application": "Thunar"
+                },
+                "label": "关闭意外弹窗",
+                "evidence": [],
+                "modifiers": [],
+                "operation": "key_press"
+              },
+              {
+                "id": "step-4",
+                "key": "l",
+                "when": {
+                  "title": [
+                    {
+                      "literal": "xiryn - Thunar"
+                    }
+                  ],
+                  "application": "Thunar"
+                },
+                "label": "按键 l",
+                "evidence": [],
+                "modifiers": [
+                  "ctrl"
+                ],
+                "operation": "key_press"
+              }
+            ],
+            "bootId": "9a256046-839c-43df-b62b-196dde81992c",
+            "cursor": 0,
+            "reason": "Dismiss the extra modal and preserve the location shortcut",
+            "status": "accepted",
+            "failure": "Expected Thunar window xiryn - Thunar; observed Create New Folder. No input was sent for this step.",
+            "decisionNo": 23,
+            "observationActionNo": 22
+          },
+          "blockedReason": "Workflow action/time allowance exhausted; no further desktop input will be sent.",
+          "waitStartedAt": null
+        },
+        "environment": {
+          "locale": "C.UTF-8",
+          "application": "Thunar",
+          "guestProtocol": 6,
+          "workstationImageId": "sha256:f8d2fbb12dc081ce3704fbfd06df87cc13afa4049ca51e8ce5e298c41b6f9add"
+        },
+        "started_at": "2026-10-25T19:24:06.155Z",
+        "completed_at": null,
+        "created_at": "2026-10-25T19:24:03.550Z"
+      },
+      "attempts": [
+        {
+          "decision_no": 23,
+          "status": "succeeded",
+          "cost_micros": "0",
+          "error": null
+        }
+      ],
+      "requests": [
+        {
+          "kind": "review",
+          "status": "cancelled",
+          "payload": {
+            "reason": "Workflow action/time allowance exhausted; no further desktop input will be sent.",
+            "message": "The workflow is stopped. Inspect or manually complete the directory task, then continue to run its fixed result check. Previous uncertain input will not be repeated.",
+            "purpose": "workflow_review",
+            "nextStep": "关闭意外弹窗",
+            "workflowStep": 4
+          },
+          "decision": null
+        }
+      ],
+      "actions": [
+        {
+          "action_no": 1,
+          "kind": "desktop_open_application",
+          "input": {
+            "application": "Thunar"
+          },
+          "status": "succeeded"
+        },
+        {
+          "action_no": 2,
+          "kind": "screen_capture",
+          "input": {},
+          "status": "succeeded"
+        },
+        {
+          "action_no": 3,
+          "kind": "key_press",
+          "input": {
+            "key": "n",
+            "modifiers": [
+              "ctrl",
+              "shift"
+            ],
+            "observationId": "7a736f36-fa5d-4b05-83f8-a9f54fd4a706"
+          },
+          "status": "succeeded"
+        },
+        {
+          "action_no": 4,
+          "kind": "screen_capture",
+          "input": {},
+          "status": "succeeded"
+        },
+        {
+          "action_no": 5,
+          "kind": "key_type",
+          "input": {
+            "text": "PA-C3-control-deadline-1792956243220",
+            "observationId": "02b8efe4-df24-4ccb-b6f7-7ae86eaeb3ec"
+          },
+          "status": "succeeded"
+        },
+        {
+          "action_no": 6,
+          "kind": "screen_capture",
+          "input": {},
+          "status": "succeeded"
+        },
+        {
+          "action_no": 7,
+          "kind": "key_press",
+          "input": {
+            "key": "enter",
+            "modifiers": [],
+            "observationId": "9644da25-06d0-4f02-a05b-f7fd33bfd396"
+          },
+          "status": "succeeded"
+        },
+        {
+          "action_no": 8,
+          "kind": "screen_capture",
+          "input": {},
+          "status": "succeeded"
+        },
+        {
+          "action_no": 9,
+          "kind": "screen_capture",
+          "input": {},
+          "status": "succeeded"
+        },
+        {
+          "action_no": 10,
+          "kind": "screen_capture",
+          "input": {},
+          "status": "succeeded"
+        },
+        {
+          "action_no": 11,
+          "kind": "screen_capture",
+          "input": {},
+          "status": "succeeded"
+        },
+        {
+          "action_no": 12,
+          "kind": "screen_capture",
+          "input": {},
+          "status": "succeeded"
+        },
+        {
+          "action_no": 13,
+          "kind": "screen_capture",
+          "input": {},
+          "status": "succeeded"
+        },
+        {
+          "action_no": 14,
+          "kind": "screen_capture",
+          "input": {},
+          "status": "succeeded"
+        },
+        {
+          "action_no": 15,
+          "kind": "screen_capture",
+          "input": {},
+          "status": "succeeded"
+        },
+        {
+          "action_no": 16,
+          "kind": "screen_capture",
+          "input": {},
+          "status": "succeeded"
+        },
+        {
+          "action_no": 17,
+          "kind": "screen_capture",
+          "input": {},
+          "status": "succeeded"
+        },
+        {
+          "action_no": 18,
+          "kind": "screen_capture",
+          "input": {},
+          "status": "succeeded"
+        },
+        {
+          "action_no": 19,
+          "kind": "screen_capture",
+          "input": {},
+          "status": "succeeded"
+        },
+        {
+          "action_no": 20,
+          "kind": "screen_capture",
+          "input": {},
+          "status": "succeeded"
+        },
+        {
+          "action_no": 21,
+          "kind": "screen_capture",
+          "input": {},
+          "status": "succeeded"
+        },
+        {
+          "action_no": 22,
+          "kind": "screen_capture",
+          "input": {},
+          "status": "succeeded"
+        }
+      ]
+    },
+    {
+      "taskId": "86cd58de-474d-4096-8d68-c1c85433bf06",
+      "state": {
+        "status": "cancelled"
+      },
+      "run": {
+        "task_id": "86cd58de-474d-4096-8d68-c1c85433bf06",
+        "version_id": "2d321b20-34f5-4407-bb7f-03c66ddb208d",
+        "purpose": "run",
+        "parameters": {
+          "draftName": "Draft",
+          "readyName": "Ready",
+          "parentName": "PA-C3-control-cancel-1792956310547"
+        },
+        "checkpoint": {
+          "step": 4,
+          "frame": null,
+          "phase": "blocked",
+          "bootId": "6985ac4a-5718-4363-bb53-4d21352a5c25",
+          "repair": {
+            "step": 4,
+            "epoch": 14,
+            "bootId": "6985ac4a-5718-4363-bb53-4d21352a5c25",
+            "cursor": 0,
+            "reason": "Task was cancelled",
+            "status": "rejected",
+            "failure": "Expected Thunar window xiryn - Thunar; observed Create New Folder. No input was sent for this step.",
+            "decisionNo": 23,
+            "observationActionNo": 22
+          },
+          "blockedReason": "Task was cancelled",
+          "waitStartedAt": 1792956322588
+        },
+        "environment": {
+          "locale": "C.UTF-8",
+          "application": "Thunar",
+          "guestProtocol": 6,
+          "workstationImageId": "sha256:f8d2fbb12dc081ce3704fbfd06df87cc13afa4049ca51e8ce5e298c41b6f9add"
+        },
+        "started_at": "2026-10-25T19:25:13.156Z",
+        "completed_at": null,
+        "created_at": "2026-10-25T19:25:10.877Z"
+      },
+      "attempts": [
+        {
+          "decision_no": 23,
+          "status": "unknown",
+          "cost_micros": null,
+          "error": "Error: Task was cancelled"
+        }
+      ],
+      "requests": [],
+      "actions": [
+        {
+          "action_no": 1,
+          "kind": "desktop_open_application",
+          "input": {
+            "application": "Thunar"
+          },
+          "status": "succeeded"
+        },
+        {
+          "action_no": 2,
+          "kind": "screen_capture",
+          "input": {},
+          "status": "succeeded"
+        },
+        {
+          "action_no": 3,
+          "kind": "key_press",
+          "input": {
+            "key": "n",
+            "modifiers": [
+              "ctrl",
+              "shift"
+            ],
+            "observationId": "cc36fea0-11c5-4c89-9308-20d28d872a30"
+          },
+          "status": "succeeded"
+        },
+        {
+          "action_no": 4,
+          "kind": "screen_capture",
+          "input": {},
+          "status": "succeeded"
+        },
+        {
+          "action_no": 5,
+          "kind": "key_type",
+          "input": {
+            "text": "PA-C3-control-cancel-1792956310547",
+            "observationId": "de923032-f575-40aa-b415-761bfeb85188"
+          },
+          "status": "succeeded"
+        },
+        {
+          "action_no": 6,
+          "kind": "screen_capture",
+          "input": {},
+          "status": "succeeded"
+        },
+        {
+          "action_no": 7,
+          "kind": "key_press",
+          "input": {
+            "key": "enter",
+            "modifiers": [],
+            "observationId": "55339c1d-5faa-4dfd-9ab8-9bfafc0e456c"
+          },
+          "status": "succeeded"
+        },
+        {
+          "action_no": 8,
+          "kind": "screen_capture",
+          "input": {},
+          "status": "succeeded"
+        },
+        {
+          "action_no": 9,
+          "kind": "screen_capture",
+          "input": {},
+          "status": "succeeded"
+        },
+        {
+          "action_no": 10,
+          "kind": "screen_capture",
+          "input": {},
+          "status": "succeeded"
+        },
+        {
+          "action_no": 11,
+          "kind": "screen_capture",
+          "input": {},
+          "status": "succeeded"
+        },
+        {
+          "action_no": 12,
+          "kind": "screen_capture",
+          "input": {},
+          "status": "succeeded"
+        },
+        {
+          "action_no": 13,
+          "kind": "screen_capture",
+          "input": {},
+          "status": "succeeded"
+        },
+        {
+          "action_no": 14,
+          "kind": "screen_capture",
+          "input": {},
+          "status": "succeeded"
+        },
+        {
+          "action_no": 15,
+          "kind": "screen_capture",
+          "input": {},
+          "status": "succeeded"
+        },
+        {
+          "action_no": 16,
+          "kind": "screen_capture",
+          "input": {},
+          "status": "succeeded"
+        },
+        {
+          "action_no": 17,
+          "kind": "screen_capture",
+          "input": {},
+          "status": "succeeded"
+        },
+        {
+          "action_no": 18,
+          "kind": "screen_capture",
+          "input": {},
+          "status": "succeeded"
+        },
+        {
+          "action_no": 19,
+          "kind": "screen_capture",
+          "input": {},
+          "status": "succeeded"
+        },
+        {
+          "action_no": 20,
+          "kind": "screen_capture",
+          "input": {},
+          "status": "succeeded"
+        },
+        {
+          "action_no": 21,
+          "kind": "screen_capture",
+          "input": {},
+          "status": "succeeded"
+        },
+        {
+          "action_no": 22,
+          "kind": "screen_capture",
+          "input": {},
+          "status": "succeeded"
+        }
+      ]
+    }
+  ],
+  "controlledProvider": true,
+  "cloudRequests": 0,
+  "scope": "C3 real in-flight model/control boundaries with local fixed responses; no model judgment or cloud quality claim"
+}

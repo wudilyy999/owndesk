@@ -1,0 +1,35 @@
+{
+  "passed": true,
+  "fixtureOnly": true,
+  "checks": [
+    {
+      "check": "G03: server-enforced readonly accepts a raw input-capable RFB client but discards its input; control ticket denied; ticket single-use"
+    },
+    {
+      "check": "G03: manual input works only after human-ready; handback revokes old socket/ticket, releases held keys/buttons and rejects stale model epoch"
+    },
+    {
+      "check": "G03: logout revokes an existing desktop connection"
+    },
+    {
+      "check": "G03: background cancellation stops actual effects and removes the container boundary",
+      "detail": {
+        "elapsedMs": 4948
+      }
+    },
+    {
+      "check": "G03: active-shell cancellation stops actual effects and removes the container boundary",
+      "detail": {
+        "elapsedMs": 4081
+      }
+    },
+    {
+      "check": "G04: real download succeeds before worker receipt; worker SIGKILL + replay adopts receipt with one download and one dispatch"
+    },
+    {
+      "check": "G04: POST commits without reply, worker and controller die; recovery requests review without replaying the submit"
+    }
+  ],
+  "recordedAt": "2026-10-24T19:48:22.224Z",
+  "directory": "data/experiments/agent_control_933766a5e00b4b22badc05e91246e29d"
+}

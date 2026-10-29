@@ -1,0 +1,130 @@
+{
+  "scope": "S5-B controlled payment preparation, affected login/code regression and post-audit current-clock release deadline",
+  "passed": true,
+  "recordedAt": "2026-10-25T08:45:08.438762+00:00",
+  "applicationVersion": "0.11.0-dev",
+  "migration": "0011",
+  "guestProtocolVersion": 4,
+  "images": {
+    "worker": "354dab7e8783",
+    "web": "3610d3103ead",
+    "workstation": "f296de7ae730"
+  },
+  "controlledProvider": true,
+  "controlledWebsite": true,
+  "realModelJudgmentEvaluated": false,
+  "paymentPreparationTasksEvaluated": 15,
+  "paymentPreparationTerminalCounts": {
+    "completed": 14,
+    "cancelled": 1
+  },
+  "loginCodeTasksEvaluated": 13,
+  "loginCodeTerminalCounts": {
+    "completed": 12,
+    "cancelled": 1
+  },
+  "postAuditDeadlineTasksEvaluated": 1,
+  "evidenceChronology": {
+    "paymentPreparationBaseline": "before narrow current-clock fix",
+    "loginCodeBaseline": "before narrow current-clock fix",
+    "deadlineAcceptance": "after narrow current-clock fix",
+    "unrelatedApplicationNetworkCapacitySuitesRepeated": false
+  },
+  "runtimeEvidence": [
+    "runtime-payments-0.11.0.json",
+    "runtime-vaultfill-0.11.0.json",
+    "runtime-paymentdeadline.json"
+  ],
+  "retainedHistoricalBaselines": [
+    "runtime-vaultfill-0.8.0.json",
+    "runtime-vaultfill-0.10.0.json",
+    "runtime-identity-0.10.0.json"
+  ],
+  "runtimeScope": "isolated host Node worker, Next Web, PostgreSQL database and real Docker guest; provider and website controlled",
+  "productionImagesBuilt": true,
+  "sourceImageEvidence": "data/experiments/s5-payment-deadline-source-image.json",
+  "mainStateEvidence": "data/experiments/s5-payment-final-main-state.json",
+  "newCandidateLinuxDeploymentEvaluated": false,
+  "independentTextReadVerified": true,
+  "perFieldPaymentTextCheckVerified": true,
+  "selectedMethodSingleReleaseVerified": true,
+  "takeoverDecisionControlWakeupAtomicityVerified": true,
+  "actualTakeoverAndHandbackVerified": true,
+  "workerRestartAndUnknownFillVerified": true,
+  "oldGuestRealHealthRejectionVerified": true,
+  "releaseDeadlineBefore": {
+    "directory": "data/experiments/agent_runtime_5297a71ab93e4445bd555cbfe0e3f276",
+    "releases": 1,
+    "dispatches": 1,
+    "fieldsFilled": 6,
+    "passed": false
+  },
+  "releaseDeadlineAfter": {
+    "directory": "data/experiments/agent_runtime_8dc89170de6e49cc82b1473a7ec76ccd",
+    "releases": 0,
+    "dispatches": 0,
+    "fieldsFilled": 0,
+    "submissions": 0,
+    "passed": true
+  },
+  "retainedDeadlineInstrumentationFailure": "data/experiments/agent_runtime_080634d191f44bc3b88b3b225bb79fa9",
+  "retainedSourceInventoryAttempt": "data/experiments/s5-payment-deadline-source-image-inventory-attempt.json",
+  "automatedPaymentSubmissions": 0,
+  "labelledManualFixtureSubmissions": 1,
+  "realPaymentEvaluated": false,
+  "paymentSubmissionVerified": false,
+  "completeS5Verified": false,
+  "screenshotsVisuallyInspected": true,
+  "visualInspectionScope": "payment choice/fill desktop and mobile before final wording/field-label refinement; final copy covered by static rendering unit and production build",
+  "sampleSecretChecks": ["full PAN", "holder name", "full UPI"],
+  "secretAuditScope": [
+    "public tables",
+    "DBOS records",
+    "model requests",
+    "guest journal",
+    "controller logs",
+    "worker logs",
+    "Web logs"
+  ],
+  "intentionallyDisclosedMetadata": ["expiry", "last digits", "label", "hint"],
+  "retainedRawReportMetadataIssue": {
+    "report": "runtime-payments-0.11.0.json",
+    "issue": "last footer wrongly says storage/provisioning does not evaluate guest filling",
+    "rawPreserved": true,
+    "actualCoverageEvidence": "fifteen-task case summary, individual finish guest journal/controller archives and model/database/sample scans",
+    "harnessFooterClassificationCorrected": true
+  },
+  "trustBoundary": "page and reader share the shell-modifiable guest; independent read checks source consistency, not tamper resistance, merchant legal identity or actual payment result",
+  "approvalCost": "separate method choice and exact-field fill approval; submission has no implemented approval/action yet",
+  "deadlineDefinition": "release/dispatch authorization deadline, not guaranteed completion time for every field of a previously admitted action",
+  "paymentUnitTests": 3,
+  "vaultUnitTests": 5,
+  "deploymentConfigTests": 2,
+  "postAuditChecks": [
+    "single real slow-DOM task",
+    "payment3 unit tests",
+    "TypeScript",
+    "production worker and Web build",
+    "runtime source byte equality and lock version comparison"
+  ],
+  "noNewDependencies": true,
+  "noNewBusinessMigrations": true,
+  "provenance": {
+    "copied": 44,
+    "adapted": 40,
+    "excluded": 1
+  },
+  "newAdaptedSources": [
+    "components/vault/request-cards.tsx -> components/vault/payment.tsx",
+    "lib/vault-requests.ts -> lib/payments.ts"
+  ],
+  "mainServicesChanged": false,
+  "mainRunningApplicationVersion": "0.8.1-dev",
+  "mainConfiguredWorkstationImage": "personal-agent-workstation:0.2.0",
+  "mainConfiguredProviderCount": 0,
+  "mainDefaultModelResolvable": false,
+  "realModelServiceChoice": "existing-cloud-api",
+  "realModelAcceptanceSpendCapUsd": null,
+  "realModelAcceptanceSpendCapMode": "user-authorized-unlimited",
+  "nextScope": "S5-C explicit submission approval, unknown-effect reconciliation and result evidence; remaining retained features, real services/cloud and matched Xiryn comparison"
+}

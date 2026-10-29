@@ -1,0 +1,284 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "streamdown/styles.css";
+
+@source "../node_modules/streamdown/dist/*.js";
+@source "../node_modules/@streamdown/code/dist/*.js";
+
+@custom-variant dark (&:is(.dark *));
+
+/* ───────────────────────────────────────────────────────────────────
+ * Warm Parchment & Terracotta design tokens (Claude-inspired)
+ *
+ * Soft warm ivory paper background, crisp walnut/espresso typography,
+ * warm oatmeal secondary surfaces, and terracotta/sienna accents.
+ * ─────────────────────────────────────────────────────────────────── */
+
+:root {
+  --radius: 0.65rem;
+
+  --background: oklch(0.972 0.012 78);
+  --foreground: oklch(0.235 0.024 55);
+  --surface: oklch(0.992 0.006 80);
+  --elevated: oklch(0.946 0.017 74);
+  --card: var(--surface);
+  --card-foreground: var(--foreground);
+  --popover: oklch(0.992 0.006 80);
+  --popover-foreground: var(--foreground);
+
+  --primary: oklch(0.555 0.145 43);
+  --primary-foreground: oklch(0.99 0.005 80);
+  --secondary: oklch(0.935 0.019 72);
+  --secondary-foreground: oklch(0.275 0.028 55);
+  --muted: oklch(0.944 0.016 74);
+  --muted-foreground: oklch(0.465 0.025 56);
+  --faint: oklch(0.61 0.022 58);
+  --accent: oklch(0.926 0.022 70);
+  --accent-foreground: var(--foreground);
+
+  --border: oklch(0.32 0.032 58 / 13%);
+  --hairline: oklch(0.32 0.032 58 / 8%);
+  --input: oklch(0.32 0.032 58 / 18%);
+  --ring: oklch(0.555 0.145 43);
+
+  --rigel: oklch(0.545 0.145 43);
+  --rigel-soft: oklch(0.545 0.145 43 / 12%);
+  --betelgeuse: oklch(0.585 0.15 54);
+  --betelgeuse-soft: oklch(0.585 0.15 54 / 12%);
+  --ok: oklch(0.53 0.12 152);
+  --warn: oklch(0.64 0.14 70);
+  --destructive: oklch(0.53 0.18 28);
+
+  --grid-dot: oklch(0.32 0.032 58 / 9%);
+}
+
+@theme inline {
+  --font-sans:
+    var(--font-inter), "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei",
+    ui-sans-serif, system-ui, sans-serif;
+  --font-serif:
+    "Iowan Old Style", "New York", "Songti SC", "STSong", "Noto Serif CJK SC", Georgia,
+    Cambria, serif;
+  --font-mono: var(--font-jetbrains), ui-monospace, "SFMono-Regular", monospace;
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-surface: var(--surface);
+  --color-elevated: var(--elevated);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-faint: var(--faint);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-hairline: var(--hairline);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-rigel: var(--rigel);
+  --color-rigel-soft: var(--rigel-soft);
+  --color-betelgeuse: var(--betelgeuse);
+  --color-betelgeuse-soft: var(--betelgeuse-soft);
+  --color-ok: var(--ok);
+  --color-warn: var(--warn);
+
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+
+  --animate-pulse-dot: pulse-dot 1.6s ease-in-out infinite;
+  --animate-caret: caret 1s steps(2, start) infinite;
+  --animate-scan: scan 2.4s linear infinite;
+  --animate-countdown: countdown var(--countdown, 8s) linear forwards;
+
+  @keyframes pulse-dot {
+    0%,
+    100% {
+      opacity: 1;
+      box-shadow: 0 0 0 0 color-mix(in oklch, currentColor 45%, transparent);
+    }
+    50% {
+      opacity: 0.55;
+      box-shadow: 0 0 0 4px transparent;
+    }
+  }
+  @keyframes caret {
+    to {
+      visibility: hidden;
+    }
+  }
+  @keyframes scan {
+    from {
+      background-position: -200% 0;
+    }
+    to {
+      background-position: 200% 0;
+    }
+  }
+  @keyframes countdown {
+    from {
+      transform: scaleX(1);
+    }
+    to {
+      transform: scaleX(0);
+    }
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  html {
+    color-scheme: light;
+  }
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-feature-settings:
+      "cv11" 1,
+      "ss01" 1,
+      "ss03" 1;
+    font-size: 14.5px;
+    line-height: 1.65;
+    letter-spacing: -0.005em;
+  }
+  h1,
+  h2 {
+    font-family: var(--font-serif);
+    letter-spacing: -0.015em;
+  }
+  ::selection {
+    background: color-mix(in oklch, var(--primary) 24%, transparent);
+  }
+  code,
+  kbd,
+  pre,
+  samp {
+    font-family: var(--font-mono);
+    font-feature-settings: "zero" 1;
+  }
+  select,
+  input:not([type="checkbox"]):not([type="radio"]):not([type="file"]) {
+    border-radius: var(--radius-lg);
+    transition:
+      border-color 150ms ease,
+      box-shadow 150ms ease,
+      background-color 150ms ease;
+  }
+  select:focus-visible,
+  input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):focus-visible,
+  textarea:focus-visible {
+    outline: none;
+    border-color: var(--ring);
+    box-shadow: 0 0 0 3px color-mix(in oklch, var(--ring) 20%, transparent);
+  }
+  input[type="checkbox"] {
+    accent-color: var(--primary);
+    border-radius: 4px;
+  }
+  :focus-visible {
+    outline-offset: 2px;
+  }
+  /* Quiet, thin scrollbars */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: color-mix(in oklch, var(--foreground) 16%, transparent) transparent;
+  }
+}
+
+@layer components {
+  /* Small uppercase mono labels: section headers, keys, captions */
+  .label-mono {
+    @apply font-mono text-[10.5px] font-medium tracking-[0.08em] text-muted-foreground uppercase;
+  }
+
+  /* Dotted engineering-paper backdrop */
+  .bg-grid {
+    background-image: radial-gradient(var(--grid-dot) 1px, transparent 1px);
+    background-size: 18px 18px;
+  }
+
+  .bg-grid-fade {
+    mask-image: radial-gradient(ellipse at 50% 30%, black 20%, transparent 75%);
+  }
+
+  /* A shimmering line used while something is in flight */
+  .shimmer-text {
+    background: linear-gradient(
+        90deg,
+        var(--muted-foreground) 0%,
+        var(--foreground) 50%,
+        var(--muted-foreground) 100%
+      )
+      0 0 / 200% 100%;
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    animation: var(--animate-scan);
+  }
+
+  .hairline-b {
+    box-shadow: inset 0 -1px 0 var(--hairline);
+  }
+}
+
+/* Markdown inside agent replies */
+.prose-owndesk {
+  @apply text-[14.5px] leading-[1.78] text-foreground;
+}
+.prose-owndesk :where(p, ul, ol, pre, blockquote, table, h1, h2, h3, h4) + :where(*) {
+  margin-top: 0.8em;
+}
+.prose-owndesk :where(h1, h2, h3, h4) {
+  @apply font-semibold tracking-tight;
+}
+.prose-owndesk :where(h1) {
+  @apply text-lg;
+}
+.prose-owndesk :where(h2) {
+  @apply text-base;
+}
+.prose-owndesk :where(h3, h4) {
+  @apply text-[14.5px];
+}
+.prose-owndesk :where(ul) {
+  @apply list-disc pl-5;
+}
+.prose-owndesk :where(ol) {
+  @apply list-decimal pl-5;
+}
+.prose-owndesk :where(li) + :where(li) {
+  margin-top: 0.3em;
+}
+.prose-owndesk :where(a) {
+  @apply text-rigel underline decoration-rigel/40 underline-offset-[3px] hover:decoration-rigel;
+}
+.prose-owndesk :where(:not(pre) > code) {
+  @apply rounded-[5px] border border-border/70 bg-elevated/80 px-[0.38em] py-[0.12em] font-mono text-[0.86em];
+}
+.prose-owndesk :where(blockquote) {
+  @apply border-l-2 border-primary/40 pl-3.5 text-muted-foreground italic;
+}
+.prose-owndesk :where(hr) {
+  @apply my-5 border-hairline;
+}
+.prose-owndesk :where(strong) {
+  @apply font-semibold;
+}
+
+/* OwnDesk runs under `next dev`, whose error badge and overlay aren't meant for
+   the people using it. Errors still print in the terminal and the browser
+   console; delete this rule while working on OwnDesk if you want them back. */
+nextjs-portal {
+  display: none !important;
+}

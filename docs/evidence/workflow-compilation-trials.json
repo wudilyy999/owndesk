@@ -1,0 +1,80 @@
+{
+  "scope": "All C1 attempt reports, including infrastructure/UI failures; C2 execution and net savings remain unverified",
+  "trials": [
+    {
+      "directory": "data/experiments/agent_compile_32436f12761648d88422d5b17cfff293",
+      "taskId": "a365799c-110c-499c-bfc6-80bbf6c50f1d",
+      "passed": false,
+      "controlledProvider": true,
+      "status": "completed",
+      "attempts": [
+        {
+          "status": "succeeded",
+          "costMicros": null,
+          "model": "custom/workflow-fixture"
+        }
+      ],
+      "scope": "C1/T19 controlled-provider candidate compilation, not C2 execution, ready certification or Xiryn comparison"
+    },
+    {
+      "directory": "data/experiments/agent_compile_3940caf7d91747b98e1dd707c8efc2d0",
+      "taskId": "4d62722d-9e05-4127-af1e-068ef926bbf2",
+      "passed": false,
+      "controlledProvider": true,
+      "status": "completed",
+      "attempts": [
+        {
+          "status": "succeeded",
+          "costMicros": null,
+          "model": "custom/workflow-fixture"
+        }
+      ],
+      "scope": "C1/T19 controlled-provider candidate compilation, not C2 execution, ready certification or Xiryn comparison"
+    },
+    {
+      "directory": "data/experiments/agent_compile_71ca1b29f16140aeb24f3b5b3c4449fb",
+      "taskId": "2d321b20-34f5-4407-bb7f-03c66ddb208d",
+      "passed": true,
+      "controlledProvider": true,
+      "status": "completed",
+      "attempts": [
+        {
+          "status": "succeeded",
+          "costMicros": null,
+          "model": "custom/workflow-fixture"
+        }
+      ],
+      "scope": "C1/T19 controlled-provider candidate compilation, not C2 execution, ready certification or Xiryn comparison"
+    },
+    {
+      "directory": "data/experiments/agent_compile_89b32692f49640c5b7887bb19091d06f",
+      "taskId": "5b0ad29b-a729-439b-91a0-13f34fb090fc",
+      "passed": false,
+      "controlledProvider": false,
+      "status": "needs_review",
+      "attempts": [
+        {
+          "status": "unknown",
+          "costMicros": null,
+          "model": "custom/gemini-3.8-flash-high"
+        }
+      ],
+      "scope": "C1/T19 real-model candidate compilation, not C2 execution, ready certification or Xiryn comparison"
+    },
+    {
+      "directory": "data/experiments/agent_compile_ee89b5d01fa24528a09fd74bdb7e9f26",
+      "taskId": "de6c7c31-aec0-4835-891a-a36dd9fa57b0",
+      "passed": true,
+      "controlledProvider": true,
+      "status": "completed",
+      "attempts": [
+        {
+          "status": "succeeded",
+          "costMicros": null,
+          "model": "custom/workflow-fixture"
+        }
+      ],
+      "scope": "C1/T19 controlled-provider candidate compilation, not C2 execution, ready certification or Xiryn comparison"
+    }
+  ]
+}

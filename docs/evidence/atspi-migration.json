@@ -1,0 +1,1049 @@
+{
+  "date": "2026-10-29",
+  "status": "development_migration_accepted_main_preview_unchanged",
+  "fullMigrationAccepted": true,
+  "upstream": {
+    "repo": "agent0ai/a0-connector",
+    "commit": "3741c8809f1f99b4efee2ed1a24234a98bf896d4",
+    "retrievedAt": 1793251519.299245,
+    "license": "MIT",
+    "notice": "licenses/a0-connector-LICENSE",
+    "namedHelpers": [
+      "_atspi_actions",
+      "_atspi_caret_offset",
+      "_atspi_child_at",
+      "_atspi_child_count",
+      "_atspi_description",
+      "_atspi_element_for_path",
+      "_atspi_find_focused",
+      "_atspi_frame",
+      "_atspi_interface_call",
+      "_atspi_match_score",
+      "_atspi_name",
+      "_atspi_node_is_offscreen",
+      "_atspi_node_is_visible",
+      "_atspi_node_matches_target",
+      "_atspi_node_metadata",
+      "_atspi_pid",
+      "_atspi_role",
+      "_atspi_states",
+      "_atspi_text",
+      "_atspi_text_count",
+      "_atspi_text_range",
+      "_atspi_value",
+      "_atspi_window_id",
+      "_clean_text",
+      "_frame_value",
+      "_list_contains_action",
+      "_node_text_fields",
+      "_normalized_match_text",
+      "_parse_atspi_window_id",
+      "_parse_ax_path",
+      "_parse_tag_invocation",
+      "_safe_call",
+      "_safe_int",
+      "_target_summary"
+    ],
+    "licenseCopiesMatch": true
+  },
+  "architecture": {
+    "upstream": "Wayland Portal/PipeWire + AT-SPI",
+    "local": "X11/Xvfb/XFCE/noVNC + AT-SPI through original Task/DBOS/action journal",
+    "protocol": 6,
+    "capability": "atspi-native-v1",
+    "sourceCandidate": "0.6.5",
+    "testedImage": "personal-agent-workstation:0.6.5",
+    "productionPreviewImage": "personal-agent-workstation:0.6.3",
+    "newSqlMigrations": 0,
+    "numberedScreenshots": false,
+    "historicalCachedImage": "personal-agent-workstation:0.6.5-atspi"
+  },
+  "desktopTrials": [
+    {
+      "path": "data/experiments/atspi-native-action-read-failure-1793254440081/result.json",
+      "phase": "action-read-failure",
+      "passed": false,
+      "checks": [],
+      "image": "personal-agent-workstation:0.6.5-atspi",
+      "container": "pa-native-action-read-failure-1793254440082",
+      "cloudCalls": 0,
+      "taskRecords": 0
+    },
+    {
+      "path": "data/experiments/atspi-native-actions-1793252339105/result.json",
+      "phase": "actions",
+      "passed": false,
+      "checks": [
+        "native index press dispatch triggers independent GTK callback exactly once",
+        "semantic targeting, path targeting, Unicode editable text and numeric value assignment",
+        "background native action affects the named background window without moving foreground focus",
+        "background focus refusal and explicit auto-to-foreground focus verification"
+      ],
+      "image": "personal-agent-workstation:0.6.5-atspi",
+      "container": "pa-native-actions-1793252339106",
+      "cloudCalls": 0,
+      "taskRecords": 0
+    },
+    {
+      "path": "data/experiments/atspi-native-applications-1793253448996/result.json",
+      "phase": "applications",
+      "passed": false,
+      "checks": [],
+      "image": "personal-agent-workstation:0.6.5-atspi",
+      "container": "pa-native-applications-1793253448998",
+      "cloudCalls": 0,
+      "taskRecords": 0
+    },
+    {
+      "path": "data/experiments/atspi-native-applications-1793253511523/result.json",
+      "phase": "applications",
+      "passed": true,
+      "checks": [
+        "real XFCE Appearance tab has native name/geometry but no Action interface; explicit fresh-frame coordinate fallback selects Fonts and AT-SPI confirms selection",
+        "real XFCE Terminal exposes terminal text and verified native-window typing+submit produces exactly one independent file result"
+      ],
+      "image": "personal-agent-workstation:0.6.5-atspi",
+      "container": "pa-native-applications-1793253511525",
+      "cloudCalls": 0,
+      "taskRecords": 0
+    },
+    {
+      "path": "data/experiments/atspi-native-desktop-tree-1793252412559/result.json",
+      "phase": "desktop-tree",
+      "passed": true,
+      "checks": ["desktop-wide AX tree traverses application containers"],
+      "image": "personal-agent-workstation:0.6.5-atspi",
+      "container": "pa-native-desktop-tree-1793252412560",
+      "cloudCalls": 0,
+      "taskRecords": 0
+    },
+    {
+      "path": "data/experiments/atspi-native-edges-1793253261557/result.json",
+      "phase": "edges",
+      "passed": true,
+      "checks": [
+        "PID ambiguity/mismatch, bounded window list, hidden-node opt-in, missing targets and unsupported native actions are explicit",
+        "desktop-wide path targeting, explicit native action and semantic role/action/state matching trigger real callbacks",
+        "wrong-window keyboard refuses input; auto set_value+submit activates and focuses the actual field before one Enter"
+      ],
+      "image": "personal-agent-workstation:0.6.5-atspi",
+      "container": "pa-native-edges-1793253261557",
+      "cloudCalls": 0,
+      "taskRecords": 0
+    },
+    {
+      "path": "data/experiments/atspi-native-hidden-semantic-1793254588983/result.json",
+      "phase": "hidden-semantic",
+      "passed": true,
+      "checks": [
+        "explicit hidden-node observation carries its scope into semantic native value assignment; default observations omit that field"
+      ],
+      "image": "personal-agent-workstation:0.6.5-atspi",
+      "container": "pa-native-hidden-semantic-1793254588983",
+      "cloudCalls": 0,
+      "taskRecords": 0
+    },
+    {
+      "path": "data/experiments/atspi-native-journal-1793253308566/result.json",
+      "phase": "journal",
+      "passed": false,
+      "checks": [],
+      "image": "personal-agent-workstation:0.6.5-atspi",
+      "container": "pa-native-journal-1793253308567",
+      "cloudCalls": 0,
+      "taskRecords": 0
+    },
+    {
+      "path": "data/experiments/atspi-native-journal-1793253378913/result.json",
+      "phase": "journal",
+      "passed": true,
+      "checks": [
+        "quiesce stops an in-flight native helper after one real GTK effect; missing completion becomes durable unknown and replay never repeats it",
+        "container/controller cold restart retains the original unknown receipt and external truth without reissuing native input"
+      ],
+      "image": "personal-agent-workstation:0.6.5-atspi",
+      "container": "pa-native-journal-1793253378914",
+      "cloudCalls": 0,
+      "taskRecords": 0
+    },
+    {
+      "path": "data/experiments/atspi-native-keyboard-1793252394625/result.json",
+      "phase": "keyboard",
+      "passed": false,
+      "checks": [],
+      "image": "personal-agent-workstation:0.6.5-atspi",
+      "container": "pa-native-keyboard-1793252394626",
+      "cloudCalls": 0,
+      "taskRecords": 0
+    },
+    {
+      "path": "data/experiments/atspi-native-keyboard-1793252453941/result.json",
+      "phase": "keyboard",
+      "passed": true,
+      "checks": ["guarded keyboard input verifies both AT-SPI and X11 target focus"],
+      "image": "personal-agent-workstation:0.6.5-atspi",
+      "container": "pa-native-keyboard-1793252453942",
+      "cloudCalls": 0,
+      "taskRecords": 0
+    },
+    {
+      "path": "data/experiments/atspi-native-limits-1793253794515/result.json",
+      "phase": "limits",
+      "passed": true,
+      "checks": [
+        "node-budget truncation explicitly returns a partial native tree together with the original screenshot"
+      ],
+      "image": "personal-agent-workstation:0.6.5-atspi",
+      "container": "pa-native-limits-1793253794516",
+      "cloudCalls": 0,
+      "taskRecords": 0
+    },
+    {
+      "path": "data/experiments/atspi-native-long-type-1793254298410/result.json",
+      "phase": "long-type",
+      "passed": true,
+      "checks": [
+        "native-window keyboard input longer than the former fixed timeout completes with exact Unicode content and verified focus"
+      ],
+      "image": "personal-agent-workstation:0.6.5-atspi",
+      "container": "pa-native-long-type-1793254298411",
+      "cloudCalls": 0,
+      "taskRecords": 0
+    },
+    {
+      "path": "data/experiments/atspi-native-observe-1793252272483/result.json",
+      "phase": "observe",
+      "passed": false,
+      "checks": [
+        "window enumeration, scoped hierarchy, object identities, names/actions/text/numeric values/states and protected/hidden/background filtering",
+        "background window observation without focus changes"
+      ],
+      "image": "personal-agent-workstation:0.6.5-atspi",
+      "container": "pa-native-observe-1793252272484",
+      "cloudCalls": 0,
+      "taskRecords": 0
+    },
+    {
+      "path": "data/experiments/atspi-native-offscreen-1793253523088/result.json",
+      "phase": "offscreen",
+      "passed": false,
+      "checks": [],
+      "image": "personal-agent-workstation:0.6.5-atspi",
+      "container": "pa-native-offscreen-1793253523089",
+      "cloudCalls": 0,
+      "taskRecords": 0
+    },
+    {
+      "path": "data/experiments/atspi-native-offscreen-1793253588528/result.json",
+      "phase": "offscreen",
+      "passed": false,
+      "checks": [],
+      "image": "personal-agent-workstation:0.6.5-atspi",
+      "container": "pa-native-offscreen-1793253588529",
+      "cloudCalls": 0,
+      "taskRecords": 0
+    },
+    {
+      "path": "data/experiments/atspi-native-offscreen-1793253704415/result.json",
+      "phase": "offscreen",
+      "passed": true,
+      "checks": [
+        "offscreen windows require explicit opt-in; same-process same-title X11 activation ambiguity rejects before effects"
+      ],
+      "image": "personal-agent-workstation:0.6.5-atspi",
+      "container": "pa-native-offscreen-1793253704420",
+      "cloudCalls": 0,
+      "taskRecords": 0
+    },
+    {
+      "path": "data/experiments/atspi-native-preflight-tail-1793254493831/result.json",
+      "phase": "preflight-tail",
+      "passed": true,
+      "checks": [
+        "known absence of native Action remains an explicit no-effect fallback; missing process ID rejects foreground dispatch before input"
+      ],
+      "image": "personal-agent-workstation:0.6.5-atspi",
+      "container": "pa-native-preflight-tail-1793254493831",
+      "cloudCalls": 0,
+      "taskRecords": 0
+    },
+    {
+      "path": "data/experiments/atspi-native-safety-1793252399094/result.json",
+      "phase": "safety",
+      "passed": true,
+      "checks": [
+        "superseded observations, ambiguous semantic targets, wrong windows, disabled and protected controls rejected before effects",
+        "same-label child-path rebinding rejected by D-Bus object identity; no callback fired",
+        "durable native receipt replay does not repeat input; consumed observation rejected",
+        "human takeover invalidates native inputs"
+      ],
+      "image": "personal-agent-workstation:0.6.5-atspi",
+      "container": "pa-native-safety-1793252399095",
+      "cloudCalls": 0,
+      "taskRecords": 0
+    },
+    {
+      "path": "data/experiments/atspi-native-scope-parity-1793254283151/result.json",
+      "phase": "scope-parity",
+      "passed": true,
+      "checks": [
+        "whole-desktop snapshot index/path/unique semantic targets resolve their observed native window without requiring an additional window_id"
+      ],
+      "image": "personal-agent-workstation:0.6.5-atspi",
+      "container": "pa-native-scope-parity-1793254283151",
+      "cloudCalls": 0,
+      "taskRecords": 0
+    },
+    {
+      "path": "data/experiments/atspi-native-tag-1793252407208/result.json",
+      "phase": "tag",
+      "passed": false,
+      "checks": [],
+      "image": "personal-agent-workstation:0.6.5-atspi",
+      "container": "pa-native-tag-1793252407209",
+      "cloudCalls": 0,
+      "taskRecords": 0
+    },
+    {
+      "path": "data/experiments/atspi-native-tag-1793252460115/result.json",
+      "phase": "tag",
+      "passed": true,
+      "checks": [
+        "focused @a0.profile context parser, exact Unicode range replacement and one-use token"
+      ],
+      "image": "personal-agent-workstation:0.6.5-atspi",
+      "container": "pa-native-tag-1793252460116",
+      "cloudCalls": 0,
+      "taskRecords": 0
+    },
+    {
+      "path": "data/experiments/atspi-native-tag-guards-1793253272367/result.json",
+      "phase": "tag-guards",
+      "passed": true,
+      "checks": [
+        "inline target release, human-modified range and protected focus all reject without replacing text or exposing the password"
+      ],
+      "image": "personal-agent-workstation:0.6.5-atspi",
+      "container": "pa-native-tag-guards-1793253272368",
+      "cloudCalls": 0,
+      "taskRecords": 0
+    },
+    {
+      "path": "data/experiments/atspi-native-tag-parity-1793254289767/result.json",
+      "phase": "tag-parity",
+      "passed": true,
+      "checks": [
+        "inline metadata, single-current-target semantics, idempotent release, window-title binding and readonly replacement checks match upstream behavior"
+      ],
+      "image": "personal-agent-workstation:0.6.5-atspi",
+      "container": "pa-native-tag-parity-1793254289768",
+      "cloudCalls": 0,
+      "taskRecords": 0
+    },
+    {
+      "path": "data/experiments/atspi-native-window-resolution-1793254818075/result.json",
+      "phase": "window-resolution",
+      "passed": true,
+      "checks": [
+        "real native press uses direct observed-window resolution; synthetic 105-app/capped traversal, exact PID/path and enumeration failures pass"
+      ],
+      "image": "personal-agent-workstation:0.6.5-atspi",
+      "container": "pa-native-window-resolution-1793254818075",
+      "cloudCalls": 0,
+      "taskRecords": 0
+    },
+    {
+      "path": "data/experiments/atspi-native-package-1793260385478/result.json",
+      "phase": "package",
+      "passed": true,
+      "checks": [
+        "clean image boots with required native dependencies, guest6/capability, Node24 and shipped license notices; packaged native sources byte-match current files; original screenshot and native hierarchy are usable"
+      ],
+      "image": "personal-agent-workstation:0.6.5",
+      "container": "pa-native-package-1793260385478",
+      "cloudCalls": 0,
+      "taskRecords": 0
+    },
+    {
+      "path": "data/experiments/atspi-native-scope-parity-1793260389343/result.json",
+      "phase": "scope-parity",
+      "passed": true,
+      "checks": [
+        "whole-desktop snapshot index/path/unique semantic targets resolve their observed native window without requiring an additional window_id"
+      ],
+      "image": "personal-agent-workstation:0.6.5",
+      "container": "pa-native-scope-parity-1793260389344",
+      "cloudCalls": 0,
+      "taskRecords": 0
+    },
+    {
+      "path": "data/experiments/atspi-native-actions-1793260395203/result.json",
+      "phase": "actions",
+      "passed": true,
+      "checks": [
+        "native index press dispatch triggers independent GTK callback exactly once",
+        "semantic targeting, path targeting, Unicode editable text and numeric value assignment",
+        "background native action affects the named background window without moving foreground focus",
+        "background focus refusal and explicit auto-to-foreground focus verification"
+      ],
+      "image": "personal-agent-workstation:0.6.5",
+      "container": "pa-native-actions-1793260395204",
+      "cloudCalls": 0,
+      "taskRecords": 0
+    },
+    {
+      "path": "data/experiments/atspi-native-tag-1793260405288/result.json",
+      "phase": "tag",
+      "passed": true,
+      "checks": [
+        "focused @a0.profile context parser, exact Unicode range replacement and one-use token"
+      ],
+      "image": "personal-agent-workstation:0.6.5",
+      "container": "pa-native-tag-1793260405289",
+      "cloudCalls": 0,
+      "taskRecords": 0
+    },
+    {
+      "path": "data/experiments/atspi-native-long-type-1793260411676/result.json",
+      "phase": "long-type",
+      "passed": true,
+      "checks": [
+        "native-window keyboard input longer than the former fixed timeout completes with exact Unicode content and verified focus"
+      ],
+      "image": "personal-agent-workstation:0.6.5",
+      "container": "pa-native-long-type-1793260411677",
+      "cloudCalls": 0,
+      "taskRecords": 0
+    },
+    {
+      "path": "data/experiments/atspi-native-safety-1793260422051/result.json",
+      "phase": "safety",
+      "passed": true,
+      "checks": [
+        "superseded observations, ambiguous semantic targets, wrong windows, disabled and protected controls rejected before effects",
+        "same-label child-path rebinding rejected by D-Bus object identity; no callback fired",
+        "durable native receipt replay does not repeat input; consumed observation rejected",
+        "human takeover invalidates native inputs"
+      ],
+      "image": "personal-agent-workstation:0.6.5",
+      "container": "pa-native-safety-1793260422052",
+      "cloudCalls": 0,
+      "taskRecords": 0
+    },
+    {
+      "path": "data/experiments/atspi-native-applications-1793260430536/result.json",
+      "phase": "applications",
+      "passed": true,
+      "checks": [
+        "real XFCE Appearance tab has native name/geometry but no Action interface; explicit fresh-frame coordinate fallback selects Fonts and AT-SPI confirms selection",
+        "real XFCE Terminal exposes terminal text and verified native-window typing+submit produces exactly one independent file result"
+      ],
+      "image": "personal-agent-workstation:0.6.5",
+      "container": "pa-native-applications-1793260430537",
+      "cloudCalls": 0,
+      "taskRecords": 0
+    }
+  ],
+  "workerTrials": [
+    {
+      "path": "data/experiments/agent_native_44d96a96cb1d4ec2a867ca71a5cbc91d/result.json",
+      "passed": true,
+      "database": "agent_native_44d96a96cb1d4ec2a867ca71a5cbc91d",
+      "directory": "data/experiments/agent_native_44d96a96cb1d4ec2a867ca71a5cbc91d",
+      "taskId": "1bce5745-a925-41fd-b999-46220639db02",
+      "steps": 11,
+      "summaries": 1,
+      "checks": [
+        "production native observations enter actual local model requests before a real worker restart",
+        "real worker restart preserves original receipts; native focus/set_value submit use the original action chain and finish in /tmp",
+        "actual model requests keep native element data and at most two current images"
+      ],
+      "errors": [],
+      "mainBefore": {
+        "tasks": 12,
+        "actions": 58,
+        "attempts": 65
+      },
+      "cloudCalls": 0
+    },
+    {
+      "path": "data/experiments/agent_native_55d119aa34bc43eba3d573b40c3d9b92/result.json",
+      "passed": false,
+      "database": "agent_native_55d119aa34bc43eba3d573b40c3d9b92",
+      "directory": "data/experiments/agent_native_55d119aa34bc43eba3d573b40c3d9b92",
+      "taskId": "05d09579-da7d-42dd-a361-d92acc3bf9dd",
+      "steps": 9,
+      "summaries": 1,
+      "checks": [
+        "production native observations enter actual local model requests before a real worker restart"
+      ],
+      "errors": [
+        "AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:\n+ actual - expected\n\n+ undefined\n- true\n"
+      ],
+      "failure": "Error: {\"status\":\"needs_review\",\"result\":null,\"error\":null}\n    at <anonymous> (tests/atspi-native-runtime.ts:353:13)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async until (tests/atspi-native-runtime.ts:63:15)\n    at async <anonymous> (tests/atspi-native-runtime.ts:348:3)",
+      "mainBefore": {
+        "tasks": 12,
+        "actions": 58,
+        "attempts": 65
+      },
+      "cloudCalls": 0
+    },
+    {
+      "path": "data/experiments/agent_native_a3d3cb601d4b4b4eaa4401e2838a429f/result.json",
+      "passed": false,
+      "database": "agent_native_a3d3cb601d4b4b4eaa4401e2838a429f",
+      "directory": "data/experiments/agent_native_a3d3cb601d4b4b4eaa4401e2838a429f",
+      "taskId": "6a037bd4-9c3c-4af0-88f4-b97aaf4abc7c",
+      "steps": 8,
+      "checks": [
+        "production native observations enter actual local model requests before a real worker restart"
+      ],
+      "errors": ["TypeError: Cannot read properties of undefined (reading 'map')"],
+      "failure": "Error: {\"status\":\"needs_review\",\"result\":null,\"error\":null}\n    at <anonymous> (tests/atspi-native-runtime.ts:327:13)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async until (tests/atspi-native-runtime.ts:63:15)\n    at async <anonymous> (tests/atspi-native-runtime.ts:322:3)",
+      "mainBefore": {
+        "tasks": 12,
+        "actions": 58,
+        "attempts": 65
+      },
+      "cloudCalls": 0
+    },
+    {
+      "path": "data/experiments/agent_native_a99fd086fc7f4d83a2c7b48c113af0e5/result.json",
+      "passed": true,
+      "database": "agent_native_a99fd086fc7f4d83a2c7b48c113af0e5",
+      "directory": "data/experiments/agent_native_a99fd086fc7f4d83a2c7b48c113af0e5",
+      "taskId": "ced1cbba-24df-4691-908f-46ee3e38b81a",
+      "steps": 5,
+      "summaries": 0,
+      "checks": [
+        "production native focus result reaches the actual local model before the cancellation checkpoint",
+        "owner cancellation finishes through the original worker control chain and preserves the successful native receipt without replay",
+        "cancelled native Task releases workstation ownership and the actual desktop container boundary",
+        "actual model requests keep native element data and at most two current images"
+      ],
+      "errors": [],
+      "mainBefore": {
+        "tasks": 12,
+        "actions": 58,
+        "attempts": 65
+      },
+      "cloudCalls": 0
+    },
+    {
+      "path": "data/experiments/agent_native_e40a8707594e420eada8ed74723b8858/result.json",
+      "passed": false,
+      "database": "agent_native_e40a8707594e420eada8ed74723b8858",
+      "directory": "data/experiments/agent_native_e40a8707594e420eada8ed74723b8858",
+      "taskId": "77053e31-d8e2-4efc-bfc7-4541628d1e19",
+      "steps": 9,
+      "summaries": 1,
+      "checks": [
+        "production native observations enter actual local model requests before a real worker restart"
+      ],
+      "errors": [
+        "AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:\n\n  assert(location)\n"
+      ],
+      "failure": "Error: {\"status\":\"needs_review\",\"result\":null,\"error\":null}\n    at <anonymous> (tests/atspi-native-runtime.ts:353:13)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async until (tests/atspi-native-runtime.ts:63:15)\n    at async <anonymous> (tests/atspi-native-runtime.ts:348:3)",
+      "mainBefore": {
+        "tasks": 12,
+        "actions": 58,
+        "attempts": 65
+      },
+      "cloudCalls": 0
+    },
+    {
+      "path": "data/experiments/agent_native_ed24681b5b6748cf8abace3031df9d07/result.json",
+      "passed": false,
+      "database": "agent_native_ed24681b5b6748cf8abace3031df9d07",
+      "directory": "data/experiments/agent_native_ed24681b5b6748cf8abace3031df9d07",
+      "taskId": "98ba788d-20ec-45c5-966e-a0b9b02a2808",
+      "steps": 7,
+      "checks": [
+        "production Task/DBOS/action chain passes native observations and successful native press into actual local model requests"
+      ],
+      "errors": ["TypeError: Cannot read properties of undefined (reading 'find')"],
+      "failure": "Error: {\"status\":\"needs_review\",\"result\":null,\"error\":null}\n    at <anonymous> (tests/atspi-native-runtime.ts:274:13)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async until (tests/atspi-native-runtime.ts:62:15)\n    at async <anonymous> (tests/atspi-native-runtime.ts:269:3)",
+      "mainBefore": {
+        "tasks": 12,
+        "actions": 58,
+        "attempts": 65
+      },
+      "cloudCalls": 0
+    },
+    {
+      "path": "data/experiments/agent_native_35ecfdb9a07349a2ad44f5a5aa41491e/result.json",
+      "passed": true,
+      "database": "agent_native_35ecfdb9a07349a2ad44f5a5aa41491e",
+      "directory": "data/experiments/agent_native_35ecfdb9a07349a2ad44f5a5aa41491e",
+      "taskId": "bb4f2b95-960b-4a1d-955c-6531bf5d8732",
+      "steps": 11,
+      "summaries": 1,
+      "checks": [
+        "production native observations enter actual local model requests before a real worker restart",
+        "real worker restart preserves original receipts; native focus/set_value submit use the original action chain and finish in /tmp",
+        "actual model requests keep native element data and at most two current images"
+      ],
+      "errors": [],
+      "mainBefore": {
+        "tasks": 12,
+        "actions": 58,
+        "attempts": 65
+      },
+      "workerImage": "personal-agent-worker:0.17.0-atspi-candidate",
+      "workstationImage": "personal-agent-workstation:0.6.5",
+      "cloudCalls": 0
+    }
+  ],
+  "runtimeAudit": [
+    {
+      "database": "agent_native_44d96a96cb1d4ec2a867ca71a5cbc91d",
+      "tasks": 1,
+      "actions": 10,
+      "attempts": 12,
+      "unknown": 0,
+      "tasksState": [
+        {
+          "id": "1bce5745-a925-41fd-b999-46220639db02",
+          "status": "completed"
+        }
+      ]
+    },
+    {
+      "database": "agent_native_55d119aa34bc43eba3d573b40c3d9b92",
+      "tasks": 1,
+      "actions": 8,
+      "attempts": 10,
+      "unknown": 1,
+      "tasksState": [
+        {
+          "id": "05d09579-da7d-42dd-a361-d92acc3bf9dd",
+          "status": "needs_review"
+        }
+      ]
+    },
+    {
+      "database": "agent_native_a3d3cb601d4b4b4eaa4401e2838a429f",
+      "tasks": 1,
+      "actions": 8,
+      "attempts": 9,
+      "unknown": 1,
+      "tasksState": [
+        {
+          "id": "6a037bd4-9c3c-4af0-88f4-b97aaf4abc7c",
+          "status": "needs_review"
+        }
+      ]
+    },
+    {
+      "database": "agent_native_a99fd086fc7f4d83a2c7b48c113af0e5",
+      "tasks": 1,
+      "actions": 4,
+      "attempts": 5,
+      "unknown": 0,
+      "tasksState": [
+        {
+          "id": "ced1cbba-24df-4691-908f-46ee3e38b81a",
+          "status": "cancelled"
+        }
+      ]
+    },
+    {
+      "database": "agent_native_e40a8707594e420eada8ed74723b8858",
+      "tasks": 1,
+      "actions": 8,
+      "attempts": 10,
+      "unknown": 1,
+      "tasksState": [
+        {
+          "id": "77053e31-d8e2-4efc-bfc7-4541628d1e19",
+          "status": "needs_review"
+        }
+      ]
+    },
+    {
+      "database": "agent_native_ed24681b5b6748cf8abace3031df9d07",
+      "tasks": 1,
+      "actions": 6,
+      "attempts": 7,
+      "unknown": 1,
+      "tasksState": [
+        {
+          "id": "98ba788d-20ec-45c5-966e-a0b9b02a2808",
+          "status": "needs_review"
+        }
+      ]
+    },
+    {
+      "database": "agent_native_35ecfdb9a07349a2ad44f5a5aa41491e",
+      "tasks": 1,
+      "actions": 10,
+      "attempts": 12,
+      "unknown": 0,
+      "tasksState": [
+        {
+          "id": "bb4f2b95-960b-4a1d-955c-6531bf5d8732",
+          "status": "completed"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "cloudCalls": 0,
+    "localDecisionCallsOnAcceptedRecovery": 11,
+    "localSummariesOnAcceptedRecovery": 1,
+    "localDecisionCallsOnAcceptedCancellation": 5,
+    "nativeContextUnitsLog": "data/experiments/atspi-migration-1793251516845/context-reason-test.log",
+    "previousContextPlusNativeUnitsLog": "data/experiments/atspi-migration-1793251516845/context-native-tests.log",
+    "typecheckLog": "data/experiments/atspi-migration-1793251516845/typecheck-last.log",
+    "guestSyntax": true,
+    "isolatedNextProductionBuildLog": "data/experiments/atspi-migration-1793251516845/application-build.log",
+    "cachedProductionRuntimePackageLog": "data/experiments/atspi-migration-1793251516845/application-package-2.log",
+    "actualPackageImportLog": "data/experiments/atspi-migration-1793251516845/application-import.log",
+    "nativeContextAndSdkUnitsLog": "data/experiments/atspi-migration-1793251516845/native-sdk-schema-test.log",
+    "currentSchemaBoundaryLog": "data/experiments/atspi-migration-1793251516845/schema-boundaries-test.log",
+    "currentWindowResolverLog": "data/experiments/atspi-migration-1793251516845/current-window-resolver-2.log",
+    "officialWebDockerfileBuildLog": "data/experiments/atspi-migration-1793251516845/official-web-build.log",
+    "officialWorkerDockerfileBuildLog": "data/experiments/atspi-migration-1793251516845/official-worker-build.log",
+    "officialWebImportLog": "data/experiments/atspi-migration-1793251516845/official-web-import.log",
+    "officialWebLoginHeaders": "data/experiments/atspi-migration-1793251516845/official-web-login.headers",
+    "officialWebRuntimeLog": "data/experiments/atspi-migration-1793251516845/official-web-runtime.log",
+    "containerToHostRouteLog": "data/experiments/atspi-migration-1793251516845/container-host-route.log",
+    "productionCandidateImages": [
+      "personal-agent-web:0.17.0-atspi-candidate",
+      "personal-agent-worker:0.17.0-atspi-candidate"
+    ],
+    "officialWorkerDockerAccessLog": "data/experiments/atspi-migration-1793251516845/official-worker-docker-access.log",
+    "productionContainerRuntimeTypecheckLog": "data/experiments/atspi-migration-1793251516845/container-runtime-typecheck.log",
+    "foregroundGuidanceFormatLog": "data/experiments/atspi-migration-1793251516845/foreground-guidance-format.log",
+    "finalApplicationWorkerBuildLog": "data/experiments/atspi-migration-1793251516845/official-worker-build-2.log",
+    "finalApplicationWebBuildLog": "data/experiments/atspi-migration-1793251516845/official-web-build-2.log",
+    "finalApplicationImportLog": "data/experiments/atspi-migration-1793251516845/official-current-import.log",
+    "finalApplicationLoginHeaders": "data/experiments/atspi-migration-1793251516845/official-current-login.headers",
+    "finalCleanWorkstationBuildLog": "data/experiments/atspi-migration-1793251516845/clean-build.log",
+    "finalControllerRefreshBuildLog": "data/experiments/atspi-migration-1793251516845/final-source-build.log",
+    "finalCleanImagePackageReport": "data/experiments/atspi-native-package-1793260385478/result.json",
+    "finalCleanNativeReports": {
+      "package": "data/experiments/atspi-native-package-1793260385478/result.json",
+      "scope": "data/experiments/atspi-native-scope-parity-1793260389343/result.json",
+      "actions": "data/experiments/atspi-native-actions-1793260395203/result.json",
+      "tag": "data/experiments/atspi-native-tag-1793260405288/result.json",
+      "longType": "data/experiments/atspi-native-long-type-1793260411676/result.json",
+      "safety": "data/experiments/atspi-native-safety-1793260422051/result.json",
+      "applications": "data/experiments/atspi-native-applications-1793260430536/result.json"
+    },
+    "finalBrowserCompatibilityReport": "data/experiments/pa-browser-startup-9cb89feb/result.json",
+    "finalProductionContainerTask": "data/experiments/agent_native_35ecfdb9a07349a2ad44f5a5aa41491e/result.json",
+    "finalProductionContainerDecisions": 11,
+    "finalProductionContainerSummaries": 1,
+    "finalProductionWorkerEvents": "data/experiments/atspi-migration-1793251516845/final-worker-events.json",
+    "finalReadOnlyDatabaseAudit": "data/experiments/atspi-migration-1793251516845/final-db-audit.json",
+    "finalMainState": "data/experiments/atspi-migration-1793251516845/main-final.json",
+    "finalImageShortIds": {
+      "workstation": "27dfeeb41697",
+      "worker": "154387cefef5",
+      "web": "b9ab423c2df8"
+    }
+  },
+  "mainUnchanged": {
+    "counts": {
+      "tasks": 12,
+      "actions": 58,
+      "attempts": 65,
+      "artifacts": 7,
+      "active": 0
+    },
+    "envBytes": 448,
+    "envMtime": "2026-10-26T15:55:04.877Z",
+    "workstationImage": "personal-agent-workstation:0.6.3",
+    "verifiedAt": "2026-10-29T08:07:08.620Z",
+    "health": {
+      "ready": true,
+      "version": "0.17.0-dev"
+    },
+    "proof": "data/experiments/atspi-migration-1793251516845/main-final.json",
+    "experimentContainersStopped": true
+  },
+  "rootFixes": [
+    "GI Text interface calls disambiguated from Accessible interface getters",
+    "Desktop traversal retains application containers",
+    "Focus refreshes cached native state and polls confirmation",
+    "Inline context request routes to the tag reader",
+    "Native focus/effect/dispatch/reason fields survive model context projection",
+    "Post-action observation inherits prior native scope/depth/node limits",
+    "Foreground value+submit explicitly focuses target field first",
+    "Mutating PID checked against observed native window",
+    "Native state failures are surfaced instead of caught broadly",
+    "Desktop-snapshot targets infer their observed native window",
+    "Inline request metadata, single-current-token semantics, idempotent release and readonly/title checks align with upstream",
+    "Explicit hidden-observation options propagate to semantic searches",
+    "Native keyboard execution timeout scales with input work",
+    "Malformed empty semantic conditions and incompatible submit operations reject at the tool boundary",
+    "Native action-name read failure and missing PID reject before input",
+    "Direct upstream window-ID parsing replaces full enumeration before scoped inputs; list limits and app metadata are explicit",
+    "Model instructions distinguish a background native scope from the active desktop screenshot and require fresh foreground observation for coordinate fallback"
+  ],
+  "preservedFailures": [
+    "Original observe/actions reports retain failure status and their already-passed branches",
+    "Four failed local runtime attempts retain their four unknown records; no retry of any historical paid attempt",
+    "Initial journal fixture lacked root permission for helper fault injection; corrected test only",
+    "Appearance notebook exposed no native Action; completed via explicit existing coordinate fallback, with original failed assumption retained",
+    "Offscreen setup initially constrained by window manager; override-redirect lifecycle sequencing corrected in fixture",
+    "Two Docker build invocations used incorrect local context/file paths; original logs retained",
+    "Action-read-failure test successfully rejected the injected native read failure, then its pure PID check imported the injected entrypoint and failed; original rejected receipt remains, preflight-tail passed independently",
+    "Host bind mounting failed because the Colima daemon cannot see the macOS path; current pure resolver verification copied only the three test/source files into a separate stopped container"
+  ],
+  "pending": [],
+  "limitations": [
+    "Native support depends on application toolkit; no Action interface requires current visual coordinate tools",
+    "Bounded snapshots and model context can omit controls; partial/omitted counts remain explicit",
+    "Screenshots and accessibility are sequential, not atomic; cannot eliminate OS focus races",
+    "No real-model quality A/B or universal-application compatibility claim",
+    "Main preview remains unchanged; deployment requires separate authorization"
+  ],
+  "liveBuild": null,
+  "liveBuilds": [],
+  "requirementAudit": [
+    {
+      "number": 1,
+      "requirement": "window enumeration and pid/window scoping",
+      "accepted": true,
+      "implementation": [
+        "workstation/controller/accessibility.py",
+        "workstation/controller/atspi_core.py"
+      ],
+      "reports": [
+        "data/experiments/atspi-native-package-1793260385478/result.json",
+        "data/experiments/atspi-native-scope-parity-1793260389343/result.json",
+        "data/experiments/atspi-native-edges-1793253261557/result.json",
+        "data/experiments/atspi-native-window-resolution-1793254818075/result.json"
+      ],
+      "additionalEvidence": []
+    },
+    {
+      "number": 2,
+      "requirement": "bounded hierarchy and node properties/actions/path/index",
+      "accepted": true,
+      "implementation": [
+        "workstation/controller/accessibility.py",
+        "workstation/controller/atspi_core.py"
+      ],
+      "reports": [
+        "data/experiments/atspi-native-package-1793260385478/result.json",
+        "data/experiments/atspi-native-scope-parity-1793260389343/result.json",
+        "data/experiments/atspi-native-actions-1793260395203/result.json",
+        "data/experiments/atspi-native-desktop-tree-1793252412559/result.json",
+        "data/experiments/atspi-native-limits-1793253794515/result.json"
+      ],
+      "additionalEvidence": []
+    },
+    {
+      "number": 3,
+      "requirement": "index/path/semantic target resolution and ambiguity",
+      "accepted": true,
+      "implementation": [
+        "workstation/controller/accessibility.py",
+        "workstation/controller/atspi_core.py"
+      ],
+      "reports": [
+        "data/experiments/atspi-native-scope-parity-1793260389343/result.json",
+        "data/experiments/atspi-native-actions-1793260395203/result.json",
+        "data/experiments/atspi-native-safety-1793260422051/result.json",
+        "data/experiments/atspi-native-edges-1793253261557/result.json",
+        "data/experiments/atspi-native-offscreen-1793253704415/result.json"
+      ],
+      "additionalEvidence": []
+    },
+    {
+      "number": 4,
+      "requirement": "native press/focus/set_value",
+      "accepted": true,
+      "implementation": [
+        "workstation/controller/accessibility.py",
+        "workstation/controller/desktop.mjs"
+      ],
+      "reports": [
+        "data/experiments/atspi-native-actions-1793260395203/result.json",
+        "data/experiments/agent_native_35ecfdb9a07349a2ad44f5a5aa41491e/result.json"
+      ],
+      "additionalEvidence": []
+    },
+    {
+      "number": 5,
+      "requirement": "background/auto/foreground dispatch",
+      "accepted": true,
+      "implementation": [
+        "workstation/controller/accessibility.py",
+        "workstation/controller/desktop.mjs"
+      ],
+      "reports": [
+        "data/experiments/atspi-native-actions-1793260395203/result.json",
+        "data/experiments/atspi-native-applications-1793260430536/result.json"
+      ],
+      "additionalEvidence": []
+    },
+    {
+      "number": 6,
+      "requirement": "verified-window keyboard input",
+      "accepted": true,
+      "implementation": [
+        "workstation/controller/accessibility.py",
+        "workstation/controller/desktop.mjs"
+      ],
+      "reports": [
+        "data/experiments/atspi-native-long-type-1793260411676/result.json",
+        "data/experiments/atspi-native-applications-1793260430536/result.json",
+        "data/experiments/agent_native_35ecfdb9a07349a2ad44f5a5aa41491e/result.json"
+      ],
+      "additionalEvidence": []
+    },
+    {
+      "number": 7,
+      "requirement": "focused-text tag context/replace/release where exposed by upstream",
+      "accepted": true,
+      "implementation": [
+        "workstation/controller/accessibility.py",
+        "workstation/controller/atspi_core.py",
+        "workstation/controller/desktop.mjs"
+      ],
+      "reports": [
+        "data/experiments/atspi-native-tag-1793260405288/result.json",
+        "data/experiments/atspi-native-tag-guards-1793253272367/result.json",
+        "data/experiments/atspi-native-tag-parity-1793254289767/result.json"
+      ],
+      "additionalEvidence": []
+    },
+    {
+      "number": 8,
+      "requirement": "original snapshots + model context trimming and image limits",
+      "accepted": true,
+      "implementation": [
+        "lib/agent/context.ts",
+        "lib/agent/native-tools.ts",
+        "workstation/controller/desktop.mjs"
+      ],
+      "reports": [
+        "data/experiments/atspi-native-package-1793260385478/result.json",
+        "data/experiments/agent_native_35ecfdb9a07349a2ad44f5a5aa41491e/result.json"
+      ],
+      "additionalEvidence": [
+        "data/experiments/atspi-migration-1793251516845/native-sdk-schema-test.log"
+      ]
+    },
+    {
+      "number": 9,
+      "requirement": "existing Task/DBOS/action journal/control/takeover/cancellation/unknown-effect semantics",
+      "accepted": true,
+      "implementation": [
+        "worker/actions.ts",
+        "workstation/controller/server.mjs",
+        "workstation/controller/desktop.mjs"
+      ],
+      "reports": [
+        "data/experiments/agent_native_35ecfdb9a07349a2ad44f5a5aa41491e/result.json",
+        "data/experiments/agent_native_a99fd086fc7f4d83a2c7b48c113af0e5/result.json",
+        "data/experiments/atspi-native-journal-1793253378913/result.json",
+        "data/experiments/atspi-native-safety-1793260422051/result.json"
+      ],
+      "additionalEvidence": []
+    },
+    {
+      "number": 10,
+      "requirement": "password/protected-field safety and license attribution",
+      "accepted": true,
+      "implementation": [
+        "workstation/controller/accessibility.py",
+        "workstation/controller/atspi_core.py",
+        "workstation/Dockerfile",
+        "licenses/a0-connector-LICENSE"
+      ],
+      "reports": [
+        "data/experiments/atspi-native-safety-1793260422051/result.json",
+        "data/experiments/atspi-native-tag-guards-1793253272367/result.json",
+        "data/experiments/atspi-native-package-1793260385478/result.json"
+      ],
+      "additionalEvidence": [
+        "licenses/a0-connector-LICENSE",
+        "workstation/controller/a0-connector-LICENSE"
+      ]
+    },
+    {
+      "number": 11,
+      "requirement": "isolated real-GUI and worker/SDK integration; clean image packaging",
+      "accepted": true,
+      "implementation": [
+        "Dockerfile",
+        "workstation/Dockerfile",
+        "tests/atspi-native.ts",
+        "tests/atspi-native-runtime.ts",
+        "tests/browser-startup.ts"
+      ],
+      "reports": [
+        "data/experiments/atspi-native-package-1793260385478/result.json",
+        "data/experiments/atspi-native-scope-parity-1793260389343/result.json",
+        "data/experiments/atspi-native-actions-1793260395203/result.json",
+        "data/experiments/atspi-native-tag-1793260405288/result.json",
+        "data/experiments/atspi-native-long-type-1793260411676/result.json",
+        "data/experiments/atspi-native-safety-1793260422051/result.json",
+        "data/experiments/atspi-native-applications-1793260430536/result.json",
+        "data/experiments/pa-browser-startup-9cb89feb/result.json",
+        "data/experiments/agent_native_35ecfdb9a07349a2ad44f5a5aa41491e/result.json"
+      ],
+      "additionalEvidence": [
+        "data/experiments/atspi-migration-1793251516845/official-current-login.headers",
+        "data/experiments/atspi-migration-1793251516845/official-current-import.log",
+        "data/experiments/atspi-migration-1793251516845/final-worker-events.json",
+        "data/experiments/atspi-migration-1793251516845/final-db-audit.json"
+      ]
+    }
+  ],
+  "acceptedAt": "2026-10-29T08:09:39.527Z",
+  "acceptanceScope": {
+    "upstreamCommit": "3741c8809f1f99b4efee2ed1a24234a98bf896d4",
+    "canonicalInterfaces": [
+      "list_windows",
+      "get_window_state",
+      "ax_snapshot",
+      "element_action",
+      "ax_action",
+      "type",
+      "tag_context",
+      "tag_replace",
+      "tag_release"
+    ],
+    "localTools": 9,
+    "requirementsAccepted": 11,
+    "excluded": [
+      "upstream Wayland Portal/PipeWire transport",
+      "byte-for-byte wire aliases/return JSON compatibility",
+      "universal application accessibility exposure",
+      "real cloud-model quality claims",
+      "main preview deployment"
+    ]
+  },
+  "runtimeTotals": {
+    "tasks": 7,
+    "attempts": 65,
+    "actions": 54,
+    "unknown": 4
+  },
+  "buildHistory": [
+    {
+      "session": 80750,
+      "status": "completed",
+      "log": "data/experiments/atspi-migration-1793251516845/clean-build.log"
+    },
+    {
+      "session": 52368,
+      "status": "completed_current_sources",
+      "log": "data/experiments/atspi-migration-1793251516845/final-source-build.log"
+    },
+    {
+      "session": 16751,
+      "status": "completed_official_application_images",
+      "logs": [
+        "data/experiments/atspi-migration-1793251516845/official-worker-build-2.log",
+        "data/experiments/atspi-migration-1793251516845/official-web-build-2.log"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,27 @@
+{
+  "recordedAt": "2026-10-26T00:43:52.960Z",
+  "images": [
+    {
+      "image": "personal-agent-web:0.17.0-dev",
+      "id": "sha256:fdfeac24fe1483a2d958715070561f0cfe503c2999a5c4f547fb446fd260c2e8",
+      "files": {
+        "worker/artifacts.ts": true,
+        "worker/workflow-execution.ts": true
+      }
+    },
+    {
+      "image": "personal-agent-worker:0.17.0-dev",
+      "id": "sha256:df82548bd24a64e72115d6df9279f586d33023609268ac80d981990d0d027ccf",
+      "files": {
+        "worker/artifacts.ts": true,
+        "worker/workflow-execution.ts": true
+      }
+    }
+  ],
+  "guestChanged": false,
+  "sourceVersion": "0.17.0-dev",
+  "sql": "0018",
+  "workstation": "0.6.2",
+  "logs": "data/experiments/workflow-production-fix",
+  "scope": "Production image builds and byte comparisons of the two runtime fixes; deployment acceptance separate"
+}

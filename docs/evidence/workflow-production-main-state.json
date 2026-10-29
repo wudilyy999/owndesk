@@ -1,0 +1,28 @@
+{
+  "recordedAt": "2026-10-26T00:53:39.615Z",
+  "health": {
+    "ready": true,
+    "version": "0.15.1-dev"
+  },
+  "businessMigrations": 16,
+  "activeTasks": 0,
+  "mainEnvMatchesBeforeProductionFix": true,
+  "processes": "PID COMMAND\n57067 next-server (v16.4.3)      \n57068 /opt/homebrew/Cellar/node@24/24.20.0/bin/node --import tsx worker/main.ts",
+  "dockerContext": "colima",
+  "colimaProfiles": "PROFILE                   STATUS     ARCH       CPUS    MEMORY    DISK      RUNTIME    ADDRESS\ndefault                   Running    aarch64    4       8GiB      100GiB    docker     \npa-linux-1792959408122    Stopped    aarch64    2       4GiB      24GiB",
+  "noMainMigrationOrRestart": true,
+  "originalCompilationAttempts": [
+    {
+      "attempt_no": 1,
+      "status": "unknown",
+      "error": "TimeoutError: The operation was aborted due to timeout",
+      "cost_micros": null
+    },
+    {
+      "attempt_no": 2,
+      "status": "unknown",
+      "error": "TimeoutError: The operation was aborted due to timeout",
+      "cost_micros": null
+    }
+  ]
+}

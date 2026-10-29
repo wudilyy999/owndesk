@@ -1,0 +1,70 @@
+{
+  "recordedAt": "2026-10-27T08:57:10.604Z",
+  "latestReport": "docs/evidence/manuals-live.json",
+  "directory": "data/experiments/manual-live-1793090720908",
+  "source": {
+    "taskId": "4656c7c7-f841-4e85-8ca9-e244e1e50c58",
+    "model": "prior local fixed responses",
+    "guiActions": 4,
+    "repeated": false
+  },
+  "realModel": "openai/gpt-6.1-sol",
+  "newTasks": 3,
+  "realRequests": 22,
+  "taskGuiActions": 17,
+  "newUnknown": 0,
+  "catalogEstimateMicros": 259811,
+  "providerBillReconciled": false,
+  "normalCase": {
+    "taskId": "9b37feb6-b20f-4553-a3ba-9c8d1015cecb",
+    "modelRequests": 6,
+    "guiActions": 4,
+    "manualSelectedByModel": true,
+    "manualIdForced": false,
+    "window": "tmp - Thunar",
+    "screenshotAddress": "/tmp/",
+    "screenshotVisuallyChecked": true,
+    "screenshot": "data/experiments/manual-live-1793090720908/live-desktop.jpg",
+    "allChecksPassed": true
+  },
+  "missingTargetCase": {
+    "taskId": "314bf137-390d-453f-bcc0-c653eb72e4fe",
+    "modelRequests": 15,
+    "guiActions": 13,
+    "passed": false,
+    "modelExplicitlyReportedIncomplete": true,
+    "target": "/home/xiryn/Downloads",
+    "targetExists": false,
+    "originalReport": "data/experiments/manual-live-1793090720908/result-1793091028985.json",
+    "diagnosis": "data/experiments/manual-live-1793090720908/target-diagnosis.json",
+    "preservedScreenshot": "data/experiments/manual-live-1793090720908/first-target-desktop.jpg"
+  },
+  "checks": {
+    "manualUnits": "4/4",
+    "typecheck": "passed",
+    "webScreenshotVisuallyChecked": true,
+    "mainCountsUnchanged": {
+      "tasks": 12,
+      "attempts": 65,
+      "actions": 58,
+      "artifacts": 7,
+      "active": 0
+    },
+    "mainEnvUnchanged": true,
+    "mainPidsUnchanged": [
+      26072,
+      25794
+    ],
+    "mainWebHttp": 307,
+    "isolatedPortsStopped": true,
+    "isolatedContainersStopped": true
+  },
+  "productRuntimeChanges": 0,
+  "mainDeployed": false,
+  "remaining": [
+    "multi-application generalization",
+    "additional real-model samples",
+    "plugin Skill import",
+    "main-preview deployment"
+  ]
+}

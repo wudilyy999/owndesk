@@ -1,0 +1,33 @@
+{
+  "recordedAt": "2026-10-25T11:57:00.064Z",
+  "userAuthorizedMainUpgrade": true,
+  "backup": "data/backups/approved-upgrade-1792929419704",
+  "separateKeys": "data/key-backups/approved-upgrade-1792929419704.env",
+  "fromMigration": "0011",
+  "toMigration": "0015",
+  "targetApplication": "0.15.1-dev",
+  "artifacts": 10,
+  "existingRecords": 5491,
+  "fullF12RollbackBundle": false,
+  "existingImageLimitation": "Original0.8.1 runtime image absent; separate database/config/artifact backup and prior verified clone migration retained",
+  "passed": true,
+  "oldTablesPreserved": 44,
+  "oldRowsPreserved": 5491,
+  "workstationImage": "personal-agent-workstation:0.5.0",
+  "masterKeyAndInstallIdPreserved": true,
+  "configChange": "WORKSTATION_IMAGE only",
+  "servicesStarted": true,
+  "migrationLog": "data/experiments/approved-upgrade-1792929419704.log",
+  "realModelJudgmentEvaluated": false,
+  "health": {
+    "ready": true,
+    "version": "0.15.1-dev"
+  },
+  "webLoginStatus": 200,
+  "approvedByUser": true,
+  "providerConfigurationEncrypted": true,
+  "rawUpgradeEvidence": "data/experiments/approved-upgrade-result.json",
+  "startupMode": "detached local Node preview, no automatic login/start/restart supervision",
+  "startupProcesses": "data/runtime/processes.json",
+  "failedLaunchdRegistration": "EX_CONFIG before Node ran; removed and archived in data/deferred/local-launchd-ex-config-2026-10-25"
+}

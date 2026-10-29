@@ -1,0 +1,14 @@
+{
+  "passed": true,
+  "applicationVersion": "0.6.0-dev",
+  "featureFocus": "Host-verified periodic CSV comparison and conditional notifications",
+  "checks": [
+    "Terminal workflows checked before upgrade, PostgreSQL 16 backup inventory saved; no SQL changes after 0009; production build passed",
+    "Actual owner-authenticated comparison editor renders on mobile/desktop, activates previous-week rule and two CSV paths",
+    "Invalid rule and signed-out access rejected; no live routine was created or executed; this existing owner currently has no real Agent configured",
+    "Real model planning and real Telegram connectivity remain separate from controlled task evaluation"
+  ],
+  "directory": "data/experiments/reports-preview-1792887008766",
+  "recordedAt": "2026-10-25T00:10:09.564Z",
+  "previousPreview": "docs/evidence/preview-routines.json"
+}

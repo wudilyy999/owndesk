@@ -1,0 +1,17 @@
+{
+  "passed": true,
+  "controlledProvider": true,
+  "realModelJudgmentEvaluated": false,
+  "checks": [
+    {
+      "check": "Owner UI: configuration/agent/memory, CSV correction/approval/download; same-thread follow-up edits original guest file, acceptance-response loss + reload preserves draft/idempotency key and reuses the accepted task; ordered transcript, rename/export, persistent task URL, mobile layout, raw HTML/external image blocking and Origin/input guards",
+      "taskId": "c5ceb0f8-182f-49bf-9564-aa9631814ebf",
+      "browser": "151.0.7922.34"
+    },
+    {
+      "check": "Provider key encrypted at rest, local config overrides env, masked settings view; plaintext key absent from task/DBOS records"
+    }
+  ],
+  "directory": "data/experiments/agent_runtime_394ca58c429c4c3ea3ecc627d41c2ab6",
+  "recordedAt": "2026-10-24T21:48:37.939Z"
+}

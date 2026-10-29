@@ -1,0 +1,69 @@
+{
+  "scope": "C0 exploration and repeat trials; not a matched benchmark",
+  "trials": [
+    {
+      "directory": "data/experiments/agent_flow_0aa90b6f9734494891c73cc9b458828c",
+      "taskId": "f7b92acc-3531-4e59-a692-84377d7adc05",
+      "passed": false,
+      "status": "cancelled",
+      "model": "custom/gemini-3.8-flash-high",
+      "modelRequests": 32,
+      "workstationActions": 32,
+      "unpricedRequests": 32,
+      "unknownRequestOutcomes": 0,
+      "supervisorHints": 0,
+      "operatorDesktopInputs": 0,
+      "reason": "Pixel-only instructions did not produce reliable desktop navigation; cancelled between model requests."
+    },
+    {
+      "directory": "data/experiments/agent_flow_619b28e59f9b4a3b8de923a1c854bc9b",
+      "taskId": "4327ffb6-5d35-4efd-ad39-8940a24038fc",
+      "passed": false,
+      "status": "cancelled",
+      "model": "custom/gemini-3.8-flash-high",
+      "modelRequests": 25,
+      "workstationActions": 25,
+      "unpricedRequests": 25,
+      "unknownRequestOutcomes": 0,
+      "supervisorHints": 0,
+      "operatorDesktopInputs": 0,
+      "reason": "Letting the model select its coordinate mode did not resolve navigation; cancelled between model requests."
+    },
+    {
+      "directory": "data/experiments/agent_flow_90d5c576902249bc8bf4d21c11c6a425",
+      "taskId": "a459092e-9f6a-41fb-8af7-a13bfa2ba0a6",
+      "passed": true,
+      "status": "completed",
+      "model": "custom/gemini-3.8-flash-high",
+      "modelRequests": 23,
+      "workstationActions": 22,
+      "unpricedRequests": 23,
+      "unknownRequestOutcomes": 0,
+      "supervisorHints": 0,
+      "operatorDesktopInputs": 0,
+      "reason": "Frozen normalized_1000; unassisted source completed on workstation0.6.0 before absolute-window correction."
+    },
+    {
+      "directory": "data/experiments/agent_flow_f0ea84d801084dfdac418230d35f7a63",
+      "taskId": "2935de0d-e34e-467a-bbdf-0f1135f5428b",
+      "passed": true,
+      "status": "completed",
+      "model": "custom/gemini-3.8-flash-high",
+      "modelRequests": 17,
+      "workstationActions": 16,
+      "unpricedRequests": 17,
+      "unknownRequestOutcomes": 0,
+      "supervisorHints": 0,
+      "operatorDesktopInputs": 0,
+      "reason": "Frozen normalized_1000; unassisted repeat completed on workstation0.6.1 after absolute-window correction."
+    }
+  ],
+  "totalModelRequests": 97,
+  "unpricedRequests": 97,
+  "totalCostMicros": null,
+  "notes": [
+    "There are two successful source tasks; no compiled workflow yet.",
+    "Failed/cancelled trial costs remain in the full-cost record.",
+    "No first-exploration task is counted twice."
+  ]
+}

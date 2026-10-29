@@ -1,0 +1,1 @@
+ALTER TABLE "task_action_attempts" ADD COLUMN "dispatch_started_at" timestamp with time zone;

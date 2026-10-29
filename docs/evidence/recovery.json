@@ -1,0 +1,14 @@
+{
+  "passed": true,
+  "fixtureOnly": true,
+  "checks": [
+    {
+      "check": "G04: real download succeeds before worker receipt; worker SIGKILL + replay adopts receipt with one download and one dispatch"
+    },
+    {
+      "check": "G04: POST commits without reply, worker and controller die; recovery requests review without replaying the submit"
+    }
+  ],
+  "recordedAt": "2026-10-24T20:00:01.974Z",
+  "directory": "data/experiments/agent_control_171c276d9e514e4c8320414996247968"
+}

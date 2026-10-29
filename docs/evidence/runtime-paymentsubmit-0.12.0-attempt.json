@@ -1,0 +1,54 @@
+{
+  "passed": false,
+  "controlledProvider": true,
+  "realModelJudgmentEvaluated": false,
+  "applicationVersion": "0.12.0-dev",
+  "guestProtocolVersion": 5,
+  "workstationImage": "personal-agent-workstation:0.5.0",
+  "migration": "0012",
+  "controlledWebsite": true,
+  "paymentSubmissionControlledEvaluated": false,
+  "paymentTasksEvaluated": 0,
+  "realPaymentEvaluated": false,
+  "independentSettlementVerified": false,
+  "checks": [
+    {
+      "check": "Actual old guest4 image with a new container label is rejected by its real health; no task/model call or secret release",
+      "agentId": "o5JYC8cRLYGb"
+    },
+    {
+      "check": "Card preparation, fresh observation, separate authenticated final UI approval, exactly one matched fixture submission and separately preserved page evidence; deleted item does not require another decrypt; API gates/idempotence/known host receipt and cross-action reuse rejection",
+      "taskId": "153a7de1-62dc-421d-8c7f-3ab35861d924"
+    },
+    {
+      "check": "Final decline after preparation never submits; foreign-task preparation/result references rejected",
+      "taskId": "1bd8b3d4-efcb-4cd5-9093-a29fa82fc2ba"
+    },
+    {
+      "check": "Cancel at final approval actually stops/removes guest; no payment dispatch",
+      "taskId": "78cf3e8a-c75e-409f-af7f-4777aece6395"
+    },
+    {
+      "check": "Changed amount after final snapshot is rejected by independent pre-dispatch read; zero dispatch/click",
+      "taskId": "017ba1f2-d39e-4404-96bd-6f7d8fee233d"
+    },
+    {
+      "check": "Changed button after final snapshot is rejected by independent pre-dispatch read; zero dispatch/click",
+      "taskId": "7b334ac3-77b7-4c71-b986-3ba8ae5b3b78"
+    },
+    {
+      "check": "Expired approval rejects; a real slow DOM read then crosses a current grant deadline and the final current-clock check refuses dispatch",
+      "taskId": "f9d8ca56-6b12-42d9-81c7-e921de0daf03"
+    },
+    {
+      "check": "Final approval wait survives SIGKILL without new model request; old epoch approval rejected and explicit decline never clicks",
+      "taskId": "89029882-d556-41af-a858-a7b1a208d6ed"
+    },
+    {
+      "check": "Actual effect and known guest receipt survive SIGKILL before host commit; cached receipt adopted without another approval/dispatch/click",
+      "taskId": "92687ab3-a39e-45cf-bec0-3d858782217e"
+    }
+  ],
+  "directory": "data/experiments/agent_runtime_eb7f34102dd044769f3e604cf0b03dc9",
+  "recordedAt": "2026-10-25T09:03:16.122Z"
+}

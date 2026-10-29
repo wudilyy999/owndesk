@@ -1,0 +1,115 @@
+{
+  "recordedAt": "2026-10-25T12:09:07.493190+00:00",
+  "scope": "B1-B5 controlled single CUA production flow; B6 still open",
+  "applicationVersion": "0.15.1-dev",
+  "migration": "0015",
+  "businessMigrations": 16,
+  "workstationVersion": "0.5.0",
+  "guestProtocolVersion": 5,
+  "controlledProductionPassed": true,
+  "basicDeliverableReady": false,
+  "productObjectiveComplete": false,
+  "productionEvidence": "basic-cua-production.json",
+  "actualTasks": 2,
+  "completed": 1,
+  "cancelled": 1,
+  "unitChecks": 2,
+  "unitLog": "data/experiments/basic-cua-unit.log",
+  "typecheckPassed": true,
+  "typecheckLog": "data/experiments/basic-cua-test-fix-typecheck.log",
+  "productionBuildPassed": true,
+  "buildLog": "data/experiments/basic-cua-production-build.log",
+  "images": {
+    "worker": "a319cc5d190a",
+    "web": "bb761df90c86",
+    "workstation": "24fd2a5471bd"
+  },
+  "runtimeMetadata": "data/experiments/basic-cua-runtime-metadata.json",
+  "candidateMetadataFilesByteMatched": 4,
+  "screenshotsVisuallyInspected": true,
+  "screenshotScope": "visible shared Chromium login and390px completed page; no overflow",
+  "unfinishedTeamWorkArchived": "data/deferred/squad-0.16-2026-10-25",
+  "migration0016Applied": false,
+  "reused": "existing0.15 runtime and production Compose/HTTPS/desktop/handoff/download test; no new execution framework/dependency",
+  "firstFailedAttempt": "basic-cua-production-first-attempt.json",
+  "firstFailureExplanation": "obsolete test tried to close an already unmounted modal; actual1Task completed. Raw early report erroneously preset expected2/1/1 counts; corrected test tracks actual observed admissions/terminal states. Do not use early counters as task evidence.",
+  "checksNotRerun": [
+    "unrelated chat/delegation/payment suites",
+    "known-failing ordinary-DNS deployment without changed prerequisites"
+  ],
+  "controlledProvider": true,
+  "realModelJudgmentEvaluated": true,
+  "ordinaryPublicDnsEvaluated": false,
+  "actualCloudProviderEvaluated": false,
+  "fullDeploymentPassed": false,
+  "fullDeploymentFailurePreserved": "deployment-private-attempt.json",
+  "dedicatedVmStoppedAndDataPreserved": true,
+  "main": {
+    "recordedAt": "2026-10-25T12:06:42.879Z",
+    "health": {
+      "ready": true,
+      "version": "0.15.1-dev"
+    },
+    "webLoginStatus": 200,
+    "businessMigrations": 16,
+    "workstationImage": "personal-agent-workstation:0.5.0",
+    "defaultModel": "openai/gpt-6.1-sol",
+    "agent": {
+      "id": "7oppZu1_Bot6",
+      "name": "Personal Assistant",
+      "model": null
+    },
+    "mainTaskStates": [
+      {
+        "status": "completed",
+        "count": 7
+      }
+    ],
+    "liveTasks": 0,
+    "encryptedProviderSettings": 2,
+    "taskAndFrameworkTablesScanned": 44,
+    "plaintextCredentialAbsentFromDatabaseJournalsAndRuntimeLogs": true,
+    "localGuestUsesLinuxNetworkGuard": false,
+    "realModelAttempts": [
+      {
+        "id": "8019eee0-5aeb-4d29-9651-66a0ee78e180",
+        "model": "openai/gpt-6.1-sol",
+        "attempts": 8,
+        "estimated_cost_micros": "35439",
+        "unpriced": 0,
+        "not_succeeded": 0
+      },
+      {
+        "id": "ef518688-00d8-4999-a83c-b18590277194",
+        "model": "custom/gemini-3.8-flash-high",
+        "attempts": 9,
+        "estimated_cost_micros": null,
+        "unpriced": 9,
+        "not_succeeded": 0
+      }
+    ]
+  },
+  "mainServicesChanged": true,
+  "newMigrationsAppliedToMain": true,
+  "pending": [
+    "guarded Linux ordinary DNS and actual VPS/ACME",
+    "long-running capacity and operations",
+    "matched Xiryn comparison and full retained product scope; teams remain deferred"
+  ],
+  "upgradeRehearsal": {
+    "evidence": "basic-cua-upgrade-rehearsal.json",
+    "passed": true,
+    "oldTablesCompared": 44,
+    "oldRowsCompared": 5491,
+    "artifactFiles": 10,
+    "sourceMigrationUnchanged": "0011",
+    "mainPreviewStarted": false,
+    "fullF12Snapshot": false
+  },
+  "localSingleAgentDeliverableReady": true,
+  "realModelEvidence": "real-models.json",
+  "approvedLocalUpgrade": "approved-local-upgrade.json",
+  "blockingInputsResolved": true,
+  "B6LocalRealModelsAndPublicBrowsing": true,
+  "B6GuardedLinuxCloudNetworkVerified": false
+}

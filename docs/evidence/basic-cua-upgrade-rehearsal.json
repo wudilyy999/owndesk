@@ -1,0 +1,28 @@
+{
+  "passed": true,
+  "recordedAt": "2026-10-25T11:22:22.894Z",
+  "scope": "Stopped local development installation: private data/config/artifact backup and restored-copy SQL0011→0015 rehearsal; not main upgrade or completeF12 rollback",
+  "directory": "data/experiments/upgrade-rehearsal-1792927341220",
+  "backup": "data/backups/pre-basic-cua-1792927341220",
+  "separateKeysFile": "data/key-backups/pre-basic-cua-1792927341220.env",
+  "applicationVersion": "0.15.1-dev",
+  "fromMigration": "0011",
+  "toMigration": "0015",
+  "stage": "complete",
+  "comparedTables": 44,
+  "comparedRows": 5491,
+  "artifactFiles": 10,
+  "observations": [
+    "Full business/authentication/DBOS/Drizzle records restored identically before migration",
+    "0012—0015 applied only to restored clone; existing public/authentication/DBOS row values unchanged",
+    "All historical task segment snapshots backfilled from their task configuration; future delegation rosters default empty",
+    "Source remains migration0011, offline preview unchanged; artifact/config bytes identical"
+  ],
+  "sourceDatabaseModified": false,
+  "mainPreviewStarted": false,
+  "migration0016Applied": false,
+  "cloneDatabaseRemoved": true,
+  "failureCloneRetained": false,
+  "realModelJudgmentEvaluated": false,
+  "fullF12Snapshot": false
+}

@@ -1,0 +1,139 @@
+{
+  "passed": true,
+  "controlledProvider": true,
+  "realModelJudgmentEvaluated": false,
+  "applicationVersion": "0.12.0-dev",
+  "guestProtocolVersion": 5,
+  "workstationImage": "personal-agent-workstation:0.5.0",
+  "controlledWebsite": true,
+  "paymentPreparationEvaluated": true,
+  "paymentTasksEvaluated": 15,
+  "paymentSubmissionEvaluated": false,
+  "realPaymentEvaluated": false,
+  "checks": [
+    {
+      "check": "Actual old guest4 image with a new container label is rejected by its real health; no task/model call or secret release",
+      "agentId": "NFHGtzxrkceh"
+    },
+    {
+      "check": "Card: actual mobile/desktop owner choice plus separate six-field approval; authenticated/Origin/version/offered-reference gates; generic/forged approval rejected; one release, no submit; new-action reuse rejected while known receipt survives item deletion",
+      "taskId": "5c46e391-af49-4ba4-916b-7e97581b4168",
+      "state": {
+        "mode": "normal",
+        "events": [
+          {
+            "field": "number",
+            "matched": true,
+            "masked": true
+          },
+          {
+            "field": "expiry",
+            "matched": true,
+            "masked": true
+          },
+          {
+            "field": "expiry_month",
+            "matched": true,
+            "masked": true
+          },
+          {
+            "field": "expiry_year",
+            "matched": true,
+            "masked": true
+          },
+          {
+            "field": "expiry_year_short",
+            "matched": true,
+            "masked": true
+          },
+          {
+            "field": "name",
+            "matched": true,
+            "masked": true
+          }
+        ],
+        "changed": false,
+        "submissions": 0,
+        "signedIn": false,
+        "merchant": "Fixture Store",
+        "amount": "USD 12.00",
+        "manualActions": 0,
+        "slowReady": false,
+        "inspectionStartedAt": null,
+        "inspectionFinishedAt": null,
+        "buttonLabel": "Pay USD 12.00",
+        "paymentMatches": false,
+        "receipt": null
+      }
+    },
+    {
+      "check": "pay_upi: selected exact-origin method actually filled once; temporary card uses secure form, reference-only wakeup and ciphertext cleanup; no automatic submit",
+      "taskId": "d4be5e23-cf7e-4be8-8c02-38c4cb2e3c92"
+    },
+    {
+      "check": "pay_provision: selected exact-origin method actually filled once; temporary card uses secure form, reference-only wakeup and ciphertext cleanup; no automatic submit",
+      "taskId": "f2992334-f76c-431b-9698-93522036b771"
+    },
+    {
+      "check": "Decline: immutable explicit decision; no secret release, fill or submit",
+      "taskId": "f7fb19b4-5c74-4219-a84d-c3050ba7f4df"
+    },
+    {
+      "check": "Cancel while choosing payment method: actual workstation stopped/removed before terminal task; no sensitive dispatch",
+      "taskId": "22e97ba3-3616-4e4d-925d-6cab9615ef12"
+    },
+    {
+      "check": "mismatch: independent source/context/version/expiry rejection; no release, input, submit or automatic regeneration",
+      "taskId": "9773a290-e19e-4aac-b623-1e39de001bbd"
+    },
+    {
+      "check": "amount_changed: independent source/context/version/expiry rejection; no release, input, submit or automatic regeneration",
+      "taskId": "bb716dd3-a586-45e1-b85f-5dcdba5ba3f5"
+    },
+    {
+      "check": "release_changed: independent source/context/version/expiry rejection; no release, input, submit or automatic regeneration",
+      "taskId": "008f50b1-7073-4f97-94d3-93d1c4eb06a9"
+    },
+    {
+      "check": "revision: independent source/context/version/expiry rejection; no release, input, submit or automatic regeneration",
+      "taskId": "6f4edce3-001b-4a11-88d7-74021febc10c"
+    },
+    {
+      "check": "expired: independent source/context/version/expiry rejection; no release, input, submit or automatic regeneration",
+      "taskId": "b4e82597-3a58-4626-91e9-441336b260e1"
+    },
+    {
+      "check": "cross_task: independent source/context/version/expiry rejection; no release, input, submit or automatic regeneration",
+      "taskId": "e8f8b277-2945-40ee-8cf6-05ffb1a55c2f"
+    },
+    {
+      "check": "Amount changes synchronously after first PAN input: guest rechecks approved text before each later field; partial review stops remaining fields and never submits/retypes",
+      "taskId": "caabe4d7-035f-4b1a-8209-3c01cad8a201"
+    },
+    {
+      "check": "Takeover choice, real control request and DBOS wakeup roll back together on injected failure; retry creates one handoff; worker SIGKILL preserves human wait; actual desktop keyboard performs a labelled manual simulation then handback, no vault release",
+      "taskId": "c638b538-2953-4d3d-92ce-004743d82510",
+      "manualSimulatedSubmissions": 1
+    },
+    {
+      "check": "Payment-choice wait survives worker SIGKILL without a new model bill; old epoch approval rejected, explicit decline/new observation/new request permits one fill",
+      "taskId": "5e5cc108-d457-4dd1-bdaa-210ee410bbec"
+    },
+    {
+      "check": "Sensitive payment fill effect plus lost receipt/worker SIGKILL remains unknown, with one release/consumption; continue does not decrypt/fill/submit again",
+      "taskId": "05bcfacc-b561-461f-a166-d36956b1a608"
+    },
+    {
+      "check": "Fifteen actual payment-preparation tasks (14 complete,1 actual cancel); full PAN/holder/UPI samples absent from public/DBOS/model/guest/worker/Web records; expiry remains intentionally disclosed metadata; no actual payments or automatic payment submissions evaluated",
+      "taskCount": 15
+    },
+    {
+      "check": "Provider key encrypted at rest, local config overrides env, masked settings view; plaintext key absent from task/DBOS records"
+    },
+    {
+      "check": "Completed Web/worker logs, actual guest journals/controller logs and model requests contain no sample secret values; website inputs are independently counted and matched"
+    }
+  ],
+  "directory": "data/experiments/agent_runtime_f9620a9b39e646759df4098ef534f0e4",
+  "recordedAt": "2026-10-25T09:09:05.341Z"
+}

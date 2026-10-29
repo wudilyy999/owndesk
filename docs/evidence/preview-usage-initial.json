@@ -1,0 +1,14 @@
+{
+  "passed": true,
+  "applicationVersion": "0.5.0-dev",
+  "featureFocus": "Request-level usage and monthly admission",
+  "checks": [
+    "Old workflows drained, PostgreSQL 16 backup archive inventory parsed, migration 0008 applied, TypeScript and production build passed",
+    "Production owner usage route/API and actual empty mobile UI render; task usage projects attempt-level unknown counts",
+    "Unauthenticated/signed-out/foreign-Origin/invalid monetary and pagination inputs rejected",
+    "Accessible exhausted-budget red warning rendered with intercepted fixture response; live owner budget, costs and pricing unchanged",
+    "Controlled usage and model-recovery checks remain separate from real provider/model evaluation"
+  ],
+  "directory": "data/experiments/usage-preview-1792883545422",
+  "recordedAt": "2026-10-24T23:12:26.706Z"
+}

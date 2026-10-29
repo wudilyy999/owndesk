@@ -1,0 +1,10 @@
+{
+  "passed": true,
+  "recordedAt": "2026-10-25T09:57:01.115Z",
+  "migration": "0013",
+  "populatedOldSegments": 1,
+  "backfilledSnapshotExact": true,
+  "notNullEnforced": true,
+  "scope": "isolated PostgreSQL database with the two relevant pre-migration table shapes; migration SQL executed unchanged, not a full upgrade/restore rehearsal",
+  "mainChanged": false
+}

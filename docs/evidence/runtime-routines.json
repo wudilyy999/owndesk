@@ -1,0 +1,32 @@
+{
+  "passed": true,
+  "controlledProvider": true,
+  "realModelJudgmentEvaluated": false,
+  "checks": [
+    {
+      "check": "Actual PostgreSQL wall-clock recurrence: Taipei, weekdays/weekly strict boundary, New York DST gap forward and fold later exactly once; invalid calendar dates rejected"
+    },
+    {
+      "check": "Concurrent due scans create one latest catch-up plus visible coalesced skipped range; edits version future plans, reject stale edits and preserve accepted prompt/timezone/date/contract snapshots across a 169-hour DST week"
+    },
+    {
+      "check": "Explicit skip policy records overdue work; five-hour recurrence retains its persisted absolute-time anchor without restarting from current time"
+    },
+    {
+      "check": "Real worker SIGKILL after atomic task enqueue but before routine task receipt: restart reuses the exact task/source key and frozen payload; duplicate manual acceptance returns the same run",
+      "taskId": "38c01850-e523-4012-97c9-806147b22518"
+    },
+    {
+      "check": "Actual DBOS timed trigger while the same workstation is busy: once plan enqueues independently, disables future scheduling, survives plan deletion with history, and runs after prior task releases the workstation",
+      "taskId": "4d912c99-c13b-4d8a-a958-1ed3b3e471f0"
+    },
+    {
+      "check": "Actual owner-authenticated mobile/desktop routines UI: create disabled plan, versioned edit, manual durable acceptance and task history; cross-origin and invalid-date API rejection; browser timezone does not define plan timezone"
+    },
+    {
+      "check": "Provider key encrypted at rest, local config overrides env, masked settings view; plaintext key absent from task/DBOS records"
+    }
+  ],
+  "directory": "data/experiments/agent_runtime_d0dac0aff35f4ae7957b7aaecba29ed7",
+  "recordedAt": "2026-10-24T23:46:08.464Z"
+}

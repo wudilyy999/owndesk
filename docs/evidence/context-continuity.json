@@ -1,0 +1,136 @@
+{
+  "date": "2026-10-29",
+  "status": "development_fix_verified_main_preview_unchanged",
+  "accepted": true,
+  "objective": "保持原任务目标和当前状态，修复压缩后重复核对与进度丢失；请求上限属于正常暂停",
+  "implementation": ["lib/agent/context.ts"],
+  "testCode": ["tests/context.test.ts", "tests/gui-complex-live.ts"],
+  "sourceEvidence": "data/experiments/gui-complex-1793263334969/verified-results.json",
+  "offlineProjectionComparison": "data/experiments/gui-complex-1793263334969/compaction-projection-comparison.json",
+  "requirements": [
+    {
+      "requirement": "Treat request limits as normal pauses, separate them from loss-of-progress defects",
+      "evidence": [
+        "data/experiments/gui-complex-1793263334969/result.json",
+        "data/experiments/gui-complex-1793263334969/native-tail-result.json"
+      ],
+      "proved": "Original budget pauses remain unchanged; 80-budget goal state satisfied but completion not reached.",
+      "accepted": true
+    },
+    {
+      "requirement": "Diagnose and repair severe repeated checking rather than raising limits alone",
+      "evidence": [
+        "data/experiments/gui-complex-1793263334969/native-delivery-80-trace.json",
+        "data/experiments/gui-complex-1793263334969/compaction-input-before-fix.json",
+        "data/experiments/gui-complex-1793263334969/compaction-input-after-fix.json",
+        "data/experiments/gui-complex-1793263334969/compaction-projection-comparison.json"
+      ],
+      "proved": "Current task was omitted and nested SDK projection erased observed state. Content-aware summarizer source repairs both paths; final59 requests is below old80 limit.",
+      "accepted": true
+    },
+    {
+      "requirement": "Preserve current goal, user corrections, observed progress and next unfinished steps across compaction",
+      "evidence": [
+        "lib/agent/context.ts",
+        "tests/context.test.ts",
+        "data/experiments/gui-complex-1793263334969/continuity-recovery-unit.log",
+        "data/experiments/gui-complex-1793263334969/continuity-semantic-units.log"
+      ],
+      "proved": "Pinned goal remains verbatim, summary receives currentTask and semantic observations, legacy checkpoint reuses prior summary with fresh observed values.",
+      "accepted": true
+    },
+    {
+      "requirement": "Verify actual GUI task proceeds after multiple real compactions and reaches its original result",
+      "evidence": [
+        "data/experiments/gui-complex-1793263334969/continuity-result.json",
+        "data/experiments/gui-complex-1793263334969/native-continuity-trace.json",
+        "data/experiments/gui-complex-1793263334969/verified-results.json",
+        "data/experiments/gui-complex-1793263334969/preserved-files-readonly.json",
+        "data/experiments/gui-complex-1793263334969/native-continuity-last-observation.jpg"
+      ],
+      "proved": "13 actual cloud summaries,45 GUI records,complete_task and independent exact files/font/final-window checks passed.",
+      "accepted": true
+    },
+    {
+      "requirement": "Preserve original evidence, control safety, image limits, memory behavior and main installation",
+      "evidence": [
+        "data/experiments/gui-complex-1793263334969/verified-results.json",
+        "data/experiments/gui-complex-1793263334969/continuity-units.log",
+        "data/experiments/gui-complex-1793263334969/continuity-recovery-unit.log",
+        "data/experiments/gui-complex-1793263334969/continuity-final-typecheck.log"
+      ],
+      "proved": "Original receipts and failed files unchanged; unknown effects remain0; two-image and existing control logic unchanged; main counts/PIDs/env preserved; experiment processes stopped.",
+      "accepted": true
+    }
+  ],
+  "acceptedRealTask": {
+    "taskId": "f9085c12-4d5b-4d11-81ef-f3f1386b51bf",
+    "model": "openai/gpt-6.1-terra",
+    "attempts": 59,
+    "summaryCalls": 13,
+    "decisions": 46,
+    "guiActionRecords": 45,
+    "elapsedSeconds": 710,
+    "oracle": {
+      "exactFiles": true,
+      "font": true,
+      "finalWindow": true,
+      "compactionContinuity": true
+    },
+    "status": "completed",
+    "effectiveMaxSteps": 200,
+    "screenshot": "data/experiments/gui-complex-1793263334969/native-continuity-last-observation.jpg"
+  },
+  "historicalBudgetPauses": [
+    {
+      "taskId": "f5e6fc26-08ac-4e8d-8d08-f304fcd6e37d",
+      "budget": 40,
+      "goalSatisfied": false,
+      "statusAtEvaluation": "needs_review",
+      "finalStatus": "cancelled"
+    },
+    {
+      "taskId": "de87d145-179b-48d9-8f51-62c3b5aa5b60",
+      "budget": 80,
+      "goalSatisfied": true,
+      "statusAtEvaluation": "needs_review",
+      "finalStatus": "cancelled"
+    }
+  ],
+  "overall": {
+    "tasks": 5,
+    "attempts": 196,
+    "summaryCalls": 40,
+    "actionRecords": 153,
+    "unknownAttempts": 0,
+    "unpricedAttempts": 196,
+    "cost": "unknown; no configured Terra price"
+  },
+  "mainUnchanged": {
+    "counts": {
+      "tasks": 12,
+      "attempts": 65,
+      "actions": 58,
+      "artifacts": 7,
+      "active": 0
+    },
+    "health": {
+      "ready": true,
+      "version": "0.17.0-dev"
+    },
+    "pids": "  PID STARTED                      COMM\n25794 Mon Oct 26 23:55:04 2026     /opt/homebrew/Cellar/node@24/24.20.0/bin/node\n26072 Mon Oct 26 23:56:04 2026     next-server (v16.4.3)\n",
+    "envBytes": 448,
+    "envMtime": "2026-10-26T15:55:04.877Z",
+    "workstationImage": "personal-agent-workstation:0.6.3"
+  },
+  "originalReceiptsUnchanged": true,
+  "originalFailedFilesystemUnchanged": true,
+  "experimentContainersStopped": true,
+  "limitations": [
+    "Single real-model native task regression; not statistical accuracy or competitor ranking",
+    "Agent used visual/key tools with AT-SPI observations; no native action tool selection in this run",
+    "Main preview not upgraded; current worker source change needs explicit paired deployment",
+    "Summary count and token-estimation policy unchanged; no per-turn model summary introduced",
+    "Auxiliary historical scrot PNGs were stale exports, retained and superseded for evidence by original action-receipt images"
+  ]
+}

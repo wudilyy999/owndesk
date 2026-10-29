@@ -1,0 +1,15 @@
+{
+  "passed": true,
+  "applicationVersion": "0.5.0-dev",
+  "featureFocus": "Durable routines and explicit time zones",
+  "checks": [
+    "Migration 0009 applied after terminal-task check and PostgreSQL 16 backup inventory; production build passed",
+    "Production owner-only routines page/API renders actual empty mobile/desktop state; unauthenticated, signed-out, foreign-Origin and invalid inputs rejected",
+    "en-US/New York browser retains owner timezone as explicit plan default",
+    "No live routines, costs or budget were changed; controlled model/routine tests are separate from actual model evaluation",
+    "Initial harness used 127.0.0.1 against configured localhost Origin and was correctly rejected; successful preview uses configured APP_URL without weakening authentication"
+  ],
+  "directory": "data/experiments/routines-preview-1792885692169",
+  "recordedAt": "2026-10-24T23:48:12.988Z",
+  "previousPreview": "docs/evidence/preview-usage.json"
+}

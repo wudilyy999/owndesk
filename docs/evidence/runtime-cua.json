@@ -1,0 +1,18 @@
+{
+  "passed": true,
+  "applicationVersion": "0.17.0-dev",
+  "migration": "0017",
+  "controlledProvider": true,
+  "realModelJudgmentEvaluated": false,
+  "checks": [
+    {
+      "check": "CUA model loop: DOM login preparation -> durable human takeover -> real desktop keyboard login -> handback note/fresh screenshot -> fresh DOM download -> checked artifact; one browser and one download; tool-image batch ordering and worker restart during human wait",
+      "taskId": "18e4e759-7469-4e80-90eb-43f8ec3bb96f"
+    },
+    {
+      "check": "Provider key encrypted at rest, local config overrides env, masked settings view; plaintext key absent from task/DBOS records"
+    }
+  ],
+  "directory": "data/experiments/agent_runtime_b05a9b5c747b4d35a9128057660a3cc5",
+  "recordedAt": "2026-10-25T18:53:15.654Z"
+}

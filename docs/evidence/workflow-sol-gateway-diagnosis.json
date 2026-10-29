@@ -1,0 +1,67 @@
+{
+  "recordedAt": "2026-10-26T01:54:17.988285+00:00",
+  "taskId": "f9cb0de4-5ed7-471c-91c7-bc9e978614fa",
+  "passed": true,
+  "gatewayProcess": "sub2api PID7363 listening on8917",
+  "gatewayLog": "<home>/code/logs/sub2api-launchd.log",
+  "failedGatewayRequestIds": [
+    "58332bae-4fe8-48a8-adf6-47b189845831",
+    "9bd4f5e1-5d4b-485f-b422-c14ed4535448"
+  ],
+  "gatewaySecurityDecision": "allow for both failed requests",
+  "upstreamStatus": 404,
+  "clientStatus": 502,
+  "upstreamError": "Item with id 'rs_…' not found. Items are not persisted when store is false.",
+  "sameReasoningItemOnBothFailures": true,
+  "itemMatchesOriginalSavedAssistantResponse": true,
+  "rootCause": "Installed SDK emitted a remote item_reference for the saved reasoning item, while the actual upstream did not retain that item. Gateway wrapped upstream404 as generic502. No local security block was recorded.",
+  "offlineEvidence": "docs/evidence/workflow-sol-serialization.json",
+  "proposedFix": "Explicit OpenAI Responses store:false and resend complete history with encrypted reasoning; offline payload has no remote item_reference and retains paired tool calls/results.",
+  "runtimeCodeChanged": false,
+  "liveAcceptancePassed": false,
+  "newModelRequests": 0,
+  "unknownCostsUnchanged": true,
+  "scope": "Read-only targeted gateway log inspection and offline SDK serialization. Does not assert that prior Gemini timeouts share this cause; production services/configuration/Task ledger remain unchanged.",
+  "logExcerpt": [
+    {
+      "line": 5326823,
+      "text": "2026-10-26T09:41:27.374+0800\tINFO\thandler/security_audit_helper.go:133\tsecurity_audit.gateway_check_start\t{\"service\": \"sub2api\", \"env\": \"production\", \"component\": \"http\", \"request_id\": \"58332bae-4fe8-48a8-adf6-47b189845831\", \"client_request_id\": \"\", \"path\": \"/v1/responses\", \"method\": \"POST\", \"client_request_id\": \"b3d84957-7489-41f8-b8ff-d766af08ec17\", \"component\": \"handler.openai_gateway.responses\", \"user_id\": 1, \"api_key_id\": 3, \"group_id\": 3, \"model\": \"gpt-6.1-sol\", \"stream\": false, \"request_id\": \"58332bae-4fe8-48a8-adf6-47b189845831\", \"user_id\": 1, \"api_key_id\": 3, \"group_id\": 3, \"endpoint\": \"/v1/responses\", \"provider\": \"openai\", \"protocol\": \"openai_responses\", \"model\": \"gpt-6.1-sol\", \"stage\": \"http\", \"body_bytes\": 19500, \"cached\": false}"
+    },
+    {
+      "line": 5326825,
+      "text": "2026-10-26T09:41:27.374+0800\tINFO\thandler/security_audit_helper.go:145\tsecurity_audit.gateway_check_done\t{\"service\": \"sub2api\", \"env\": \"production\", \"component\": \"http\", \"request_id\": \"58332bae-4fe8-48a8-adf6-47b189845831\", \"client_request_id\": \"\", \"path\": \"/v1/responses\", \"method\": \"POST\", \"client_request_id\": \"b3d84957-7489-41f8-b8ff-d766af08ec17\", \"component\": \"handler.openai_gateway.responses\", \"user_id\": 1, \"api_key_id\": 3, \"group_id\": 3, \"model\": \"gpt-6.1-sol\", \"stream\": false, \"request_id\": \"58332bae-4fe8-48a8-adf6-47b189845831\", \"decision\": \"allow\", \"error_code\": \"\", \"allow_next_stage\": true, \"stage\": \"http\", \"cached\": false}"
+    },
+    {
+      "line": 5326831,
+      "text": "2026-10-26T09:41:29.903+0800\tERROR\tservice/openai_gateway_upstream_errors.go:579\tOpenAI upstream error 404 (account=1 platform=openai type=apikey): {\"error\":{\"message\":\"Item with id 'rs_0d3378625d8bc172016adeafac535887d0ab5f174b7fd96f8c' not found. Items are not persisted when `store` is set to false. Try again with `store` set to true, or remove this item from your input.\",\"type\":\"invalid_request_error\",\"param\":\"input\",\"code\":null}}\t{\"service\": \"sub2api\", \"env\": \"production\", \"component\": \"service.openai_gateway\", \"legacy_printf\": true}"
+    },
+    {
+      "line": 5326921,
+      "text": "2026-10-26T09:41:29.908+0800\tWARN\thandler/openai_gateway_handler.go:981\topenai.forward_failed\t{\"service\": \"sub2api\", \"env\": \"production\", \"component\": \"http\", \"request_id\": \"58332bae-4fe8-48a8-adf6-47b189845831\", \"client_request_id\": \"\", \"path\": \"/v1/responses\", \"method\": \"POST\", \"client_request_id\": \"b3d84957-7489-41f8-b8ff-d766af08ec17\", \"component\": \"handler.openai_gateway.responses\", \"user_id\": 1, \"api_key_id\": 3, \"group_id\": 3, \"model\": \"gpt-6.1-sol\", \"stream\": false, \"account_id\": 1, \"fallback_error_response_written\": false, \"upstream_error_response_already_written\": false, \"error\": \"upstream error: 404 message=Item with id 'rs_0d3378625d8bc172016adeafac535887d0ab5f174b7fd96f8c' not found. Items are not persisted when `store` is set to false. Try again with `store` set to true, or remove this item from your input.\"}"
+    },
+    {
+      "line": 5326922,
+      "text": "2026-10-26T09:41:29.909+0800\tINFO\tmiddleware/logger.go:82\thttp request completed\t{\"service\": \"sub2api\", \"env\": \"production\", \"component\": \"http\", \"request_id\": \"58332bae-4fe8-48a8-adf6-47b189845831\", \"client_request_id\": \"\", \"path\": \"/v1/responses\", \"method\": \"POST\", \"client_request_id\": \"b3d84957-7489-41f8-b8ff-d766af08ec17\", \"component\": \"http.access\", \"status_code\": 502, \"latency_ms\": 2538, \"client_ip\": \"127.0.0.1\", \"protocol\": \"HTTP/1.1\", \"method\": \"POST\", \"path\": \"/v1/responses\", \"account_id\": 1, \"platform\": \"openai\", \"model\": \"gpt-6.1-sol\", \"completed_at\": \"2026-10-26T09:41:29.909+0800\"}"
+    },
+    {
+      "line": 5327016,
+      "text": "2026-10-26T09:44:48.720+0800\tINFO\thandler/security_audit_helper.go:133\tsecurity_audit.gateway_check_start\t{\"service\": \"sub2api\", \"env\": \"production\", \"component\": \"http\", \"request_id\": \"9bd4f5e1-5d4b-485f-b422-c14ed4535448\", \"client_request_id\": \"\", \"path\": \"/v1/responses\", \"method\": \"POST\", \"client_request_id\": \"714025d8-5af5-4642-ac8c-6a470c437694\", \"component\": \"handler.openai_gateway.responses\", \"user_id\": 1, \"api_key_id\": 3, \"group_id\": 3, \"model\": \"gpt-6.1-sol\", \"stream\": false, \"request_id\": \"9bd4f5e1-5d4b-485f-b422-c14ed4535448\", \"user_id\": 1, \"api_key_id\": 3, \"group_id\": 3, \"endpoint\": \"/v1/responses\", \"provider\": \"openai\", \"protocol\": \"openai_responses\", \"model\": \"gpt-6.1-sol\", \"stage\": \"http\", \"body_bytes\": 20025, \"cached\": false}"
+    },
+    {
+      "line": 5327018,
+      "text": "2026-10-26T09:44:48.720+0800\tINFO\thandler/security_audit_helper.go:145\tsecurity_audit.gateway_check_done\t{\"service\": \"sub2api\", \"env\": \"production\", \"component\": \"http\", \"request_id\": \"9bd4f5e1-5d4b-485f-b422-c14ed4535448\", \"client_request_id\": \"\", \"path\": \"/v1/responses\", \"method\": \"POST\", \"client_request_id\": \"714025d8-5af5-4642-ac8c-6a470c437694\", \"component\": \"handler.openai_gateway.responses\", \"user_id\": 1, \"api_key_id\": 3, \"group_id\": 3, \"model\": \"gpt-6.1-sol\", \"stream\": false, \"request_id\": \"9bd4f5e1-5d4b-485f-b422-c14ed4535448\", \"decision\": \"allow\", \"error_code\": \"\", \"allow_next_stage\": true, \"stage\": \"http\", \"cached\": false}"
+    },
+    {
+      "line": 5327019,
+      "text": "2026-10-26T09:44:55.245+0800\tERROR\tservice/openai_gateway_upstream_errors.go:579\tOpenAI upstream error 404 (account=1 platform=openai type=apikey): {\"error\":{\"message\":\"Item with id 'rs_0d3378625d8bc172016adeafac535887d0ab5f174b7fd96f8c' not found. Items are not persisted when `store` is set to false. Try again with `store` set to true, or remove this item from your input.\",\"type\":\"invalid_request_error\",\"param\":\"input\",\"code\":null}}\t{\"service\": \"sub2api\", \"env\": \"production\", \"component\": \"service.openai_gateway\", \"legacy_printf\": true}"
+    },
+    {
+      "line": 5327109,
+      "text": "2026-10-26T09:44:55.248+0800\tWARN\thandler/openai_gateway_handler.go:981\topenai.forward_failed\t{\"service\": \"sub2api\", \"env\": \"production\", \"component\": \"http\", \"request_id\": \"9bd4f5e1-5d4b-485f-b422-c14ed4535448\", \"client_request_id\": \"\", \"path\": \"/v1/responses\", \"method\": \"POST\", \"client_request_id\": \"714025d8-5af5-4642-ac8c-6a470c437694\", \"component\": \"handler.openai_gateway.responses\", \"user_id\": 1, \"api_key_id\": 3, \"group_id\": 3, \"model\": \"gpt-6.1-sol\", \"stream\": false, \"account_id\": 1, \"fallback_error_response_written\": false, \"upstream_error_response_already_written\": false, \"error\": \"upstream error: 404 message=Item with id 'rs_0d3378625d8bc172016adeafac535887d0ab5f174b7fd96f8c' not found. Items are not persisted when `store` is set to false. Try again with `store` set to true, or remove this item from your input.\"}"
+    },
+    {
+      "line": 5327110,
+      "text": "2026-10-26T09:44:55.250+0800\tINFO\tmiddleware/logger.go:82\thttp request completed\t{\"service\": \"sub2api\", \"env\": \"production\", \"component\": \"http\", \"request_id\": \"9bd4f5e1-5d4b-485f-b422-c14ed4535448\", \"client_request_id\": \"\", \"path\": \"/v1/responses\", \"method\": \"POST\", \"client_request_id\": \"714025d8-5af5-4642-ac8c-6a470c437694\", \"component\": \"http.access\", \"status_code\": 502, \"latency_ms\": 6530, \"client_ip\": \"127.0.0.1\", \"protocol\": \"HTTP/1.1\", \"method\": \"POST\", \"path\": \"/v1/responses\", \"account_id\": 1, \"platform\": \"openai\", \"model\": \"gpt-6.1-sol\", \"completed_at\": \"2026-10-26T09:44:55.250+0800\"}"
+    }
+  ]
+}

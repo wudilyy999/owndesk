@@ -1,0 +1,72 @@
+{
+  "passed": true,
+  "controlledProvider": true,
+  "realModelJudgmentEvaluated": false,
+  "applicationVersion": "0.12.0-dev",
+  "guestProtocolVersion": 5,
+  "workstationImage": "personal-agent-workstation:0.5.0",
+  "migration": "0012",
+  "controlledWebsite": true,
+  "paymentSubmissionControlledEvaluated": true,
+  "paymentSubmissionRecoveryEvaluated": false,
+  "paymentSubmissionEdgesEvaluated": false,
+  "focusedLostReceiptOnly": false,
+  "focusedEdgesOnly": false,
+  "paymentTasksEvaluated": 9,
+  "realPaymentEvaluated": false,
+  "independentSettlementVerified": false,
+  "checks": [
+    {
+      "check": "Actual old guest4 image with a new container label is rejected by its real health; no task/model call or secret release",
+      "agentId": "yJRWZrb7-Y-P"
+    },
+    {
+      "check": "Card preparation, fresh observation, separate authenticated final UI approval, exactly one matched fixture submission and separately preserved page evidence; deleted item does not require another decrypt; API gates/idempotence/known host receipt and cross-action reuse rejection",
+      "taskId": "140b1bb2-055c-4a97-8bc8-b779a6082b95"
+    },
+    {
+      "check": "Final decline after preparation never submits; foreign-task preparation/result references rejected",
+      "taskId": "68451df1-21ab-4d32-9699-8e3c335c042f"
+    },
+    {
+      "check": "Cancel at final approval actually stops/removes guest; no payment dispatch",
+      "taskId": "3a62752c-0d6c-4b43-b2a0-a153e637495e"
+    },
+    {
+      "check": "Changed amount after final snapshot is rejected by independent pre-dispatch read; zero dispatch/click",
+      "taskId": "3b40b39d-8aa2-4529-bcda-42d304f49074"
+    },
+    {
+      "check": "Changed button after final snapshot is rejected by independent pre-dispatch read; zero dispatch/click",
+      "taskId": "570f7630-d8c4-493f-9234-104eb73f219a"
+    },
+    {
+      "check": "Expired approval rejects; a real slow DOM read then crosses a current grant deadline and the final current-clock check refuses dispatch",
+      "taskId": "8c1e875b-886e-496f-a615-76667cda0c82"
+    },
+    {
+      "check": "Final approval wait survives SIGKILL without new model request; old epoch approval rejected and explicit decline never clicks",
+      "taskId": "24b5a34d-8fc3-4cb8-8dd0-fafdf238fea8"
+    },
+    {
+      "check": "Actual effect and known guest receipt survive SIGKILL before host commit; cached receipt adopted without another approval/dispatch/click",
+      "taskId": "9d52cf67-47f5-4f85-a979-fe51af3c5ff7"
+    },
+    {
+      "check": "Actual effect plus lost guest receipt and SIGKILL becomes unknown; continue/cancel only, no second dispatch/click, fresh result evidence remains readable",
+      "taskId": "5016299a-3a14-4815-be1a-54295b3e1008"
+    },
+    {
+      "check": "Nine actual submission tasks (8 completed,1 cancelled), controlled fixture payments only; page evidence distinct from settlement, no plaintext sample in durable records",
+      "taskCount": 9
+    },
+    {
+      "check": "Provider key encrypted at rest, local config overrides env, masked settings view; plaintext key absent from task/DBOS records"
+    },
+    {
+      "check": "Completed Web/worker logs, actual guest journals/controller logs and model requests contain no sample secret values; website inputs are independently counted and matched"
+    }
+  ],
+  "directory": "data/experiments/agent_runtime_31d2b8126a084c369176f745dc6c995e",
+  "recordedAt": "2026-10-25T09:32:28.501Z"
+}

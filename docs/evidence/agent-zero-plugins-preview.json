@@ -1,0 +1,35 @@
+{
+  "recordedAt": "2026-10-26T08:20:03.288Z",
+  "webStatus": 200,
+  "worker": {
+    "ready": true,
+    "version": "0.17.0-dev"
+  },
+  "activeTasks": 0,
+  "plugins": [
+    {
+      "id": "rg",
+      "commit": "66e6d6ddf6ef115985ac60a2c1f79bb56c36b010",
+      "enabled": false,
+      "tools": [
+        "rg"
+      ]
+    },
+    {
+      "id": "todo_list",
+      "commit": "888b8c36327972c41a86e9a68a685f6f7c525ded",
+      "enabled": false,
+      "tools": [
+        "todo_create_task",
+        "todo_delete_task",
+        "todo_get_tasks",
+        "todo_tool",
+        "todo_update_task"
+      ]
+    }
+  ],
+  "webPid": 24404,
+  "workerPid": 24405,
+  "extraCloudModelRequests": 0,
+  "scope": "Local preview updated; demo plugin sources installed disabled, no main task or SQL migration created"
+}

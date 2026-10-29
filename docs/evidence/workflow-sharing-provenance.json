@@ -1,0 +1,10 @@
+{
+  "passed": true,
+  "database": "agent_flowshare_e1b366c4df2041ba81118894118926c9",
+  "checks": [
+    "SQL origin constraint rejects source-less records without an imported package",
+    "Repaired imported version preserves external provenance, references the local repair Task, starts unverified and can explicitly enter independent verification",
+    "All synthetic changes rolled back; original ready version, checkpoints and four real Tasks remain unchanged"
+  ],
+  "scope": "Synthetic rollback-only SQL provenance and imported repair persistence compatibility; no new Task, GUI action, model call or real repair quality claim"
+}

@@ -1,0 +1,12 @@
+#!/bin/bash
+# browser [url]: requests the one profile-owning browser controller.
+set -eu
+node --input-type=module - "$@" <<'JS'
+const health = await (await fetch('http://127.0.0.1:6079/health')).json()
+const route = health.mode === 'agent' ? '/open' : '/desktop-browser'
+const response = await fetch(`http://127.0.0.1:6079${route}`, {
+  method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${process.env.PA_WORKSPACE_TOKEN}` },
+  body: JSON.stringify({ epoch: health.epoch, url: process.argv[2] || 'https://example.com' })
+})
+if (!response.ok) throw new Error(await response.text())
+JS

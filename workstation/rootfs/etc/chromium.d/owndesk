@@ -1,0 +1,8 @@
+# The container is the sandbox: Chromium's own needs kernel features that
+# Docker withholds. --test-type hides the warning bar about it.
+#
+# The debugging port answers inside the container only. OwnDesk reads it to know
+# which site a page is on, so saved logins and cards only fill on the right
+# one. Chromium allows it only with a profile folder of its own, set here; it
+# lives in the home folder, so sign-ins survive restarts.
+export CHROMIUM_FLAGS="$CHROMIUM_FLAGS --no-sandbox --test-type --disable-dev-shm-usage --no-first-run --no-default-browser-check --password-store=basic --start-maximized --hide-crash-restore-bubble --user-data-dir=/home/agent/.config/owndesk-browser --remote-debugging-address=127.0.0.1 --remote-debugging-port=9222"

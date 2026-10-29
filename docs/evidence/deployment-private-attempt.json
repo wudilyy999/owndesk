@@ -1,0 +1,75 @@
+{
+  "passed": false,
+  "directory": "data/experiments/pa-linux-1792898258832/attempt-1792900868801",
+  "checks": [
+    {
+      "check": "Fresh rootful Linux Docker: absent policy rejected; scoped bridge/firewall initialized and live rules verified",
+      "detail": {
+        "ready": true,
+        "policy": "private-v1",
+        "name": "pa-9dafe13f-egress",
+        "bridge": "pag9dafe13f",
+        "subnet": "172.30.205.0/24",
+        "controlIPs": ["127.0.0.1", "93.184.216.9"]
+      }
+    },
+    {
+      "check": "Production Linux Compose: migrations/one-owner init, HTTPS chain validation, owner settings and private DB/Web/worker; only worker mounts Docker"
+    },
+    {
+      "check": "Production cloud task: CUA/DOM, visible WSS desktop, human RFB login, worker SIGKILL recovery, one download and verified CSV delivery",
+      "detail": {
+        "taskId": "79fc2788-fd89-437a-8b36-b2f012645bc8",
+        "downloads": 1,
+        "amount": 620
+      }
+    }
+  ],
+  "recordedAt": "2026-10-25T04:02:25.450Z",
+  "applicationVersion": "0.9.0-dev",
+  "controlledProvider": true,
+  "realModelJudgmentEvaluated": false,
+  "actualCloudProviderEvaluated": false,
+  "fullRestoreEvaluated": false,
+  "hostKind": "dedicated rootful Linux VM with its own kernel; isolated Colima profile",
+  "mainLocalDeploymentUnchanged": true,
+  "diagnosis": {
+    "ordinaryDnsResponse": ["198.18.1.34"],
+    "explicitPublicDnsServersCompared": ["1.1.1.1", "8.8.8.8", "9.9.9.9"],
+    "guardedReservedRangeDropPackets": 15,
+    "guardedDoHWithVerifiedTlsSucceeded": true,
+    "ordinaryDnsGatePassed": false,
+    "productionDoHIntegrationImplemented": false,
+    "rawFiles": [
+      "dns-diagnostic.txt",
+      "guarded-internet-init.json",
+      "guarded-internet.txt",
+      "guarded-internet-counters.txt"
+    ],
+    "unguardedProbeFilesAreDiagnosticsOnly": [
+      "internet-host.jsonl",
+      "internet-guest.jsonl",
+      "internet-curl.txt"
+    ]
+  },
+  "notYetEvaluated": [
+    "Full consistent backup/clean restore",
+    "Guard tamper/drain/reinitialize lifecycle",
+    "Host capacity and long-running resource retention",
+    "Actual VPS/public ACME",
+    "Matched Xiryn comparison"
+  ],
+  "subsequentTestChangesNotRun": [
+    "Save per-endpoint probes and DNS before Internet assertions",
+    "Explicit fake-IP DNS rejection",
+    "Wait for completed UI and dismiss desktop modal before final mobile screenshot"
+  ],
+  "mainStatusRechecked": {
+    "ready": true,
+    "version": "0.8.1-dev",
+    "configuredProviderCount": 0,
+    "configuredDefaultModelCount": 0,
+    "activeTasks": 0,
+    "workstations": 0
+  }
+}

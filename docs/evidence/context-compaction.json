@@ -1,0 +1,59 @@
+{
+  "recordedAt": "2026-10-26T03:54:04.741Z",
+  "passed": true,
+  "policy": "context-v2",
+  "sourceVersion": "0.17.0-dev",
+  "policyDetails": {
+    "recentOutputChars": 12000,
+    "oldOutputChars": 600,
+    "batchSize": 6,
+    "allSdkOutputTypes": true,
+    "assistantToolResults": true,
+    "sharedMultipartBudget": true,
+    "currentEpochImages": 1,
+    "maximumImageSerializedChars": 4000000,
+    "defaultWindowTokens": 65536,
+    "outputReserve": 8192,
+    "softInputFraction": 0.8,
+    "summaryMaxChars": 12000,
+    "summaryOutputTokens": 4096,
+    "recentAssistantTurns": 2,
+    "tokenEstimate": "UTF-8 bytes / 3 plus media/schema allowance, calibrated upward from prior input usage",
+    "windowFrozenPerTask": true,
+    "pinnedGoalContractAndOwnerNotes": true,
+    "durableSummaryUsesOriginalLedger": true,
+    "memoryChangesOverlay": true
+  },
+  "checks": {
+    "contextUnits": 15,
+    "workflowUnitsPreviouslyPassed": 5,
+    "ledgerChecks": 10,
+    "dbosErrorCodec": true,
+    "typecheck": true,
+    "formats": true,
+    "freshProcessRecovery": true,
+    "cloudModelRequests": 0,
+    "localFixtureRequests": 8,
+    "realDesktopActions": 0,
+    "main": {
+      "activeTasks": 0,
+      "attempts": 62,
+      "migrations": 16,
+      "health": {
+        "ready": true,
+        "version": "0.15.1-dev"
+      },
+      "processes": "57067 next-server (v16.4.3)      \n57068 /opt/homebrew/Cellar/node@24/24.20.0/bin/node --import tsx worker/main.ts",
+      "envUnchanged": true
+    },
+    "canonicalMirrors": 5
+  },
+  "unchanged": {
+    "schemaMigrations": true,
+    "guest": true,
+    "dependencies": true,
+    "mainDeployment": true,
+    "originalUnknownRequests": true
+  },
+  "scope": "Implementation and controlled provider/ledger acceptance; full DBOS workflow, cloud-model summary quality/cache savings and deployment remain unverified. Existing cross-Task selection and persistent memory limits are retained; no new auto-profile/vector-memory system."
+}

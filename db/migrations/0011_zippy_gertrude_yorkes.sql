@@ -1,0 +1,1 @@
+ALTER TABLE "task_action_attempts" ADD COLUMN "secret_released_at" timestamp with time zone;

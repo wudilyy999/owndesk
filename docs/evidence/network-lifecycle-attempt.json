@@ -1,0 +1,37 @@
+{
+  "passed": true,
+  "scope": "controlled-restored-linux-guest-network-and-policy-lifecycle",
+  "directory": "data/experiments/pa-linux-1792903976167/attempt-1792905740639",
+  "checks": [
+    {
+      "check": "Actual guest blocks live DB/Web/worker/host/peer/metadata/control alias with positive host controls; controlled public fixture allowed; guest/viewer restrictions verified",
+      "probes": 10,
+      "ordinaryInternetEvaluated": false
+    },
+    {
+      "check": "outbound-rule: check/provisioning rejected tamper; drained, explicitly reinitialized and resumed workstation with home retained"
+    },
+    {
+      "check": "forward-precedence: check/provisioning rejected tamper; drained, explicitly reinitialized and resumed workstation with home retained"
+    },
+    {
+      "check": "input-precedence: check/provisioning rejected tamper; drained, explicitly reinitialized and resumed workstation with home retained"
+    },
+    {
+      "check": "New workstation succeeds only after repair; existing task/model/action counts unchanged",
+      "counts": {
+        "tasks": 6,
+        "actions": 12,
+        "models": 17
+      }
+    }
+  ],
+  "recordedAt": "2026-10-25T05:24:13.471Z",
+  "applicationVersion": "0.9.0-dev",
+  "ordinaryPublicDnsEvaluated": false,
+  "actualCloudProviderEvaluated": false,
+  "realModelJudgmentEvaluated": false,
+  "modelCallsInitiated": 0,
+  "continuousRootTamperDefense": false,
+  "mainLocalDeploymentUnchanged": true
+}

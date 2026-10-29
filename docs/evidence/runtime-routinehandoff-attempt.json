@@ -1,0 +1,18 @@
+{
+  "passed": false,
+  "applicationVersion": "0.14.0-dev",
+  "migration": "0014",
+  "controlledProvider": true,
+  "realModelJudgmentEvaluated": false,
+  "guestProtocolVersion": 5,
+  "routineDelegationRosterEvaluated": false,
+  "routineHandoffTasksEvaluated": 0,
+  "originalHandoffSuiteRerun": false,
+  "checks": [
+    {
+      "check": "Unmodified SQL0014 in an isolated schema fills one preexisting row and a new omitted value with []; NOT NULL rejects null. Narrow column migration, not a full upgrade/restore rehearsal."
+    }
+  ],
+  "directory": "data/experiments/agent_runtime_ee27f9a8bb274cd1a98b4c16e54a01f6",
+  "recordedAt": "2026-10-25T10:22:42.734Z"
+}

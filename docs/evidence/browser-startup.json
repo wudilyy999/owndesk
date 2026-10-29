@@ -1,0 +1,34 @@
+{
+  "passed": true,
+  "image": "personal-agent-workstation:0.6.3",
+  "imageId": "sha256:65816a15ff16b5f729dd59f0fb83b0fb69b7517b641dfc7433c3839a0e8cd48d",
+  "protocol": 6,
+  "bootSynchronized": true,
+  "epochSynchronized": true,
+  "mode": "idle",
+  "pageCount": 0,
+  "chromiumRunning": false,
+  "recordsBefore": {
+    "tasks": 12,
+    "attempts": 65,
+    "actions": 58,
+    "artifacts": 7,
+    "active": 0
+  },
+  "recordsAfter": {
+    "tasks": 12,
+    "attempts": 65,
+    "actions": 58,
+    "artifacts": 7,
+    "active": 0
+  },
+  "modelRequests": 0,
+  "taskSubmissions": 0,
+  "backup": "data/backups/browser-startup-1793029996081",
+  "mechanismEvidence": "data/experiments/pa-browser-startup-6e8b0821/result.json",
+  "recordedAt": "2026-10-26T15:55:53.491Z",
+  "webTakeoverVerified": true,
+  "endedInReadOnlyWatching": true,
+  "deployedSourceMatches": true,
+  "postTakeoverPages": 0
+}

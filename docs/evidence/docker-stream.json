@@ -1,0 +1,11 @@
+{
+  "passed": true,
+  "checks": [
+    "one MiB binary round-trip and remote EOF through real Docker exec",
+    "nonzero remote exit preserves error even after stdout EOF",
+    "destroy delivers EOF and leaves neither remote process nor local Docker CLI",
+    "missing-container transport failure propagates"
+  ],
+  "directory": "data/experiments/pa-stream-4b33974b-a30e-4a9a-b9c0-db010e3d1cff",
+  "recordedAt": "2026-10-25T02:34:42.011Z"
+}

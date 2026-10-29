@@ -1,0 +1,140 @@
+{
+  "database": "agent_compile_89b32692f49640c5b7887bb19091d06f",
+  "directory": "data/experiments/agent_compile_89b32692f49640c5b7887bb19091d06f/sol-1792978851395",
+  "taskId": "f9cb0de4-5ed7-471c-91c7-bc9e978614fa",
+  "sourceTaskId": "2935de0d-e34e-467a-bbdf-0f1135f5428b",
+  "model": "openai/gpt-6.1-sol",
+  "controlledProvider": false,
+  "state": {
+    "status": "needs_review",
+    "result": null,
+    "error": null
+  },
+  "version": {
+    "id": "f9cb0de4-5ed7-471c-91c7-bc9e978614fa",
+    "workflowId": "f9cb0de4-5ed7-471c-91c7-bc9e978614fa",
+    "revision": 1,
+    "name": "Thunar 创建并重命名目录",
+    "sourceTaskId": "2935de0d-e34e-467a-bbdf-0f1135f5428b",
+    "compilationTaskId": "f9cb0de4-5ed7-471c-91c7-bc9e978614fa",
+    "compilationStatus": "needs_review",
+    "status": "draft",
+    "environment": {
+      "locale": "C.UTF-8",
+      "application": "Thunar",
+      "guestProtocol": 6,
+      "workstationImageId": "sha256:c90794aae50fa9acdbea1a0dd8aae1b1d785023d438fc4fb2cd53616216770b3"
+    },
+    "validatedEnvironment": null,
+    "plan": null,
+    "createdAt": "2026-10-26T01:40:53.650Z",
+    "importedPackage": null
+  },
+  "compilationMetrics": {
+    "taskId": "f9cb0de4-5ed7-471c-91c7-bc9e978614fa",
+    "database": "agent_compile_89b32692f49640c5b7887bb19091d06f",
+    "ownerId": "7dfb69a5-eceb-4dde-8a4e-985a4132ec7e",
+    "phase": "compilation",
+    "status": "needs_review",
+    "source": "c1-sol-switch",
+    "requestKey": "170c7351-a895-448a-8021-7c9c789d493c",
+    "createdAt": "2026-10-26T01:40:53.650Z",
+    "terminalAt": null,
+    "contract": {
+      "directoryTree": {
+        "root": "/home/xiryn/Flow-C0-1792950841215",
+        "absent": [
+          "Draft"
+        ],
+        "directories": [
+          "Ready"
+        ]
+      },
+      "requireHumanReview": false
+    },
+    "grade": null,
+    "model": "openai/gpt-6.1-sol",
+    "plan": null,
+    "parameters": null,
+    "environment": null,
+    "workstationChannel": null,
+    "attempts": [
+      {
+        "segmentNo": 1,
+        "decisionNo": 1,
+        "attemptNo": 1,
+        "model": "openai/gpt-6.1-sol",
+        "status": "succeeded",
+        "usage": {
+          "input": 2468,
+          "cached": 0,
+          "output": 1833,
+          "missing": false,
+          "reasoning": 206
+        },
+        "costMicros": "23266",
+        "reconciledCostMicros": null,
+        "priceSnapshot": {
+          "kind": "priced",
+          "price": {
+            "long": {
+              "above": 272000,
+              "input": 4,
+              "cached": 0.2,
+              "output": 15
+            },
+            "input": 2,
+            "cached": 0.1,
+            "output": 10
+          },
+          "source": "catalog"
+        },
+        "startedAt": "2026-10-26T01:40:56.714Z",
+        "finishedAt": "2026-10-26T01:41:27.618Z"
+      },
+      {
+        "segmentNo": 1,
+        "decisionNo": 2,
+        "attemptNo": 1,
+        "model": "openai/gpt-6.1-sol",
+        "status": "unknown",
+        "usage": null,
+        "costMicros": null,
+        "reconciledCostMicros": null,
+        "priceSnapshot": {
+          "kind": "priced",
+          "price": {
+            "long": {
+              "above": 272000,
+              "input": 4,
+              "cached": 0.2,
+              "output": 15
+            },
+            "input": 2,
+            "cached": 0.1,
+            "output": 10
+          },
+          "source": "catalog"
+        },
+        "startedAt": "2026-10-26T01:41:27.957Z",
+        "finishedAt": "2026-10-26T01:41:30.517Z"
+      }
+    ],
+    "actions": [],
+    "requests": [
+      {
+        "id": "f9cb0de4-5ed7-471c-91c7-bc9e978614fa-s1-error-2",
+        "kind": "review",
+        "status": "pending",
+        "createdAt": "2026-10-26T01:41:31.161Z",
+        "resolvedAt": null
+      }
+    ]
+  },
+  "priorGeminiTaskId": "5b0ad29b-a729-439b-91a0-13f34fb090fc",
+  "oldUnknownPreserved": true,
+  "error": "{\"taskId\":\"f9cb0de4-5ed7-471c-91c7-bc9e978614fa\",\"status\":\"needs_review\",\"error\":null}\n+ actual - expected\n\n+ 'needs_review'\n- 'completed'\n",
+  "passed": false,
+  "runs": [],
+  "scope": "Owner-authorized Sol compilation plus three distinct native GUI parameter verification Tasks and one ready reuse; old Gemini attempts/source/main preserved, not full C4 or cloud/Xiryn comparison"
+}

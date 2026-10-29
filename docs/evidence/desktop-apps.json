@@ -1,0 +1,62 @@
+{
+  "recordedAt": "2026-10-25T14:10:24.092Z",
+  "applicationVersion": "0.15.1-dev",
+  "workstationImage": "personal-agent-workstation:0.5.0",
+  "scope": "One assisted real-model native Linux file-manager task; not unassisted general desktop reliability",
+  "controlledProvider": false,
+  "actualTasks": 2,
+  "completed": 1,
+  "cancelled": 1,
+  "passedWithSupervisorHint": true,
+  "unassistedAcceptancePassed": false,
+  "modelToolsUsed": [
+    "screen_capture",
+    "key_press",
+    "pointer_click",
+    "key_type",
+    "screen_share"
+  ],
+  "shellFileAndBrowserToolCalls": 0,
+  "operatorDesktopInputs": 0,
+  "supervisorCoordinateHints": 1,
+  "independentDirectoryVerification": {
+    "passed": true,
+    "directories": [
+      "/home/xiryn/CUA-GUI-Demo-20261025",
+      "/home/xiryn/CUA-GUI-Demo-20261025/Ready"
+    ],
+    "readyExists": true,
+    "draftAbsent": true,
+    "method": "Read-only docker exec after the model finished; no directory mutations"
+  },
+  "gpt": {
+    "taskId": "d2991b3b-dde5-4620-a716-4b1775392b86",
+    "outcome": "Cancelled after two upstream model errors; one retry explicitly owner-authorized",
+    "successfulRequests": 3,
+    "unknownRequestOutcomes": 2,
+    "knownEstimatedCostMicros": 20967,
+    "directory": "data/experiments/desktop-app-d2991b3b-dde5-4620-a716-4b1775392b86"
+  },
+  "gemini": {
+    "taskId": "2ee6c0a6-7d53-4f7f-a583-2a63a54c9ebd",
+    "status": "completed",
+    "successfulRequests": 40,
+    "unknownRequestOutcomes": 0,
+    "unpricedRequests": 40,
+    "cost": "Unknown; not free",
+    "successfulWorkstationActions": 39,
+    "directory": "data/experiments/desktop-app-2ee6c0a6-7d53-4f7f-a583-2a63a54c9ebd",
+    "desktopScreenshot": "data/experiments/desktop-app-2ee6c0a6-7d53-4f7f-a583-2a63a54c9ebd/action-40-screen_share.jpg",
+    "webScreenshot": "data/experiments/desktop-app-2ee6c0a6-7d53-4f7f-a583-2a63a54c9ebd/web-live-thunar.jpg"
+  },
+  "observations": [
+    "Initial pointer targets were consistent with normalized 0..1000 output being interpreted as pixels. A handback note explicitly described the 1280x800 absolute-pixel contract; no supervisor application clicks were sent.",
+    "After the note, the model used the Applications menu and keyboard navigation to open Thunar, create the parent and Draft folders, and rename Draft to Ready.",
+    "Alt+F2 did not open a launcher in this desktop session.",
+    "Default model restored to openai/gpt-6.1-sol after Gemini task admission.",
+    "App/runtime code, database schema, service processes and network isolation settings were not changed."
+  ],
+  "liveTaskCount": 0,
+  "cloudDeploymentEvaluated": false,
+  "generalDesktopAppReliabilityEvaluated": false
+}

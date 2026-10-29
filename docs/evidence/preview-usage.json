@@ -1,0 +1,16 @@
+{
+  "passed": true,
+  "applicationVersion": "0.5.0-dev",
+  "featureFocus": "Request-level usage and monthly admission",
+  "checks": [
+    "Old workflows drained, PostgreSQL 16 backup archive inventory parsed, migration 0008 applied, TypeScript and production build passed",
+    "Production owner usage route/API and actual empty mobile UI render; task usage projects attempt-level unknown counts",
+    "Unauthenticated/signed-out/foreign-Origin/invalid monetary and pagination inputs rejected",
+    "Accessible exhausted-budget red warning rendered with intercepted fixture response; live owner budget, costs and pricing unchanged",
+    "Controlled usage and model-recovery checks remain separate from real provider/model evaluation",
+    "Final request-date rendering uses UTC owner policy under an en-US/New York browser; server rendering unit and client rendering agree; warning remains red; mock response does not persist owner settings"
+  ],
+  "directory": "data/experiments/usage-timezone-preview-1792884062157",
+  "recordedAt": "2026-10-24T23:21:03.048Z",
+  "previousPreview": "docs/evidence/preview-usage-initial.json"
+}

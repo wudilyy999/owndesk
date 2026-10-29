@@ -1,0 +1,129 @@
+{
+  "passed": true,
+  "controlledProvider": true,
+  "realModelJudgmentEvaluated": false,
+  "applicationVersion": "0.10.0-dev",
+  "guestProtocolVersion": 3,
+  "workstationImage": "personal-agent-workstation:0.3.0",
+  "controlledWebsite": true,
+  "identityFillEvaluated": true,
+  "identityTasksEvaluated": 10,
+  "paymentFillEvaluated": false,
+  "paymentSubmissionEvaluated": false,
+  "checks": [
+    {
+      "check": "Actual old guest2 image with a new container label is rejected by its real health; no task/model call or secret release",
+      "agentId": "UpXNk812K8L9"
+    },
+    {
+      "check": "Ten identity fields including 1210-character derived textarea address match and are masked; actual mobile/desktop approval; one release, zero submit; deleted-item replay returns known receipt without decrypt/retype; fresh DOM, no automatic screenshot",
+      "taskId": "0379f680-6a9c-4a43-a28c-eab2ed1a2e92",
+      "state": {
+        "mode": "normal",
+        "events": [
+          {
+            "field": "name",
+            "matched": true,
+            "masked": true
+          },
+          {
+            "field": "email",
+            "matched": true,
+            "masked": true
+          },
+          {
+            "field": "phone",
+            "matched": true,
+            "masked": true
+          },
+          {
+            "field": "address",
+            "matched": true,
+            "masked": true
+          },
+          {
+            "field": "address_line1",
+            "matched": true,
+            "masked": true
+          },
+          {
+            "field": "address_line2",
+            "matched": true,
+            "masked": true
+          },
+          {
+            "field": "city",
+            "matched": true,
+            "masked": true
+          },
+          {
+            "field": "state",
+            "matched": true,
+            "masked": true
+          },
+          {
+            "field": "postcode",
+            "matched": true,
+            "masked": true
+          },
+          {
+            "field": "country",
+            "matched": true,
+            "masked": true
+          }
+        ],
+        "changed": false,
+        "submissions": 0,
+        "signedIn": false
+      }
+    },
+    {
+      "check": "Authenticated mobile secure form provisions task-scoped identity by reference; separate approval types all three fields once; consumed ciphertext cleaned while audit remains",
+      "taskId": "2ec19a26-6b57-41a4-bc41-66915acc0311"
+    },
+    {
+      "check": "Identity missing: safe explicit rejection, no release/input/submit, no execution-error wait or automatic retry; payment kinds remain unavailable",
+      "taskId": "6cbf57d3-6880-435a-9739-89e2761107d6"
+    },
+    {
+      "check": "Identity decline: safe explicit rejection, no release/input/submit, no execution-error wait or automatic retry; payment kinds remain unavailable",
+      "taskId": "17fbb716-fcad-4cf8-90c9-711c85ce4909"
+    },
+    {
+      "check": "Identity kind: safe explicit rejection, no release/input/submit, no execution-error wait or automatic retry; payment kinds remain unavailable",
+      "taskId": "1986b2d1-8fdd-48dc-ba87-b341ad3e2463"
+    },
+    {
+      "check": "Identity card: safe explicit rejection, no release/input/submit, no execution-error wait or automatic retry; payment kinds remain unavailable",
+      "taskId": "81236d13-4069-4313-9ae3-a60d5b5df4f4"
+    },
+    {
+      "check": "Identity upi: safe explicit rejection, no release/input/submit, no execution-error wait or automatic retry; payment kinds remain unavailable",
+      "taskId": "dd283a02-775a-4150-965a-314c1d4ee4d1"
+    },
+    {
+      "check": "Identity select: safe explicit rejection, no release/input/submit, no execution-error wait or automatic retry; payment kinds remain unavailable",
+      "taskId": "59eedf64-37d2-4d84-94bb-e21201d81731"
+    },
+    {
+      "check": "First identity input navigates; remaining fields stop; actual review/continue never refills or submits",
+      "taskId": "92ae62aa-8f6b-4380-83b5-874bb45cd540"
+    },
+    {
+      "check": "Identity effect plus deterministic worker SIGKILL/receipt removal remains unknown; review permits continue/cancel only, no second release/input/submission",
+      "taskId": "7f97eae6-4fb0-4f68-bdfe-5f44339f7751"
+    },
+    {
+      "check": "Ten actual identity-slice tasks completed; all public/DBOS tables and controlled model requests contain no sample identity values; post-logout approval rejected; card/UPI/payment and real models remain unevaluated",
+      "taskCount": 10
+    },
+    {
+      "check": "Provider key encrypted at rest, local config overrides env, masked settings view; plaintext key absent from task/DBOS records"
+    },
+    {
+      "check": "Completed Web/worker logs, actual guest journals/controller logs and model requests contain no sample secret values; website inputs are independently counted and matched"
+    }
+  ],
+  "directory": "data/experiments/agent_runtime_9f81f6a3f31f468f984446ad049f97aa",
+  "recordedAt": "2026-10-25T07:42:27.111Z"
+}

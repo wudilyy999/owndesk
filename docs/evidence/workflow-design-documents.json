@@ -1,0 +1,63 @@
+{
+  "recordedDate": "2026-10-26",
+  "timeZone": "Asia/Taipei",
+  "scope": "Documentation-only workflow-compilation design and main-conversation handoff",
+  "designSource": "docs/design",
+  "designMirror": "docs/design",
+  "designVersion": "1.25",
+  "designFiles": 16,
+  "mirrorPairs": 16,
+  "localLinksChecked": 81,
+  "jsonBlocksParsed": 2,
+  "entryPointsChecked": 5,
+  "plannedFlows": [
+    "F15",
+    "F16",
+    "F17"
+  ],
+  "plannedAcceptanceIds": [
+    "T19",
+    "T20",
+    "T21",
+    "T22"
+  ],
+  "plannedStages": [
+    "C0",
+    "C1",
+    "C2",
+    "C3",
+    "C4",
+    "C5"
+  ],
+  "errors": [],
+  "formatting": {
+    "newDocuments": 2,
+    "command": "./node_modules/.bin/prettier --check docs/design/CUA流程编译与自动化复用.md docs/design/主会话指导-流程编译.md",
+    "initialResult": "Two new documents needed formatting; formatted those two documents and synchronized their mirrors.",
+    "finalResult": "passed"
+  },
+  "changes": {
+    "newDesignDocuments": 2,
+    "existingDesignDocumentsUpdated": 12,
+    "projectEntryDocumentsUpdated": 5,
+    "sourceAndMirrorMarkdownFilesChanged": 28
+  },
+  "research": {
+    "AgentRR": "https://arxiv.org/abs/2505.17716",
+    "MobiAgent": "https://arxiv.org/abs/2509.00531",
+    "MobiAgentCode": "https://github.com/IPADS-SAI/MobiAgent",
+    "PACE": "https://arxiv.org/abs/2610.02932"
+  },
+  "boundaries": {
+    "runtimeCodeChanged": false,
+    "databaseMigrated": false,
+    "imagesBuilt": false,
+    "servicesRestarted": false,
+    "modelCallsMade": false,
+    "mainConversationMessaged": false,
+    "applicationTestsRun": false,
+    "workflowCompilerImplemented": false,
+    "performanceClaimsValidated": false
+  },
+  "next": "Main conversation reads 主会话指导-流程编译.md, inspects current code, and proceeds through C0/C1 before C2."
+}

@@ -1,0 +1,34 @@
+{
+  "passed": true,
+  "applicationVersion": "0.15.0-dev",
+  "migration": "0015",
+  "guestProtocolVersion": 5,
+  "focus": "handoff",
+  "taskCounts": [
+    {
+      "status": "completed",
+      "count": 3
+    }
+  ],
+  "actualTasks": 3,
+  "controlledTelegram": true,
+  "controlledProvider": true,
+  "realTelegramConnectivityEvaluated": false,
+  "realModelJudgmentEvaluated": false,
+  "checks": [
+    {
+      "check": "Unmodified SQL0015 narrow schema probe sets [] on an existing row and omitted new value, rejects null; initial Telegram permissions disabled and missing/fixture targets rejected."
+    },
+    {
+      "check": "Actual SIGKILL after frozen inbox commit and before Task admission, with zero tasks/model calls at the barrier; changed owner roster does not alter replay. Original recipient executes a two-segment no-file handoff, exact update replay creates no duplicate."
+    },
+    {
+      "check": "Next phone turn retains the original source conversation but freezes the new roster and hands off to its new recipient. /new retains source permissions; /use clears them, and an actual subsequent delegate is denied without creating a new segment."
+    },
+    {
+      "check": "Actual owner mobile/desktop roster form preserves drafts across status polls, saves explicit permission and clears on source selection/unpair; stale source or generation, anonymous/cross-Origin/invalid or oversized rosters denied. Rotate/token/bot-identity generation change also clears permission; no extra tasks."
+    }
+  ],
+  "directory": "data/experiments/agent_telegram_4a018c440e754de2ba3fa66cae269707",
+  "recordedAt": "2026-10-25T10:38:13.181Z"
+}

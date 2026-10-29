@@ -1,0 +1,83 @@
+#!/bin/bash
+# Boots the agent's desktop and keeps the container alive while it's in use.
+#
+# Xvfb draws the screen, xfwm4 and xfce4-panel make it a desktop, x11vnc
+# serves it (password protected) and websockify/noVNC put it on port 6080.
+# The container stops itself after OWNDESK_IDLE_MINUTES without activity, so an
+# idle agent costs nothing even when OwnDesk isn't running to stop it.
+
+set -u
+
+state=/tmp/owndesk
+mkdir -p "$state"
+
+# A machine that was stopped keeps its /tmp. Locks left by the last run's X
+# server would make this one refuse to start, so clear them: nothing is
+# running yet.
+display_number="${DISPLAY#:}"
+rm -f "/tmp/.X${display_number}-lock" "/tmp/.X11-unix/X${display_number}"
+touch "$state/active"
+echo "${OWNDESK_IDLE_MINUTES:-15}" > "$state/idle-minutes"
+
+Xvfb "$DISPLAY" -screen 0 "${OWNDESK_SCREEN:-1280x800}x24" -dpi 96 -nolisten tcp \
+  >"$state/xvfb.log" 2>&1 &
+xvfb=$!
+for _ in $(seq 100); do
+  xdpyinfo >/dev/null 2>&1 && break
+  sleep 0.1
+done
+
+x11vnc -storepasswd "${OWNDESK_VNC_PASSWORD:?OWNDESK_VNC_PASSWORD is required}" \
+  "$state/vncpass" >/dev/null 2>&1
+unset OWNDESK_VNC_PASSWORD
+# Kept to put the file back if something clears /tmp: x11vnc reads it for
+# every connection
+vncpass=$(base64 -w0 "$state/vncpass")
+
+eval "$(dbus-launch --sh-syntax)"
+export NO_AT_BRIDGE=0 GTK_MODULES=atk-bridge
+dbus-send --session --print-reply --dest=org.a11y.Bus /org/a11y/bus \
+  org.freedesktop.DBus.Properties.Set string:org.a11y.Status string:IsEnabled variant:boolean:true \
+  >"$state/accessibility.log" 2>&1 || exit 1
+xfsettingsd --daemon >/dev/null 2>&1
+xfwm4 --compositor=off >"$state/xfwm4.log" 2>&1 &
+xfce4-panel >"$state/panel.log" 2>&1 &
+feh --no-fehbg --bg-fill /usr/share/owndesk/wallpaper.png 2>/dev/null \
+  || xsetroot -solid "#0b0e14"
+
+x11vnc -display "$DISPLAY" -rfbauth "$state/vncpass" -rfbport 5901 -localhost \
+  -forever -shared -noremote -clear_all -noxdamage -quiet >"$state/x11vnc.log" 2>&1 &
+vnc=$!
+websockify --web /usr/share/novnc 6081 localhost:5901 >"$state/websockify.log" 2>&1 &
+ws=$!
+
+# One controller owns the headed browser and persistent profile.
+node /opt/owndesk-controller/server.mjs >>"$state/browser.log" 2>&1 &
+controller=$!
+trap 'kill -TERM "$controller"; wait "$controller"; exit 0' TERM INT
+
+while true; do
+  sleep 20 &
+  wait $!
+  for pid in "$xvfb" "$vnc" "$ws" "$controller"; do
+    kill -0 "$pid" 2>/dev/null || exit 1
+  done
+
+  # Someone watching the screen or a command still running counts as activity
+  if [ -n "$(ss -Htn state established '( sport = :6081 )' 2>/dev/null)" ] \
+    || pgrep -f '^/bin/bash /usr/local/bin/owndesk-run' >/dev/null; then
+    touch "$state/active"
+  fi
+
+  # An agent clearing /tmp shouldn't take its own machine down with it
+  if [ ! -e "$state/active" ] || [ ! -s "$state/vncpass" ]; then
+    mkdir -p "$state"
+    touch "$state/active"
+    (umask 077 && echo "$vncpass" | base64 -d >"$state/vncpass")
+  fi
+
+  limit=$(cat "$state/idle-minutes" 2>/dev/null || echo 15)
+  [ "$limit" -gt 0 ] 2>/dev/null || continue
+  idle=$(( $(date +%s) - $(stat -c %Y "$state/active") ))
+  [ "$idle" -ge $(( limit * 60 )) ] && exit 0
+done

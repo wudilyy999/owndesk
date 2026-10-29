@@ -1,0 +1,34 @@
+{
+  "passed": true,
+  "controlledProvider": true,
+  "realModelJudgmentEvaluated": false,
+  "checks": [
+    {
+      "check": "Four actual DBOS-triggered weekly runs use frozen current/baseline weeks, shared-browser DOM downloads (16 files), guest CSV merge and host-only exact sum; changed/equal/zero-baseline decisions ignore contradictory model summaries; missing baseline cannot complete; human confirmation survives worker SIGKILL without model/download repetition",
+      "taskIds": [
+        "e719fae5-22cc-47a6-b899-1a18ebd39a49",
+        "c677229a-7712-408d-8c4c-0879cf9aff1e",
+        "572f2f65-dab6-439e-a4b8-a4b8314c54e2",
+        "c5654158-fbcd-4385-8fcf-34a06af71961"
+      ]
+    },
+    {
+      "check": "Persisted comparison and notification decision survive worker restart; repeated Telegram collection emits three completed notices, a real cancellation notice and no unchanged notice, with program totals preceding unverified model text; a human review request still notifies"
+    },
+    {
+      "check": "The existing outbox sends the three accepted task notifications to an actual controlled HTTP Bot API; suppressed completion creates no send attempt. Pairing and real Telegram connectivity are separate checks."
+    },
+    {
+      "check": "Actual mobile/desktop report UI separates program decision from contradictory model text, downloads private baseline bytes, and saves a disabled comparison routine with exact threshold/direction/notification policy"
+    },
+    {
+      "check": "Provider key encrypted at rest, local config overrides env, masked settings view; plaintext key absent from task/DBOS records"
+    }
+  ],
+  "directory": "data/experiments/agent_runtime_892c5a073f9b4e76827d0cc67a185cf6",
+  "recordedAt": "2026-10-25T00:12:04.574Z",
+  "controlledWebsite": true,
+  "controlledTelegramApi": true,
+  "realTelegramConnectivityEvaluated": false,
+  "realSourceAuthenticityEvaluated": false
+}

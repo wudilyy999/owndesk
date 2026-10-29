@@ -1,0 +1,8 @@
+{
+  "health": {
+    "ready": true,
+    "version": "0.15.1-dev"
+  },
+  "migrations": 16,
+  "activeTasks": 0
+}

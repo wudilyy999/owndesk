@@ -1,0 +1,123 @@
+# Adapted from pinned MIT the pinned MIT upstream: sibling workstations, named data, loopback entry.
+name: pa-${INSTALL_ID:?Generate deploy/.env first}
+
+x-application: &application
+  DATABASE_URL: ${DATABASE_URL:?}
+  APP_URL: ${APP_URL:?}
+  BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:?}
+  MASTER_KEY: ${MASTER_KEY:?}
+  INSTALL_ID: ${INSTALL_ID:?}
+  ARTIFACT_DIR: /app/data/artifacts
+  DESKTOP_GATEWAY_URL: ${DESKTOP_GATEWAY_URL:?}
+
+services:
+  postgres:
+    image: ${PA_POSTGRES_IMAGE:-postgres:16.15-alpine}
+    environment:
+      POSTGRES_USER: agent
+      POSTGRES_DB: personal_agent
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?}
+    volumes:
+      - postgres:/var/lib/postgresql/data
+    networks: [control]
+    restart: unless-stopped
+    healthcheck:
+      test: [CMD-SHELL, pg_isready -U agent -d personal_agent]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  web:
+    image: ${PA_WEB_IMAGE:-owndesk-web:0.17.0-dev}
+    build:
+      context: ..
+      target: web
+    environment: *application
+    volumes:
+      - artifacts:/app/data/artifacts:ro
+    networks: [control]
+    depends_on:
+      postgres: { condition: service_healthy }
+    read_only: true
+    tmpfs: [/tmp]
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    restart: unless-stopped
+    healthcheck:
+      test:
+        [
+          CMD,
+          node,
+          -e,
+          "fetch('http://127.0.0.1:6797/login').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  worker:
+    image: ${PA_WORKER_IMAGE:-owndesk-worker:0.17.0-dev}
+    build:
+      context: ..
+      target: worker
+    environment:
+      <<: *application
+      WORKER_HOST: 0.0.0.0
+      WORKER_PORT: 6798
+      WORKSTATION_IMAGE: ${PA_WORKSTATION_IMAGE:-owndesk-workstation:0.6.5}
+      WORKSTATION_NETWORK: ${WORKSTATION_NETWORK:?}
+      NETWORK_GUARD_IMAGE: ${PA_WORKER_IMAGE:-owndesk-worker:0.17.0-dev}
+      PA_GUEST_SUBNET: ${PA_GUEST_SUBNET:?}
+      PA_CONTROL_IPS: ${PA_CONTROL_IPS:-}
+      PA_GUEST_DNS: ${PA_GUEST_DNS:-1.1.1.1}
+      WORKSTATION_CPUS: ${WORKSTATION_CPUS:-2}
+      WORKSTATION_MEMORY_MB: ${WORKSTATION_MEMORY_MB:-4096}
+      WORKSTATION_IDLE_MINUTES: ${WORKSTATION_IDLE_MINUTES:-15}
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - artifacts:/app/data/artifacts
+    networks: [control, outbound]
+    depends_on:
+      postgres: { condition: service_healthy }
+    init: true
+    restart: unless-stopped
+    stop_grace_period: 60s
+    healthcheck:
+      test:
+        [
+          CMD,
+          node,
+          -e,
+          "fetch('http://127.0.0.1:6798/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  caddy:
+    image: ${PA_CADDY_IMAGE:-caddy:2.11.7-alpine}
+    environment:
+      APP_HOSTNAME: ${APP_HOSTNAME:?}
+    ports:
+      - ${PA_BIND_IP:-127.0.0.1}:${PA_HTTP_PORT:-80}:80
+      - ${PA_BIND_IP:-127.0.0.1}:${PA_HTTPS_PORT:-443}:443
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy:/data
+      - caddy_config:/config
+    networks: [control, outbound]
+    depends_on:
+      web: { condition: service_healthy }
+      worker: { condition: service_healthy }
+    restart: unless-stopped
+
+networks:
+  control:
+    internal: true
+  outbound:
+
+volumes:
+  postgres:
+  artifacts:
+  caddy:
+  caddy_config:

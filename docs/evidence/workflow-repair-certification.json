@@ -1,0 +1,12 @@
+{
+  "passed": true,
+  "database": "agent_repaircert_e2e405199f2d4a9c875d40f1329c17dc",
+  "directory": "data/experiments/agent_repaircert_e2e405199f2d4a9c875d40f1329c17dc",
+  "checks": [
+    "a fixed checked result whose execution required repair cannot certify the unchanged original method",
+    "three original complete distinct unmodified samples still certify normally",
+    "completion replay of a checked repaired task retains one draft revision and one event",
+    "even a fully checked repaired result cannot generate a new draft while an action outcome is unknown"
+  ],
+  "scope": "C3 synthetic certification/completion transaction mutations of retained real GUI evidence; zero additional GUI tasks or model calls"
+}

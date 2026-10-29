@@ -1,0 +1,30 @@
+#!/bin/bash
+# owndesk-run <seconds> <command>
+# What an agent's `shell` tool runs. Output goes through a file, so a program
+# left running in the background can't hold the call open, and very long
+# output comes back as its beginning and its end.
+
+set -u
+
+seconds="$1"
+command="$2"
+mkdir -p /tmp/owndesk
+out=$(mktemp /tmp/owndesk/run.XXXXXX)
+touch /tmp/owndesk/active
+
+timeout -k 5 "$seconds" bash -lc "$command" </dev/null >"$out" 2>&1
+code=$?
+
+size=$(stat -c %s "$out")
+if [ "$size" -gt 20000 ]; then
+  head -c 10000 "$out"
+  printf '\n\n… %s bytes of output omitted …\n\n' $(( size - 20000 ))
+  tail -c 10000 "$out"
+else
+  cat "$out"
+fi
+rm -f "$out"
+touch /tmp/owndesk/active
+
+[ "$code" -eq 124 ] && printf '\n[timed out after %ss]\n' "$seconds"
+exit "$code"

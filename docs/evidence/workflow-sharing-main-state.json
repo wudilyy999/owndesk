@@ -1,0 +1,33 @@
+{
+  "passed": true,
+  "checkedAt": "2026-10-25T20:11:46.566Z",
+  "main": {
+    "health": {
+      "ready": true,
+      "version": "0.15.1-dev"
+    },
+    "businessMigrations": 16,
+    "activeTasks": 0,
+    "webPid": 57067,
+    "workerPid": 57068
+  },
+  "originalC1": {
+    "status": "needs_review",
+    "version_status": "draft",
+    "plan_missing": true,
+    "attempts": 1,
+    "unknown_attempts": 1
+  },
+  "isolatedEnvironments": [
+    {
+      "database": "agent_sharesource_3722c885a43f4840b9aec87f80b1e769",
+      "businessMigrations": 19
+    },
+    {
+      "database": "agent_flowshare_e1b366c4df2041ba81118894118926c9",
+      "businessMigrations": 19
+    }
+  ],
+  "envUnchanged": true,
+  "scope": "Read-only main/paused-C1 recheck; migrations only in isolated source copy and empty target; main processes and pending request unchanged"
+}

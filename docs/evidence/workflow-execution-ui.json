@@ -1,0 +1,19 @@
+{
+  "passed": true,
+  "scope": "C2 owner Web ready-version execution and actual native GUI task; no cloud compilation or overall product comparison",
+  "database": "agent_flowui_503fce3cec7b4a00be014980588cba85",
+  "directory": "data/experiments/agent_flowui_503fce3cec7b4a00be014980588cba85",
+  "taskId": "d1ccf7b1-e133-4aee-a0bf-ee1c46f2631d",
+  "checks": [
+    {
+      "check": "ready-version form, desktop/390px layout, pending parameters and request key survive response loss/reload; second POST truly accepted",
+      "taskId": "d1ccf7b1-e133-4aee-a0bf-ee1c46f2631d",
+      "passed": true
+    },
+    {
+      "check": "real Web-admitted task performed GUI actions, fixed version/contract result passed, zero model calls and completed step progress visible",
+      "taskId": "d1ccf7b1-e133-4aee-a0bf-ee1c46f2631d",
+      "passed": true
+    }
+  ]
+}

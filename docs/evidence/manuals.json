@@ -1,0 +1,96 @@
+{
+  "passed": true,
+  "database": "agent_manual_0fea1db958b34a7ea0656dce99c67b72",
+  "directory": "data/experiments/agent_manual_0fea1db958b34a7ea0656dce99c67b72",
+  "sourceId": "4656c7c7-f841-4e85-8ca9-e244e1e50c58",
+  "compileId": "aeb092f4-f792-480d-aa27-93793b404826",
+  "reuseId": "dd525202-b12a-44b9-8b60-8856f1177012",
+  "steps": {
+    "source": 0,
+    "compile": 1,
+    "reuse": 7
+  },
+  "checks": [
+    "Real source Task: Thunar launch and three fresh-observation keyboard actions; completed without cloud requests",
+    "Actual owner UI: preview before any model call, generate one draft, edit, review, save; anonymous/cross-origin/unreviewed requests rejected and save is idempotent",
+    "New Task discovers/loads the saved edited manual, preserves it across a real worker restart, uses new screenshot IDs; disable affects future admission only and one durable load event survives replay"
+  ],
+  "cloudModelRequests": 0,
+  "errors": [],
+  "mainBefore": {
+    "tasks": 12,
+    "attempts": 65,
+    "actions": 58,
+    "artifacts": 7
+  },
+  "inheritedSource": {
+    "database": "agent_manual_cc1f35673d5c40f892d59dc0a838f983",
+    "taskId": "4656c7c7-f841-4e85-8ca9-e244e1e50c58",
+    "report": "data/experiments/agent_manual_cc1f35673d5c40f892d59dc0a838f983/report.json"
+  },
+  "status": "development-only",
+  "recordedAt": "2026-10-27T08:39:01.442134+00:00",
+  "versions": {
+    "application": "0.17.0-dev",
+    "migration": "0018",
+    "workstation": "0.6.3",
+    "guestProtocol": 6
+  },
+  "successfulChain": {
+    "logicalTasks": 3,
+    "localFixedResponses": 13,
+    "newLocalFixedResponses": 8,
+    "desktopActions": 9,
+    "actionsByTask": {
+      "sourceId": 4,
+      "compileId": 0,
+      "reuseId": 5
+    },
+    "sourceGuiReusedWithoutRerun": true
+  },
+  "verification": {
+    "unitTests": 23,
+    "passed": 23,
+    "typecheck": true,
+    "isolatedProductionBuild": true,
+    "desktopAndMobileUI": true,
+    "exportNameFocusedRecheck": 4
+  },
+  "mainAfter": {
+    "counts": {
+      "tasks": 12,
+      "attempts": 65,
+      "actions": 58,
+      "artifacts": 7,
+      "active": 0
+    },
+    "workstationImage": "personal-agent-workstation:0.6.3",
+    "pids": [25794, 26072],
+    "mainRestarted": false,
+    "mainConfigChanged": false,
+    "recordedAt": "2026-10-27T08:34:30.882Z"
+  },
+  "retainedFailures": [
+    {
+      "report": "data/experiments/agent_manual_11c6dc0b625e4070bce62a90c1abd5f4/report.json",
+      "reason": "Local fixture did not decode image-tool content arrays",
+      "unknownAttemptsRetained": 1,
+      "cloudRequests": 0
+    },
+    {
+      "report": "data/experiments/agent_manual_cc1f35673d5c40f892d59dc0a838f983/report.json",
+      "reason": "Source succeeded; owner UI revealed submit buttons without explicit submit type. Source reused in later tail."
+    },
+    {
+      "log": "data/experiments/manuals-development/build-first.log",
+      "reason": "Isolated web checkout initially omitted imported worker type sources; copied sources and rebuilt."
+    }
+  ],
+  "remaining": [
+    "Real-model extraction and relevance-selection quality",
+    "Multi-application and changed-parameter generalization",
+    "Plugin bundled Skill discovery/resource import and marketplace",
+    "Main preview deployment"
+  ],
+  "codeScope": "Owner-reviewed advisory manuals through original Task/runtime; no restored UI numbering and no new executor."
+}

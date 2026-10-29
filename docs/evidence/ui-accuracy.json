@@ -1,0 +1,1498 @@
+{
+  "completed": true,
+  "recordedAt": "2026-10-27T07:36:16.940Z",
+  "image": "personal-agent-workstation:0.7.0",
+  "directory": "data/experiments/pa-ui-accuracy-a34d2eb8",
+  "name": "pa-ui-accuracy-a34d2eb8",
+  "groundTruth": "12 DOM controls, 12 GTK controls, 20 Canvas controls; also disabled/hidden/covered/static negatives",
+  "selection": "Geometry oracle matches reference centers to fixture ground truth; this is not an autonomous VLM evaluation.",
+  "rates": [
+    {
+      "mode": "native",
+      "detection": {
+        "correct": 11,
+        "total": 12
+      },
+      "naming": {
+        "correct": 9,
+        "total": 11
+      },
+      "candidatePrecision": {
+        "correct": 11,
+        "total": 11
+      },
+      "rawClicks": {
+        "confirmed": 10,
+        "attempts": 11
+      },
+      "nativeConfirmedDistinct": 11
+    },
+    {
+      "mode": "dom",
+      "detection": {
+        "correct": 12,
+        "total": 12
+      },
+      "naming": {
+        "correct": 8,
+        "total": 12
+      },
+      "candidatePrecision": {
+        "correct": 12,
+        "total": 12
+      },
+      "rawClicks": {
+        "confirmed": 12,
+        "attempts": 12
+      }
+    },
+    {
+      "mode": "vision",
+      "detection": {
+        "correct": 18,
+        "total": 20
+      },
+      "naming": {
+        "correct": 12,
+        "total": 14
+      },
+      "candidatePrecision": {
+        "correct": 18,
+        "total": 21
+      },
+      "rawClicks": {
+        "confirmed": 18,
+        "attempts": 18
+      }
+    }
+  ],
+  "sections": [
+    {
+      "mode": "native",
+      "total": 12,
+      "detected": 11,
+      "namedTargets": 11,
+      "namesExact": 9,
+      "candidateCount": 11,
+      "validCandidateCount": 11,
+      "duplicateCandidates": 0,
+      "spuriousCandidates": [],
+      "namedExamples": [
+        {
+          "id": "save",
+          "expectedName": "Save",
+          "detected": true,
+          "ref": "a1",
+          "name": "Save",
+          "source": "atspi",
+          "nameExact": true,
+          "bounds": {
+            "x": 105,
+            "y": 154,
+            "width": 205,
+            "height": 48
+          },
+          "click": {
+            "status": "succeeded",
+            "hit": true,
+            "callbacks": ["save"],
+            "method": "atspi"
+          }
+        },
+        {
+          "id": "cancel",
+          "expectedName": "Cancel",
+          "detected": true,
+          "ref": "a2",
+          "name": "Cancel",
+          "source": "atspi",
+          "nameExact": true,
+          "bounds": {
+            "x": 345,
+            "y": 154,
+            "width": 205,
+            "height": 48
+          },
+          "click": {
+            "status": "succeeded",
+            "hit": true,
+            "callbacks": ["cancel"],
+            "method": "atspi"
+          }
+        },
+        {
+          "id": "download",
+          "expectedName": "Download",
+          "detected": true,
+          "ref": "a3",
+          "name": "Download",
+          "source": "atspi",
+          "nameExact": true,
+          "bounds": {
+            "x": 585,
+            "y": 154,
+            "width": 205,
+            "height": 48
+          },
+          "click": {
+            "status": "succeeded",
+            "hit": true,
+            "callbacks": ["download"],
+            "method": "atspi"
+          }
+        },
+        {
+          "id": "refresh",
+          "expectedName": "Refresh",
+          "detected": true,
+          "ref": "a4",
+          "name": "Refresh",
+          "source": "atspi",
+          "nameExact": true,
+          "bounds": {
+            "x": 825,
+            "y": 154,
+            "width": 205,
+            "height": 48
+          },
+          "click": {
+            "status": "succeeded",
+            "hit": true,
+            "callbacks": ["refresh"],
+            "method": "atspi"
+          }
+        },
+        {
+          "id": "sync",
+          "expectedName": "Enable sync",
+          "detected": true,
+          "ref": "a5",
+          "name": "Enable sync",
+          "source": "atspi",
+          "nameExact": true,
+          "bounds": {
+            "x": 105,
+            "y": 259,
+            "width": 205,
+            "height": 48
+          },
+          "click": {
+            "status": "succeeded",
+            "hit": true,
+            "callbacks": ["sync"],
+            "method": "atspi"
+          }
+        },
+        {
+          "id": "auto",
+          "expectedName": "Auto mode",
+          "detected": true,
+          "ref": "a6",
+          "name": "Auto mode",
+          "source": "atspi",
+          "nameExact": true,
+          "bounds": {
+            "x": 345,
+            "y": 259,
+            "width": 205,
+            "height": 48
+          },
+          "click": {
+            "status": "succeeded",
+            "hit": true,
+            "callbacks": ["auto"],
+            "method": "atspi"
+          }
+        }
+      ],
+      "rows": [
+        {
+          "id": "save",
+          "expectedName": "Save",
+          "detected": true,
+          "ref": "a1",
+          "name": "Save",
+          "source": "atspi",
+          "nameExact": true,
+          "bounds": {
+            "x": 105,
+            "y": 154,
+            "width": 205,
+            "height": 48
+          },
+          "click": {
+            "status": "succeeded",
+            "hit": true,
+            "callbacks": ["save"],
+            "method": "atspi"
+          }
+        },
+        {
+          "id": "cancel",
+          "expectedName": "Cancel",
+          "detected": true,
+          "ref": "a2",
+          "name": "Cancel",
+          "source": "atspi",
+          "nameExact": true,
+          "bounds": {
+            "x": 345,
+            "y": 154,
+            "width": 205,
+            "height": 48
+          },
+          "click": {
+            "status": "succeeded",
+            "hit": true,
+            "callbacks": ["cancel"],
+            "method": "atspi"
+          }
+        },
+        {
+          "id": "download",
+          "expectedName": "Download",
+          "detected": true,
+          "ref": "a3",
+          "name": "Download",
+          "source": "atspi",
+          "nameExact": true,
+          "bounds": {
+            "x": 585,
+            "y": 154,
+            "width": 205,
+            "height": 48
+          },
+          "click": {
+            "status": "succeeded",
+            "hit": true,
+            "callbacks": ["download"],
+            "method": "atspi"
+          }
+        },
+        {
+          "id": "refresh",
+          "expectedName": "Refresh",
+          "detected": true,
+          "ref": "a4",
+          "name": "Refresh",
+          "source": "atspi",
+          "nameExact": true,
+          "bounds": {
+            "x": 825,
+            "y": 154,
+            "width": 205,
+            "height": 48
+          },
+          "click": {
+            "status": "succeeded",
+            "hit": true,
+            "callbacks": ["refresh"],
+            "method": "atspi"
+          }
+        },
+        {
+          "id": "sync",
+          "expectedName": "Enable sync",
+          "detected": true,
+          "ref": "a5",
+          "name": "Enable sync",
+          "source": "atspi",
+          "nameExact": true,
+          "bounds": {
+            "x": 105,
+            "y": 259,
+            "width": 205,
+            "height": 48
+          },
+          "click": {
+            "status": "succeeded",
+            "hit": true,
+            "callbacks": ["sync"],
+            "method": "atspi"
+          }
+        },
+        {
+          "id": "auto",
+          "expectedName": "Auto mode",
+          "detected": true,
+          "ref": "a6",
+          "name": "Auto mode",
+          "source": "atspi",
+          "nameExact": true,
+          "bounds": {
+            "x": 345,
+            "y": 259,
+            "width": 205,
+            "height": 48
+          },
+          "click": {
+            "status": "succeeded",
+            "hit": true,
+            "callbacks": ["auto"],
+            "method": "atspi"
+          }
+        },
+        {
+          "id": "report",
+          "expectedName": "Report name",
+          "detected": true,
+          "ref": "a7",
+          "name": "Report name",
+          "source": "atspi",
+          "nameExact": true,
+          "bounds": {
+            "x": 585,
+            "y": 259,
+            "width": 205,
+            "height": 48
+          },
+          "click": {
+            "status": "succeeded",
+            "hit": true,
+            "callbacks": ["report"],
+            "method": "atspi"
+          }
+        },
+        {
+          "id": "email",
+          "expectedName": "Email address",
+          "detected": true,
+          "ref": "a8",
+          "name": "",
+          "source": "atspi",
+          "nameExact": false,
+          "bounds": {
+            "x": 825,
+            "y": 259,
+            "width": 205,
+            "height": 48
+          },
+          "click": {
+            "status": "succeeded",
+            "hit": true,
+            "callbacks": ["email"],
+            "method": "atspi"
+          }
+        },
+        {
+          "id": "zoom",
+          "expectedName": "Zoom",
+          "detected": true,
+          "ref": "a9",
+          "name": "Zoom",
+          "source": "atspi",
+          "nameExact": true,
+          "bounds": {
+            "x": 105,
+            "y": 364,
+            "width": 205,
+            "height": 48
+          },
+          "click": {
+            "status": "succeeded",
+            "hit": false,
+            "callbacks": [],
+            "method": "atspi"
+          }
+        },
+        {
+          "id": "format",
+          "expectedName": "File format",
+          "detected": true,
+          "ref": "a10",
+          "name": "File format",
+          "source": "atspi",
+          "nameExact": true,
+          "bounds": {
+            "x": 345,
+            "y": 364,
+            "width": 205,
+            "height": 48
+          },
+          "click": {
+            "status": "succeeded",
+            "hit": true,
+            "callbacks": ["format"],
+            "method": "atspi"
+          }
+        },
+        {
+          "id": "volume",
+          "expectedName": "Volume",
+          "detected": false,
+          "nameExact": false,
+          "click": null
+        },
+        {
+          "id": "unnamed",
+          "expectedName": null,
+          "detected": true,
+          "ref": "a11",
+          "name": "",
+          "source": "atspi",
+          "nameExact": null,
+          "bounds": {
+            "x": 825,
+            "y": 364,
+            "width": 205,
+            "height": 48
+          },
+          "click": {
+            "status": "succeeded",
+            "hit": true,
+            "callbacks": ["unnamed"],
+            "method": "atspi"
+          }
+        }
+      ],
+      "clickAttempts": 11,
+      "clickHits": 10,
+      "clickRejected": 0,
+      "clickUnknown": 0,
+      "nativeWithFallbackDetected": 11
+    },
+    {
+      "mode": "dom",
+      "total": 12,
+      "detected": 12,
+      "namedTargets": 12,
+      "namesExact": 8,
+      "candidateCount": 12,
+      "validCandidateCount": 12,
+      "duplicateCandidates": 0,
+      "spuriousCandidates": [],
+      "namedExamples": [
+        {
+          "id": "save",
+          "expectedName": "Save",
+          "detected": true,
+          "ref": "r0",
+          "name": "Save",
+          "source": "dom",
+          "nameExact": true,
+          "bounds": {
+            "x": 16,
+            "y": 58,
+            "width": 220,
+            "height": 48
+          },
+          "click": {
+            "status": "succeeded",
+            "hit": true,
+            "callbacks": ["save"],
+            "method": "dom"
+          }
+        },
+        {
+          "id": "cancel",
+          "expectedName": "Cancel",
+          "detected": true,
+          "ref": "r1",
+          "name": "Cancel",
+          "source": "dom",
+          "nameExact": true,
+          "bounds": {
+            "x": 296,
+            "y": 58,
+            "width": 220,
+            "height": 48
+          },
+          "click": {
+            "status": "succeeded",
+            "hit": true,
+            "callbacks": ["cancel"],
+            "method": "dom"
+          }
+        },
+        {
+          "id": "download",
+          "expectedName": "Download report",
+          "detected": true,
+          "ref": "r2",
+          "name": "Download report",
+          "source": "dom",
+          "nameExact": true,
+          "bounds": {
+            "x": 576,
+            "y": 58,
+            "width": 220,
+            "height": 48
+          },
+          "click": {
+            "status": "succeeded",
+            "hit": true,
+            "callbacks": ["download"],
+            "method": "dom"
+          }
+        },
+        {
+          "id": "search",
+          "expectedName": "Search docs",
+          "detected": true,
+          "ref": "r3",
+          "name": "Search docs",
+          "source": "dom",
+          "nameExact": true,
+          "bounds": {
+            "x": 856,
+            "y": 58,
+            "width": 220,
+            "height": 48
+          },
+          "click": {
+            "status": "succeeded",
+            "hit": true,
+            "callbacks": ["search"],
+            "method": "dom"
+          }
+        },
+        {
+          "id": "role",
+          "expectedName": "Open panel",
+          "detected": true,
+          "ref": "r7",
+          "name": "Open panel",
+          "source": "dom",
+          "nameExact": true,
+          "bounds": {
+            "x": 856,
+            "y": 126,
+            "width": 220,
+            "height": 48
+          },
+          "click": {
+            "status": "succeeded",
+            "hit": true,
+            "callbacks": ["role"],
+            "method": "dom"
+          }
+        },
+        {
+          "id": "shadow",
+          "expectedName": "Shadow action",
+          "detected": true,
+          "ref": "r9",
+          "name": "Shadow action",
+          "source": "dom",
+          "nameExact": true,
+          "bounds": {
+            "x": 296,
+            "y": 217,
+            "width": 220,
+            "height": 48
+          },
+          "click": {
+            "status": "succeeded",
+            "hit": true,
+            "callbacks": ["shadow"],
+            "method": "dom"
+          }
+        }
+      ],
+      "rows": [
+        {
+          "id": "save",
+          "expectedName": "Save",
+          "detected": true,
+          "ref": "r0",
+          "name": "Save",
+          "source": "dom",
+          "nameExact": true,
+          "bounds": {
+            "x": 16,
+            "y": 58,
+            "width": 220,
+            "height": 48
+          },
+          "click": {
+            "status": "succeeded",
+            "hit": true,
+            "callbacks": ["save"],
+            "method": "dom"
+          }
+        },
+        {
+          "id": "cancel",
+          "expectedName": "Cancel",
+          "detected": true,
+          "ref": "r1",
+          "name": "Cancel",
+          "source": "dom",
+          "nameExact": true,
+          "bounds": {
+            "x": 296,
+            "y": 58,
+            "width": 220,
+            "height": 48
+          },
+          "click": {
+            "status": "succeeded",
+            "hit": true,
+            "callbacks": ["cancel"],
+            "method": "dom"
+          }
+        },
+        {
+          "id": "download",
+          "expectedName": "Download report",
+          "detected": true,
+          "ref": "r2",
+          "name": "Download report",
+          "source": "dom",
+          "nameExact": true,
+          "bounds": {
+            "x": 576,
+            "y": 58,
+            "width": 220,
+            "height": 48
+          },
+          "click": {
+            "status": "succeeded",
+            "hit": true,
+            "callbacks": ["download"],
+            "method": "dom"
+          }
+        },
+        {
+          "id": "search",
+          "expectedName": "Search docs",
+          "detected": true,
+          "ref": "r3",
+          "name": "Search docs",
+          "source": "dom",
+          "nameExact": true,
+          "bounds": {
+            "x": 856,
+            "y": 58,
+            "width": 220,
+            "height": 48
+          },
+          "click": {
+            "status": "succeeded",
+            "hit": true,
+            "callbacks": ["search"],
+            "method": "dom"
+          }
+        },
+        {
+          "id": "email",
+          "expectedName": "Email address",
+          "detected": true,
+          "ref": "r4",
+          "name": "",
+          "source": "dom",
+          "nameExact": false,
+          "bounds": {
+            "x": 16,
+            "y": 143,
+            "width": 220,
+            "height": 48
+          },
+          "click": {
+            "status": "succeeded",
+            "hit": true,
+            "callbacks": ["email"],
+            "method": "dom"
+          }
+        },
+        {
+          "id": "legacy",
+          "expectedName": "Refresh data",
+          "detected": true,
+          "ref": "r5",
+          "name": "",
+          "source": "dom",
+          "nameExact": false,
+          "bounds": {
+            "x": 296,
+            "y": 126,
+            "width": 220,
+            "height": 48
+          },
+          "click": {
+            "status": "succeeded",
+            "hit": true,
+            "callbacks": ["legacy"],
+            "method": "dom"
+          }
+        },
+        {
+          "id": "sync",
+          "expectedName": "Enable sync",
+          "detected": true,
+          "ref": "r6",
+          "name": "",
+          "source": "dom",
+          "nameExact": false,
+          "bounds": {
+            "x": 580,
+            "y": 146,
+            "width": 220,
+            "height": 48
+          },
+          "click": {
+            "status": "succeeded",
+            "hit": true,
+            "callbacks": ["sync"],
+            "method": "dom"
+          }
+        },
+        {
+          "id": "role",
+          "expectedName": "Open panel",
+          "detected": true,
+          "ref": "r7",
+          "name": "Open panel",
+          "source": "dom",
+          "nameExact": true,
+          "bounds": {
+            "x": 856,
+            "y": 126,
+            "width": 220,
+            "height": 48
+          },
+          "click": {
+            "status": "succeeded",
+            "hit": true,
+            "callbacks": ["role"],
+            "method": "dom"
+          }
+        },
+        {
+          "id": "menu",
+          "expectedName": "Options",
+          "detected": true,
+          "ref": "r8",
+          "name": "",
+          "source": "dom",
+          "nameExact": false,
+          "bounds": {
+            "x": 16,
+            "y": 238,
+            "width": 220,
+            "height": 48
+          },
+          "click": {
+            "status": "succeeded",
+            "hit": true,
+            "callbacks": ["menu"],
+            "method": "dom"
+          }
+        },
+        {
+          "id": "shadow",
+          "expectedName": "Shadow action",
+          "detected": true,
+          "ref": "r9",
+          "name": "Shadow action",
+          "source": "dom",
+          "nameExact": true,
+          "bounds": {
+            "x": 296,
+            "y": 217,
+            "width": 220,
+            "height": 48
+          },
+          "click": {
+            "status": "succeeded",
+            "hit": true,
+            "callbacks": ["shadow"],
+            "method": "dom"
+          }
+        },
+        {
+          "id": "frame",
+          "expectedName": "Frame action",
+          "detected": true,
+          "ref": "r11",
+          "name": "Frame action",
+          "source": "dom",
+          "nameExact": true,
+          "bounds": {
+            "x": 585,
+            "y": 226,
+            "width": 220,
+            "height": 48
+          },
+          "click": {
+            "status": "succeeded",
+            "hit": true,
+            "callbacks": ["frame"],
+            "method": "dom"
+          }
+        },
+        {
+          "id": "delete",
+          "expectedName": "Delete draft",
+          "detected": true,
+          "ref": "r10",
+          "name": "Delete draft",
+          "source": "dom",
+          "nameExact": true,
+          "bounds": {
+            "x": 856,
+            "y": 217,
+            "width": 220,
+            "height": 48
+          },
+          "click": {
+            "status": "succeeded",
+            "hit": true,
+            "callbacks": ["delete"],
+            "method": "dom"
+          }
+        }
+      ],
+      "clickAttempts": 12,
+      "clickHits": 12,
+      "clickRejected": 0,
+      "clickUnknown": 0
+    },
+    {
+      "mode": "vision",
+      "total": 20,
+      "detected": 18,
+      "namedTargets": 14,
+      "namesExact": 12,
+      "candidateCount": 21,
+      "validCandidateCount": 18,
+      "duplicateCandidates": 0,
+      "spuriousCandidates": [
+        {
+          "source": "vision",
+          "role": "candidate",
+          "name": "Report title",
+          "bounds": {
+            "x": 37,
+            "y": 685,
+            "width": 85,
+            "height": 17
+          },
+          "actions": ["click", "double_click"],
+          "detector": "ocr",
+          "confidence": 0.9623779299999999,
+          "ref": "v21"
+        },
+        {
+          "source": "vision",
+          "role": "candidate",
+          "name": "Status: ready",
+          "bounds": {
+            "x": 327,
+            "y": 685,
+            "width": 105,
+            "height": 17
+          },
+          "actions": ["click", "double_click"],
+          "detector": "ocr",
+          "confidence": 0.94874588,
+          "ref": "v22"
+        },
+        {
+          "source": "vision",
+          "role": "candidate",
+          "name": "Disabled action",
+          "bounds": {
+            "x": 615,
+            "y": 661,
+            "width": 225,
+            "height": 58
+          },
+          "actions": ["click", "double_click"],
+          "detector": "ocr+outline",
+          "confidence": 0.96461746,
+          "ref": "v23"
+        }
+      ],
+      "namedExamples": [
+        {
+          "id": "save",
+          "expectedName": "Save",
+          "detected": true,
+          "ref": "v10",
+          "name": "Save",
+          "source": "vision",
+          "detector": "ocr+outline",
+          "nameExact": true,
+          "bounds": {
+            "x": 37,
+            "y": 149,
+            "width": 218,
+            "height": 52
+          },
+          "click": {
+            "status": "succeeded",
+            "hit": true,
+            "callbacks": ["save"],
+            "method": "bounds"
+          }
+        },
+        {
+          "id": "cancel",
+          "expectedName": "Cancel",
+          "detected": true,
+          "ref": "v11",
+          "name": "Cancel",
+          "source": "vision",
+          "detector": "ocr+outline",
+          "nameExact": true,
+          "bounds": {
+            "x": 327,
+            "y": 149,
+            "width": 218,
+            "height": 52
+          },
+          "click": {
+            "status": "succeeded",
+            "hit": true,
+            "callbacks": ["cancel"],
+            "method": "bounds"
+          }
+        },
+        {
+          "id": "export",
+          "expectedName": "Export CSV",
+          "detected": true,
+          "ref": "v12",
+          "name": "Export CSV",
+          "source": "vision",
+          "detector": "ocr+outline",
+          "nameExact": true,
+          "bounds": {
+            "x": 617,
+            "y": 149,
+            "width": 218,
+            "height": 52
+          },
+          "click": {
+            "status": "succeeded",
+            "hit": true,
+            "callbacks": ["export"],
+            "method": "bounds"
+          }
+        },
+        {
+          "id": "settings",
+          "expectedName": "Settings",
+          "detected": true,
+          "ref": "v13",
+          "name": "Settings",
+          "source": "vision",
+          "detector": "ocr+outline",
+          "nameExact": true,
+          "bounds": {
+            "x": 907,
+            "y": 149,
+            "width": 218,
+            "height": 52
+          },
+          "click": {
+            "status": "succeeded",
+            "hit": true,
+            "callbacks": ["settings"],
+            "method": "bounds"
+          }
+        },
+        {
+          "id": "run",
+          "expectedName": "Run report",
+          "detected": true,
+          "ref": "v28",
+          "name": "Run report",
+          "source": "vision",
+          "detector": "outline+ocr",
+          "nameExact": true,
+          "bounds": {
+            "x": 34,
+            "y": 247,
+            "width": 223,
+            "height": 56
+          },
+          "click": {
+            "status": "succeeded",
+            "hit": true,
+            "callbacks": ["run"],
+            "method": "bounds"
+          }
+        },
+        {
+          "id": "download",
+          "expectedName": "Download",
+          "detected": true,
+          "ref": "v30",
+          "name": "Download",
+          "source": "vision",
+          "detector": "outline+ocr",
+          "nameExact": true,
+          "bounds": {
+            "x": 323,
+            "y": 247,
+            "width": 226,
+            "height": 56
+          },
+          "click": {
+            "status": "succeeded",
+            "hit": true,
+            "callbacks": ["download"],
+            "method": "bounds"
+          }
+        }
+      ],
+      "rows": [
+        {
+          "id": "save",
+          "expectedName": "Save",
+          "detected": true,
+          "ref": "v10",
+          "name": "Save",
+          "source": "vision",
+          "detector": "ocr+outline",
+          "nameExact": true,
+          "bounds": {
+            "x": 37,
+            "y": 149,
+            "width": 218,
+            "height": 52
+          },
+          "click": {
+            "status": "succeeded",
+            "hit": true,
+            "callbacks": ["save"],
+            "method": "bounds"
+          }
+        },
+        {
+          "id": "cancel",
+          "expectedName": "Cancel",
+          "detected": true,
+          "ref": "v11",
+          "name": "Cancel",
+          "source": "vision",
+          "detector": "ocr+outline",
+          "nameExact": true,
+          "bounds": {
+            "x": 327,
+            "y": 149,
+            "width": 218,
+            "height": 52
+          },
+          "click": {
+            "status": "succeeded",
+            "hit": true,
+            "callbacks": ["cancel"],
+            "method": "bounds"
+          }
+        },
+        {
+          "id": "export",
+          "expectedName": "Export CSV",
+          "detected": true,
+          "ref": "v12",
+          "name": "Export CSV",
+          "source": "vision",
+          "detector": "ocr+outline",
+          "nameExact": true,
+          "bounds": {
+            "x": 617,
+            "y": 149,
+            "width": 218,
+            "height": 52
+          },
+          "click": {
+            "status": "succeeded",
+            "hit": true,
+            "callbacks": ["export"],
+            "method": "bounds"
+          }
+        },
+        {
+          "id": "settings",
+          "expectedName": "Settings",
+          "detected": true,
+          "ref": "v13",
+          "name": "Settings",
+          "source": "vision",
+          "detector": "ocr+outline",
+          "nameExact": true,
+          "bounds": {
+            "x": 907,
+            "y": 149,
+            "width": 218,
+            "height": 52
+          },
+          "click": {
+            "status": "succeeded",
+            "hit": true,
+            "callbacks": ["settings"],
+            "method": "bounds"
+          }
+        },
+        {
+          "id": "run",
+          "expectedName": "Run report",
+          "detected": true,
+          "ref": "v28",
+          "name": "Run report",
+          "source": "vision",
+          "detector": "outline+ocr",
+          "nameExact": true,
+          "bounds": {
+            "x": 34,
+            "y": 247,
+            "width": 223,
+            "height": 56
+          },
+          "click": {
+            "status": "succeeded",
+            "hit": true,
+            "callbacks": ["run"],
+            "method": "bounds"
+          }
+        },
+        {
+          "id": "download",
+          "expectedName": "Download",
+          "detected": true,
+          "ref": "v30",
+          "name": "Download",
+          "source": "vision",
+          "detector": "outline+ocr",
+          "nameExact": true,
+          "bounds": {
+            "x": 323,
+            "y": 247,
+            "width": 226,
+            "height": 56
+          },
+          "click": {
+            "status": "succeeded",
+            "hit": true,
+            "callbacks": ["download"],
+            "method": "bounds"
+          }
+        },
+        {
+          "id": "upload",
+          "expectedName": "Upload",
+          "detected": true,
+          "ref": "v29",
+          "name": "Upload",
+          "source": "vision",
+          "detector": "outline+ocr",
+          "nameExact": true,
+          "bounds": {
+            "x": 615,
+            "y": 247,
+            "width": 224,
+            "height": 56
+          },
+          "click": {
+            "status": "succeeded",
+            "hit": true,
+            "callbacks": ["upload"],
+            "method": "bounds"
+          }
+        },
+        {
+          "id": "refresh",
+          "expectedName": "Refresh",
+          "detected": true,
+          "ref": "v27",
+          "name": "Refresh",
+          "source": "vision",
+          "detector": "outline+ocr",
+          "nameExact": true,
+          "bounds": {
+            "x": 905,
+            "y": 247,
+            "width": 222,
+            "height": 56
+          },
+          "click": {
+            "status": "succeeded",
+            "hit": true,
+            "callbacks": ["refresh"],
+            "method": "bounds"
+          }
+        },
+        {
+          "id": "continue",
+          "expectedName": "Continue",
+          "detected": true,
+          "ref": "v14",
+          "name": "Continue",
+          "source": "vision",
+          "detector": "ocr",
+          "nameExact": true,
+          "bounds": {
+            "x": 107,
+            "y": 368,
+            "width": 78,
+            "height": 14
+          },
+          "click": {
+            "status": "succeeded",
+            "hit": true,
+            "callbacks": ["continue"],
+            "method": "bounds"
+          }
+        },
+        {
+          "id": "open",
+          "expectedName": "Open folder",
+          "detected": true,
+          "ref": "v15",
+          "name": "Open folder",
+          "source": "vision",
+          "detector": "ocr",
+          "nameExact": true,
+          "bounds": {
+            "x": 385,
+            "y": 367,
+            "width": 103,
+            "height": 19
+          },
+          "click": {
+            "status": "succeeded",
+            "hit": true,
+            "callbacks": ["open"],
+            "method": "bounds"
+          }
+        },
+        {
+          "id": "filter",
+          "expectedName": "Apply filter",
+          "detected": true,
+          "ref": "v16",
+          "name": "Apply",
+          "source": "vision",
+          "detector": "ocr",
+          "nameExact": false,
+          "bounds": {
+            "x": 698,
+            "y": 370,
+            "width": 30,
+            "height": 12
+          },
+          "click": {
+            "status": "succeeded",
+            "hit": true,
+            "callbacks": ["filter"],
+            "method": "bounds"
+          }
+        },
+        {
+          "id": "version",
+          "expectedName": "Version 2.4",
+          "detected": true,
+          "ref": "v17",
+          "name": "Version 2.4",
+          "source": "vision",
+          "detector": "ocr+outline",
+          "nameExact": true,
+          "bounds": {
+            "x": 907,
+            "y": 349,
+            "width": 218,
+            "height": 52
+          },
+          "click": {
+            "status": "succeeded",
+            "hit": true,
+            "callbacks": ["version"],
+            "method": "bounds"
+          }
+        },
+        {
+          "id": "add",
+          "expectedName": null,
+          "detected": true,
+          "ref": "v25",
+          "name": "十",
+          "source": "vision",
+          "detector": "outline+ocr",
+          "nameExact": null,
+          "bounds": {
+            "x": 37,
+            "y": 449,
+            "width": 218,
+            "height": 52
+          },
+          "click": {
+            "status": "succeeded",
+            "hit": true,
+            "callbacks": ["add"],
+            "method": "bounds"
+          }
+        },
+        {
+          "id": "trash",
+          "expectedName": null,
+          "detected": true,
+          "ref": "v26",
+          "name": "Unlabeled visual candidate",
+          "source": "vision",
+          "detector": "outline",
+          "nameExact": null,
+          "bounds": {
+            "x": 327,
+            "y": 449,
+            "width": 218,
+            "height": 52
+          },
+          "click": {
+            "status": "succeeded",
+            "hit": true,
+            "callbacks": ["trash"],
+            "method": "bounds"
+          }
+        },
+        {
+          "id": "gear",
+          "expectedName": null,
+          "detected": true,
+          "ref": "v18",
+          "name": "©",
+          "source": "vision",
+          "detector": "ocr+outline",
+          "nameExact": null,
+          "bounds": {
+            "x": 712,
+            "y": 462,
+            "width": 27,
+            "height": 26
+          },
+          "click": {
+            "status": "succeeded",
+            "hit": true,
+            "callbacks": ["gear"],
+            "method": "bounds"
+          }
+        },
+        {
+          "id": "magnify",
+          "expectedName": null,
+          "detected": true,
+          "ref": "v19",
+          "name": "Q",
+          "source": "vision",
+          "detector": "ocr+outline",
+          "nameExact": null,
+          "bounds": {
+            "x": 907,
+            "y": 449,
+            "width": 218,
+            "height": 52
+          },
+          "click": {
+            "status": "succeeded",
+            "hit": true,
+            "callbacks": ["magnify"],
+            "method": "bounds"
+          }
+        },
+        {
+          "id": "tiny",
+          "expectedName": null,
+          "detected": true,
+          "ref": "v24",
+          "name": "Unlabeled visual candidate",
+          "source": "vision",
+          "detector": "outline",
+          "nameExact": null,
+          "bounds": {
+            "x": 32,
+            "y": 544,
+            "width": 28,
+            "height": 30
+          },
+          "click": {
+            "status": "succeeded",
+            "hit": true,
+            "callbacks": ["tiny"],
+            "method": "bounds"
+          }
+        },
+        {
+          "id": "play",
+          "expectedName": null,
+          "detected": false,
+          "nameExact": null,
+          "click": null
+        },
+        {
+          "id": "ok",
+          "expectedName": "OK",
+          "detected": true,
+          "ref": "v20",
+          "name": "OK",
+          "source": "vision",
+          "detector": "ocr+outline",
+          "nameExact": true,
+          "bounds": {
+            "x": 617,
+            "y": 549,
+            "width": 218,
+            "height": 52
+          },
+          "click": {
+            "status": "succeeded",
+            "hit": true,
+            "callbacks": ["ok"],
+            "method": "bounds"
+          }
+        },
+        {
+          "id": "advanced",
+          "expectedName": "Advanced",
+          "detected": false,
+          "nameExact": false,
+          "click": null
+        }
+      ],
+      "clickAttempts": 18,
+      "clickHits": 18,
+      "clickRejected": 0,
+      "clickUnknown": 0
+    }
+  ],
+  "nativeSupplementaryVerification": {
+    "passed": true,
+    "targetId": "zoom",
+    "ref": "a9",
+    "name": "Zoom",
+    "signal": "activate",
+    "method": "atspi",
+    "hits": ["zoom"],
+    "reason": "Initial fixture listened for physical button-press-event, while the AT-SPI adapter invoked its supported activate action. Single-item semantic callback verification; original attempt retained.",
+    "modelRequests": 0
+  },
+  "totalDirectGuestClickAttempts": 42,
+  "cloudModelRequests": 0,
+  "taskSubmissions": 0,
+  "productionCodeChanged": false,
+  "previewUpgraded": false,
+  "main": {
+    "row": {
+      "tasks": 12,
+      "attempts": 65,
+      "actions": 58,
+      "artifacts": 7,
+      "active": 0
+    },
+    "workstationImage": "personal-agent-workstation:0.6.3",
+    "recordedAt": "2026-10-27T07:36:16.901Z"
+  },
+  "knownGaps": [
+    "DOM name extraction omits associated label, aria-labelledby and title",
+    "AT-SPI labelled-by relation not resolved; slider missing from semantic targets",
+    "OCR partially reads small labels and treats visual icons as characters; plain play icon and low-contrast Advanced label missed",
+    "Visual candidates include static Report title, Status: ready and disabled action"
+  ],
+  "fixtureOnlyDependency": "gir1.2-gtk-3.0 installed in the isolated guest; immutable workstation image unchanged",
+  "captures": {
+    "dom": "ui-accuracy-dom.jpg",
+    "native": "ui-accuracy-native.jpg",
+    "vision": "ui-accuracy-vision.jpg"
+  }
+}

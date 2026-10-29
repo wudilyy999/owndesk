@@ -1,0 +1,16 @@
+#!/bin/bash
+# Trusted read-only relay: no agent home, no Docker socket, immutable root filesystem.
+# X11 is in another IPC namespace; capture through XGetImage, never MIT-SHM.
+set -eu
+x11vnc -storepasswd "${OWNDESK_VNC_PASSWORD:?VNC password required}" /tmp/vncpass >/dev/null
+unset OWNDESK_VNC_PASSWORD
+x11vnc -display "${DISPLAY:-:1}" -rfbauth /tmp/vncpass -rfbport 5900 -localhost \
+  -viewonly -noremote -forever -shared -noshm -noxdamage -quiet >/tmp/viewer.log 2>&1 &
+vnc=$!
+websockify 6080 localhost:5900 >/tmp/websockify.log 2>&1 &
+ws=$!
+trap 'kill "$vnc" "$ws"; wait; exit 0' TERM INT
+while true; do
+  sleep 5 & wait $!
+  kill -0 "$vnc" "$ws"
+done

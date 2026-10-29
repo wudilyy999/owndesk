@@ -1,0 +1,80 @@
+{
+  "passed": true,
+  "applicationVersion": "0.13.0-dev",
+  "migration": "0013",
+  "controlledProvider": true,
+  "realModelJudgmentEvaluated": false,
+  "guestProtocolVersion": 5,
+  "controlledWebsite": false,
+  "sequentialHandoffEvaluated": true,
+  "handoffTasksEvaluated": 11,
+  "parallelDelegationEvaluated": false,
+  "checks": [
+    {
+      "check": "Busy target uses its real partition; source released, task stays queued, immutable target config/memory and host file survive edits; byte-checked recipient delivery, owner-answer context, stale segment APIs denied, idempotent handoff, no later source batch action; actual phone/desktop UI and original-thread follow-up",
+      "taskIds": [
+        "47b82910-ecbe-473e-b6ab-402d18c66380",
+        "14b6c16e-f422-41c2-bd6c-9b145d551d37",
+        "f08fcd7d-37dc-4469-a665-0e097f0f8fe2"
+      ],
+      "queue": {
+        "queue_name": "workspace-tasks",
+        "queue_partition_key": "gfgIGdxflGhX",
+        "application_version": "0.13.0-dev"
+      }
+    },
+    {
+      "check": "Same-workstation handoff creates a new queued segment after the old workflow returns; one shared task and file transfer",
+      "taskId": "04e92e3a-4423-47e8-b33d-a1e969aed57f"
+    },
+    {
+      "check": "Missing agent, unconfigured target model and missing source file all reject before a next segment is created",
+      "taskId": "31189fe2-e719-48d4-abea-5fe1529689c0"
+    },
+    {
+      "check": "Actual SIGKILL at before_commit: prepared handoff resumes without source model regeneration, duplicate segment/enqueue or premature task completion",
+      "taskId": "3475d9df-1799-452d-b099-d0353521a39a"
+    },
+    {
+      "check": "Actual SIGKILL at after_commit: prepared handoff resumes without source model regeneration, duplicate segment/enqueue or premature task completion",
+      "taskId": "74694fcc-52b2-449b-a4a7-001de36fc89b"
+    },
+    {
+      "check": "Total model-step budget remains consumed across delegation; next agent waits before any model request, explicit owner increase resumes it",
+      "taskId": "74a4c593-e545-4087-80c9-ba3390174b20"
+    },
+    {
+      "check": "Cancelling a queued recipient segment leaves the target's different active task intact and never calls the recipient model",
+      "taskIds": [
+        "558a920d-01ab-4177-a3c6-df76ca87b74d",
+        "1dd5741e-c8ab-4450-bdfc-48e3d05a0b63"
+      ]
+    },
+    {
+      "check": "Cancel after source release but before committed handoff survives SIGKILL and prevents next segment/model/queue effects",
+      "taskId": "28d2d427-a023-4f97-be63-e89f64d325e8"
+    },
+    {
+      "check": "Eleven actual tasks including two real target blockers and original-thread follow-up; nine completed, two actually cancelled",
+      "taskIds": [
+        "47b82910-ecbe-473e-b6ab-402d18c66380",
+        "14b6c16e-f422-41c2-bd6c-9b145d551d37",
+        "f08fcd7d-37dc-4469-a665-0e097f0f8fe2",
+        "04e92e3a-4423-47e8-b33d-a1e969aed57f",
+        "31189fe2-e719-48d4-abea-5fe1529689c0",
+        "3475d9df-1799-452d-b099-d0353521a39a",
+        "74694fcc-52b2-449b-a4a7-001de36fc89b",
+        "74a4c593-e545-4087-80c9-ba3390174b20",
+        "1dd5741e-c8ab-4450-bdfc-48e3d05a0b63",
+        "558a920d-01ab-4177-a3c6-df76ca87b74d",
+        "28d2d427-a023-4f97-be63-e89f64d325e8"
+      ],
+      "taskCount": 11
+    },
+    {
+      "check": "Provider key encrypted at rest, local config overrides env, masked settings view; plaintext key absent from task/DBOS records"
+    }
+  ],
+  "directory": "data/experiments/agent_runtime_c905a426a1fa4d6d9cffe66e3d828117",
+  "recordedAt": "2026-10-25T10:08:33.107Z"
+}

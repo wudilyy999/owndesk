@@ -1,0 +1,225 @@
+{
+  "scope": "S5-C final submission and separate page-result evidence: controlled mechanism acceptance, not full S5/product release",
+  "passed": true,
+  "partialControlledMechanismsVerified": true,
+  "recordedAt": "2026-10-25T09:34:03.434864+00:00",
+  "applicationVersion": "0.12.0-dev",
+  "migration": "0012",
+  "guestProtocolVersion": 5,
+  "workstationImage": "personal-agent-workstation:0.5.0",
+  "images": {
+    "worker": "313b02d4ac5f",
+    "web": "4c97e8d75c22",
+    "workstation": "24fd2a5471bd"
+  },
+  "controlledProvider": true,
+  "controlledWebsite": true,
+  "realModelJudgmentEvaluated": false,
+  "realPaymentEvaluated": false,
+  "independentSettlementVerified": false,
+  "completeS5Verified": false,
+  "completeNineTaskCommandPassed": true,
+  "originalNineTaskCountGatePreserved": true,
+  "originalCommand": "npm run test:runtime:payment-submit",
+  "partialAttempt": {
+    "evidence": "runtime-paymentsubmit-0.12.0-attempt.json",
+    "directory": "data/experiments/agent_runtime_eb7f34102dd044769f3e604cf0b03dc9",
+    "passed": false,
+    "tasksStarted": 9,
+    "acceptedScenarioChecks": 8,
+    "completedTasks": 7,
+    "cancelledTasks": 1,
+    "unfinishedTaskAtTestFailure": 1,
+    "failure": "test-only ambiguous SELECT dispatch_id in joined tables during ninth receipt-removal setup; changed to a.dispatch_id"
+  },
+  "focusedRecovery": {
+    "evidence": "runtime-paymentsubmit-recovery.json",
+    "directory": "data/experiments/agent_runtime_078534415b624f18a786a3514c0952b7",
+    "command": "npm run test:runtime:payment-submit -- lost-receipt",
+    "passed": true,
+    "actualTasks": 1,
+    "clickEffects": 1,
+    "dispatchMarkers": 1,
+    "reviewDecisions": ["continue", "cancel"],
+    "pageResultEvidenceVerified": true,
+    "anotherClickAfterReview": false,
+    "doesNotMarkFullSuitePassed": true
+  },
+  "earliestFailedAttempt": {
+    "directory": "data/experiments/agent_runtime_c5e8e806d69b479abf3d238eaf585c9f",
+    "failure": "test called a new executable action while task waited for owner; existing WorkspacePaused correctly rejected; test now queries preparation scope under Task lock"
+  },
+  "verifiedScenarioChecks": [
+    "Card preparation, fresh observation, separate authenticated final UI approval, exactly one matched fixture submission and separately preserved page evidence; deleted item does not require another decrypt; API gates/idempotence/known host receipt and cross-action reuse rejection",
+    "Final decline after preparation never submits; foreign-task preparation/result references rejected",
+    "Cancel at final approval actually stops/removes guest; no payment dispatch",
+    "Changed amount after final snapshot is rejected by independent pre-dispatch read; zero dispatch/click",
+    "Changed button after final snapshot is rejected by independent pre-dispatch read; zero dispatch/click",
+    "Expired approval rejects; a real slow DOM read then crosses a current grant deadline and the final current-clock check refuses dispatch",
+    "Final approval wait survives SIGKILL without new model request; old epoch approval rejected and explicit decline never clicks",
+    "Actual effect and known guest receipt survive SIGKILL before host commit; cached receipt adopted without another approval/dispatch/click",
+    "Actual effect plus lost guest receipt and SIGKILL becomes unknown; continue/cancel only, no second dispatch/click, fresh result evidence remains readable"
+  ],
+  "sourceImageEvidence": "data/experiments/s5-submit-source-image.json",
+  "mainStateEvidence": "data/experiments/s5-submit-gates-final-state.json",
+  "partialSecretAudit": "data/experiments/s5-submit-partial-secret-audit.json",
+  "partialAttemptSecretAudit": {
+    "modelRequests": "exact sample checks on every live controlled request",
+    "postFailureDatabaseTables": 44,
+    "postFailureLogs": 26,
+    "guestArchives": 7,
+    "postFailureScan": "exact fixture PAN plus generated holder/UPI UUID family patterns; not reconstruction of the terminated test process exact-value list",
+    "cancelledGuestArchiveIncluded": false
+  },
+  "focusedRecoverySecretAudit": "full live exact-sample model/public/DBOS/log scan and guest archive passed",
+  "affectedRegressions": {
+    "paymentPreparation": {
+      "evidence": "runtime-payments-0.12.0.json",
+      "passed": true,
+      "tasks": 15,
+      "completed": 14,
+      "cancelled": 1
+    },
+    "loginCode": {
+      "evidence": "runtime-vaultfill-0.12.0.json",
+      "passed": true,
+      "tasks": 13,
+      "completed": 12,
+      "cancelled": 1
+    }
+  },
+  "historicalEvidencePreserved": [
+    "runtime-payments-0.11.0.json",
+    "runtime-vaultfill-0.11.0.json",
+    "runtime-paymentdeadline.json",
+    "runtime-vaultfill-0.10.0.json",
+    "runtime-identity-0.10.0.json",
+    "runtime-vaultfill-0.8.0.json"
+  ],
+  "paymentUnitTests": 4,
+  "vaultUnitTests": 5,
+  "deploymentConfigTests": 2,
+  "typecheckPassed": true,
+  "productionBuildPassed": true,
+  "runtimeScope": "isolated host Node worker, Next Web, PostgreSQL DB and actual Docker guest; production images built and source-compared, not a new Linux/cloud deployment",
+  "screenshotsVisuallyInspected": true,
+  "screenshotScope": "fresh complete-nine-task mobile page-result screenshot visually inspected; prior final-approval/result desktop/mobile checks retained",
+  "newBusinessMigrations": ["0012_fancy_thanos"],
+  "newMigrationAppliedToMain": false,
+  "newDependencies": false,
+  "provenance": {
+    "copied": 44,
+    "adapted": 40,
+    "excluded": 1
+  },
+  "approvalCost": "method choice, exact-field fill, final submission are three distinct approvals; marker-before-send can require manual review without an actual click",
+  "receiptGrades": {
+    "payment_submit": "dispatch_only",
+    "payment_result": "page_text_only"
+  },
+  "trustBoundary": "page/reader remain shell-modifiable within the same guest; no merchant authenticity, issuer settlement or arbitrary-shell semantic enforcement claim",
+  "mainServicesChanged": false,
+  "mainRunningApplicationVersion": "0.8.1-dev",
+  "mainBusinessMigrations": 12,
+  "mainConfiguredWorkstationImage": "personal-agent-workstation:0.2.0",
+  "mainConfiguredProviderCount": 0,
+  "mainDefaultModelResolvable": false,
+  "remaining": [
+    "real model judgment and real services/site compatibility; no real financial payment authorization",
+    "main paired upgrade after drained backup and corresponding gates",
+    "new-candidate Linux/cloud deployment, ordinary public DNS/actual VPS/ACME",
+    "retained product features including sequential agent handoff",
+    "long-running capacity and matched Xiryn comparison"
+  ],
+  "controlledSubmissionGatePassed": true,
+  "completeNineTaskRun": {
+    "evidence": "runtime-paymentsubmit.json",
+    "directory": "data/experiments/agent_runtime_31d2b8126a084c369176f745dc6c995e",
+    "command": "npm run test:runtime:payment-submit",
+    "passed": true,
+    "actualTasks": 9,
+    "completed": 8,
+    "cancelled": 1,
+    "originalCountGate": 9
+  },
+  "focusedEdges": {
+    "evidence": "runtime-paymentsubmit-edges.json",
+    "directory": "data/experiments/agent_runtime_d54f0a82ab7341cfb714394600556f49",
+    "command": "npm run test:runtime:payment-submit -- edges",
+    "passed": true,
+    "actualTasks": 11,
+    "completed": 11,
+    "focusedEdgesOnly": true,
+    "doesNotMarkOriginalSuitePassed": true,
+    "checks": [
+      {
+        "check": "UPI-only fill, distinct final approval, one independently matched submission and page result",
+        "taskId": "3c6877fa-b461-411c-be51-a31cc3d65f5b"
+      },
+      {
+        "check": "Real submit tool after declined fill is rejected for missing complete preparation receipt; no final approval, marker, inputs or click",
+        "taskId": "2c7c06fd-febf-478f-bc6f-40ba5b88f076"
+      },
+      {
+        "check": "Actual cross_site DOM change after snapshot rejected before dispatch; zero marker/click",
+        "taskId": "e197a63e-ee6d-4eac-a872-222ecebbf5a0"
+      },
+      {
+        "check": "Actual special_control DOM change after snapshot rejected before dispatch; zero marker/click",
+        "taskId": "809c6955-c21e-46d1-8662-3280acc86a78"
+      },
+      {
+        "check": "Actual iframe DOM change after snapshot rejected before dispatch; zero marker/click",
+        "taskId": "b55c08a0-dfc1-4599-acde-ad6d1b216788"
+      },
+      {
+        "check": "Marker committed before native Docker send; process-group SIGKILL, proxy death and breakpoint removal before restart; continue/cancel review with no click or fabricated result and one attempt",
+        "taskId": "438eb28e-de68-4468-8108-b95c44f62658"
+      },
+      {
+        "check": "Button changes after host final inspection/marker and before guest execution; guest rejects before effect with one marker and zero clicks",
+        "taskId": "311916b0-813f-47a1-bbed-2c3e21a30a47"
+      },
+      {
+        "check": "result_missing: observed result references changed before actual read; invalid evidence not persisted, payment remains one submission/marker",
+        "taskId": "3415223e-a841-442b-922a-e43adad8b306"
+      },
+      {
+        "check": "result_amount: observed result references changed before actual read; invalid evidence not persisted, payment remains one submission/marker",
+        "taskId": "5d3aba8d-9d25-447b-a688-d6bf7ed17811"
+      },
+      {
+        "check": "result_merchant: observed result references changed before actual read; invalid evidence not persisted, payment remains one submission/marker",
+        "taskId": "61e239bd-dcb1-4ead-8e07-a8d53eb9cf47"
+      },
+      {
+        "check": "Host receipt committed before blocked framework checkpoint; SIGKILL/restart adopts durable result with one click/marker and fresh page evidence",
+        "taskId": "4dfd31c1-2526-407f-8b36-cc6baa9d6f97"
+      }
+    ]
+  },
+  "historicalPartialAggregation": "payment-submission-1.18.json",
+  "markerBeforeSendInterruptionVerified": true,
+  "upiFinalSubmissionVerified": true,
+  "noCompletePreparationRejected": true,
+  "invalidResultBranchesVerified": [
+    "missing receipt source",
+    "mismatched amount",
+    "mismatched merchant"
+  ],
+  "unsupportedTargetBranchesVerified": ["cross-site form", "role button div", "iframe"],
+  "guestRecheckAfterHostMarkerVerified": true,
+  "hostReceiptBeforeFrameworkCheckpointVerified": true,
+  "sourceRuntimeCodeChangedThisRound": false,
+  "newProductionTestHooks": false,
+  "acceptanceImplementationFiles": [
+    "tests/runtime.ts",
+    "tests/fixtures/vault-site.mjs",
+    "tests/fixtures/docker-gate.mjs"
+  ],
+  "focusedEdgesSecretAudit": "exact live sample checks on model requests, all public/DBOS tables, Web/worker logs and eleven actual guest archives",
+  "completeNineTaskSecretAudit": "exact live sample checks on model requests, all public/DBOS tables and Web/worker logs; eight completed-task guest archives; actual cancellation follows filling and precedes payment dispatch, cancelled guest archive not included",
+  "sourceImageScope": "previous final source/image comparison remains applicable: only acceptance helpers/docs changed this round, no production runtime/controller/lockfile changes or new image build",
+  "freshScreenshotDirectory": "data/experiments/agent_runtime_31d2b8126a084c369176f745dc6c995e",
+  "completeNineTaskCancelledGuestArchiveIncluded": false
+}

@@ -1,0 +1,5087 @@
+{
+  "passed": true,
+  "scope": "C2 real native desktop execution of a controlled C1 candidate; no cloud compilation, general GUI reliability, control-boundary acceptance or Xiryn comparison claim",
+  "database": "agent_flowrun_2b122e03d4344f0985e94f316e77e1a1",
+  "directory": "data/experiments/agent_flowrun_2b122e03d4344f0985e94f316e77e1a1",
+  "checks": [
+    {
+      "check": "candidate run/owner/parameter boundaries and immutable completion contract",
+      "passed": true
+    },
+    {
+      "check": "new GUI-only task 1: changed names/path and independent host directory check",
+      "taskId": "72588a59-b775-4a7b-a9fa-24b33764e9fc",
+      "actions": 27,
+      "purpose": "verify",
+      "passed": true
+    },
+    {
+      "check": "SIGKILL after real key_type receipt and before workflow checkpoint; original input identity recovered",
+      "taskId": "627bdad2-f6c5-4bd7-996e-a18c11499b82",
+      "passed": true
+    },
+    {
+      "check": "new GUI-only task 2: changed names/path and independent host directory check",
+      "taskId": "627bdad2-f6c5-4bd7-996e-a18c11499b82",
+      "actions": 27,
+      "purpose": "verify",
+      "passed": true
+    },
+    {
+      "check": "new GUI-only task 3: changed names/path and independent host directory check",
+      "taskId": "567e1984-ea6f-4c29-8fed-8b38cb8f7d2d",
+      "actions": 27,
+      "purpose": "verify",
+      "passed": true
+    },
+    {
+      "check": "new GUI-only task 4: changed names/path and independent host directory check",
+      "taskId": "768d80df-fe08-4836-8ed0-e9109f96a51a",
+      "actions": 27,
+      "purpose": "run",
+      "passed": true
+    },
+    {
+      "check": "three distinct checked samples certified the exact execution image separately from the historical source image; fourth task ran ready version",
+      "passed": true
+    }
+  ],
+  "results": [
+    {
+      "taskId": "72588a59-b775-4a7b-a9fa-24b33764e9fc",
+      "input": {
+        "agentId": "ec5db4ab-c5f3-4a01-a126-05cbf3743a0f",
+        "goal": "CUA流程新任务 0",
+        "clientRequestId": "63056ccb-cecc-4807-a43b-bab48dc43f69",
+        "workflowExecution": {
+          "versionId": "2d321b20-34f5-4407-bb7f-03c66ddb208d",
+          "purpose": "verify",
+          "parameters": {
+            "parentName": "PA-C2-0-1792954074778",
+            "draftName": "Incoming-A",
+            "readyName": "Finished-A"
+          },
+          "maxActions": 120,
+          "maxDurationSeconds": 300
+        },
+        "completionContract": {
+          "requireHumanReview": false
+        },
+        "budget": {
+          "maxSteps": 1,
+          "maxCostMicros": 0
+        }
+      },
+      "state": {
+        "status": "completed",
+        "result": {
+          "files": [],
+          "summary": "流程已执行并通过固定目录检查：/home/xiryn/PA-C2-0-1792954074778",
+          "verification": {
+            "grade": "program_checked",
+            "unverified": [
+              "The summary's general factual correctness is not independently established."
+            ]
+          },
+          "directoryTree": {
+            "root": "/home/xiryn/PA-C2-0-1792954074778",
+            "grade": "program_checked",
+            "absent": [
+              "Incoming-A"
+            ],
+            "checks": {
+              "linksRejected": true,
+              "hostReadOnlyArchive": true
+            },
+            "entries": [
+              {
+                "path": "",
+                "directory": true
+              },
+              {
+                "path": "Finished-A",
+                "directory": true
+              }
+            ],
+            "checkerId": "directory-tree-v1",
+            "directories": [
+              "Finished-A"
+            ]
+          }
+        },
+        "error": null
+      },
+      "run": {
+        "checkpoint": {
+          "step": 15,
+          "frame": null,
+          "phase": "observe",
+          "bootId": "5f9f4473-5d2b-418b-b046-e31557254bfa",
+          "blockedReason": null,
+          "waitStartedAt": null
+        },
+        "environment": {
+          "locale": "C.UTF-8",
+          "application": "Thunar",
+          "guestProtocol": 6,
+          "workstationImageId": "sha256:f8d2fbb12dc081ce3704fbfd06df87cc13afa4049ca51e8ce5e298c41b6f9add"
+        },
+        "started_at": "2026-10-25T18:47:58.397Z",
+        "completed_at": "2026-10-25T18:48:34.158Z"
+      },
+      "actions": [
+        {
+          "action_no": 1,
+          "kind": "desktop_open_application",
+          "input": {
+            "application": "Thunar"
+          },
+          "status": "succeeded",
+          "receipt": {
+            "ok": true,
+            "output": {
+              "epoch": 2,
+              "width": 1280,
+              "bootId": "5f9f4473-5d2b-418b-b046-e31557254bfa",
+              "height": 800,
+              "window": {
+                "x": 320,
+                "y": 187,
+                "id": "0x2a00007",
+                "title": "xiryn - Thunar",
+                "width": 640,
+                "height": 480,
+                "wmClass": "WM_CLASS(STRING) = \"thunar\", \"Thunar\"",
+                "boundsSpace": "screen_pixels_client_area"
+              },
+              "mapping": {
+                "scaleX": 1,
+                "scaleY": 1,
+                "offsetX": 0,
+                "offsetY": 0
+              },
+              "launched": "Thunar",
+              "mediaType": "image/jpeg",
+              "observationId": "dd29c9ca-0a37-46f8-8b7e-cbf2109f2654",
+              "coordinateSpace": "screenshot_pixels",
+              "acceptedCoordinateModes": [
+                "pixels",
+                "normalized_1000"
+              ]
+            }
+          }
+        },
+        {
+          "action_no": 2,
+          "kind": "screen_capture",
+          "input": {},
+          "status": "succeeded",
+          "receipt": {
+            "ok": true,
+            "output": {
+              "epoch": 2,
+              "width": 1280,
+              "bootId": "5f9f4473-5d2b-418b-b046-e31557254bfa",
+              "height": 800,
+              "window": {
+                "x": 320,
+                "y": 187,
+                "id": "0x2a00007",
+                "title": "xiryn - Thunar",
+                "width": 640,
+                "height": 480,
+                "wmClass": "WM_CLASS(STRING) = \"thunar\", \"Thunar\"",
+                "boundsSpace": "screen_pixels_client_area"
+              },
+              "mapping": {
+                "scaleX": 1,
+                "scaleY": 1,
+                "offsetX": 0,
+                "offsetY": 0
+              },
+              "mediaType": "image/jpeg",
+              "observationId": "e1bc789c-abbe-4b5b-89bc-e7134b73f79f",
+              "coordinateSpace": "screenshot_pixels",
+              "acceptedCoordinateModes": [
+                "pixels",
+                "normalized_1000"
+              ]
+            }
+          }
+        },
+        {
+          "action_no": 3,
+          "kind": "key_press",
+          "input": {
+            "key": "n",
+            "modifiers": [
+              "ctrl",
+              "shift"
+            ],
+            "observationId": "e1bc789c-abbe-4b5b-89bc-e7134b73f79f"
+          },
+          "status": "succeeded",
+          "receipt": {
+            "ok": true,
+            "output": {
+              "key": "n",
+              "epoch": 2,
+              "width": 1280,
+              "bootId": "5f9f4473-5d2b-418b-b046-e31557254bfa",
+              "height": 800,
+              "window": {
+                "x": 495,
+                "y": 391,
+                "id": "0x2a000b0",
+                "title": "Create New Folder",
+                "width": 300,
+                "height": 129,
+                "wmClass": "WM_CLASS(STRING) = \"thunar\", \"Thunar\"",
+                "boundsSpace": "screen_pixels_client_area"
+              },
+              "mapping": {
+                "scaleX": 1,
+                "scaleY": 1,
+                "offsetX": 0,
+                "offsetY": 0
+              },
+              "mediaType": "image/jpeg",
+              "modifiers": [
+                "ctrl",
+                "shift"
+              ],
+              "executedInput": {
+                "key": "n",
+                "modifiers": [
+                  "ctrl",
+                  "shift"
+                ],
+                "observationId": "e1bc789c-abbe-4b5b-89bc-e7134b73f79f"
+              },
+              "observationId": "598a6364-b439-4158-b73b-93eb87641055",
+              "coordinateSpace": "screenshot_pixels",
+              "acceptedCoordinateModes": [
+                "pixels",
+                "normalized_1000"
+              ]
+            }
+          }
+        },
+        {
+          "action_no": 4,
+          "kind": "screen_capture",
+          "input": {},
+          "status": "succeeded",
+          "receipt": {
+            "ok": true,
+            "output": {
+              "epoch": 2,
+              "width": 1280,
+              "bootId": "5f9f4473-5d2b-418b-b046-e31557254bfa",
+              "height": 800,
+              "window": {
+                "x": 495,
+                "y": 391,
+                "id": "0x2a000b0",
+                "title": "Create New Folder",
+                "width": 300,
+                "height": 129,
+                "wmClass": "WM_CLASS(STRING) = \"thunar\", \"Thunar\"",
+                "boundsSpace": "screen_pixels_client_area"
+              },
+              "mapping": {
+                "scaleX": 1,
+                "scaleY": 1,
+                "offsetX": 0,
+                "offsetY": 0
+              },
+              "mediaType": "image/jpeg",
+              "observationId": "2dcccd67-f444-474e-8f47-9a65fc2130b4",
+              "coordinateSpace": "screenshot_pixels",
+              "acceptedCoordinateModes": [
+                "pixels",
+                "normalized_1000"
+              ]
+            }
+          }
+        },
+        {
+          "action_no": 5,
+          "kind": "key_type",
+          "input": {
+            "text": "PA-C2-0-1792954074778",
+            "observationId": "2dcccd67-f444-474e-8f47-9a65fc2130b4"
+          },
+          "status": "succeeded",
+          "receipt": {
+            "ok": true,
+            "output": {
+              "text": "PA-C2-0-1792954074778",
+              "epoch": 2,
+              "width": 1280,
+              "bootId": "5f9f4473-5d2b-418b-b046-e31557254bfa",
+              "height": 800,
+              "window": {
+                "x": 495,
+                "y": 391,
+                "id": "0x2a000b0",
+                "title": "Create New Folder",
+                "width": 300,
+                "height": 129,
+                "wmClass": "WM_CLASS(STRING) = \"thunar\", \"Thunar\"",
+                "boundsSpace": "screen_pixels_client_area"
+              },
+              "mapping": {
+                "scaleX": 1,
+                "scaleY": 1,
+                "offsetX": 0,
+                "offsetY": 0
+              },
+              "mediaType": "image/jpeg",
+              "executedInput": {
+                "text": "PA-C2-0-1792954074778",
+                "observationId": "2dcccd67-f444-474e-8f47-9a65fc2130b4"
+              },
+              "observationId": "ae56b740-5e29-4845-9cbe-b6a8c6b79add",
+              "coordinateSpace": "screenshot_pixels",
+              "acceptedCoordinateModes": [
+                "pixels",
+                "normalized_1000"
+              ]
+            }
+          }
+        },
+        {
+          "action_no": 6,
+          "kind": "screen_capture",
+          "input": {},
+          "status": "succeeded",
+          "receipt": {
+            "ok": true,
+            "output": {
+              "epoch": 2,
+              "width": 1280,
+              "bootId": "5f9f4473-5d2b-418b-b046-e31557254bfa",
+              "height": 800,
+              "window": {
+                "x": 495,
+                "y": 391,
+                "id": "0x2a000b0",
+                "title": "Create New Folder",
+                "width": 300,
+                "height": 129,
+                "wmClass": "WM_CLASS(STRING) = \"thunar\", \"Thunar\"",
+                "boundsSpace": "screen_pixels_client_area"
+              },
+              "mapping": {
+                "scaleX": 1,
+                "scaleY": 1,
+                "offsetX": 0,
+                "offsetY": 0
+              },
+              "mediaType": "image/jpeg",
+              "observationId": "3ed61784-5db0-46f6-b298-de40a534ee51",
+              "coordinateSpace": "screenshot_pixels",
+              "acceptedCoordinateModes": [
+                "pixels",
+                "normalized_1000"
+              ]
+            }
+          }
+        },
+        {
+          "action_no": 7,
+          "kind": "key_press",
+          "input": {
+            "key": "enter",
+            "modifiers": [],
+            "observationId": "3ed61784-5db0-46f6-b298-de40a534ee51"
+          },
+          "status": "succeeded",
+          "receipt": {
+            "ok": true,
+            "output": {
+              "key": "enter",
+              "epoch": 2,
+              "width": 1280,
+              "bootId": "5f9f4473-5d2b-418b-b046-e31557254bfa",
+              "height": 800,
+              "window": {
+                "x": 320,
+                "y": 187,
+                "id": "0x2a00007",
+                "title": "xiryn - Thunar",
+                "width": 640,
+                "height": 480,
+                "wmClass": "WM_CLASS(STRING) = \"thunar\", \"Thunar\"",
+                "boundsSpace": "screen_pixels_client_area"
+              },
+              "mapping": {
+                "scaleX": 1,
+                "scaleY": 1,
+                "offsetX": 0,
+                "offsetY": 0
+              },
+              "mediaType": "image/jpeg",
+              "modifiers": [],
+              "executedInput": {
+                "key": "enter",
+                "modifiers": [],
+                "observationId": "3ed61784-5db0-46f6-b298-de40a534ee51"
+              },
+              "observationId": "bb686390-99a3-4c4a-bacf-7d0a57ef239d",
+              "coordinateSpace": "screenshot_pixels",
+              "acceptedCoordinateModes": [
+                "pixels",
+                "normalized_1000"
+              ]
+            }
+          }
+        },
+        {
+          "action_no": 8,
+          "kind": "screen_capture",
+          "input": {},
+          "status": "succeeded",
+          "receipt": {
+            "ok": true,
+            "output": {
+              "epoch": 2,
+              "width": 1280,
+              "bootId": "5f9f4473-5d2b-418b-b046-e31557254bfa",
+              "height": 800,
+              "window": {
+                "x": 320,
+                "y": 187,
+                "id": "0x2a00007",
+                "title": "xiryn - Thunar",
+                "width": 640,
+                "height": 480,
+                "wmClass": "WM_CLASS(STRING) = \"thunar\", \"Thunar\"",
+                "boundsSpace": "screen_pixels_client_area"
+              },
+              "mapping": {
+                "scaleX": 1,
+                "scaleY": 1,
+                "offsetX": 0,
+                "offsetY": 0
+              },
+              "mediaType": "image/jpeg",
+              "observationId": "d9d8361f-f78d-44b7-a32b-78b94ccab049",
+              "coordinateSpace": "screenshot_pixels",
+              "acceptedCoordinateModes": [
+                "pixels",
+                "normalized_1000"
+              ]
+            }
+          }
+        },
+        {
+          "action_no": 9,
+          "kind": "key_press",
+          "input": {
+            "key": "l",
+            "modifiers": [
+              "ctrl"
+            ],
+            "observationId": "d9d8361f-f78d-44b7-a32b-78b94ccab049"
+          },
+          "status": "succeeded",
+          "receipt": {
+            "ok": true,
+            "output": {
+              "key": "l",
+              "epoch": 2,
+              "width": 1280,
+              "bootId": "5f9f4473-5d2b-418b-b046-e31557254bfa",
+              "height": 800,
+              "window": {
+                "x": 320,
+                "y": 187,
+                "id": "0x2a00007",
+                "title": "xiryn - Thunar",
+                "width": 640,
+                "height": 480,
+                "wmClass": "WM_CLASS(STRING) = \"thunar\", \"Thunar\"",
+                "boundsSpace": "screen_pixels_client_area"
+              },
+              "mapping": {
+                "scaleX": 1,
+                "scaleY": 1,
+                "offsetX": 0,
+                "offsetY": 0
+              },
+              "mediaType": "image/jpeg",
+              "modifiers": [
+                "ctrl"
+              ],
+              "executedInput": {
+                "key": "l",
+                "modifiers": [
+                  "ctrl"
+                ],
+                "observationId": "d9d8361f-f78d-44b7-a32b-78b94ccab049"
+              },
+              "observationId": "4d4df27e-5824-4e62-9205-30675ddee877",
+              "coordinateSpace": "screenshot_pixels",
+              "acceptedCoordinateModes": [
+                "pixels",
+                "normalized_1000"
+              ]
+            }
+          }
+        },
+        {
+          "action_no": 10,
+          "kind": "screen_capture",
+          "input": {},
+          "status": "succeeded",
+          "receipt": {
+            "ok": true,
+            "output": {
+              "epoch": 2,
+              "width": 1280,
+              "bootId": "5f9f4473-5d2b-418b-b046-e31557254bfa",
+              "height": 800,
+              "window": {
+                "x": 320,
+                "y": 187,
+                "id": "0x2a00007",
+                "title": "xiryn - Thunar",
+                "width": 640,
+                "height": 480,
+                "wmClass": "WM_CLASS(STRING) = \"thunar\", \"Thunar\"",
+                "boundsSpace": "screen_pixels_client_area"
+              },
+              "mapping": {
+                "scaleX": 1,
+                "scaleY": 1,
+                "offsetX": 0,
+                "offsetY": 0
+              },
+              "mediaType": "image/jpeg",
+              "observationId": "69f735e0-2413-459f-b41a-80f1ffe17408",
+              "coordinateSpace": "screenshot_pixels",
+              "acceptedCoordinateModes": [
+                "pixels",
+                "normalized_1000"
+              ]
+            }
+          }
+        },
+        {
+          "action_no": 11,
+          "kind": "key_type",
+          "input": {
+            "text": "/home/xiryn/PA-C2-0-1792954074778",
+            "observationId": "69f735e0-2413-459f-b41a-80f1ffe17408"
+          },
+          "status": "succeeded",
+          "receipt": {
+            "ok": true,
+            "output": {
+              "text": "/home/xiryn/PA-C2-0-1792954074778",
+              "epoch": 2,
+              "width": 1280,
+              "bootId": "5f9f4473-5d2b-418b-b046-e31557254bfa",
+              "height": 800,
+              "window": {
+                "x": 320,
+                "y": 187,
+                "id": "0x2a00007",
+                "title": "xiryn - Thunar",
+                "width": 640,
+                "height": 480,
+                "wmClass": "WM_CLASS(STRING) = \"thunar\", \"Thunar\"",
+                "boundsSpace": "screen_pixels_client_area"
+              },
+              "mapping": {
+                "scaleX": 1,
+                "scaleY": 1,
+                "offsetX": 0,
+                "offsetY": 0
+              },
+              "mediaType": "image/jpeg",
+              "executedInput": {
+                "text": "/home/xiryn/PA-C2-0-1792954074778",
+                "observationId": "69f735e0-2413-459f-b41a-80f1ffe17408"
+              },
+              "observationId": "043168c1-e039-41f5-9c00-407b76ff1102",
+              "coordinateSpace": "screenshot_pixels",
+              "acceptedCoordinateModes": [
+                "pixels",
+                "normalized_1000"
+              ]
+            }
+          }
+        },
+        {
+          "action_no": 12,
+          "kind": "screen_capture",
+          "input": {},
+          "status": "succeeded",
+          "receipt": {
+            "ok": true,
+            "output": {
+              "epoch": 2,
+              "width": 1280,
+              "bootId": "5f9f4473-5d2b-418b-b046-e31557254bfa",
+              "height": 800,
+              "window": {
+                "x": 320,
+                "y": 187,
+                "id": "0x2a00007",
+                "title": "xiryn - Thunar",
+                "width": 640,
+                "height": 480,
+                "wmClass": "WM_CLASS(STRING) = \"thunar\", \"Thunar\"",
+                "boundsSpace": "screen_pixels_client_area"
+              },
+              "mapping": {
+                "scaleX": 1,
+                "scaleY": 1,
+                "offsetX": 0,
+                "offsetY": 0
+              },
+              "mediaType": "image/jpeg",
+              "observationId": "89dd3e88-cc16-4b63-82f4-1dc7eea909c0",
+              "coordinateSpace": "screenshot_pixels",
+              "acceptedCoordinateModes": [
+                "pixels",
+                "normalized_1000"
+              ]
+            }
+          }
+        },
+        {
+          "action_no": 13,
+          "kind": "key_press",
+          "input": {
+            "key": "enter",
+            "modifiers": [],
+            "observationId": "89dd3e88-cc16-4b63-82f4-1dc7eea909c0"
+          },
+          "status": "succeeded",
+          "receipt": {
+            "ok": true,
+            "output": {
+              "key": "enter",
+              "epoch": 2,
+              "width": 1280,
+              "bootId": "5f9f4473-5d2b-418b-b046-e31557254bfa",
+              "height": 800,
+              "window": {
+                "x": 320,
+                "y": 187,
+                "id": "0x2a00007",
+                "title": "PA-C2-0-1792954074778 - Thunar",
+                "width": 640,
+                "height": 480,
+                "wmClass": "WM_CLASS(STRING) = \"thunar\", \"Thunar\"",
+                "boundsSpace": "screen_pixels_client_area"
+              },
+              "mapping": {
+                "scaleX": 1,
+                "scaleY": 1,
+                "offsetX": 0,
+                "offsetY": 0
+              },
+              "mediaType": "image/jpeg",
+              "modifiers": [],
+              "executedInput": {
+                "key": "enter",
+                "modifiers": [],
+                "observationId": "89dd3e88-cc16-4b63-82f4-1dc7eea909c0"
+              },
+              "observationId": "1061231e-969f-4896-a9e4-da20f22dc641",
+              "coordinateSpace": "screenshot_pixels",
+              "acceptedCoordinateModes": [
+                "pixels",
+                "normalized_1000"
+              ]
+            }
+          }
+        },
+        {
+          "action_no": 14,
+          "kind": "screen_capture",
+          "input": {},
+          "status": "succeeded",
+          "receipt": {
+            "ok": true,
+            "output": {
+              "epoch": 2,
+              "width": 1280,
+              "bootId": "5f9f4473-5d2b-418b-b046-e31557254bfa",
+              "height": 800,
+              "window": {
+                "x": 320,
+                "y": 187,
+                "id": "0x2a00007",
+                "title": "PA-C2-0-1792954074778 - Thunar",
+                "width": 640,
+                "height": 480,
+                "wmClass": "WM_CLASS(STRING) = \"thunar\", \"Thunar\"",
+                "boundsSpace": "screen_pixels_client_area"
+              },
+              "mapping": {
+                "scaleX": 1,
+                "scaleY": 1,
+                "offsetX": 0,
+                "offsetY": 0
+              },
+              "mediaType": "image/jpeg",
+              "observationId": "7c27019a-4f19-4c9c-b1d4-c489487306bf",
+              "coordinateSpace": "screenshot_pixels",
+              "acceptedCoordinateModes": [
+                "pixels",
+                "normalized_1000"
+              ]
+            }
+          }
+        },
+        {
+          "action_no": 15,
+          "kind": "key_press",
+          "input": {
+            "key": "n",
+            "modifiers": [
+              "ctrl",
+              "shift"
+            ],
+            "observationId": "7c27019a-4f19-4c9c-b1d4-c489487306bf"
+          },
+          "status": "succeeded",
+          "receipt": {
+            "ok": true,
+            "output": {
+              "key": "n",
+              "epoch": 2,
+              "width": 1280,
+              "bootId": "5f9f4473-5d2b-418b-b046-e31557254bfa",
+              "height": 800,
+              "window": {
+                "x": 495,
+                "y": 391,
+                "id": "0x2a0085a",
+                "title": "Create New Folder",
+                "width": 300,
+                "height": 129,
+                "wmClass": "WM_CLASS(STRING) = \"thunar\", \"Thunar\"",
+                "boundsSpace": "screen_pixels_client_area"
+              },
+              "mapping": {
+                "scaleX": 1,
+                "scaleY": 1,
+                "offsetX": 0,
+                "offsetY": 0
+              },
+              "mediaType": "image/jpeg",
+              "modifiers": [
+                "ctrl",
+                "shift"
+              ],
+              "executedInput": {
+                "key": "n",
+                "modifiers": [
+                  "ctrl",
+                  "shift"
+                ],
+                "observationId": "7c27019a-4f19-4c9c-b1d4-c489487306bf"
+              },
+              "observationId": "fa90bed1-b815-4add-933e-55b62ecaf71f",
+              "coordinateSpace": "screenshot_pixels",
+              "acceptedCoordinateModes": [
+                "pixels",
+                "normalized_1000"
+              ]
+            }
+          }
+        },
+        {
+          "action_no": 16,
+          "kind": "screen_capture",
+          "input": {},
+          "status": "succeeded",
+          "receipt": {
+            "ok": true,
+            "output": {
+              "epoch": 2,
+              "width": 1280,
+              "bootId": "5f9f4473-5d2b-418b-b046-e31557254bfa",
+              "height": 800,
+              "window": {
+                "x": 495,
+                "y": 391,
+                "id": "0x2a0085a",
+                "title": "Create New Folder",
+                "width": 300,
+                "height": 129,
+                "wmClass": "WM_CLASS(STRING) = \"thunar\", \"Thunar\"",
+                "boundsSpace": "screen_pixels_client_area"
+              },
+              "mapping": {
+                "scaleX": 1,
+                "scaleY": 1,
+                "offsetX": 0,
+                "offsetY": 0
+              },
+              "mediaType": "image/jpeg",
+              "observationId": "c641fd00-4614-42fe-8444-62d45c3b72e4",
+              "coordinateSpace": "screenshot_pixels",
+              "acceptedCoordinateModes": [
+                "pixels",
+                "normalized_1000"
+              ]
+            }
+          }
+        },
+        {
+          "action_no": 17,
+          "kind": "key_type",
+          "input": {
+            "text": "Incoming-A",
+            "observationId": "c641fd00-4614-42fe-8444-62d45c3b72e4"
+          },
+          "status": "succeeded",
+          "receipt": {
+            "ok": true,
+            "output": {
+              "text": "Incoming-A",
+              "epoch": 2,
+              "width": 1280,
+              "bootId": "5f9f4473-5d2b-418b-b046-e31557254bfa",
+              "height": 800,
+              "window": {
+                "x": 495,
+                "y": 391,
+                "id": "0x2a0085a",
+                "title": "Create New Folder",
+                "width": 300,
+                "height": 129,
+                "wmClass": "WM_CLASS(STRING) = \"thunar\", \"Thunar\"",
+                "boundsSpace": "screen_pixels_client_area"
+              },
+              "mapping": {
+                "scaleX": 1,
+                "scaleY": 1,
+                "offsetX": 0,
+                "offsetY": 0
+              },
+              "mediaType": "image/jpeg",
+              "executedInput": {
+                "text": "Incoming-A",
+                "observationId": "c641fd00-4614-42fe-8444-62d45c3b72e4"
+              },
+              "observationId": "a9a977ac-ded6-48f0-a3d5-e6bf8be1b14a",
+              "coordinateSpace": "screenshot_pixels",
+              "acceptedCoordinateModes": [
+                "pixels",
+                "normalized_1000"
+              ]
+            }
+          }
+        },
+        {
+          "action_no": 18,
+          "kind": "screen_capture",
+          "input": {},
+          "status": "succeeded",
+          "receipt": {
+            "ok": true,
+            "output": {
+              "epoch": 2,
+              "width": 1280,
+              "bootId": "5f9f4473-5d2b-418b-b046-e31557254bfa",
+              "height": 800,
+              "window": {
+                "x": 495,
+                "y": 391,
+                "id": "0x2a0085a",
+                "title": "Create New Folder",
+                "width": 300,
+                "height": 129,
+                "wmClass": "WM_CLASS(STRING) = \"thunar\", \"Thunar\"",
+                "boundsSpace": "screen_pixels_client_area"
+              },
+              "mapping": {
+                "scaleX": 1,
+                "scaleY": 1,
+                "offsetX": 0,
+                "offsetY": 0
+              },
+              "mediaType": "image/jpeg",
+              "observationId": "0c59bc4b-a27b-4705-8f2d-efd89d3c97c7",
+              "coordinateSpace": "screenshot_pixels",
+              "acceptedCoordinateModes": [
+                "pixels",
+                "normalized_1000"
+              ]
+            }
+          }
+        },
+        {
+          "action_no": 19,
+          "kind": "key_press",
+          "input": {
+            "key": "enter",
+            "modifiers": [],
+            "observationId": "0c59bc4b-a27b-4705-8f2d-efd89d3c97c7"
+          },
+          "status": "succeeded",
+          "receipt": {
+            "ok": true,
+            "output": {
+              "key": "enter",
+              "epoch": 2,
+              "width": 1280,
+              "bootId": "5f9f4473-5d2b-418b-b046-e31557254bfa",
+              "height": 800,
+              "window": {
+                "x": 320,
+                "y": 187,
+                "id": "0x2a00007",
+                "title": "PA-C2-0-1792954074778 - Thunar",
+                "width": 640,
+                "height": 480,
+                "wmClass": "WM_CLASS(STRING) = \"thunar\", \"Thunar\"",
+                "boundsSpace": "screen_pixels_client_area"
+              },
+              "mapping": {
+                "scaleX": 1,
+                "scaleY": 1,
+                "offsetX": 0,
+                "offsetY": 0
+              },
+              "mediaType": "image/jpeg",
+              "modifiers": [],
+              "executedInput": {
+                "key": "enter",
+                "modifiers": [],
+                "observationId": "0c59bc4b-a27b-4705-8f2d-efd89d3c97c7"
+              },
+              "observationId": "279bd441-568b-407f-8b1f-819ec64040c9",
+              "coordinateSpace": "screenshot_pixels",
+              "acceptedCoordinateModes": [
+                "pixels",
+                "normalized_1000"
+              ]
+            }
+          }
+        },
+        {
+          "action_no": 20,
+          "kind": "screen_capture",
+          "input": {},
+          "status": "succeeded",
+          "receipt": {
+            "ok": true,
+            "output": {
+              "epoch": 2,
+              "width": 1280,
+              "bootId": "5f9f4473-5d2b-418b-b046-e31557254bfa",
+              "height": 800,
+              "window": {
+                "x": 320,
+                "y": 187,
+                "id": "0x2a00007",
+                "title": "PA-C2-0-1792954074778 - Thunar",
+                "width": 640,
+                "height": 480,
+                "wmClass": "WM_CLASS(STRING) = \"thunar\", \"Thunar\"",
+                "boundsSpace": "screen_pixels_client_area"
+              },
+              "mapping": {
+                "scaleX": 1,
+                "scaleY": 1,
+                "offsetX": 0,
+                "offsetY": 0
+              },
+              "mediaType": "image/jpeg",
+              "observationId": "df8c9a11-4835-4df6-ba8b-8e9c486f52eb",
+              "coordinateSpace": "screenshot_pixels",
+              "acceptedCoordinateModes": [
+                "pixels",
+                "normalized_1000"
+              ]
+            }
+          }
+        },
+        {
+          "action_no": 21,
+          "kind": "key_press",
+          "input": {
+            "key": "f2",
+            "modifiers": [],
+            "observationId": "df8c9a11-4835-4df6-ba8b-8e9c486f52eb"
+          },
+          "status": "succeeded",
+          "receipt": {
+            "ok": true,
+            "output": {
+              "key": "f2",
+              "epoch": 2,
+              "width": 1280,
+              "bootId": "5f9f4473-5d2b-418b-b046-e31557254bfa",
+              "height": 800,
+              "window": {
+                "x": 495,
+                "y": 391,
+                "id": "0x2a00c50",
+                "title": "Rename \"Incoming-A\"",
+                "width": 300,
+                "height": 129,
+                "wmClass": "WM_CLASS(STRING) = \"thunar\", \"Thunar\"",
+                "boundsSpace": "screen_pixels_client_area"
+              },
+              "mapping": {
+                "scaleX": 1,
+                "scaleY": 1,
+                "offsetX": 0,
+                "offsetY": 0
+              },
+              "mediaType": "image/jpeg",
+              "modifiers": [],
+              "executedInput": {
+                "key": "f2",
+                "modifiers": [],
+                "observationId": "df8c9a11-4835-4df6-ba8b-8e9c486f52eb"
+              },
+              "observationId": "a987dbbf-081d-48cf-8c98-dd9869ba6440",
+              "coordinateSpace": "screenshot_pixels",
+              "acceptedCoordinateModes": [
+                "pixels",
+                "normalized_1000"
+              ]
+            }
+          }
+        },
+        {
+          "action_no": 22,
+          "kind": "screen_capture",
+          "input": {},
+          "status": "succeeded",
+          "receipt": {
+            "ok": true,
+            "output": {
+              "epoch": 2,
+              "width": 1280,
+              "bootId": "5f9f4473-5d2b-418b-b046-e31557254bfa",
+              "height": 800,
+              "window": {
+                "x": 495,
+                "y": 391,
+                "id": "0x2a00c50",
+                "title": "Rename \"Incoming-A\"",
+                "width": 300,
+                "height": 129,
+                "wmClass": "WM_CLASS(STRING) = \"thunar\", \"Thunar\"",
+                "boundsSpace": "screen_pixels_client_area"
+              },
+              "mapping": {
+                "scaleX": 1,
+                "scaleY": 1,
+                "offsetX": 0,
+                "offsetY": 0
+              },
+              "mediaType": "image/jpeg",
+              "observationId": "f81887b3-59a7-4088-a27c-e75ccf1a61dc",
+              "coordinateSpace": "screenshot_pixels",
+              "acceptedCoordinateModes": [
+                "pixels",
+                "normalized_1000"
+              ]
+            }
+          }
+        },
+        {
+          "action_no": 23,
+          "kind": "key_type",
+          "input": {
+            "text": "Finished-A",
+            "observationId": "f81887b3-59a7-4088-a27c-e75ccf1a61dc"
+          },
+          "status": "succeeded",
+          "receipt": {
+            "ok": true,
+            "output": {
+              "text": "Finished-A",
+              "epoch": 2,
+              "width": 1280,
+              "bootId": "5f9f4473-5d2b-418b-b046-e31557254bfa",
+              "height": 800,
+              "window": {
+                "x": 495,
+                "y": 391,
+                "id": "0x2a00c50",
+                "title": "Rename \"Incoming-A\"",
+                "width": 300,
+                "height": 129,
+                "wmClass": "WM_CLASS(STRING) = \"thunar\", \"Thunar\"",
+                "boundsSpace": "screen_pixels_client_area"
+              },
+              "mapping": {
+                "scaleX": 1,
+                "scaleY": 1,
+                "offsetX": 0,
+                "offsetY": 0
+              },
+              "mediaType": "image/jpeg",
+              "executedInput": {
+                "text": "Finished-A",
+                "observationId": "f81887b3-59a7-4088-a27c-e75ccf1a61dc"
+              },
+              "observationId": "ebfe27b8-d09c-411a-983a-850d80473010",
+              "coordinateSpace": "screenshot_pixels",
+              "acceptedCoordinateModes": [
+                "pixels",
+                "normalized_1000"
+              ]
+            }
+          }
+        },
+        {
+          "action_no": 24,
+          "kind": "screen_capture",
+          "input": {},
+          "status": "succeeded",
+          "receipt": {
+            "ok": true,
+            "output": {
+              "epoch": 2,
+              "width": 1280,
+              "bootId": "5f9f4473-5d2b-418b-b046-e31557254bfa",
+              "height": 800,
+              "window": {
+                "x": 495,
+                "y": 391,
+                "id": "0x2a00c50",
+                "title": "Rename \"Incoming-A\"",
+                "width": 300,
+                "height": 129,
+                "wmClass": "WM_CLASS(STRING) = \"thunar\", \"Thunar\"",
+                "boundsSpace": "screen_pixels_client_area"
+              },
+              "mapping": {
+                "scaleX": 1,
+                "scaleY": 1,
+                "offsetX": 0,
+                "offsetY": 0
+              },
+              "mediaType": "image/jpeg",
+              "observationId": "5938b8c4-e359-4976-b063-7ce192a6d1a5",
+              "coordinateSpace": "screenshot_pixels",
+              "acceptedCoordinateModes": [
+                "pixels",
+                "normalized_1000"
+              ]
+            }
+          }
+        },
+        {
+          "action_no": 25,
+          "kind": "key_press",
+          "input": {
+            "key": "enter",
+            "modifiers": [],
+            "observationId": "5938b8c4-e359-4976-b063-7ce192a6d1a5"
+          },
+          "status": "succeeded",
+          "receipt": {
+            "ok": true,
+            "output": {
+              "key": "enter",
+              "epoch": 2,
+              "width": 1280,
+              "bootId": "5f9f4473-5d2b-418b-b046-e31557254bfa",
+              "height": 800,
+              "window": {
+                "x": 320,
+                "y": 187,
+                "id": "0x2a00007",
+                "title": "PA-C2-0-1792954074778 - Thunar",
+                "width": 640,
+                "height": 480,
+                "wmClass": "WM_CLASS(STRING) = \"thunar\", \"Thunar\"",
+                "boundsSpace": "screen_pixels_client_area"
+              },
+              "mapping": {
+                "scaleX": 1,
+                "scaleY": 1,
+                "offsetX": 0,
+                "offsetY": 0
+              },
+              "mediaType": "image/jpeg",
+              "modifiers": [],
+              "executedInput": {
+                "key": "enter",
+                "modifiers": [],
+                "observationId": "5938b8c4-e359-4976-b063-7ce192a6d1a5"
+              },
+              "observationId": "d3e259e9-eed9-41e1-ba25-8fc1050e636d",
+              "coordinateSpace": "screenshot_pixels",
+              "acceptedCoordinateModes": [
+                "pixels",
+                "normalized_1000"
+              ]
+            }
+          }
+        },
+        {
+          "action_no": 26,
+          "kind": "screen_capture",
+          "input": {},
+          "status": "succeeded",
+          "receipt": {
+            "ok": true,
+            "output": {
+              "epoch": 2,
+              "width": 1280,
+              "bootId": "5f9f4473-5d2b-418b-b046-e31557254bfa",
+              "height": 800,
+              "window": {
+                "x": 320,
+                "y": 187,
+                "id": "0x2a00007",
+                "title": "PA-C2-0-1792954074778 - Thunar",
+                "width": 640,
+                "height": 480,
+                "wmClass": "WM_CLASS(STRING) = \"thunar\", \"Thunar\"",
+                "boundsSpace": "screen_pixels_client_area"
+              },
+              "mapping": {
+                "scaleX": 1,
+                "scaleY": 1,
+                "offsetX": 0,
+                "offsetY": 0
+              },
+              "mediaType": "image/jpeg",
+              "observationId": "d87a55ba-e339-41b9-bc8b-2f257b3d3b60",
+              "coordinateSpace": "screenshot_pixels",
+              "acceptedCoordinateModes": [
+                "pixels",
+                "normalized_1000"
+              ]
+            }
+          }
+        },
+        {
+          "action_no": 28,
+          "kind": "screen_share",
+          "input": {},
+          "status": "succeeded",
+          "receipt": {
+            "ok": true,
+            "output": {
+              "epoch": 2,
+              "width": 1280,
+              "bootId": "5f9f4473-5d2b-418b-b046-e31557254bfa",
+              "height": 800,
+              "window": {
+                "x": 320,
+                "y": 187,
+                "id": "0x2a00007",
+                "title": "PA-C2-0-1792954074778 - Thunar",
+                "width": 640,
+                "height": 480,
+                "wmClass": "WM_CLASS(STRING) = \"thunar\", \"Thunar\"",
+                "boundsSpace": "screen_pixels_client_area"
+              },
+              "mapping": {
+                "scaleX": 1,
+                "scaleY": 1,
+                "offsetX": 0,
+                "offsetY": 0
+              },
+              "mediaType": "image/jpeg",
+              "observationId": "9bedd364-4d9e-4656-8e38-855703a5d712",
+              "coordinateSpace": "screenshot_pixels",
+              "acceptedCoordinateModes": [
+                "pixels",
+                "normalized_1000"
+              ]
+            }
+          }
+        }
+      ],
+      "requests": []
+    },
+    {
+      "taskId": "627bdad2-f6c5-4bd7-996e-a18c11499b82",
+      "input": {
+        "agentId": "ec5db4ab-c5f3-4a01-a126-05cbf3743a0f",
+        "goal": "CUA流程新任务 1",
+        "clientRequestId": "44fc63be-9de8-49ef-b537-b3a6fa4c0ccf",
+        "workflowExecution": {
+          "versionId": "2d321b20-34f5-4407-bb7f-03c66ddb208d",
+          "purpose": "verify",
+          "parameters": {
+            "parentName": "PA-C2-1-1792954114073",
+            "draftName": "Work in progress",
+            "readyName": "Ready with spaces"
+          },
+          "maxActions": 120,
+          "maxDurationSeconds": 300
+        },
+        "completionContract": {
+          "requireHumanReview": false
+        },
+        "budget": {
+          "maxSteps": 1,
+          "maxCostMicros": 0
+        }
+      },
+      "state": {
+        "status": "completed",
+        "result": {
+          "files": [],
+          "summary": "流程已执行并通过固定目录检查：/home/xiryn/PA-C2-1-1792954114073",
+          "verification": {
+            "grade": "program_checked",
+            "unverified": [
+              "The summary's general factual correctness is not independently established."
+            ]
+          },
+          "directoryTree": {
+            "root": "/home/xiryn/PA-C2-1-1792954114073",
+            "grade": "program_checked",
+            "absent": [
+              "Work in progress"
+            ],
+            "checks": {
+              "linksRejected": true,
+              "hostReadOnlyArchive": true
+            },
+            "entries": [
+              {
+                "path": "",
+                "directory": true
+              },
+              {
+                "path": "Ready with spaces",
+                "directory": true
+              }
+            ],
+            "checkerId": "directory-tree-v1",
+            "directories": [
+              "Ready with spaces"
+            ]
+          }
+        },
+        "error": null
+      },
+      "run": {
+        "checkpoint": {
+          "step": 15,
+          "frame": null,
+          "phase": "observe",
+          "bootId": "5f9f4473-5d2b-418b-b046-e31557254bfa",
+          "blockedReason": null,
+          "waitStartedAt": null
+        },
+        "environment": {
+          "locale": "C.UTF-8",
+          "application": "Thunar",
+          "guestProtocol": 6,
+          "workstationImageId": "sha256:f8d2fbb12dc081ce3704fbfd06df87cc13afa4049ca51e8ce5e298c41b6f9add"
+        },
+        "started_at": "2026-10-25T18:48:35.387Z",
+        "completed_at": "2026-10-25T18:49:12.649Z"
+      },
+      "actions": [
+        {
+          "action_no": 1,
+          "kind": "desktop_open_application",
+          "input": {
+            "application": "Thunar"
+          },
+          "status": "succeeded",
+          "receipt": {
+            "ok": true,
+            "output": {
+              "epoch": 6,
+              "width": 1280,
+              "bootId": "5f9f4473-5d2b-418b-b046-e31557254bfa",
+              "height": 800,
+              "window": {
+                "x": 320,
+                "y": 187,
+                "id": "0x2a01091",
+                "title": "xiryn - Thunar",
+                "width": 640,
+                "height": 480,
+                "wmClass": "WM_CLASS(STRING) = \"thunar\", \"Thunar\"",
+                "boundsSpace": "screen_pixels_client_area"
+              },
+              "mapping": {
+                "scaleX": 1,
+                "scaleY": 1,
+                "offsetX": 0,
+                "offsetY": 0
+              },
+              "launched": "Thunar",
+              "mediaType": "image/jpeg",
+              "observationId": "d0b855ac-332b-488a-a8ae-22684adaaeef",
+              "coordinateSpace": "screenshot_pixels",
+              "acceptedCoordinateModes": [
+                "pixels",
+                "normalized_1000"
+              ]
+            }
+          }
+        },
+        {
+          "action_no": 2,
+          "kind": "screen_capture",
+          "input": {},
+          "status": "succeeded",
+          "receipt": {
+            "ok": true,
+            "output": {
+              "epoch": 6,
+              "width": 1280,
+              "bootId": "5f9f4473-5d2b-418b-b046-e31557254bfa",
+              "height": 800,
+              "window": {
+                "x": 320,
+                "y": 187,
+                "id": "0x2a01091",
+                "title": "xiryn - Thunar",
+                "width": 640,
+                "height": 480,
+                "wmClass": "WM_CLASS(STRING) = \"thunar\", \"Thunar\"",
+                "boundsSpace": "screen_pixels_client_area"
+              },
+              "mapping": {
+                "scaleX": 1,
+                "scaleY": 1,
+                "offsetX": 0,
+                "offsetY": 0
+              },
+              "mediaType": "image/jpeg",
+              "observationId": "d7d4fc24-9db3-43a5-aba9-0b95baa2791d",
+              "coordinateSpace": "screenshot_pixels",
+              "acceptedCoordinateModes": [
+                "pixels",
+                "normalized_1000"
+              ]
+            }
+          }
+        },
+        {
+          "action_no": 3,
+          "kind": "key_press",
+          "input": {
+            "key": "n",
+            "modifiers": [
+              "ctrl",
+              "shift"
+            ],
+            "observationId": "d7d4fc24-9db3-43a5-aba9-0b95baa2791d"
+          },
+          "status": "succeeded",
+          "receipt": {
+            "ok": true,
+            "output": {
+              "key": "n",
+              "epoch": 6,
+              "width": 1280,
+              "bootId": "5f9f4473-5d2b-418b-b046-e31557254bfa",
+              "height": 800,
+              "window": {
+                "x": 495,
+                "y": 391,
+                "id": "0x2a012df",
+                "title": "Create New Folder",
+                "width": 300,
+                "height": 129,
+                "wmClass": "WM_CLASS(STRING) = \"thunar\", \"Thunar\"",
+                "boundsSpace": "screen_pixels_client_area"
+              },
+              "mapping": {
+                "scaleX": 1,
+                "scaleY": 1,
+                "offsetX": 0,
+                "offsetY": 0
+              },
+              "mediaType": "image/jpeg",
+              "modifiers": [
+                "ctrl",
+                "shift"
+              ],
+              "executedInput": {
+                "key": "n",
+                "modifiers": [
+                  "ctrl",
+                  "shift"
+                ],
+                "observationId": "d7d4fc24-9db3-43a5-aba9-0b95baa2791d"
+              },
+              "observationId": "ce6ad9f3-664d-497a-92d4-ecba545d610d",
+              "coordinateSpace": "screenshot_pixels",
+              "acceptedCoordinateModes": [
+                "pixels",
+                "normalized_1000"
+              ]
+            }
+          }
+        },
+        {
+          "action_no": 4,
+          "kind": "screen_capture",
+          "input": {},
+          "status": "succeeded",
+          "receipt": {
+            "ok": true,
+            "output": {
+              "epoch": 6,
+              "width": 1280,
+              "bootId": "5f9f4473-5d2b-418b-b046-e31557254bfa",
+              "height": 800,
+              "window": {
+                "x": 495,
+                "y": 391,
+                "id": "0x2a012df",
+                "title": "Create New Folder",
+                "width": 300,
+                "height": 129,
+                "wmClass": "WM_CLASS(STRING) = \"thunar\", \"Thunar\"",
+                "boundsSpace": "screen_pixels_client_area"
+              },
+              "mapping": {
+                "scaleX": 1,
+                "scaleY": 1,
+                "offsetX": 0,
+                "offsetY": 0
+              },
+              "mediaType": "image/jpeg",
+              "observationId": "1ca7d9e8-36a0-4b3c-bb07-4168de6f66c2",
+              "coordinateSpace": "screenshot_pixels",
+              "acceptedCoordinateModes": [
+                "pixels",
+                "normalized_1000"
+              ]
+            }
+          }
+        },
+        {
+          "action_no": 5,
+          "kind": "key_type",
+          "input": {
+            "text": "PA-C2-1-1792954114073",
+            "observationId": "1ca7d9e8-36a0-4b3c-bb07-4168de6f66c2"
+          },
+          "status": "succeeded",
+          "receipt": {
+            "ok": true,
+            "output": {
+              "text": "PA-C2-1-1792954114073",
+              "epoch": 6,
+              "width": 1280,
+              "bootId": "5f9f4473-5d2b-418b-b046-e31557254bfa",
+              "height": 800,
+              "window": {
+                "x": 495,
+                "y": 391,
+                "id": "0x2a012df",
+                "title": "Create New Folder",
+                "width": 300,
+                "height": 129,
+                "wmClass": "WM_CLASS(STRING) = \"thunar\", \"Thunar\"",
+                "boundsSpace": "screen_pixels_client_area"
+              },
+              "mapping": {
+                "scaleX": 1,
+                "scaleY": 1,
+                "offsetX": 0,
+                "offsetY": 0
+              },
+              "mediaType": "image/jpeg",
+              "executedInput": {
+                "text": "PA-C2-1-1792954114073",
+                "observationId": "1ca7d9e8-36a0-4b3c-bb07-4168de6f66c2"
+              },
+              "observationId": "52e6908d-3b53-4ee0-9107-9833bd080657",
+              "coordinateSpace": "screenshot_pixels",
+              "acceptedCoordinateModes": [
+                "pixels",
+                "normalized_1000"
+              ]
+            }
+          }
+        },
+        {
+          "action_no": 6,
+          "kind": "screen_capture",
+          "input": {},
+          "status": "succeeded",
+          "receipt": {
+            "ok": true,
+            "output": {
+              "epoch": 10,
+              "width": 1280,
+              "bootId": "5f9f4473-5d2b-418b-b046-e31557254bfa",
+              "height": 800,
+              "window": {
+                "x": 495,
+                "y": 391,
+                "id": "0x2a012df",
+                "title": "Create New Folder",
+                "width": 300,
+                "height": 129,
+                "wmClass": "WM_CLASS(STRING) = \"thunar\", \"Thunar\"",
+                "boundsSpace": "screen_pixels_client_area"
+              },
+              "mapping": {
+                "scaleX": 1,
+                "scaleY": 1,
+                "offsetX": 0,
+                "offsetY": 0
+              },
+              "mediaType": "image/jpeg",
+              "observationId": "c743863d-3850-4559-8177-c3ad50ba695d",
+              "coordinateSpace": "screenshot_pixels",
+              "acceptedCoordinateModes": [
+                "pixels",
+                "normalized_1000"
+              ]
+            }
+          }
+        },
+        {
+          "action_no": 7,
+          "kind": "key_press",
+          "input": {
+            "key": "enter",
+            "modifiers": [],
+            "observationId": "c743863d-3850-4559-8177-c3ad50ba695d"
+          },
+          "status": "succeeded",
+          "receipt": {
+            "ok": true,
+            "output": {
+              "key": "enter",
+              "epoch": 10,
+              "width": 1280,
+              "bootId": "5f9f4473-5d2b-418b-b046-e31557254bfa",
+              "height": 800,
+              "window": {
+                "x": 320,
+                "y": 187,
+                "id": "0x2a01091",
+                "title": "xiryn - Thunar",
+                "width": 640,
+                "height": 480,
+                "wmClass": "WM_CLASS(STRING) = \"thunar\", \"Thunar\"",
+                "boundsSpace": "screen_pixels_client_area"
+              },
+              "mapping": {
+                "scaleX": 1,
+                "scaleY": 1,
+                "offsetX": 0,
+                "offsetY": 0
+              },
+              "mediaType": "image/jpeg",
+              "modifiers": [],
+              "executedInput": {
+                "key": "enter",
+                "modifiers": [],
+                "observationId": "c743863d-3850-4559-8177-c3ad50ba695d"
+              },
+              "observationId": "85f13cf1-548e-4719-a69f-eb4dcee8e4e4",
+              "coordinateSpace": "screenshot_pixels",
+              "acceptedCoordinateModes": [
+                "pixels",
+                "normalized_1000"
+              ]
+            }
+          }
+        },
+        {
+          "action_no": 8,
+          "kind": "screen_capture",
+          "input": {},
+          "status": "succeeded",
+          "receipt": {
+            "ok": true,
+            "output": {
+              "epoch": 10,
+              "width": 1280,
+              "bootId": "5f9f4473-5d2b-418b-b046-e31557254bfa",
+              "height": 800,
+              "window": {
+                "x": 320,
+                "y": 187,
+                "id": "0x2a01091",
+                "title": "xiryn - Thunar",
+                "width": 640,
+                "height": 480,
+                "wmClass": "WM_CLASS(STRING) = \"thunar\", \"Thunar\"",
+                "boundsSpace": "screen_pixels_client_area"
+              },
+              "mapping": {
+                "scaleX": 1,
+                "scaleY": 1,
+                "offsetX": 0,
+                "offsetY": 0
+              },
+              "mediaType": "image/jpeg",
+              "observationId": "9f13bc30-911b-49d0-9b93-c4783de20cd1",
+              "coordinateSpace": "screenshot_pixels",
+              "acceptedCoordinateModes": [
+                "pixels",
+                "normalized_1000"
+              ]
+            }
+          }
+        },
+        {
+          "action_no": 9,
+          "kind": "key_press",
+          "input": {
+            "key": "l",
+            "modifiers": [
+              "ctrl"
+            ],
+            "observationId": "9f13bc30-911b-49d0-9b93-c4783de20cd1"
+          },
+          "status": "succeeded",
+          "receipt": {
+            "ok": true,
+            "output": {
+              "key": "l",
+              "epoch": 10,
+              "width": 1280,
+              "bootId": "5f9f4473-5d2b-418b-b046-e31557254bfa",
+              "height": 800,
+              "window": {
+                "x": 320,
+                "y": 187,
+                "id": "0x2a01091",
+                "title": "xiryn - Thunar",
+                "width": 640,
+                "height": 480,
+                "wmClass": "WM_CLASS(STRING) = \"thunar\", \"Thunar\"",
+                "boundsSpace": "screen_pixels_client_area"
+              },
+              "mapping": {
+                "scaleX": 1,
+                "scaleY": 1,
+                "offsetX": 0,
+                "offsetY": 0
+              },
+              "mediaType": "image/jpeg",
+              "modifiers": [
+                "ctrl"
+              ],
+              "executedInput": {
+                "key": "l",
+                "modifiers": [
+                  "ctrl"
+                ],
+                "observationId": "9f13bc30-911b-49d0-9b93-c4783de20cd1"
+              },
+              "observationId": "20301c1a-6357-48a0-811e-cd5a35579a48",
+              "coordinateSpace": "screenshot_pixels",
+              "acceptedCoordinateModes": [
+                "pixels",
+                "normalized_1000"
+              ]
+            }
+          }
+        },
+        {
+          "action_no": 10,
+          "kind": "screen_capture",
+          "input": {},
+          "status": "succeeded",
+          "receipt": {
+            "ok": true,
+            "output": {
+              "epoch": 10,
+              "width": 1280,
+              "bootId": "5f9f4473-5d2b-418b-b046-e31557254bfa",
+              "height": 800,
+              "window": {
+                "x": 320,
+                "y": 187,
+                "id": "0x2a01091",
+                "title": "xiryn - Thunar",
+                "width": 640,
+                "height": 480,
+                "wmClass": "WM_CLASS(STRING) = \"thunar\", \"Thunar\"",
+                "boundsSpace": "screen_pixels_client_area"
+              },
+              "mapping": {
+                "scaleX": 1,
+                "scaleY": 1,
+                "offsetX": 0,
+                "offsetY": 0
+              },
+              "mediaType": "image/jpeg",
+              "observationId": "60dee766-d48e-47d9-9c0e-9e0e48dc4601",
+              "coordinateSpace": "screenshot_pixels",
+              "acceptedCoordinateModes": [
+                "pixels",
+                "normalized_1000"
+              ]
+            }
+          }
+        },
+        {
+          "action_no": 11,
+          "kind": "key_type",
+          "input": {
+            "text": "/home/xiryn/PA-C2-1-1792954114073",
+            "observationId": "60dee766-d48e-47d9-9c0e-9e0e48dc4601"
+          },
+          "status": "succeeded",
+          "receipt": {
+            "ok": true,
+            "output": {
+              "text": "/home/xiryn/PA-C2-1-1792954114073",
+              "epoch": 10,
+              "width": 1280,
+              "bootId": "5f9f4473-5d2b-418b-b046-e31557254bfa",
+              "height": 800,
+              "window": {
+                "x": 320,
+                "y": 187,
+                "id": "0x2a01091",
+                "title": "xiryn - Thunar",
+                "width": 640,
+                "height": 480,
+                "wmClass": "WM_CLASS(STRING) = \"thunar\", \"Thunar\"",
+                "boundsSpace": "screen_pixels_client_area"
+              },
+              "mapping": {
+                "scaleX": 1,
+                "scaleY": 1,
+                "offsetX": 0,
+                "offsetY": 0
+              },
+              "mediaType": "image/jpeg",
+              "executedInput": {
+                "text": "/home/xiryn/PA-C2-1-1792954114073",
+                "observationId": "60dee766-d48e-47d9-9c0e-9e0e48dc4601"
+              },
+              "observationId": "a3519cb5-f262-4840-8a9a-30891c4503e3",
+              "coordinateSpace": "screenshot_pixels",
+              "acceptedCoordinateModes": [
+                "pixels",
+                "normalized_1000"
+              ]
+            }
+          }
+        },
+        {
+          "action_no": 12,
+          "kind": "screen_capture",
+          "input": {},
+          "status": "succeeded",
+          "receipt": {
+            "ok": true,
+            "output": {
+              "epoch": 10,
+              "width": 1280,
+              "bootId": "5f9f4473-5d2b-418b-b046-e31557254bfa",
+              "height": 800,
+              "window": {
+                "x": 320,
+                "y": 187,
+                "id": "0x2a01091",
+                "title": "xiryn - Thunar",
+                "width": 640,
+                "height": 480,
+                "wmClass": "WM_CLASS(STRING) = \"thunar\", \"Thunar\"",
+                "boundsSpace": "screen_pixels_client_area"
+              },
+              "mapping": {
+                "scaleX": 1,
+                "scaleY": 1,
+                "offsetX": 0,
+                "offsetY": 0
+              },
+              "mediaType": "image/jpeg",
+              "observationId": "78708f0f-ff9d-4495-bb14-3f1fd9e72d16",
+              "coordinateSpace": "screenshot_pixels",
+              "acceptedCoordinateModes": [
+                "pixels",
+                "normalized_1000"
+              ]
+            }
+          }
+        },
+        {
+          "action_no": 13,
+          "kind": "key_press",
+          "input": {
+            "key": "enter",
+            "modifiers": [],
+            "observationId": "78708f0f-ff9d-4495-bb14-3f1fd9e72d16"
+          },
+          "status": "succeeded",
+          "receipt": {
+            "ok": true,
+            "output": {
+              "key": "enter",
+              "epoch": 10,
+              "width": 1280,
+              "bootId": "5f9f4473-5d2b-418b-b046-e31557254bfa",
+              "height": 800,
+              "window": {
+                "x": 320,
+                "y": 187,
+                "id": "0x2a01091",
+                "title": "PA-C2-1-1792954114073 - Thunar",
+                "width": 640,
+                "height": 480,
+                "wmClass": "WM_CLASS(STRING) = \"thunar\", \"Thunar\"",
+                "boundsSpace": "screen_pixels_client_area"
+              },
+              "mapping": {
+                "scaleX": 1,
+                "scaleY": 1,
+                "offsetX": 0,
+                "offsetY": 0
+              },
+              "mediaType": "image/jpeg",
+              "modifiers": [],
+              "executedInput": {
+                "key": "enter",
+                "modifiers": [],
+                "observationId": "78708f0f-ff9d-4495-bb14-3f1fd9e72d16"
+              },
+              "observationId": "32cc87f9-bdbb-430e-bda5-e7e9344ffd80",
+              "coordinateSpace": "screenshot_pixels",
+              "acceptedCoordinateModes": [
+                "pixels",
+                "normalized_1000"
+              ]
+            }
+          }
+        },
+        {
+          "action_no": 14,
+          "kind": "screen_capture",
+          "input": {},
+          "status": "succeeded",
+          "receipt": {
+            "ok": true,
+            "output": {
+              "epoch": 10,
+              "width": 1280,
+              "bootId": "5f9f4473-5d2b-418b-b046-e31557254bfa",
+              "height": 800,
+              "window": {
+                "x": 320,
+                "y": 187,
+                "id": "0x2a01091",
+                "title": "PA-C2-1-1792954114073 - Thunar",
+                "width": 640,
+                "height": 480,
+                "wmClass": "WM_CLASS(STRING) = \"thunar\", \"Thunar\"",
+                "boundsSpace": "screen_pixels_client_area"
+              },
+              "mapping": {
+                "scaleX": 1,
+                "scaleY": 1,
+                "offsetX": 0,
+                "offsetY": 0
+              },
+              "mediaType": "image/jpeg",
+              "observationId": "cac4acb0-c0a0-464c-a115-0f0aa91f4d0e",
+              "coordinateSpace": "screenshot_pixels",
+              "acceptedCoordinateModes": [
+                "pixels",
+                "normalized_1000"
+              ]
+            }
+          }
+        },
+        {
+          "action_no": 15,
+          "kind": "key_press",
+          "input": {
+            "key": "n",
+            "modifiers": [
+              "ctrl",
+              "shift"
+            ],
+            "observationId": "cac4acb0-c0a0-464c-a115-0f0aa91f4d0e"
+          },
+          "status": "succeeded",
+          "receipt": {
+            "ok": true,
+            "output": {
+              "key": "n",
+              "epoch": 10,
+              "width": 1280,
+              "bootId": "5f9f4473-5d2b-418b-b046-e31557254bfa",
+              "height": 800,
+              "window": {
+                "x": 495,
+                "y": 391,
+                "id": "0x2a019e1",
+                "title": "Create New Folder",
+                "width": 300,
+                "height": 129,
+                "wmClass": "WM_CLASS(STRING) = \"thunar\", \"Thunar\"",
+                "boundsSpace": "screen_pixels_client_area"
+              },
+              "mapping": {
+                "scaleX": 1,
+                "scaleY": 1,
+                "offsetX": 0,
+                "offsetY": 0
+              },
+              "mediaType": "image/jpeg",
+              "modifiers": [
+                "ctrl",
+                "shift"
+              ],
+              "executedInput": {
+                "key": "n",
+                "modifiers": [
+                  "ctrl",
+                  "shift"
+                ],
+                "observationId": "cac4acb0-c0a0-464c-a115-0f0aa91f4d0e"
+              },
+              "observationId": "1b9dda52-7531-4396-95ca-ac83bb7e549c",
+              "coordinateSpace": "screenshot_pixels",
+              "acceptedCoordinateModes": [
+                "pixels",
+                "normalized_1000"
+              ]
+            }
+          }
+        },
+        {
+          "action_no": 16,
+          "kind": "screen_capture",
+          "input": {},
+          "status": "succeeded",
+          "receipt": {
+            "ok": true,
+            "output": {
+              "epoch": 10,
+              "width": 1280,
+              "bootId": "5f9f4473-5d2b-418b-b046-e31557254bfa",
+              "height": 800,
+              "window": {
+                "x": 495,
+                "y": 391,
+                "id": "0x2a019e1",
+                "title": "Create New Folder",
+                "width": 300,
+                "height": 129,
+                "wmClass": "WM_CLASS(STRING) = \"thunar\", \"Thunar\"",
+                "boundsSpace": "screen_pixels_client_area"
+              },
+              "mapping": {
+                "scaleX": 1,
+                "scaleY": 1,
+                "offsetX": 0,
+                "offsetY": 0
+              },
+              "mediaType": "image/jpeg",
+              "observationId": "9e789eb3-3f73-4280-964a-e8f35acf1590",
+              "coordinateSpace": "screenshot_pixels",
+              "acceptedCoordinateModes": [
+                "pixels",
+                "normalized_1000"
+              ]
+            }
+          }
+        },
+        {
+          "action_no": 17,
+          "kind": "key_type",
+          "input": {
+            "text": "Work in progress",
+            "observationId": "9e789eb3-3f73-4280-964a-e8f35acf1590"
+          },
+          "status": "succeeded",
+          "receipt": {
+            "ok": true,
+            "output": {
+              "text": "Work in progress",
+              "epoch": 10,
+              "width": 1280,
+              "bootId": "5f9f4473-5d2b-418b-b046-e31557254bfa",
+              "height": 800,
+              "window": {
+                "x": 495,
+                "y": 391,
+                "id": "0x2a019e1",
+                "title": "Create New Folder",
+                "width": 300,
+                "height": 129,
+                "wmClass": "WM_CLASS(STRING) = \"thunar\", \"Thunar\"",
+                "boundsSpace": "screen_pixels_client_area"
+              },
+              "mapping": {
+                "scaleX": 1,
+                "scaleY": 1,
+                "offsetX": 0,
+                "offsetY": 0
+              },
+              "mediaType": "image/jpeg",
+              "executedInput": {
+                "text": "Work in progress",
+                "observationId": "9e789eb3-3f73-4280-964a-e8f35acf1590"
+              },
+              "observationId": "093cb8a9-75bf-46cc-8f87-142e194893a9",
+              "coordinateSpace": "screenshot_pixels",
+              "acceptedCoordinateModes": [
+                "pixels",
+                "normalized_1000"
+              ]
+            }
+          }
+        },
+        {
+          "action_no": 18,
+          "kind": "screen_capture",
+          "input": {},
+          "status": "succeeded",
+          "receipt": {
+            "ok": true,
+            "output": {
+              "epoch": 10,
+              "width": 1280,
+              "bootId": "5f9f4473-5d2b-418b-b046-e31557254bfa",
+              "height": 800,
+              "window": {
+                "x": 495,
+                "y": 391,
+                "id": "0x2a019e1",
+                "title": "Create New Folder",
+                "width": 300,
+                "height": 129,
+                "wmClass": "WM_CLASS(STRING) = \"thunar\", \"Thunar\"",
+                "boundsSpace": "screen_pixels_client_area"
+              },
+              "mapping": {
+                "scaleX": 1,
+                "scaleY": 1,
+                "offsetX": 0,
+                "offsetY": 0
+              },
+              "mediaType": "image/jpeg",
+              "observationId": "f1c62c81-522c-461b-839e-598afe67dcb9",
+              "coordinateSpace": "screenshot_pixels",
+              "acceptedCoordinateModes": [
+                "pixels",
+                "normalized_1000"
+              ]
+            }
+          }
+        },
+        {
+          "action_no": 19,
+          "kind": "key_press",
+          "input": {
+            "key": "enter",
+            "modifiers": [],
+            "observationId": "f1c62c81-522c-461b-839e-598afe67dcb9"
+          },
+          "status": "succeeded",
+          "receipt": {
+            "ok": true,
+            "output": {
+              "key": "enter",
+              "epoch": 10,
+              "width": 1280,
+              "bootId": "5f9f4473-5d2b-418b-b046-e31557254bfa",
+              "height": 800,
+              "window": {
+                "x": 320,
+                "y": 187,
+                "id": "0x2a01091",
+                "title": "PA-C2-1-1792954114073 - Thunar",
+                "width": 640,
+                "height": 480,
+                "wmClass": "WM_CLASS(STRING) = \"thunar\", \"Thunar\"",
+                "boundsSpace": "screen_pixels_client_area"
+              },
+              "mapping": {
+                "scaleX": 1,
+                "scaleY": 1,
+                "offsetX": 0,
+                "offsetY": 0
+              },
+              "mediaType": "image/jpeg",
+              "modifiers": [],
+              "executedInput": {
+                "key": "enter",
+                "modifiers": [],
+                "observationId": "f1c62c81-522c-461b-839e-598afe67dcb9"
+              },
+              "observationId": "d0c65cfc-96a6-4c5e-90f7-70945a22aa4a",
+              "coordinateSpace": "screenshot_pixels",
+              "acceptedCoordinateModes": [
+                "pixels",
+                "normalized_1000"
+              ]
+            }
+          }
+        },
+        {
+          "action_no": 20,
+          "kind": "screen_capture",
+          "input": {},
+          "status": "succeeded",
+          "receipt": {
+            "ok": true,
+            "output": {
+              "epoch": 10,
+              "width": 1280,
+              "bootId": "5f9f4473-5d2b-418b-b046-e31557254bfa",
+              "height": 800,
+              "window": {
+                "x": 320,
+                "y": 187,
+                "id": "0x2a01091",
+                "title": "PA-C2-1-1792954114073 - Thunar",
+                "width": 640,
+                "height": 480,
+                "wmClass": "WM_CLASS(STRING) = \"thunar\", \"Thunar\"",
+                "boundsSpace": "screen_pixels_client_area"
+              },
+              "mapping": {
+                "scaleX": 1,
+                "scaleY": 1,
+                "offsetX": 0,
+                "offsetY": 0
+              },
+              "mediaType": "image/jpeg",
+              "observationId": "7343e839-2172-4da1-b4bc-f742bccfed61",
+              "coordinateSpace": "screenshot_pixels",
+              "acceptedCoordinateModes": [
+                "pixels",
+                "normalized_1000"
+              ]
+            }
+          }
+        },
+        {
+          "action_no": 21,
+          "kind": "key_press",
+          "input": {
+            "key": "f2",
+            "modifiers": [],
+            "observationId": "7343e839-2172-4da1-b4bc-f742bccfed61"
+          },
+          "status": "succeeded",
+          "receipt": {
+            "ok": true,
+            "output": {
+              "key": "f2",
+              "epoch": 10,
+              "width": 1280,
+              "bootId": "5f9f4473-5d2b-418b-b046-e31557254bfa",
+              "height": 800,
+              "window": {
+                "x": 495,
+                "y": 391,
+                "id": "0x2a01dab",
+                "title": "Rename \"Work in progress\"",
+                "width": 300,
+                "height": 129,
+                "wmClass": "WM_CLASS(STRING) = \"thunar\", \"Thunar\"",
+                "boundsSpace": "screen_pixels_client_area"
+              },
+              "mapping": {
+                "scaleX": 1,
+                "scaleY": 1,
+                "offsetX": 0,
+                "offsetY": 0
+              },
+              "mediaType": "image/jpeg",
+              "modifiers": [],
+              "executedInput": {
+                "key": "f2",
+                "modifiers": [],
+                "observationId": "7343e839-2172-4da1-b4bc-f742bccfed61"
+              },
+              "observationId": "134121a9-8009-4fb6-98c5-6c09bb81a205",
+              "coordinateSpace": "screenshot_pixels",
+              "acceptedCoordinateModes": [
+                "pixels",
+                "normalized_1000"
+              ]
+            }
+          }
+        },
+        {
+          "action_no": 22,
+          "kind": "screen_capture",
+          "input": {},
+          "status": "succeeded",
+          "receipt": {
+            "ok": true,
+            "output": {
+              "epoch": 10,
+              "width": 1280,
+              "bootId": "5f9f4473-5d2b-418b-b046-e31557254bfa",
+              "height": 800,
+              "window": {
+                "x": 495,
+                "y": 391,
+                "id": "0x2a01dab",
+                "title": "Rename \"Work in progress\"",
+                "width": 300,
+                "height": 129,
+                "wmClass": "WM_CLASS(STRING) = \"thunar\", \"Thunar\"",
+                "boundsSpace": "screen_pixels_client_area"
+              },
+              "mapping": {
+                "scaleX": 1,
+                "scaleY": 1,
+                "offsetX": 0,
+                "offsetY": 0
+              },
+              "mediaType": "image/jpeg",
+              "observationId": "1a6f5942-2997-462e-a481-4d6f1aa87240",
+              "coordinateSpace": "screenshot_pixels",
+              "acceptedCoordinateModes": [
+                "pixels",
+                "normalized_1000"
+              ]
+            }
+          }
+        },
+        {
+          "action_no": 23,
+          "kind": "key_type",
+          "input": {
+            "text": "Ready with spaces",
+            "observationId": "1a6f5942-2997-462e-a481-4d6f1aa87240"
+          },
+          "status": "succeeded",
+          "receipt": {
+            "ok": true,
+            "output": {
+              "text": "Ready with spaces",
+              "epoch": 10,
+              "width": 1280,
+              "bootId": "5f9f4473-5d2b-418b-b046-e31557254bfa",
+              "height": 800,
+              "window": {
+                "x": 495,
+                "y": 391,
+                "id": "0x2a01dab",
+                "title": "Rename \"Work in progress\"",
+                "width": 300,
+                "height": 129,
+                "wmClass": "WM_CLASS(STRING) = \"thunar\", \"Thunar\"",
+                "boundsSpace": "screen_pixels_client_area"
+              },
+              "mapping": {
+                "scaleX": 1,
+                "scaleY": 1,
+                "offsetX": 0,
+                "offsetY": 0
+              },
+              "mediaType": "image/jpeg",
+              "executedInput": {
+                "text": "Ready with spaces",
+                "observationId": "1a6f5942-2997-462e-a481-4d6f1aa87240"
+              },
+              "observationId": "86610065-351e-42a2-8d33-2347c43b072b",
+              "coordinateSpace": "screenshot_pixels",
+              "acceptedCoordinateModes": [
+                "pixels",
+                "normalized_1000"
+              ]
+            }
+          }
+        },
+        {
+          "action_no": 24,
+          "kind": "screen_capture",
+          "input": {},
+          "status": "succeeded",
+          "receipt": {
+            "ok": true,
+            "output": {
+              "epoch": 10,
+              "width": 1280,
+              "bootId": "5f9f4473-5d2b-418b-b046-e31557254bfa",
+              "height": 800,
+              "window": {
+                "x": 495,
+                "y": 391,
+                "id": "0x2a01dab",
+                "title": "Rename \"Work in progress\"",
+                "width": 300,
+                "height": 129,
+                "wmClass": "WM_CLASS(STRING) = \"thunar\", \"Thunar\"",
+                "boundsSpace": "screen_pixels_client_area"
+              },
+              "mapping": {
+                "scaleX": 1,
+                "scaleY": 1,
+                "offsetX": 0,
+                "offsetY": 0
+              },
+              "mediaType": "image/jpeg",
+              "observationId": "672d9eb1-2c04-4339-aaeb-60eaea459842",
+              "coordinateSpace": "screenshot_pixels",
+              "acceptedCoordinateModes": [
+                "pixels",
+                "normalized_1000"
+              ]
+            }
+          }
+        },
+        {
+          "action_no": 25,
+          "kind": "key_press",
+          "input": {
+            "key": "enter",
+            "modifiers": [],
+            "observationId": "672d9eb1-2c04-4339-aaeb-60eaea459842"
+          },
+          "status": "succeeded",
+          "receipt": {
+            "ok": true,
+            "output": {
+              "key": "enter",
+              "epoch": 10,
+              "width": 1280,
+              "bootId": "5f9f4473-5d2b-418b-b046-e31557254bfa",
+              "height": 800,
+              "window": {
+                "x": 320,
+                "y": 187,
+                "id": "0x2a01091",
+                "title": "PA-C2-1-1792954114073 - Thunar",
+                "width": 640,
+                "height": 480,
+                "wmClass": "WM_CLASS(STRING) = \"thunar\", \"Thunar\"",
+                "boundsSpace": "screen_pixels_client_area"
+              },
+              "mapping": {
+                "scaleX": 1,
+                "scaleY": 1,
+                "offsetX": 0,
+                "offsetY": 0
+              },
+              "mediaType": "image/jpeg",
+              "modifiers": [],
+              "executedInput": {
+                "key": "enter",
+                "modifiers": [],
+                "observationId": "672d9eb1-2c04-4339-aaeb-60eaea459842"
+              },
+              "observationId": "b97a8c8a-b01a-4f5e-a31a-9d4bfaa719f3",
+              "coordinateSpace": "screenshot_pixels",
+              "acceptedCoordinateModes": [
+                "pixels",
+                "normalized_1000"
+              ]
+            }
+          }
+        },
+        {
+          "action_no": 26,
+          "kind": "screen_capture",
+          "input": {},
+          "status": "succeeded",
+          "receipt": {
+            "ok": true,
+            "output": {
+              "epoch": 10,
+              "width": 1280,
+              "bootId": "5f9f4473-5d2b-418b-b046-e31557254bfa",
+              "height": 800,
+              "window": {
+                "x": 320,
+                "y": 187,
+                "id": "0x2a01091",
+                "title": "PA-C2-1-1792954114073 - Thunar",
+                "width": 640,
+                "height": 480,
+                "wmClass": "WM_CLASS(STRING) = \"thunar\", \"Thunar\"",
+                "boundsSpace": "screen_pixels_client_area"
+              },
+              "mapping": {
+                "scaleX": 1,
+                "scaleY": 1,
+                "offsetX": 0,
+                "offsetY": 0
+              },
+              "mediaType": "image/jpeg",
+              "observationId": "3a4eb538-998c-435e-929f-2b4240c2c217",
+              "coordinateSpace": "screenshot_pixels",
+              "acceptedCoordinateModes": [
+                "pixels",
+                "normalized_1000"
+              ]
+            }
+          }
+        },
+        {
+          "action_no": 28,
+          "kind": "screen_share",
+          "input": {},
+          "status": "succeeded",
+          "receipt": {
+            "ok": true,
+            "output": {
+              "epoch": 10,
+              "width": 1280,
+              "bootId": "5f9f4473-5d2b-418b-b046-e31557254bfa",
+              "height": 800,
+              "window": {
+                "x": 320,
+                "y": 187,
+                "id": "0x2a01091",
+                "title": "PA-C2-1-1792954114073 - Thunar",
+                "width": 640,
+                "height": 480,
+                "wmClass": "WM_CLASS(STRING) = \"thunar\", \"Thunar\"",
+                "boundsSpace": "screen_pixels_client_area"
+              },
+              "mapping": {
+                "scaleX": 1,
+                "scaleY": 1,
+                "offsetX": 0,
+                "offsetY": 0
+              },
+              "mediaType": "image/jpeg",
+              "observationId": "29adc6c3-9e9d-4c44-bc9e-cb3d158c219c",
+              "coordinateSpace": "screenshot_pixels",
+              "acceptedCoordinateModes": [
+                "pixels",
+                "normalized_1000"
+              ]
+            }
+          }
+        }
+      ],
+      "requests": []
+    },
+    {
+      "taskId": "567e1984-ea6f-4c29-8fed-8b38cb8f7d2d",
+      "input": {
+        "agentId": "ec5db4ab-c5f3-4a01-a126-05cbf3743a0f",
+        "goal": "CUA流程新任务 2",
+        "clientRequestId": "43a801be-2bbb-4495-83c5-da9fe3575c42",
+        "workflowExecution": {
+          "versionId": "2d321b20-34f5-4407-bb7f-03c66ddb208d",
+          "purpose": "verify",
+          "parameters": {
+            "parentName": "PA-C2-2-1792954152489",
+            "draftName": "待处理",
+            "readyName": "已完成"
+          },
+          "maxActions": 120,
+          "maxDurationSeconds": 300
+        },
+        "completionContract": {
+          "requireHumanReview": false
+        },
+        "budget": {
+          "maxSteps": 1,
+          "maxCostMicros": 0
+        }
+      },
+      "state": {
+        "status": "completed",
+        "result": {
+          "files": [],
+          "summary": "流程已执行并通过固定目录检查：/home/xiryn/PA-C2-2-1792954152489",
+          "verification": {
+            "grade": "program_checked",
+            "unverified": [
+              "The summary's general factual correctness is not independently established."
+            ]
+          },
+          "directoryTree": {
+            "root": "/home/xiryn/PA-C2-2-1792954152489",
+            "grade": "program_checked",
+            "absent": [
+              "待处理"
+            ],
+            "checks": {
+              "linksRejected": true,
+              "hostReadOnlyArchive": true
+            },
+            "entries": [
+              {
+                "path": "",
+                "directory": true
+              },
+              {
+                "path": "已完成",
+                "directory": true
+              }
+            ],
+            "checkerId": "directory-tree-v1",
+            "directories": [
+              "已完成"
+            ]
+          }
+        },
+        "error": null
+      },
+      "run": {
+        "checkpoint": {
+          "step": 15,
+          "frame": null,
+          "phase": "observe",
+          "bootId": "5f9f4473-5d2b-418b-b046-e31557254bfa",
+          "blockedReason": null,
+          "waitStartedAt": null
+        },
+        "environment": {
+          "locale": "C.UTF-8",
+          "application": "Thunar",
+          "guestProtocol": 6,
+          "workstationImageId": "sha256:f8d2fbb12dc081ce3704fbfd06df87cc13afa4049ca51e8ce5e298c41b6f9add"
+        },
+        "started_at": "2026-10-25T18:49:14.010Z",
+        "completed_at": "2026-10-25T18:49:46.246Z"
+      },
+      "actions": [
+        {
+          "action_no": 1,
+          "kind": "desktop_open_application",
+          "input": {
+            "application": "Thunar"
+          },
+          "status": "succeeded",
+          "receipt": {
+            "ok": true,
+            "output": {
+              "epoch": 14,
+              "width": 1280,
+              "bootId": "5f9f4473-5d2b-418b-b046-e31557254bfa",
+              "height": 800,
+              "window": {
+                "x": 320,
+                "y": 187,
+                "id": "0x2a021d8",
+                "title": "xiryn - Thunar",
+                "width": 640,
+                "height": 480,
+                "wmClass": "WM_CLASS(STRING) = \"thunar\", \"Thunar\"",
+                "boundsSpace": "screen_pixels_client_area"
+              },
+              "mapping": {
+                "scaleX": 1,
+                "scaleY": 1,
+                "offsetX": 0,
+                "offsetY": 0
+              },
+              "launched": "Thunar",
+              "mediaType": "image/jpeg",
+              "observationId": "9968a91a-0450-4502-8530-c242aca19ebd",
+              "coordinateSpace": "screenshot_pixels",
+              "acceptedCoordinateModes": [
+                "pixels",
+                "normalized_1000"
+              ]
+            }
+          }
+        },
+        {
+          "action_no": 2,
+          "kind": "screen_capture",
+          "input": {},
+          "status": "succeeded",
+          "receipt": {
+            "ok": true,
+            "output": {
+              "epoch": 14,
+              "width": 1280,
+              "bootId": "5f9f4473-5d2b-418b-b046-e31557254bfa",
+              "height": 800,
+              "window": {
+                "x": 320,
+                "y": 187,
+                "id": "0x2a021d8",
+                "title": "xiryn - Thunar",
+                "width": 640,
+                "height": 480,
+                "wmClass": "WM_CLASS(STRING) = \"thunar\", \"Thunar\"",
+                "boundsSpace": "screen_pixels_client_area"
+              },
+              "mapping": {
+                "scaleX": 1,
+                "scaleY": 1,
+                "offsetX": 0,
+                "offsetY": 0
+              },
+              "mediaType": "image/jpeg",
+              "observationId": "ba5c19d5-2f3d-4236-b609-6229ae8a5999",
+              "coordinateSpace": "screenshot_pixels",
+              "acceptedCoordinateModes": [
+                "pixels",
+                "normalized_1000"
+              ]
+            }
+          }
+        },
+        {
+          "action_no": 3,
+          "kind": "key_press",
+          "input": {
+            "key": "n",
+            "modifiers": [
+              "ctrl",
+              "shift"
+            ],
+            "observationId": "ba5c19d5-2f3d-4236-b609-6229ae8a5999"
+          },
+          "status": "succeeded",
+          "receipt": {
+            "ok": true,
+            "output": {
+              "key": "n",
+              "epoch": 14,
+              "width": 1280,
+              "bootId": "5f9f4473-5d2b-418b-b046-e31557254bfa",
+              "height": 800,
+              "window": {
+                "x": 495,
+                "y": 391,
+                "id": "0x2a0243f",
+                "title": "Create New Folder",
+                "width": 300,
+                "height": 129,
+                "wmClass": "WM_CLASS(STRING) = \"thunar\", \"Thunar\"",
+                "boundsSpace": "screen_pixels_client_area"
+              },
+              "mapping": {
+                "scaleX": 1,
+                "scaleY": 1,
+                "offsetX": 0,
+                "offsetY": 0
+              },
+              "mediaType": "image/jpeg",
+              "modifiers": [
+                "ctrl",
+                "shift"
+              ],
+              "executedInput": {
+                "key": "n",
+                "modifiers": [
+                  "ctrl",
+                  "shift"
+                ],
+                "observationId": "ba5c19d5-2f3d-4236-b609-6229ae8a5999"
+              },
+              "observationId": "4ba640ae-f19e-4e6b-95c8-b7cd0a7e9d68",
+              "coordinateSpace": "screenshot_pixels",
+              "acceptedCoordinateModes": [
+                "pixels",
+                "normalized_1000"
+              ]
+            }
+          }
+        },
+        {
+          "action_no": 4,
+          "kind": "screen_capture",
+          "input": {},
+          "status": "succeeded",
+          "receipt": {
+            "ok": true,
+            "output": {
+              "epoch": 14,
+              "width": 1280,
+              "bootId": "5f9f4473-5d2b-418b-b046-e31557254bfa",
+              "height": 800,
+              "window": {
+                "x": 495,
+                "y": 391,
+                "id": "0x2a0243f",
+                "title": "Create New Folder",
+                "width": 300,
+                "height": 129,
+                "wmClass": "WM_CLASS(STRING) = \"thunar\", \"Thunar\"",
+                "boundsSpace": "screen_pixels_client_area"
+              },
+              "mapping": {
+                "scaleX": 1,
+                "scaleY": 1,
+                "offsetX": 0,
+                "offsetY": 0
+              },
+              "mediaType": "image/jpeg",
+              "observationId": "e12f66bd-a0d1-4a14-b362-cf82b7046b3c",
+              "coordinateSpace": "screenshot_pixels",
+              "acceptedCoordinateModes": [
+                "pixels",
+                "normalized_1000"
+              ]
+            }
+          }
+        },
+        {
+          "action_no": 5,
+          "kind": "key_type",
+          "input": {
+            "text": "PA-C2-2-1792954152489",
+            "observationId": "e12f66bd-a0d1-4a14-b362-cf82b7046b3c"
+          },
+          "status": "succeeded",
+          "receipt": {
+            "ok": true,
+            "output": {
+              "text": "PA-C2-2-1792954152489",
+              "epoch": 14,
+              "width": 1280,
+              "bootId": "5f9f4473-5d2b-418b-b046-e31557254bfa",
+              "height": 800,
+              "window": {
+                "x": 495,
+                "y": 391,
+                "id": "0x2a0243f",
+                "title": "Create New Folder",
+                "width": 300,
+                "height": 129,
+                "wmClass": "WM_CLASS(STRING) = \"thunar\", \"Thunar\"",
+                "boundsSpace": "screen_pixels_client_area"
+              },
+              "mapping": {
+                "scaleX": 1,
+                "scaleY": 1,
+                "offsetX": 0,
+                "offsetY": 0
+              },
+              "mediaType": "image/jpeg",
+              "executedInput": {
+                "text": "PA-C2-2-1792954152489",
+                "observationId": "e12f66bd-a0d1-4a14-b362-cf82b7046b3c"
+              },
+              "observationId": "32b51d6f-b433-4e59-8d1f-63deb28b2678",
+              "coordinateSpace": "screenshot_pixels",
+              "acceptedCoordinateModes": [
+                "pixels",
+                "normalized_1000"
+              ]
+            }
+          }
+        },
+        {
+          "action_no": 6,
+          "kind": "screen_capture",
+          "input": {},
+          "status": "succeeded",
+          "receipt": {
+            "ok": true,
+            "output": {
+              "epoch": 14,
+              "width": 1280,
+              "bootId": "5f9f4473-5d2b-418b-b046-e31557254bfa",
+              "height": 800,
+              "window": {
+                "x": 495,
+                "y": 391,
+                "id": "0x2a0243f",
+                "title": "Create New Folder",
+                "width": 300,
+                "height": 129,
+                "wmClass": "WM_CLASS(STRING) = \"thunar\", \"Thunar\"",
+                "boundsSpace": "screen_pixels_client_area"
+              },
+              "mapping": {
+                "scaleX": 1,
+                "scaleY": 1,
+                "offsetX": 0,
+                "offsetY": 0
+              },
+              "mediaType": "image/jpeg",
+              "observationId": "7d70c89d-ee1d-4e02-a46e-c695f0d5301d",
+              "coordinateSpace": "screenshot_pixels",
+              "acceptedCoordinateModes": [
+                "pixels",
+                "normalized_1000"
+              ]
+            }
+          }
+        },
+        {
+          "action_no": 7,
+          "kind": "key_press",
+          "input": {
+            "key": "enter",
+            "modifiers": [],
+            "observationId": "7d70c89d-ee1d-4e02-a46e-c695f0d5301d"
+          },
+          "status": "succeeded",
+          "receipt": {
+            "ok": true,
+            "output": {
+              "key": "enter",
+              "epoch": 14,
+              "width": 1280,
+              "bootId": "5f9f4473-5d2b-418b-b046-e31557254bfa",
+              "height": 800,
+              "window": {
+                "x": 320,
+                "y": 187,
+                "id": "0x2a021d8",
+                "title": "xiryn - Thunar",
+                "width": 640,
+                "height": 480,
+                "wmClass": "WM_CLASS(STRING) = \"thunar\", \"Thunar\"",
+                "boundsSpace": "screen_pixels_client_area"
+              },
+              "mapping": {
+                "scaleX": 1,
+                "scaleY": 1,
+                "offsetX": 0,
+                "offsetY": 0
+              },
+              "mediaType": "image/jpeg",
+              "modifiers": [],
+              "executedInput": {
+                "key": "enter",
+                "modifiers": [],
+                "observationId": "7d70c89d-ee1d-4e02-a46e-c695f0d5301d"
+              },
+              "observationId": "c8bf6c1d-822d-4adc-a847-ddd35a480c3d",
+              "coordinateSpace": "screenshot_pixels",
+              "acceptedCoordinateModes": [
+                "pixels",
+                "normalized_1000"
+              ]
+            }
+          }
+        },
+        {
+          "action_no": 8,
+          "kind": "screen_capture",
+          "input": {},
+          "status": "succeeded",
+          "receipt": {
+            "ok": true,
+            "output": {
+              "epoch": 14,
+              "width": 1280,
+              "bootId": "5f9f4473-5d2b-418b-b046-e31557254bfa",
+              "height": 800,
+              "window": {
+                "x": 320,
+                "y": 187,
+                "id": "0x2a021d8",
+                "title": "xiryn - Thunar",
+                "width": 640,
+                "height": 480,
+                "wmClass": "WM_CLASS(STRING) = \"thunar\", \"Thunar\"",
+                "boundsSpace": "screen_pixels_client_area"
+              },
+              "mapping": {
+                "scaleX": 1,
+                "scaleY": 1,
+                "offsetX": 0,
+                "offsetY": 0
+              },
+              "mediaType": "image/jpeg",
+              "observationId": "35da8c4f-2664-4c9a-9c21-8de59b716e08",
+              "coordinateSpace": "screenshot_pixels",
+              "acceptedCoordinateModes": [
+                "pixels",
+                "normalized_1000"
+              ]
+            }
+          }
+        },
+        {
+          "action_no": 9,
+          "kind": "key_press",
+          "input": {
+            "key": "l",
+            "modifiers": [
+              "ctrl"
+            ],
+            "observationId": "35da8c4f-2664-4c9a-9c21-8de59b716e08"
+          },
+          "status": "succeeded",
+          "receipt": {
+            "ok": true,
+            "output": {
+              "key": "l",
+              "epoch": 14,
+              "width": 1280,
+              "bootId": "5f9f4473-5d2b-418b-b046-e31557254bfa",
+              "height": 800,
+              "window": {
+                "x": 320,
+                "y": 187,
+                "id": "0x2a021d8",
+                "title": "xiryn - Thunar",
+                "width": 640,
+                "height": 480,
+                "wmClass": "WM_CLASS(STRING) = \"thunar\", \"Thunar\"",
+                "boundsSpace": "screen_pixels_client_area"
+              },
+              "mapping": {
+                "scaleX": 1,
+                "scaleY": 1,
+                "offsetX": 0,
+                "offsetY": 0
+              },
+              "mediaType": "image/jpeg",
+              "modifiers": [
+                "ctrl"
+              ],
+              "executedInput": {
+                "key": "l",
+                "modifiers": [
+                  "ctrl"
+                ],
+                "observationId": "35da8c4f-2664-4c9a-9c21-8de59b716e08"
+              },
+              "observationId": "d53d9d9b-219a-4e60-8c61-3177a495d386",
+              "coordinateSpace": "screenshot_pixels",
+              "acceptedCoordinateModes": [
+                "pixels",
+                "normalized_1000"
+              ]
+            }
+          }
+        },
+        {
+          "action_no": 10,
+          "kind": "screen_capture",
+          "input": {},
+          "status": "succeeded",
+          "receipt": {
+            "ok": true,
+            "output": {
+              "epoch": 14,
+              "width": 1280,
+              "bootId": "5f9f4473-5d2b-418b-b046-e31557254bfa",
+              "height": 800,
+              "window": {
+                "x": 320,
+                "y": 187,
+                "id": "0x2a021d8",
+                "title": "xiryn - Thunar",
+                "width": 640,
+                "height": 480,
+                "wmClass": "WM_CLASS(STRING) = \"thunar\", \"Thunar\"",
+                "boundsSpace": "screen_pixels_client_area"
+              },
+              "mapping": {
+                "scaleX": 1,
+                "scaleY": 1,
+                "offsetX": 0,
+                "offsetY": 0
+              },
+              "mediaType": "image/jpeg",
+              "observationId": "6fce9ea6-ef6c-44da-96a5-b9243773bdad",
+              "coordinateSpace": "screenshot_pixels",
+              "acceptedCoordinateModes": [
+                "pixels",
+                "normalized_1000"
+              ]
+            }
+          }
+        },
+        {
+          "action_no": 11,
+          "kind": "key_type",
+          "input": {
+            "text": "/home/xiryn/PA-C2-2-1792954152489",
+            "observationId": "6fce9ea6-ef6c-44da-96a5-b9243773bdad"
+          },
+          "status": "succeeded",
+          "receipt": {
+            "ok": true,
+            "output": {
+              "text": "/home/xiryn/PA-C2-2-1792954152489",
+              "epoch": 14,
+              "width": 1280,
+              "bootId": "5f9f4473-5d2b-418b-b046-e31557254bfa",
+              "height": 800,
+              "window": {
+                "x": 320,
+                "y": 187,
+                "id": "0x2a021d8",
+                "title": "xiryn - Thunar",
+                "width": 640,
+                "height": 480,
+                "wmClass": "WM_CLASS(STRING) = \"thunar\", \"Thunar\"",
+                "boundsSpace": "screen_pixels_client_area"
+              },
+              "mapping": {
+                "scaleX": 1,
+                "scaleY": 1,
+                "offsetX": 0,
+                "offsetY": 0
+              },
+              "mediaType": "image/jpeg",
+              "executedInput": {
+                "text": "/home/xiryn/PA-C2-2-1792954152489",
+                "observationId": "6fce9ea6-ef6c-44da-96a5-b9243773bdad"
+              },
+              "observationId": "78d3a712-ce84-45c7-bb61-4ae8fb9db9b7",
+              "coordinateSpace": "screenshot_pixels",
+              "acceptedCoordinateModes": [
+                "pixels",
+                "normalized_1000"
+              ]
+            }
+          }
+        },
+        {
+          "action_no": 12,
+          "kind": "screen_capture",
+          "input": {},
+          "status": "succeeded",
+          "receipt": {
+            "ok": true,
+            "output": {
+              "epoch": 14,
+              "width": 1280,
+              "bootId": "5f9f4473-5d2b-418b-b046-e31557254bfa",
+              "height": 800,
+              "window": {
+                "x": 320,
+                "y": 187,
+                "id": "0x2a021d8",
+                "title": "xiryn - Thunar",
+                "width": 640,
+                "height": 480,
+                "wmClass": "WM_CLASS(STRING) = \"thunar\", \"Thunar\"",
+                "boundsSpace": "screen_pixels_client_area"
+              },
+              "mapping": {
+                "scaleX": 1,
+                "scaleY": 1,
+                "offsetX": 0,
+                "offsetY": 0
+              },
+              "mediaType": "image/jpeg",
+              "observationId": "114ee3fa-128f-4956-8770-c9cdb2d92550",
+              "coordinateSpace": "screenshot_pixels",
+              "acceptedCoordinateModes": [
+                "pixels",
+                "normalized_1000"
+              ]
+            }
+          }
+        },
+        {
+          "action_no": 13,
+          "kind": "key_press",
+          "input": {
+            "key": "enter",
+            "modifiers": [],
+            "observationId": "114ee3fa-128f-4956-8770-c9cdb2d92550"
+          },
+          "status": "succeeded",
+          "receipt": {
+            "ok": true,
+            "output": {
+              "key": "enter",
+              "epoch": 14,
+              "width": 1280,
+              "bootId": "5f9f4473-5d2b-418b-b046-e31557254bfa",
+              "height": 800,
+              "window": {
+                "x": 320,
+                "y": 187,
+                "id": "0x2a021d8",
+                "title": "PA-C2-2-1792954152489 - Thunar",
+                "width": 640,
+                "height": 480,
+                "wmClass": "WM_CLASS(STRING) = \"thunar\", \"Thunar\"",
+                "boundsSpace": "screen_pixels_client_area"
+              },
+              "mapping": {
+                "scaleX": 1,
+                "scaleY": 1,
+                "offsetX": 0,
+                "offsetY": 0
+              },
+              "mediaType": "image/jpeg",
+              "modifiers": [],
+              "executedInput": {
+                "key": "enter",
+                "modifiers": [],
+                "observationId": "114ee3fa-128f-4956-8770-c9cdb2d92550"
+              },
+              "observationId": "b2917d47-828d-4f85-ab96-5089618661b7",
+              "coordinateSpace": "screenshot_pixels",
+              "acceptedCoordinateModes": [
+                "pixels",
+                "normalized_1000"
+              ]
+            }
+          }
+        },
+        {
+          "action_no": 14,
+          "kind": "screen_capture",
+          "input": {},
+          "status": "succeeded",
+          "receipt": {
+            "ok": true,
+            "output": {
+              "epoch": 14,
+              "width": 1280,
+              "bootId": "5f9f4473-5d2b-418b-b046-e31557254bfa",
+              "height": 800,
+              "window": {
+                "x": 320,
+                "y": 187,
+                "id": "0x2a021d8",
+                "title": "PA-C2-2-1792954152489 - Thunar",
+                "width": 640,
+                "height": 480,
+                "wmClass": "WM_CLASS(STRING) = \"thunar\", \"Thunar\"",
+                "boundsSpace": "screen_pixels_client_area"
+              },
+              "mapping": {
+                "scaleX": 1,
+                "scaleY": 1,
+                "offsetX": 0,
+                "offsetY": 0
+              },
+              "mediaType": "image/jpeg",
+              "observationId": "210bd7bc-5fea-4898-8153-56596ee57bdd",
+              "coordinateSpace": "screenshot_pixels",
+              "acceptedCoordinateModes": [
+                "pixels",
+                "normalized_1000"
+              ]
+            }
+          }
+        },
+        {
+          "action_no": 15,
+          "kind": "key_press",
+          "input": {
+            "key": "n",
+            "modifiers": [
+              "ctrl",
+              "shift"
+            ],
+            "observationId": "210bd7bc-5fea-4898-8153-56596ee57bdd"
+          },
+          "status": "succeeded",
+          "receipt": {
+            "ok": true,
+            "output": {
+              "key": "n",
+              "epoch": 14,
+              "width": 1280,
+              "bootId": "5f9f4473-5d2b-418b-b046-e31557254bfa",
+              "height": 800,
+              "window": {
+                "x": 495,
+                "y": 391,
+                "id": "0x2a02b3e",
+                "title": "Create New Folder",
+                "width": 300,
+                "height": 129,
+                "wmClass": "WM_CLASS(STRING) = \"thunar\", \"Thunar\"",
+                "boundsSpace": "screen_pixels_client_area"
+              },
+              "mapping": {
+                "scaleX": 1,
+                "scaleY": 1,
+                "offsetX": 0,
+                "offsetY": 0
+              },
+              "mediaType": "image/jpeg",
+              "modifiers": [
+                "ctrl",
+                "shift"
+              ],
+              "executedInput": {
+                "key": "n",
+                "modifiers": [
+                  "ctrl",
+                  "shift"
+                ],
+                "observationId": "210bd7bc-5fea-4898-8153-56596ee57bdd"
+              },
+              "observationId": "b88c9740-7662-4df3-bbe7-9361b2fa23b2",
+              "coordinateSpace": "screenshot_pixels",
+              "acceptedCoordinateModes": [
+                "pixels",
+                "normalized_1000"
+              ]
+            }
+          }
+        },
+        {
+          "action_no": 16,
+          "kind": "screen_capture",
+          "input": {},
+          "status": "succeeded",
+          "receipt": {
+            "ok": true,
+            "output": {
+              "epoch": 14,
+              "width": 1280,
+              "bootId": "5f9f4473-5d2b-418b-b046-e31557254bfa",
+              "height": 800,
+              "window": {
+                "x": 495,
+                "y": 391,
+                "id": "0x2a02b3e",
+                "title": "Create New Folder",
+                "width": 300,
+                "height": 129,
+                "wmClass": "WM_CLASS(STRING) = \"thunar\", \"Thunar\"",
+                "boundsSpace": "screen_pixels_client_area"
+              },
+              "mapping": {
+                "scaleX": 1,
+                "scaleY": 1,
+                "offsetX": 0,
+                "offsetY": 0
+              },
+              "mediaType": "image/jpeg",
+              "observationId": "12b15053-cf1c-4e3b-b989-67eb0973467d",
+              "coordinateSpace": "screenshot_pixels",
+              "acceptedCoordinateModes": [
+                "pixels",
+                "normalized_1000"
+              ]
+            }
+          }
+        },
+        {
+          "action_no": 17,
+          "kind": "key_type",
+          "input": {
+            "text": "待处理",
+            "observationId": "12b15053-cf1c-4e3b-b989-67eb0973467d"
+          },
+          "status": "succeeded",
+          "receipt": {
+            "ok": true,
+            "output": {
+              "text": "待处理",
+              "epoch": 14,
+              "width": 1280,
+              "bootId": "5f9f4473-5d2b-418b-b046-e31557254bfa",
+              "height": 800,
+              "window": {
+                "x": 495,
+                "y": 391,
+                "id": "0x2a02b3e",
+                "title": "Create New Folder",
+                "width": 300,
+                "height": 129,
+                "wmClass": "WM_CLASS(STRING) = \"thunar\", \"Thunar\"",
+                "boundsSpace": "screen_pixels_client_area"
+              },
+              "mapping": {
+                "scaleX": 1,
+                "scaleY": 1,
+                "offsetX": 0,
+                "offsetY": 0
+              },
+              "mediaType": "image/jpeg",
+              "executedInput": {
+                "text": "待处理",
+                "observationId": "12b15053-cf1c-4e3b-b989-67eb0973467d"
+              },
+              "observationId": "4e0310ca-ea4a-413a-bcc4-a32360045e27",
+              "coordinateSpace": "screenshot_pixels",
+              "acceptedCoordinateModes": [
+                "pixels",
+                "normalized_1000"
+              ]
+            }
+          }
+        },
+        {
+          "action_no": 18,
+          "kind": "screen_capture",
+          "input": {},
+          "status": "succeeded",
+          "receipt": {
+            "ok": true,
+            "output": {
+              "epoch": 14,
+              "width": 1280,
+              "bootId": "5f9f4473-5d2b-418b-b046-e31557254bfa",
+              "height": 800,
+              "window": {
+                "x": 495,
+                "y": 391,
+                "id": "0x2a02b3e",
+                "title": "Create New Folder",
+                "width": 300,
+                "height": 129,
+                "wmClass": "WM_CLASS(STRING) = \"thunar\", \"Thunar\"",
+                "boundsSpace": "screen_pixels_client_area"
+              },
+              "mapping": {
+                "scaleX": 1,
+                "scaleY": 1,
+                "offsetX": 0,
+                "offsetY": 0
+              },
+              "mediaType": "image/jpeg",
+              "observationId": "1064e976-53be-4168-be98-a855591e4cbb",
+              "coordinateSpace": "screenshot_pixels",
+              "acceptedCoordinateModes": [
+                "pixels",
+                "normalized_1000"
+              ]
+            }
+          }
+        },
+        {
+          "action_no": 19,
+          "kind": "key_press",
+          "input": {
+            "key": "enter",
+            "modifiers": [],
+            "observationId": "1064e976-53be-4168-be98-a855591e4cbb"
+          },
+          "status": "succeeded",
+          "receipt": {
+            "ok": true,
+            "output": {
+              "key": "enter",
+              "epoch": 14,
+              "width": 1280,
+              "bootId": "5f9f4473-5d2b-418b-b046-e31557254bfa",
+              "height": 800,
+              "window": {
+                "x": 320,
+                "y": 187,
+                "id": "0x2a021d8",
+                "title": "PA-C2-2-1792954152489 - Thunar",
+                "width": 640,
+                "height": 480,
+                "wmClass": "WM_CLASS(STRING) = \"thunar\", \"Thunar\"",
+                "boundsSpace": "screen_pixels_client_area"
+              },
+              "mapping": {
+                "scaleX": 1,
+                "scaleY": 1,
+                "offsetX": 0,
+                "offsetY": 0
+              },
+              "mediaType": "image/jpeg",
+              "modifiers": [],
+              "executedInput": {
+                "key": "enter",
+                "modifiers": [],
+                "observationId": "1064e976-53be-4168-be98-a855591e4cbb"
+              },
+              "observationId": "4ef56a1d-6dac-4386-a7a8-0b5d39da64cb",
+              "coordinateSpace": "screenshot_pixels",
+              "acceptedCoordinateModes": [
+                "pixels",
+                "normalized_1000"
+              ]
+            }
+          }
+        },
+        {
+          "action_no": 20,
+          "kind": "screen_capture",
+          "input": {},
+          "status": "succeeded",
+          "receipt": {
+            "ok": true,
+            "output": {
+              "epoch": 14,
+              "width": 1280,
+              "bootId": "5f9f4473-5d2b-418b-b046-e31557254bfa",
+              "height": 800,
+              "window": {
+                "x": 320,
+                "y": 187,
+                "id": "0x2a021d8",
+                "title": "PA-C2-2-1792954152489 - Thunar",
+                "width": 640,
+                "height": 480,
+                "wmClass": "WM_CLASS(STRING) = \"thunar\", \"Thunar\"",
+                "boundsSpace": "screen_pixels_client_area"
+              },
+              "mapping": {
+                "scaleX": 1,
+                "scaleY": 1,
+                "offsetX": 0,
+                "offsetY": 0
+              },
+              "mediaType": "image/jpeg",
+              "observationId": "012234af-3641-4596-bcf5-064ab5535ddf",
+              "coordinateSpace": "screenshot_pixels",
+              "acceptedCoordinateModes": [
+                "pixels",
+                "normalized_1000"
+              ]
+            }
+          }
+        },
+        {
+          "action_no": 21,
+          "kind": "key_press",
+          "input": {
+            "key": "f2",
+            "modifiers": [],
+            "observationId": "012234af-3641-4596-bcf5-064ab5535ddf"
+          },
+          "status": "succeeded",
+          "receipt": {
+            "ok": true,
+            "output": {
+              "key": "f2",
+              "epoch": 14,
+              "width": 1280,
+              "bootId": "5f9f4473-5d2b-418b-b046-e31557254bfa",
+              "height": 800,
+              "window": {
+                "x": 495,
+                "y": 391,
+                "id": "0x2a02f0a",
+                "title": "Rename \"待处理\"",
+                "width": 300,
+                "height": 129,
+                "wmClass": "WM_CLASS(STRING) = \"thunar\", \"Thunar\"",
+                "boundsSpace": "screen_pixels_client_area"
+              },
+              "mapping": {
+                "scaleX": 1,
+                "scaleY": 1,
+                "offsetX": 0,
+                "offsetY": 0
+              },
+              "mediaType": "image/jpeg",
+              "modifiers": [],
+              "executedInput": {
+                "key": "f2",
+                "modifiers": [],
+                "observationId": "012234af-3641-4596-bcf5-064ab5535ddf"
+              },
+              "observationId": "fbee4eb4-1b5a-4c18-af84-31cf37fd2fd5",
+              "coordinateSpace": "screenshot_pixels",
+              "acceptedCoordinateModes": [
+                "pixels",
+                "normalized_1000"
+              ]
+            }
+          }
+        },
+        {
+          "action_no": 22,
+          "kind": "screen_capture",
+          "input": {},
+          "status": "succeeded",
+          "receipt": {
+            "ok": true,
+            "output": {
+              "epoch": 14,
+              "width": 1280,
+              "bootId": "5f9f4473-5d2b-418b-b046-e31557254bfa",
+              "height": 800,
+              "window": {
+                "x": 495,
+                "y": 391,
+                "id": "0x2a02f0a",
+                "title": "Rename \"待处理\"",
+                "width": 300,
+                "height": 129,
+                "wmClass": "WM_CLASS(STRING) = \"thunar\", \"Thunar\"",
+                "boundsSpace": "screen_pixels_client_area"
+              },
+              "mapping": {
+                "scaleX": 1,
+                "scaleY": 1,
+                "offsetX": 0,
+                "offsetY": 0
+              },
+              "mediaType": "image/jpeg",
+              "observationId": "ccb1bd9d-2c88-448d-a6bd-ba954c8fa1d9",
+              "coordinateSpace": "screenshot_pixels",
+              "acceptedCoordinateModes": [
+                "pixels",
+                "normalized_1000"
+              ]
+            }
+          }
+        },
+        {
+          "action_no": 23,
+          "kind": "key_type",
+          "input": {
+            "text": "已完成",
+            "observationId": "ccb1bd9d-2c88-448d-a6bd-ba954c8fa1d9"
+          },
+          "status": "succeeded",
+          "receipt": {
+            "ok": true,
+            "output": {
+              "text": "已完成",
+              "epoch": 14,
+              "width": 1280,
+              "bootId": "5f9f4473-5d2b-418b-b046-e31557254bfa",
+              "height": 800,
+              "window": {
+                "x": 495,
+                "y": 391,
+                "id": "0x2a02f0a",
+                "title": "Rename \"待处理\"",
+                "width": 300,
+                "height": 129,
+                "wmClass": "WM_CLASS(STRING) = \"thunar\", \"Thunar\"",
+                "boundsSpace": "screen_pixels_client_area"
+              },
+              "mapping": {
+                "scaleX": 1,
+                "scaleY": 1,
+                "offsetX": 0,
+                "offsetY": 0
+              },
+              "mediaType": "image/jpeg",
+              "executedInput": {
+                "text": "已完成",
+                "observationId": "ccb1bd9d-2c88-448d-a6bd-ba954c8fa1d9"
+              },
+              "observationId": "c73334f0-6844-4209-873c-6af6385412b5",
+              "coordinateSpace": "screenshot_pixels",
+              "acceptedCoordinateModes": [
+                "pixels",
+                "normalized_1000"
+              ]
+            }
+          }
+        },
+        {
+          "action_no": 24,
+          "kind": "screen_capture",
+          "input": {},
+          "status": "succeeded",
+          "receipt": {
+            "ok": true,
+            "output": {
+              "epoch": 14,
+              "width": 1280,
+              "bootId": "5f9f4473-5d2b-418b-b046-e31557254bfa",
+              "height": 800,
+              "window": {
+                "x": 495,
+                "y": 391,
+                "id": "0x2a02f0a",
+                "title": "Rename \"待处理\"",
+                "width": 300,
+                "height": 129,
+                "wmClass": "WM_CLASS(STRING) = \"thunar\", \"Thunar\"",
+                "boundsSpace": "screen_pixels_client_area"
+              },
+              "mapping": {
+                "scaleX": 1,
+                "scaleY": 1,
+                "offsetX": 0,
+                "offsetY": 0
+              },
+              "mediaType": "image/jpeg",
+              "observationId": "750db3cc-cd49-435a-a091-2de2ca31fba1",
+              "coordinateSpace": "screenshot_pixels",
+              "acceptedCoordinateModes": [
+                "pixels",
+                "normalized_1000"
+              ]
+            }
+          }
+        },
+        {
+          "action_no": 25,
+          "kind": "key_press",
+          "input": {
+            "key": "enter",
+            "modifiers": [],
+            "observationId": "750db3cc-cd49-435a-a091-2de2ca31fba1"
+          },
+          "status": "succeeded",
+          "receipt": {
+            "ok": true,
+            "output": {
+              "key": "enter",
+              "epoch": 14,
+              "width": 1280,
+              "bootId": "5f9f4473-5d2b-418b-b046-e31557254bfa",
+              "height": 800,
+              "window": {
+                "x": 320,
+                "y": 187,
+                "id": "0x2a021d8",
+                "title": "PA-C2-2-1792954152489 - Thunar",
+                "width": 640,
+                "height": 480,
+                "wmClass": "WM_CLASS(STRING) = \"thunar\", \"Thunar\"",
+                "boundsSpace": "screen_pixels_client_area"
+              },
+              "mapping": {
+                "scaleX": 1,
+                "scaleY": 1,
+                "offsetX": 0,
+                "offsetY": 0
+              },
+              "mediaType": "image/jpeg",
+              "modifiers": [],
+              "executedInput": {
+                "key": "enter",
+                "modifiers": [],
+                "observationId": "750db3cc-cd49-435a-a091-2de2ca31fba1"
+              },
+              "observationId": "f9107c1d-b554-44b3-bbaf-5335a9052239",
+              "coordinateSpace": "screenshot_pixels",
+              "acceptedCoordinateModes": [
+                "pixels",
+                "normalized_1000"
+              ]
+            }
+          }
+        },
+        {
+          "action_no": 26,
+          "kind": "screen_capture",
+          "input": {},
+          "status": "succeeded",
+          "receipt": {
+            "ok": true,
+            "output": {
+              "epoch": 14,
+              "width": 1280,
+              "bootId": "5f9f4473-5d2b-418b-b046-e31557254bfa",
+              "height": 800,
+              "window": {
+                "x": 320,
+                "y": 187,
+                "id": "0x2a021d8",
+                "title": "PA-C2-2-1792954152489 - Thunar",
+                "width": 640,
+                "height": 480,
+                "wmClass": "WM_CLASS(STRING) = \"thunar\", \"Thunar\"",
+                "boundsSpace": "screen_pixels_client_area"
+              },
+              "mapping": {
+                "scaleX": 1,
+                "scaleY": 1,
+                "offsetX": 0,
+                "offsetY": 0
+              },
+              "mediaType": "image/jpeg",
+              "observationId": "ed05d5fe-283d-4dcd-97a1-0993b79456fa",
+              "coordinateSpace": "screenshot_pixels",
+              "acceptedCoordinateModes": [
+                "pixels",
+                "normalized_1000"
+              ]
+            }
+          }
+        },
+        {
+          "action_no": 28,
+          "kind": "screen_share",
+          "input": {},
+          "status": "succeeded",
+          "receipt": {
+            "ok": true,
+            "output": {
+              "epoch": 14,
+              "width": 1280,
+              "bootId": "5f9f4473-5d2b-418b-b046-e31557254bfa",
+              "height": 800,
+              "window": {
+                "x": 320,
+                "y": 187,
+                "id": "0x2a021d8",
+                "title": "PA-C2-2-1792954152489 - Thunar",
+                "width": 640,
+                "height": 480,
+                "wmClass": "WM_CLASS(STRING) = \"thunar\", \"Thunar\"",
+                "boundsSpace": "screen_pixels_client_area"
+              },
+              "mapping": {
+                "scaleX": 1,
+                "scaleY": 1,
+                "offsetX": 0,
+                "offsetY": 0
+              },
+              "mediaType": "image/jpeg",
+              "observationId": "b603f717-16d0-4673-969e-673f56324372",
+              "coordinateSpace": "screenshot_pixels",
+              "acceptedCoordinateModes": [
+                "pixels",
+                "normalized_1000"
+              ]
+            }
+          }
+        }
+      ],
+      "requests": []
+    },
+    {
+      "taskId": "768d80df-fe08-4836-8ed0-e9109f96a51a",
+      "input": {
+        "agentId": "ec5db4ab-c5f3-4a01-a126-05cbf3743a0f",
+        "goal": "CUA流程新任务 3",
+        "clientRequestId": "908bcb7e-59e0-4516-b260-f7ec5941709b",
+        "workflowExecution": {
+          "versionId": "2d321b20-34f5-4407-bb7f-03c66ddb208d",
+          "purpose": "run",
+          "parameters": {
+            "parentName": "PA-C2-3-1792954186130",
+            "draftName": "Input-four",
+            "readyName": "Final-four"
+          },
+          "maxActions": 120,
+          "maxDurationSeconds": 300
+        },
+        "completionContract": {
+          "requireHumanReview": false
+        },
+        "budget": {
+          "maxSteps": 1,
+          "maxCostMicros": 0
+        }
+      },
+      "state": {
+        "status": "completed",
+        "result": {
+          "files": [],
+          "summary": "流程已执行并通过固定目录检查：/home/xiryn/PA-C2-3-1792954186130",
+          "verification": {
+            "grade": "program_checked",
+            "unverified": [
+              "The summary's general factual correctness is not independently established."
+            ]
+          },
+          "directoryTree": {
+            "root": "/home/xiryn/PA-C2-3-1792954186130",
+            "grade": "program_checked",
+            "absent": [
+              "Input-four"
+            ],
+            "checks": {
+              "linksRejected": true,
+              "hostReadOnlyArchive": true
+            },
+            "entries": [
+              {
+                "path": "",
+                "directory": true
+              },
+              {
+                "path": "Final-four",
+                "directory": true
+              }
+            ],
+            "checkerId": "directory-tree-v1",
+            "directories": [
+              "Final-four"
+            ]
+          }
+        },
+        "error": null
+      },
+      "run": {
+        "checkpoint": {
+          "step": 15,
+          "frame": null,
+          "phase": "observe",
+          "bootId": "5f9f4473-5d2b-418b-b046-e31557254bfa",
+          "blockedReason": null,
+          "waitStartedAt": null
+        },
+        "environment": {
+          "locale": "C.UTF-8",
+          "application": "Thunar",
+          "guestProtocol": 6,
+          "workstationImageId": "sha256:f8d2fbb12dc081ce3704fbfd06df87cc13afa4049ca51e8ce5e298c41b6f9add"
+        },
+        "started_at": "2026-10-25T18:49:47.574Z",
+        "completed_at": "2026-10-25T18:50:20.255Z"
+      },
+      "actions": [
+        {
+          "action_no": 1,
+          "kind": "desktop_open_application",
+          "input": {
+            "application": "Thunar"
+          },
+          "status": "succeeded",
+          "receipt": {
+            "ok": true,
+            "output": {
+              "epoch": 18,
+              "width": 1280,
+              "bootId": "5f9f4473-5d2b-418b-b046-e31557254bfa",
+              "height": 800,
+              "window": {
+                "x": 320,
+                "y": 187,
+                "id": "0x2a0331c",
+                "title": "xiryn - Thunar",
+                "width": 640,
+                "height": 480,
+                "wmClass": "WM_CLASS(STRING) = \"thunar\", \"Thunar\"",
+                "boundsSpace": "screen_pixels_client_area"
+              },
+              "mapping": {
+                "scaleX": 1,
+                "scaleY": 1,
+                "offsetX": 0,
+                "offsetY": 0
+              },
+              "launched": "Thunar",
+              "mediaType": "image/jpeg",
+              "observationId": "f3009876-993d-49d5-9e56-d2f9e8ec7197",
+              "coordinateSpace": "screenshot_pixels",
+              "acceptedCoordinateModes": [
+                "pixels",
+                "normalized_1000"
+              ]
+            }
+          }
+        },
+        {
+          "action_no": 2,
+          "kind": "screen_capture",
+          "input": {},
+          "status": "succeeded",
+          "receipt": {
+            "ok": true,
+            "output": {
+              "epoch": 18,
+              "width": 1280,
+              "bootId": "5f9f4473-5d2b-418b-b046-e31557254bfa",
+              "height": 800,
+              "window": {
+                "x": 320,
+                "y": 187,
+                "id": "0x2a0331c",
+                "title": "xiryn - Thunar",
+                "width": 640,
+                "height": 480,
+                "wmClass": "WM_CLASS(STRING) = \"thunar\", \"Thunar\"",
+                "boundsSpace": "screen_pixels_client_area"
+              },
+              "mapping": {
+                "scaleX": 1,
+                "scaleY": 1,
+                "offsetX": 0,
+                "offsetY": 0
+              },
+              "mediaType": "image/jpeg",
+              "observationId": "5e83b5e7-8922-4f10-95e7-82cb2b418b2a",
+              "coordinateSpace": "screenshot_pixels",
+              "acceptedCoordinateModes": [
+                "pixels",
+                "normalized_1000"
+              ]
+            }
+          }
+        },
+        {
+          "action_no": 3,
+          "kind": "key_press",
+          "input": {
+            "key": "n",
+            "modifiers": [
+              "ctrl",
+              "shift"
+            ],
+            "observationId": "5e83b5e7-8922-4f10-95e7-82cb2b418b2a"
+          },
+          "status": "succeeded",
+          "receipt": {
+            "ok": true,
+            "output": {
+              "key": "n",
+              "epoch": 18,
+              "width": 1280,
+              "bootId": "5f9f4473-5d2b-418b-b046-e31557254bfa",
+              "height": 800,
+              "window": {
+                "x": 495,
+                "y": 391,
+                "id": "0x2a03584",
+                "title": "Create New Folder",
+                "width": 300,
+                "height": 129,
+                "wmClass": "WM_CLASS(STRING) = \"thunar\", \"Thunar\"",
+                "boundsSpace": "screen_pixels_client_area"
+              },
+              "mapping": {
+                "scaleX": 1,
+                "scaleY": 1,
+                "offsetX": 0,
+                "offsetY": 0
+              },
+              "mediaType": "image/jpeg",
+              "modifiers": [
+                "ctrl",
+                "shift"
+              ],
+              "executedInput": {
+                "key": "n",
+                "modifiers": [
+                  "ctrl",
+                  "shift"
+                ],
+                "observationId": "5e83b5e7-8922-4f10-95e7-82cb2b418b2a"
+              },
+              "observationId": "8707b988-6d9c-4488-8b4e-ec81273a49d1",
+              "coordinateSpace": "screenshot_pixels",
+              "acceptedCoordinateModes": [
+                "pixels",
+                "normalized_1000"
+              ]
+            }
+          }
+        },
+        {
+          "action_no": 4,
+          "kind": "screen_capture",
+          "input": {},
+          "status": "succeeded",
+          "receipt": {
+            "ok": true,
+            "output": {
+              "epoch": 18,
+              "width": 1280,
+              "bootId": "5f9f4473-5d2b-418b-b046-e31557254bfa",
+              "height": 800,
+              "window": {
+                "x": 495,
+                "y": 391,
+                "id": "0x2a03584",
+                "title": "Create New Folder",
+                "width": 300,
+                "height": 129,
+                "wmClass": "WM_CLASS(STRING) = \"thunar\", \"Thunar\"",
+                "boundsSpace": "screen_pixels_client_area"
+              },
+              "mapping": {
+                "scaleX": 1,
+                "scaleY": 1,
+                "offsetX": 0,
+                "offsetY": 0
+              },
+              "mediaType": "image/jpeg",
+              "observationId": "a05883b0-0acb-4e19-8798-4882124f3c4b",
+              "coordinateSpace": "screenshot_pixels",
+              "acceptedCoordinateModes": [
+                "pixels",
+                "normalized_1000"
+              ]
+            }
+          }
+        },
+        {
+          "action_no": 5,
+          "kind": "key_type",
+          "input": {
+            "text": "PA-C2-3-1792954186130",
+            "observationId": "a05883b0-0acb-4e19-8798-4882124f3c4b"
+          },
+          "status": "succeeded",
+          "receipt": {
+            "ok": true,
+            "output": {
+              "text": "PA-C2-3-1792954186130",
+              "epoch": 18,
+              "width": 1280,
+              "bootId": "5f9f4473-5d2b-418b-b046-e31557254bfa",
+              "height": 800,
+              "window": {
+                "x": 495,
+                "y": 391,
+                "id": "0x2a03584",
+                "title": "Create New Folder",
+                "width": 300,
+                "height": 129,
+                "wmClass": "WM_CLASS(STRING) = \"thunar\", \"Thunar\"",
+                "boundsSpace": "screen_pixels_client_area"
+              },
+              "mapping": {
+                "scaleX": 1,
+                "scaleY": 1,
+                "offsetX": 0,
+                "offsetY": 0
+              },
+              "mediaType": "image/jpeg",
+              "executedInput": {
+                "text": "PA-C2-3-1792954186130",
+                "observationId": "a05883b0-0acb-4e19-8798-4882124f3c4b"
+              },
+              "observationId": "604a24f4-78e1-442a-a4d7-818a31f03292",
+              "coordinateSpace": "screenshot_pixels",
+              "acceptedCoordinateModes": [
+                "pixels",
+                "normalized_1000"
+              ]
+            }
+          }
+        },
+        {
+          "action_no": 6,
+          "kind": "screen_capture",
+          "input": {},
+          "status": "succeeded",
+          "receipt": {
+            "ok": true,
+            "output": {
+              "epoch": 18,
+              "width": 1280,
+              "bootId": "5f9f4473-5d2b-418b-b046-e31557254bfa",
+              "height": 800,
+              "window": {
+                "x": 495,
+                "y": 391,
+                "id": "0x2a03584",
+                "title": "Create New Folder",
+                "width": 300,
+                "height": 129,
+                "wmClass": "WM_CLASS(STRING) = \"thunar\", \"Thunar\"",
+                "boundsSpace": "screen_pixels_client_area"
+              },
+              "mapping": {
+                "scaleX": 1,
+                "scaleY": 1,
+                "offsetX": 0,
+                "offsetY": 0
+              },
+              "mediaType": "image/jpeg",
+              "observationId": "373f8285-1db6-4c65-aa30-85c36fd47a52",
+              "coordinateSpace": "screenshot_pixels",
+              "acceptedCoordinateModes": [
+                "pixels",
+                "normalized_1000"
+              ]
+            }
+          }
+        },
+        {
+          "action_no": 7,
+          "kind": "key_press",
+          "input": {
+            "key": "enter",
+            "modifiers": [],
+            "observationId": "373f8285-1db6-4c65-aa30-85c36fd47a52"
+          },
+          "status": "succeeded",
+          "receipt": {
+            "ok": true,
+            "output": {
+              "key": "enter",
+              "epoch": 18,
+              "width": 1280,
+              "bootId": "5f9f4473-5d2b-418b-b046-e31557254bfa",
+              "height": 800,
+              "window": {
+                "x": 320,
+                "y": 187,
+                "id": "0x2a0331c",
+                "title": "xiryn - Thunar",
+                "width": 640,
+                "height": 480,
+                "wmClass": "WM_CLASS(STRING) = \"thunar\", \"Thunar\"",
+                "boundsSpace": "screen_pixels_client_area"
+              },
+              "mapping": {
+                "scaleX": 1,
+                "scaleY": 1,
+                "offsetX": 0,
+                "offsetY": 0
+              },
+              "mediaType": "image/jpeg",
+              "modifiers": [],
+              "executedInput": {
+                "key": "enter",
+                "modifiers": [],
+                "observationId": "373f8285-1db6-4c65-aa30-85c36fd47a52"
+              },
+              "observationId": "b305515d-3c31-4e03-afe7-c64bda1b2558",
+              "coordinateSpace": "screenshot_pixels",
+              "acceptedCoordinateModes": [
+                "pixels",
+                "normalized_1000"
+              ]
+            }
+          }
+        },
+        {
+          "action_no": 8,
+          "kind": "screen_capture",
+          "input": {},
+          "status": "succeeded",
+          "receipt": {
+            "ok": true,
+            "output": {
+              "epoch": 18,
+              "width": 1280,
+              "bootId": "5f9f4473-5d2b-418b-b046-e31557254bfa",
+              "height": 800,
+              "window": {
+                "x": 320,
+                "y": 187,
+                "id": "0x2a0331c",
+                "title": "xiryn - Thunar",
+                "width": 640,
+                "height": 480,
+                "wmClass": "WM_CLASS(STRING) = \"thunar\", \"Thunar\"",
+                "boundsSpace": "screen_pixels_client_area"
+              },
+              "mapping": {
+                "scaleX": 1,
+                "scaleY": 1,
+                "offsetX": 0,
+                "offsetY": 0
+              },
+              "mediaType": "image/jpeg",
+              "observationId": "721aefa0-71d4-41aa-a328-3dd862be5fab",
+              "coordinateSpace": "screenshot_pixels",
+              "acceptedCoordinateModes": [
+                "pixels",
+                "normalized_1000"
+              ]
+            }
+          }
+        },
+        {
+          "action_no": 9,
+          "kind": "key_press",
+          "input": {
+            "key": "l",
+            "modifiers": [
+              "ctrl"
+            ],
+            "observationId": "721aefa0-71d4-41aa-a328-3dd862be5fab"
+          },
+          "status": "succeeded",
+          "receipt": {
+            "ok": true,
+            "output": {
+              "key": "l",
+              "epoch": 18,
+              "width": 1280,
+              "bootId": "5f9f4473-5d2b-418b-b046-e31557254bfa",
+              "height": 800,
+              "window": {
+                "x": 320,
+                "y": 187,
+                "id": "0x2a0331c",
+                "title": "xiryn - Thunar",
+                "width": 640,
+                "height": 480,
+                "wmClass": "WM_CLASS(STRING) = \"thunar\", \"Thunar\"",
+                "boundsSpace": "screen_pixels_client_area"
+              },
+              "mapping": {
+                "scaleX": 1,
+                "scaleY": 1,
+                "offsetX": 0,
+                "offsetY": 0
+              },
+              "mediaType": "image/jpeg",
+              "modifiers": [
+                "ctrl"
+              ],
+              "executedInput": {
+                "key": "l",
+                "modifiers": [
+                  "ctrl"
+                ],
+                "observationId": "721aefa0-71d4-41aa-a328-3dd862be5fab"
+              },
+              "observationId": "398d7fa0-32a1-4fca-ab90-8e1be8ab3655",
+              "coordinateSpace": "screenshot_pixels",
+              "acceptedCoordinateModes": [
+                "pixels",
+                "normalized_1000"
+              ]
+            }
+          }
+        },
+        {
+          "action_no": 10,
+          "kind": "screen_capture",
+          "input": {},
+          "status": "succeeded",
+          "receipt": {
+            "ok": true,
+            "output": {
+              "epoch": 18,
+              "width": 1280,
+              "bootId": "5f9f4473-5d2b-418b-b046-e31557254bfa",
+              "height": 800,
+              "window": {
+                "x": 320,
+                "y": 187,
+                "id": "0x2a0331c",
+                "title": "xiryn - Thunar",
+                "width": 640,
+                "height": 480,
+                "wmClass": "WM_CLASS(STRING) = \"thunar\", \"Thunar\"",
+                "boundsSpace": "screen_pixels_client_area"
+              },
+              "mapping": {
+                "scaleX": 1,
+                "scaleY": 1,
+                "offsetX": 0,
+                "offsetY": 0
+              },
+              "mediaType": "image/jpeg",
+              "observationId": "89816179-8020-49c4-971e-47b42ee13d7f",
+              "coordinateSpace": "screenshot_pixels",
+              "acceptedCoordinateModes": [
+                "pixels",
+                "normalized_1000"
+              ]
+            }
+          }
+        },
+        {
+          "action_no": 11,
+          "kind": "key_type",
+          "input": {
+            "text": "/home/xiryn/PA-C2-3-1792954186130",
+            "observationId": "89816179-8020-49c4-971e-47b42ee13d7f"
+          },
+          "status": "succeeded",
+          "receipt": {
+            "ok": true,
+            "output": {
+              "text": "/home/xiryn/PA-C2-3-1792954186130",
+              "epoch": 18,
+              "width": 1280,
+              "bootId": "5f9f4473-5d2b-418b-b046-e31557254bfa",
+              "height": 800,
+              "window": {
+                "x": 320,
+                "y": 187,
+                "id": "0x2a0331c",
+                "title": "xiryn - Thunar",
+                "width": 640,
+                "height": 480,
+                "wmClass": "WM_CLASS(STRING) = \"thunar\", \"Thunar\"",
+                "boundsSpace": "screen_pixels_client_area"
+              },
+              "mapping": {
+                "scaleX": 1,
+                "scaleY": 1,
+                "offsetX": 0,
+                "offsetY": 0
+              },
+              "mediaType": "image/jpeg",
+              "executedInput": {
+                "text": "/home/xiryn/PA-C2-3-1792954186130",
+                "observationId": "89816179-8020-49c4-971e-47b42ee13d7f"
+              },
+              "observationId": "9c6ebc4e-cbd0-415c-9433-a0576a47bc00",
+              "coordinateSpace": "screenshot_pixels",
+              "acceptedCoordinateModes": [
+                "pixels",
+                "normalized_1000"
+              ]
+            }
+          }
+        },
+        {
+          "action_no": 12,
+          "kind": "screen_capture",
+          "input": {},
+          "status": "succeeded",
+          "receipt": {
+            "ok": true,
+            "output": {
+              "epoch": 18,
+              "width": 1280,
+              "bootId": "5f9f4473-5d2b-418b-b046-e31557254bfa",
+              "height": 800,
+              "window": {
+                "x": 320,
+                "y": 187,
+                "id": "0x2a0331c",
+                "title": "xiryn - Thunar",
+                "width": 640,
+                "height": 480,
+                "wmClass": "WM_CLASS(STRING) = \"thunar\", \"Thunar\"",
+                "boundsSpace": "screen_pixels_client_area"
+              },
+              "mapping": {
+                "scaleX": 1,
+                "scaleY": 1,
+                "offsetX": 0,
+                "offsetY": 0
+              },
+              "mediaType": "image/jpeg",
+              "observationId": "1bccec83-dac5-447e-a43e-a37b553c5250",
+              "coordinateSpace": "screenshot_pixels",
+              "acceptedCoordinateModes": [
+                "pixels",
+                "normalized_1000"
+              ]
+            }
+          }
+        },
+        {
+          "action_no": 13,
+          "kind": "key_press",
+          "input": {
+            "key": "enter",
+            "modifiers": [],
+            "observationId": "1bccec83-dac5-447e-a43e-a37b553c5250"
+          },
+          "status": "succeeded",
+          "receipt": {
+            "ok": true,
+            "output": {
+              "key": "enter",
+              "epoch": 18,
+              "width": 1280,
+              "bootId": "5f9f4473-5d2b-418b-b046-e31557254bfa",
+              "height": 800,
+              "window": {
+                "x": 320,
+                "y": 187,
+                "id": "0x2a0331c",
+                "title": "PA-C2-3-1792954186130 - Thunar",
+                "width": 640,
+                "height": 480,
+                "wmClass": "WM_CLASS(STRING) = \"thunar\", \"Thunar\"",
+                "boundsSpace": "screen_pixels_client_area"
+              },
+              "mapping": {
+                "scaleX": 1,
+                "scaleY": 1,
+                "offsetX": 0,
+                "offsetY": 0
+              },
+              "mediaType": "image/jpeg",
+              "modifiers": [],
+              "executedInput": {
+                "key": "enter",
+                "modifiers": [],
+                "observationId": "1bccec83-dac5-447e-a43e-a37b553c5250"
+              },
+              "observationId": "0b931f9d-f45e-4776-9503-c81f93384bf6",
+              "coordinateSpace": "screenshot_pixels",
+              "acceptedCoordinateModes": [
+                "pixels",
+                "normalized_1000"
+              ]
+            }
+          }
+        },
+        {
+          "action_no": 14,
+          "kind": "screen_capture",
+          "input": {},
+          "status": "succeeded",
+          "receipt": {
+            "ok": true,
+            "output": {
+              "epoch": 18,
+              "width": 1280,
+              "bootId": "5f9f4473-5d2b-418b-b046-e31557254bfa",
+              "height": 800,
+              "window": {
+                "x": 320,
+                "y": 187,
+                "id": "0x2a0331c",
+                "title": "PA-C2-3-1792954186130 - Thunar",
+                "width": 640,
+                "height": 480,
+                "wmClass": "WM_CLASS(STRING) = \"thunar\", \"Thunar\"",
+                "boundsSpace": "screen_pixels_client_area"
+              },
+              "mapping": {
+                "scaleX": 1,
+                "scaleY": 1,
+                "offsetX": 0,
+                "offsetY": 0
+              },
+              "mediaType": "image/jpeg",
+              "observationId": "a6a540cb-7e32-49f2-b9ef-1b76f301c2d7",
+              "coordinateSpace": "screenshot_pixels",
+              "acceptedCoordinateModes": [
+                "pixels",
+                "normalized_1000"
+              ]
+            }
+          }
+        },
+        {
+          "action_no": 15,
+          "kind": "key_press",
+          "input": {
+            "key": "n",
+            "modifiers": [
+              "ctrl",
+              "shift"
+            ],
+            "observationId": "a6a540cb-7e32-49f2-b9ef-1b76f301c2d7"
+          },
+          "status": "succeeded",
+          "receipt": {
+            "ok": true,
+            "output": {
+              "key": "n",
+              "epoch": 18,
+              "width": 1280,
+              "bootId": "5f9f4473-5d2b-418b-b046-e31557254bfa",
+              "height": 800,
+              "window": {
+                "x": 495,
+                "y": 391,
+                "id": "0x2a03cee",
+                "title": "Create New Folder",
+                "width": 300,
+                "height": 129,
+                "wmClass": "WM_CLASS(STRING) = \"thunar\", \"Thunar\"",
+                "boundsSpace": "screen_pixels_client_area"
+              },
+              "mapping": {
+                "scaleX": 1,
+                "scaleY": 1,
+                "offsetX": 0,
+                "offsetY": 0
+              },
+              "mediaType": "image/jpeg",
+              "modifiers": [
+                "ctrl",
+                "shift"
+              ],
+              "executedInput": {
+                "key": "n",
+                "modifiers": [
+                  "ctrl",
+                  "shift"
+                ],
+                "observationId": "a6a540cb-7e32-49f2-b9ef-1b76f301c2d7"
+              },
+              "observationId": "e8d1bb9e-02ea-499b-be96-e781786ad3db",
+              "coordinateSpace": "screenshot_pixels",
+              "acceptedCoordinateModes": [
+                "pixels",
+                "normalized_1000"
+              ]
+            }
+          }
+        },
+        {
+          "action_no": 16,
+          "kind": "screen_capture",
+          "input": {},
+          "status": "succeeded",
+          "receipt": {
+            "ok": true,
+            "output": {
+              "epoch": 18,
+              "width": 1280,
+              "bootId": "5f9f4473-5d2b-418b-b046-e31557254bfa",
+              "height": 800,
+              "window": {
+                "x": 495,
+                "y": 391,
+                "id": "0x2a03cee",
+                "title": "Create New Folder",
+                "width": 300,
+                "height": 129,
+                "wmClass": "WM_CLASS(STRING) = \"thunar\", \"Thunar\"",
+                "boundsSpace": "screen_pixels_client_area"
+              },
+              "mapping": {
+                "scaleX": 1,
+                "scaleY": 1,
+                "offsetX": 0,
+                "offsetY": 0
+              },
+              "mediaType": "image/jpeg",
+              "observationId": "be252501-6f79-4049-ac2b-e2788751ea91",
+              "coordinateSpace": "screenshot_pixels",
+              "acceptedCoordinateModes": [
+                "pixels",
+                "normalized_1000"
+              ]
+            }
+          }
+        },
+        {
+          "action_no": 17,
+          "kind": "key_type",
+          "input": {
+            "text": "Input-four",
+            "observationId": "be252501-6f79-4049-ac2b-e2788751ea91"
+          },
+          "status": "succeeded",
+          "receipt": {
+            "ok": true,
+            "output": {
+              "text": "Input-four",
+              "epoch": 18,
+              "width": 1280,
+              "bootId": "5f9f4473-5d2b-418b-b046-e31557254bfa",
+              "height": 800,
+              "window": {
+                "x": 495,
+                "y": 391,
+                "id": "0x2a03cee",
+                "title": "Create New Folder",
+                "width": 300,
+                "height": 129,
+                "wmClass": "WM_CLASS(STRING) = \"thunar\", \"Thunar\"",
+                "boundsSpace": "screen_pixels_client_area"
+              },
+              "mapping": {
+                "scaleX": 1,
+                "scaleY": 1,
+                "offsetX": 0,
+                "offsetY": 0
+              },
+              "mediaType": "image/jpeg",
+              "executedInput": {
+                "text": "Input-four",
+                "observationId": "be252501-6f79-4049-ac2b-e2788751ea91"
+              },
+              "observationId": "e7192eec-4fdf-425c-876c-9f1d31cf6ae3",
+              "coordinateSpace": "screenshot_pixels",
+              "acceptedCoordinateModes": [
+                "pixels",
+                "normalized_1000"
+              ]
+            }
+          }
+        },
+        {
+          "action_no": 18,
+          "kind": "screen_capture",
+          "input": {},
+          "status": "succeeded",
+          "receipt": {
+            "ok": true,
+            "output": {
+              "epoch": 18,
+              "width": 1280,
+              "bootId": "5f9f4473-5d2b-418b-b046-e31557254bfa",
+              "height": 800,
+              "window": {
+                "x": 495,
+                "y": 391,
+                "id": "0x2a03cee",
+                "title": "Create New Folder",
+                "width": 300,
+                "height": 129,
+                "wmClass": "WM_CLASS(STRING) = \"thunar\", \"Thunar\"",
+                "boundsSpace": "screen_pixels_client_area"
+              },
+              "mapping": {
+                "scaleX": 1,
+                "scaleY": 1,
+                "offsetX": 0,
+                "offsetY": 0
+              },
+              "mediaType": "image/jpeg",
+              "observationId": "e5e6f4f0-d0f9-45ab-ac25-84046473686e",
+              "coordinateSpace": "screenshot_pixels",
+              "acceptedCoordinateModes": [
+                "pixels",
+                "normalized_1000"
+              ]
+            }
+          }
+        },
+        {
+          "action_no": 19,
+          "kind": "key_press",
+          "input": {
+            "key": "enter",
+            "modifiers": [],
+            "observationId": "e5e6f4f0-d0f9-45ab-ac25-84046473686e"
+          },
+          "status": "succeeded",
+          "receipt": {
+            "ok": true,
+            "output": {
+              "key": "enter",
+              "epoch": 18,
+              "width": 1280,
+              "bootId": "5f9f4473-5d2b-418b-b046-e31557254bfa",
+              "height": 800,
+              "window": {
+                "x": 320,
+                "y": 187,
+                "id": "0x2a0331c",
+                "title": "PA-C2-3-1792954186130 - Thunar",
+                "width": 640,
+                "height": 480,
+                "wmClass": "WM_CLASS(STRING) = \"thunar\", \"Thunar\"",
+                "boundsSpace": "screen_pixels_client_area"
+              },
+              "mapping": {
+                "scaleX": 1,
+                "scaleY": 1,
+                "offsetX": 0,
+                "offsetY": 0
+              },
+              "mediaType": "image/jpeg",
+              "modifiers": [],
+              "executedInput": {
+                "key": "enter",
+                "modifiers": [],
+                "observationId": "e5e6f4f0-d0f9-45ab-ac25-84046473686e"
+              },
+              "observationId": "6125d151-3acb-4fc3-894e-0de04902d7e1",
+              "coordinateSpace": "screenshot_pixels",
+              "acceptedCoordinateModes": [
+                "pixels",
+                "normalized_1000"
+              ]
+            }
+          }
+        },
+        {
+          "action_no": 20,
+          "kind": "screen_capture",
+          "input": {},
+          "status": "succeeded",
+          "receipt": {
+            "ok": true,
+            "output": {
+              "epoch": 18,
+              "width": 1280,
+              "bootId": "5f9f4473-5d2b-418b-b046-e31557254bfa",
+              "height": 800,
+              "window": {
+                "x": 320,
+                "y": 187,
+                "id": "0x2a0331c",
+                "title": "PA-C2-3-1792954186130 - Thunar",
+                "width": 640,
+                "height": 480,
+                "wmClass": "WM_CLASS(STRING) = \"thunar\", \"Thunar\"",
+                "boundsSpace": "screen_pixels_client_area"
+              },
+              "mapping": {
+                "scaleX": 1,
+                "scaleY": 1,
+                "offsetX": 0,
+                "offsetY": 0
+              },
+              "mediaType": "image/jpeg",
+              "observationId": "34311f41-bca0-492b-bc7f-d495072caf60",
+              "coordinateSpace": "screenshot_pixels",
+              "acceptedCoordinateModes": [
+                "pixels",
+                "normalized_1000"
+              ]
+            }
+          }
+        },
+        {
+          "action_no": 21,
+          "kind": "key_press",
+          "input": {
+            "key": "f2",
+            "modifiers": [],
+            "observationId": "34311f41-bca0-492b-bc7f-d495072caf60"
+          },
+          "status": "succeeded",
+          "receipt": {
+            "ok": true,
+            "output": {
+              "key": "f2",
+              "epoch": 18,
+              "width": 1280,
+              "bootId": "5f9f4473-5d2b-418b-b046-e31557254bfa",
+              "height": 800,
+              "window": {
+                "x": 495,
+                "y": 391,
+                "id": "0x2a040b1",
+                "title": "Rename \"Input-four\"",
+                "width": 300,
+                "height": 129,
+                "wmClass": "WM_CLASS(STRING) = \"thunar\", \"Thunar\"",
+                "boundsSpace": "screen_pixels_client_area"
+              },
+              "mapping": {
+                "scaleX": 1,
+                "scaleY": 1,
+                "offsetX": 0,
+                "offsetY": 0
+              },
+              "mediaType": "image/jpeg",
+              "modifiers": [],
+              "executedInput": {
+                "key": "f2",
+                "modifiers": [],
+                "observationId": "34311f41-bca0-492b-bc7f-d495072caf60"
+              },
+              "observationId": "f9b4f6d9-371d-4a37-9181-03909912d682",
+              "coordinateSpace": "screenshot_pixels",
+              "acceptedCoordinateModes": [
+                "pixels",
+                "normalized_1000"
+              ]
+            }
+          }
+        },
+        {
+          "action_no": 22,
+          "kind": "screen_capture",
+          "input": {},
+          "status": "succeeded",
+          "receipt": {
+            "ok": true,
+            "output": {
+              "epoch": 18,
+              "width": 1280,
+              "bootId": "5f9f4473-5d2b-418b-b046-e31557254bfa",
+              "height": 800,
+              "window": {
+                "x": 495,
+                "y": 391,
+                "id": "0x2a040b1",
+                "title": "Rename \"Input-four\"",
+                "width": 300,
+                "height": 129,
+                "wmClass": "WM_CLASS(STRING) = \"thunar\", \"Thunar\"",
+                "boundsSpace": "screen_pixels_client_area"
+              },
+              "mapping": {
+                "scaleX": 1,
+                "scaleY": 1,
+                "offsetX": 0,
+                "offsetY": 0
+              },
+              "mediaType": "image/jpeg",
+              "observationId": "5c0c8be4-1082-48e9-a9d8-b85113e7b8d6",
+              "coordinateSpace": "screenshot_pixels",
+              "acceptedCoordinateModes": [
+                "pixels",
+                "normalized_1000"
+              ]
+            }
+          }
+        },
+        {
+          "action_no": 23,
+          "kind": "key_type",
+          "input": {
+            "text": "Final-four",
+            "observationId": "5c0c8be4-1082-48e9-a9d8-b85113e7b8d6"
+          },
+          "status": "succeeded",
+          "receipt": {
+            "ok": true,
+            "output": {
+              "text": "Final-four",
+              "epoch": 18,
+              "width": 1280,
+              "bootId": "5f9f4473-5d2b-418b-b046-e31557254bfa",
+              "height": 800,
+              "window": {
+                "x": 495,
+                "y": 391,
+                "id": "0x2a040b1",
+                "title": "Rename \"Input-four\"",
+                "width": 300,
+                "height": 129,
+                "wmClass": "WM_CLASS(STRING) = \"thunar\", \"Thunar\"",
+                "boundsSpace": "screen_pixels_client_area"
+              },
+              "mapping": {
+                "scaleX": 1,
+                "scaleY": 1,
+                "offsetX": 0,
+                "offsetY": 0
+              },
+              "mediaType": "image/jpeg",
+              "executedInput": {
+                "text": "Final-four",
+                "observationId": "5c0c8be4-1082-48e9-a9d8-b85113e7b8d6"
+              },
+              "observationId": "6e9f626d-41c5-4827-99d4-78f73b6296a8",
+              "coordinateSpace": "screenshot_pixels",
+              "acceptedCoordinateModes": [
+                "pixels",
+                "normalized_1000"
+              ]
+            }
+          }
+        },
+        {
+          "action_no": 24,
+          "kind": "screen_capture",
+          "input": {},
+          "status": "succeeded",
+          "receipt": {
+            "ok": true,
+            "output": {
+              "epoch": 18,
+              "width": 1280,
+              "bootId": "5f9f4473-5d2b-418b-b046-e31557254bfa",
+              "height": 800,
+              "window": {
+                "x": 495,
+                "y": 391,
+                "id": "0x2a040b1",
+                "title": "Rename \"Input-four\"",
+                "width": 300,
+                "height": 129,
+                "wmClass": "WM_CLASS(STRING) = \"thunar\", \"Thunar\"",
+                "boundsSpace": "screen_pixels_client_area"
+              },
+              "mapping": {
+                "scaleX": 1,
+                "scaleY": 1,
+                "offsetX": 0,
+                "offsetY": 0
+              },
+              "mediaType": "image/jpeg",
+              "observationId": "d0a7a375-68bc-462c-8225-5a1c77adb6b5",
+              "coordinateSpace": "screenshot_pixels",
+              "acceptedCoordinateModes": [
+                "pixels",
+                "normalized_1000"
+              ]
+            }
+          }
+        },
+        {
+          "action_no": 25,
+          "kind": "key_press",
+          "input": {
+            "key": "enter",
+            "modifiers": [],
+            "observationId": "d0a7a375-68bc-462c-8225-5a1c77adb6b5"
+          },
+          "status": "succeeded",
+          "receipt": {
+            "ok": true,
+            "output": {
+              "key": "enter",
+              "epoch": 18,
+              "width": 1280,
+              "bootId": "5f9f4473-5d2b-418b-b046-e31557254bfa",
+              "height": 800,
+              "window": {
+                "x": 320,
+                "y": 187,
+                "id": "0x2a0331c",
+                "title": "PA-C2-3-1792954186130 - Thunar",
+                "width": 640,
+                "height": 480,
+                "wmClass": "WM_CLASS(STRING) = \"thunar\", \"Thunar\"",
+                "boundsSpace": "screen_pixels_client_area"
+              },
+              "mapping": {
+                "scaleX": 1,
+                "scaleY": 1,
+                "offsetX": 0,
+                "offsetY": 0
+              },
+              "mediaType": "image/jpeg",
+              "modifiers": [],
+              "executedInput": {
+                "key": "enter",
+                "modifiers": [],
+                "observationId": "d0a7a375-68bc-462c-8225-5a1c77adb6b5"
+              },
+              "observationId": "88d60192-cff0-48ef-a3eb-274c6c28dd6f",
+              "coordinateSpace": "screenshot_pixels",
+              "acceptedCoordinateModes": [
+                "pixels",
+                "normalized_1000"
+              ]
+            }
+          }
+        },
+        {
+          "action_no": 26,
+          "kind": "screen_capture",
+          "input": {},
+          "status": "succeeded",
+          "receipt": {
+            "ok": true,
+            "output": {
+              "epoch": 18,
+              "width": 1280,
+              "bootId": "5f9f4473-5d2b-418b-b046-e31557254bfa",
+              "height": 800,
+              "window": {
+                "x": 320,
+                "y": 187,
+                "id": "0x2a0331c",
+                "title": "PA-C2-3-1792954186130 - Thunar",
+                "width": 640,
+                "height": 480,
+                "wmClass": "WM_CLASS(STRING) = \"thunar\", \"Thunar\"",
+                "boundsSpace": "screen_pixels_client_area"
+              },
+              "mapping": {
+                "scaleX": 1,
+                "scaleY": 1,
+                "offsetX": 0,
+                "offsetY": 0
+              },
+              "mediaType": "image/jpeg",
+              "observationId": "ee221bb4-91c7-478c-856e-de66adb253db",
+              "coordinateSpace": "screenshot_pixels",
+              "acceptedCoordinateModes": [
+                "pixels",
+                "normalized_1000"
+              ]
+            }
+          }
+        },
+        {
+          "action_no": 28,
+          "kind": "screen_share",
+          "input": {},
+          "status": "succeeded",
+          "receipt": {
+            "ok": true,
+            "output": {
+              "epoch": 18,
+              "width": 1280,
+              "bootId": "5f9f4473-5d2b-418b-b046-e31557254bfa",
+              "height": 800,
+              "window": {
+                "x": 320,
+                "y": 187,
+                "id": "0x2a0331c",
+                "title": "PA-C2-3-1792954186130 - Thunar",
+                "width": 640,
+                "height": 480,
+                "wmClass": "WM_CLASS(STRING) = \"thunar\", \"Thunar\"",
+                "boundsSpace": "screen_pixels_client_area"
+              },
+              "mapping": {
+                "scaleX": 1,
+                "scaleY": 1,
+                "offsetX": 0,
+                "offsetY": 0
+              },
+              "mediaType": "image/jpeg",
+              "observationId": "79312728-6c5e-42a2-92e6-d7c8ef8fb534",
+              "coordinateSpace": "screenshot_pixels",
+              "acceptedCoordinateModes": [
+                "pixels",
+                "normalized_1000"
+              ]
+            }
+          }
+        }
+      ],
+      "requests": []
+    }
+  ]
+}

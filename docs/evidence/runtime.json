@@ -1,0 +1,19 @@
+{
+  "passed": true,
+  "controlledProvider": true,
+  "realModelJudgmentEvaluated": false,
+  "checks": [
+    {
+      "check": "Production provider/SDK/workflow: invalid CSV rejected, model corrects it, trusted extraction checks date/columns, owner approval resumes, one artifact and four non-duplicated model charges",
+      "taskId": "977bda2f-9ad9-44e3-a357-b46b57cb723d"
+    },
+    {
+      "check": "Cancellation aborts the real HTTP model request, stops the workstation, and dispatches no model tools"
+    },
+    {
+      "check": "Provider key encrypted at rest, local config overrides env, masked settings view; plaintext key absent from task/DBOS records"
+    }
+  ],
+  "directory": "data/experiments/agent_runtime_1af313a779a94333a24a6710568cf8ab",
+  "recordedAt": "2026-10-24T20:36:12.709Z"
+}

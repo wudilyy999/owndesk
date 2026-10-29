@@ -1,0 +1,54 @@
+{
+  "recordedAt": "2026-10-26T01:52:59.865Z",
+  "passed": true,
+  "sourceTaskId": "f9cb0de4-5ed7-471c-91c7-bc9e978614fa",
+  "gatewayErrorItemMatchesSavedReasoning": true,
+  "usesRealSavedAssistantResponse": true,
+  "records": [
+    {
+      "mode": "current-default",
+      "storeField": "omitted",
+      "itemReferences": [
+        "rs_0d3378625d8bc172016adeafac535887d0ab5f174b7fd96f8c"
+      ],
+      "reasoningItems": 0,
+      "encryptedReasoningIncluded": false,
+      "toolCalls": [
+        {
+          "callId": "call_ZLjM2DYMyJGBx2tQVqPvQfU1",
+          "name": "submit_workflow"
+        }
+      ],
+      "toolResults": [
+        {
+          "callId": "call_ZLjM2DYMyJGBx2tQVqPvQfU1"
+        }
+      ],
+      "requestedInclude": [],
+      "networkRequests": 0
+    },
+    {
+      "mode": "explicit-store-false",
+      "storeField": false,
+      "itemReferences": [],
+      "reasoningItems": 1,
+      "encryptedReasoningIncluded": true,
+      "toolCalls": [
+        {
+          "callId": "call_ZLjM2DYMyJGBx2tQVqPvQfU1",
+          "name": "submit_workflow"
+        }
+      ],
+      "toolResults": [
+        {
+          "callId": "call_ZLjM2DYMyJGBx2tQVqPvQfU1"
+        }
+      ],
+      "requestedInclude": [
+        "reasoning.encrypted_content"
+      ],
+      "networkRequests": 0
+    }
+  ],
+  "scope": "Offline serialization with installed AI SDK and mocked fetch only. No provider credentials sent, no network/model request, no source Task/attempt changes; proves serialization root cause and proposed stateless payload, not live provider acceptance."
+}

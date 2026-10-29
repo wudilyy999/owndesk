@@ -1,0 +1,418 @@
+{
+  "passed": true,
+  "database": "agent_benchprotocol_4932f78f2c5341a6bb9ffa4495d8ee17",
+  "directory": "data/experiments/agent_benchprotocol_4932f78f2c5341a6bb9ffa4495d8ee17",
+  "checks": [
+    "fresh protocol freezes exact provider endpoint; changed endpoint/legacy unpinned model arm/shared desktop reject before admission",
+    "provider-free deterministic arm remains admissible after endpoint change; same source key reuses Task and queued cancellation creates no effects",
+    "matching endpoint admits baseline with frozen model/channel/bound contract; both admitted Tasks cancelled in queue with zero model/action records"
+  ],
+  "results": [
+    {
+      "taskId": "527e2896-ab20-4dea-85bb-56d4471619e1",
+      "database": "agent_benchprotocol_4932f78f2c5341a6bb9ffa4495d8ee17",
+      "ownerId": "7dfb69a5-eceb-4dde-8a4e-985a4132ec7e",
+      "phase": "control",
+      "status": "cancelled",
+      "source": "benchmark:784d5723-dd6e-49ee-a5fc-0dbb8b2a44b9:checked",
+      "requestKey": "case-0",
+      "createdAt": "2026-10-25T19:48:38.558Z",
+      "terminalAt": "2026-10-25T19:48:38.583Z",
+      "contract": {
+        "directoryTree": {
+          "root": "/home/xiryn/Protocol-parent-0",
+          "absent": [
+            "Draft-0"
+          ],
+          "directories": [
+            "Ready-0"
+          ]
+        },
+        "requireHumanReview": false
+      },
+      "grade": null,
+      "model": "workflow/deterministic",
+      "plan": {
+        "steps": [
+          {
+            "id": "open",
+            "label": "打开 Thunar",
+            "evidence": [],
+            "operation": "open_application",
+            "application": "Thunar"
+          },
+          {
+            "id": "step-1",
+            "key": "n",
+            "when": {
+              "title": [
+                {
+                  "literal": "xiryn - Thunar"
+                }
+              ],
+              "application": "Thunar"
+            },
+            "label": "按键 n",
+            "evidence": [],
+            "modifiers": [
+              "ctrl",
+              "shift"
+            ],
+            "operation": "key_press"
+          },
+          {
+            "id": "step-2",
+            "text": [
+              {
+                "parameter": "parentName"
+              }
+            ],
+            "when": {
+              "title": [
+                {
+                  "literal": "Create New Folder"
+                }
+              ],
+              "application": "Thunar"
+            },
+            "label": "填写目录名或路径",
+            "evidence": [],
+            "operation": "key_type"
+          },
+          {
+            "id": "step-3",
+            "key": "enter",
+            "when": {
+              "title": [
+                {
+                  "literal": "Create New Folder"
+                }
+              ],
+              "application": "Thunar"
+            },
+            "label": "按键 enter",
+            "evidence": [],
+            "modifiers": [],
+            "operation": "key_press"
+          },
+          {
+            "id": "step-4",
+            "key": "l",
+            "when": {
+              "title": [
+                {
+                  "literal": "xiryn - Thunar"
+                }
+              ],
+              "application": "Thunar"
+            },
+            "label": "按键 l",
+            "evidence": [],
+            "modifiers": [
+              "ctrl"
+            ],
+            "operation": "key_press"
+          },
+          {
+            "id": "step-5",
+            "text": [
+              {
+                "literal": "/home/xiryn/"
+              },
+              {
+                "parameter": "parentName"
+              }
+            ],
+            "when": {
+              "title": [
+                {
+                  "literal": "xiryn - Thunar"
+                }
+              ],
+              "application": "Thunar"
+            },
+            "label": "填写目录名或路径",
+            "evidence": [],
+            "operation": "key_type"
+          },
+          {
+            "id": "step-6",
+            "key": "enter",
+            "when": {
+              "title": [
+                {
+                  "literal": "xiryn - Thunar"
+                }
+              ],
+              "application": "Thunar"
+            },
+            "label": "按键 enter",
+            "evidence": [],
+            "modifiers": [],
+            "operation": "key_press"
+          },
+          {
+            "id": "step-7",
+            "key": "n",
+            "when": {
+              "title": [
+                {
+                  "parameter": "parentName"
+                },
+                {
+                  "literal": " - Thunar"
+                }
+              ],
+              "application": "Thunar"
+            },
+            "label": "按键 n",
+            "evidence": [],
+            "modifiers": [
+              "ctrl",
+              "shift"
+            ],
+            "operation": "key_press"
+          },
+          {
+            "id": "step-8",
+            "text": [
+              {
+                "parameter": "draftName"
+              }
+            ],
+            "when": {
+              "title": [
+                {
+                  "literal": "Create New Folder"
+                }
+              ],
+              "application": "Thunar"
+            },
+            "label": "填写目录名或路径",
+            "evidence": [],
+            "operation": "key_type"
+          },
+          {
+            "id": "step-9",
+            "key": "enter",
+            "when": {
+              "title": [
+                {
+                  "literal": "Create New Folder"
+                }
+              ],
+              "application": "Thunar"
+            },
+            "label": "按键 enter",
+            "evidence": [],
+            "modifiers": [],
+            "operation": "key_press"
+          },
+          {
+            "id": "step-10",
+            "key": "f2",
+            "when": {
+              "title": [
+                {
+                  "parameter": "parentName"
+                },
+                {
+                  "literal": " - Thunar"
+                }
+              ],
+              "application": "Thunar"
+            },
+            "label": "按键 f2",
+            "evidence": [],
+            "modifiers": [],
+            "operation": "key_press"
+          },
+          {
+            "id": "step-11",
+            "text": [
+              {
+                "parameter": "readyName"
+              }
+            ],
+            "when": {
+              "title": [
+                {
+                  "literal": "Rename \""
+                },
+                {
+                  "parameter": "draftName"
+                },
+                {
+                  "literal": "\""
+                }
+              ],
+              "application": "Thunar"
+            },
+            "label": "填写目录名或路径",
+            "evidence": [],
+            "operation": "key_type"
+          },
+          {
+            "id": "step-12",
+            "key": "enter",
+            "when": {
+              "title": [
+                {
+                  "literal": "Rename \""
+                },
+                {
+                  "parameter": "draftName"
+                },
+                {
+                  "literal": "\""
+                }
+              ],
+              "application": "Thunar"
+            },
+            "label": "按键 enter",
+            "evidence": [],
+            "modifiers": [],
+            "operation": "key_press"
+          },
+          {
+            "id": "final-window",
+            "label": "核对当前目录窗口",
+            "window": {
+              "title": [
+                {
+                  "parameter": "parentName"
+                },
+                {
+                  "literal": " - Thunar"
+                }
+              ],
+              "application": "Thunar"
+            },
+            "evidence": [],
+            "operation": "assert"
+          },
+          {
+            "id": "share",
+            "label": "展示最后桌面",
+            "share": true,
+            "evidence": [],
+            "operation": "observe"
+          }
+        ],
+        "completion": {
+          "root": [
+            {
+              "literal": "/home/xiryn/"
+            },
+            {
+              "parameter": "parentName"
+            }
+          ],
+          "absent": [
+            [
+              {
+                "parameter": "draftName"
+              }
+            ]
+          ],
+          "directories": [
+            [
+              {
+                "parameter": "readyName"
+              }
+            ]
+          ]
+        },
+        "parameters": [
+          {
+            "name": "parentName",
+            "label": "父目录名",
+            "sourceValue": "Flow-C0-1792950841215"
+          },
+          {
+            "name": "draftName",
+            "label": "初始目录名",
+            "sourceValue": "Draft"
+          },
+          {
+            "name": "readyName",
+            "label": "最终目录名",
+            "sourceValue": "Ready"
+          }
+        ],
+        "description": "受控提供者生成的参数化 Thunar 计划，用于执行链与界面检查",
+        "environment": {
+          "locale": "C.UTF-8",
+          "application": "Thunar",
+          "guestProtocol": 6,
+          "workstationImageId": "sha256:c90794aae50fa9acdbea1a0dd8aae1b1d785023d438fc4fb2cd53616216770b3"
+        },
+        "sourceTaskId": "2935de0d-e34e-467a-bbdf-0f1135f5428b",
+        "schemaVersion": 1,
+        "sourceSegment": 1,
+        "sourceActionNumbers": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          14,
+          15,
+          16
+        ]
+      },
+      "parameters": {
+        "draftName": "Draft-0",
+        "readyName": "Ready-0",
+        "parentName": "Protocol-parent-0"
+      },
+      "environment": null,
+      "workstationChannel": "desktop",
+      "attempts": [],
+      "actions": [],
+      "requests": []
+    },
+    {
+      "taskId": "b7b4c6c8-ca27-47f1-8824-606a86e3fc3a",
+      "database": "agent_benchprotocol_4932f78f2c5341a6bb9ffa4495d8ee17",
+      "ownerId": "7dfb69a5-eceb-4dde-8a4e-985a4132ec7e",
+      "phase": "control",
+      "status": "cancelled",
+      "source": "benchmark:784d5723-dd6e-49ee-a5fc-0dbb8b2a44b9:baseline",
+      "requestKey": "case-0",
+      "createdAt": "2026-10-25T19:48:38.601Z",
+      "terminalAt": "2026-10-25T19:48:38.611Z",
+      "contract": {
+        "directoryTree": {
+          "root": "/home/xiryn/Protocol-parent-0",
+          "absent": [
+            "Draft-0"
+          ],
+          "directories": [
+            "Ready-0"
+          ]
+        },
+        "requireHumanReview": false
+      },
+      "grade": null,
+      "model": "custom/protocol-fixture",
+      "plan": null,
+      "parameters": null,
+      "environment": null,
+      "workstationChannel": "desktop",
+      "attempts": [],
+      "actions": [],
+      "requests": []
+    }
+  ],
+  "cloudRequests": 0,
+  "scope": "C4 fresh-protocol transport/admission checks; two queued-cancelled Tasks, no desktop/model execution or performance comparison"
+}

@@ -1,0 +1,30 @@
+{
+  "passed": true,
+  "controlledProvider": true,
+  "realModelJudgmentEvaluated": false,
+  "checks": [
+    {
+      "check": "Actual owner settings UI creates, masks, replaces and deletes credentials; retained card/UPI/identity schemas store encrypted values; duplicate request ids, version conflicts, public HTTP, CVV and cross-Origin mutations rejected; form values not persisted in browser storage",
+      "itemId": "8f05303d-49c8-4f68-a381-53e58ecbf080"
+    },
+    {
+      "check": "Real model protocol requests secure credentials; generic approval cannot inject secrets, Telegram offers only web provisioning/reject/cancel; worker SIGKILL during wait preserves request and reuses model decision; owner selects a versioned exact-origin item and only its reference reaches DBOS/model",
+      "taskId": "d4989cbf-b181-48c1-b7f0-0c4bb962d1dc"
+    },
+    {
+      "check": "Actual secure OTP form: forced failure after encrypted insert/DBOS send rolls all changes back and leaves the original request waiting; same form retries once, old versions/wrong origin/conflicting values fail; code is task-scoped, expires in ten minutes and is removed on expiry while its nonsecret audit remains; replay cannot resurrect a deleted code or create another model request",
+      "taskId": "ace8aecc-4568-4a74-b72d-1c8da65cb0db"
+    },
+    {
+      "check": "Cancelled requests cannot create credentials; post-logout vault/request access rejected; all public and DBOS tables inspected for sample plaintext values, which are absent (ciphertexts and masked metadata only)"
+    },
+    {
+      "check": "Provider key encrypted at rest, local config overrides env, masked settings view; plaintext key absent from task/DBOS records"
+    },
+    {
+      "check": "Completed Web/worker logs contain no sample vault plaintext; storage/provisioning slice does not evaluate guest filling"
+    }
+  ],
+  "directory": "data/experiments/agent_runtime_6b98280154c2452a889443fd1f45d2c1",
+  "recordedAt": "2026-10-25T02:01:23.679Z"
+}

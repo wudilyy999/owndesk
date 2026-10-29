@@ -1,0 +1,78 @@
+{
+  "passed": true,
+  "fixtureOnly": true,
+  "database": "agent_g01_d59cf284271b4f2daa010ad0d855c0f2",
+  "results": [
+    {
+      "check": "12 concurrent submissions + conflicting payload",
+      "passed": true,
+      "detail": {
+        "taskId": "385d9c13-0ecf-4df2-b767-a69faa746ed5",
+        "workflows": 1
+      }
+    },
+    {
+      "check": "Business insert and DBOS enqueue roll back together",
+      "passed": true,
+      "detail": {
+        "taskId": "7cf3ad95-e28e-4eb0-821e-4e8d2791435c"
+      }
+    },
+    {
+      "check": "SIGKILL after fixture-prepare; resume from checkpoints",
+      "passed": true,
+      "detail": {
+        "taskId": "385d9c13-0ecf-4df2-b767-a69faa746ed5",
+        "before": [
+          {
+            "name": "fixture-prepare",
+            "completed": true
+          },
+          {
+            "name": "DBOS.sleep",
+            "completed": true
+          }
+        ],
+        "callbackInvocations": [
+          "prepare",
+          "materialize",
+          "verify"
+        ],
+        "artifactCount": 1
+      }
+    },
+    {
+      "check": "SIGKILL after fixture-materialize; resume from checkpoints",
+      "passed": true,
+      "detail": {
+        "taskId": "50d8acda-3f57-4f00-bc44-a4cb395a3f87",
+        "before": [
+          {
+            "name": "fixture-prepare",
+            "completed": true
+          },
+          {
+            "name": "DBOS.sleep",
+            "completed": true
+          },
+          {
+            "name": "fixture-materialize",
+            "completed": true
+          },
+          {
+            "name": "DBOS.sleep",
+            "completed": true
+          }
+        ],
+        "callbackInvocations": [
+          "prepare",
+          "materialize",
+          "verify"
+        ],
+        "artifactCount": 1
+      }
+    }
+  ],
+  "recordedAt": "2026-10-24T18:23:48.849Z",
+  "evidencePath": "data/experiments/agent_g01_d59cf284271b4f2daa010ad0d855c0f2"
+}

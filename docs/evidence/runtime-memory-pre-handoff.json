@@ -1,0 +1,17 @@
+{
+  "passed": true,
+  "controlledProvider": true,
+  "realModelJudgmentEvaluated": false,
+  "checks": [
+    {
+      "check": "Durable memory tools save/forget per-agent notes, refuse another agent's id, atomically replay prior receipts without resurrecting deleted notes, and load retained preferences into a future task",
+      "taskId": "29fe0973-eefa-4f40-b3ae-75c040dd161d",
+      "nextTaskId": "18c03f31-effa-421c-9b8d-dcc9b270e354"
+    },
+    {
+      "check": "Provider key encrypted at rest, local config overrides env, masked settings view; plaintext key absent from task/DBOS records"
+    }
+  ],
+  "directory": "data/experiments/agent_runtime_feb8cce1a6994f2e8769ce89fc5e7df0",
+  "recordedAt": "2026-10-24T21:04:02.341Z"
+}

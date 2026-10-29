@@ -1,0 +1,531 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content"
+    />
+    <meta name="theme-color" content="#0b0e14" />
+    <meta name="robots" content="noindex" />
+    <title>OwnDesk · take over</title>
+    <!--
+      OwnDesk's take-over page for phones. Served by the agent's own workstation
+      and reached through a temporary link from a Telegram hand-off. The
+      desktop's password travels after the # so it never reaches a server log.
+    -->
+    <style>
+      :root {
+        --bg: #0b0e14;
+        --panel: #11161f;
+        --raised: #18202c;
+        --line: #232b39;
+        --text: #e8edf5;
+        --muted: #8b95a7;
+        --faint: #5b6577;
+        --rigel: #7cc4ff;
+        --betel: #f5b06a;
+        --ok: #4ade80;
+        --bad: #f87171;
+        --mono: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, Consolas, monospace;
+      }
+      * {
+        box-sizing: border-box;
+        -webkit-tap-highlight-color: transparent;
+      }
+      [hidden] {
+        display: none !important;
+      }
+      html,
+      body {
+        margin: 0;
+        height: 100%;
+        background: var(--bg);
+        color: var(--text);
+        font:
+          14px/1.4 -apple-system,
+          system-ui,
+          "Segoe UI",
+          Roboto,
+          sans-serif;
+        overflow: hidden;
+        overscroll-behavior: none;
+      }
+      body {
+        display: flex;
+        flex-direction: column;
+        height: 100dvh;
+      }
+      header {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: calc(env(safe-area-inset-top) + 10px) 12px 10px;
+        background: var(--panel);
+        border-bottom: 1px solid var(--line);
+      }
+      .pulse {
+        width: 9px;
+        height: 9px;
+        flex: none;
+        border-radius: 50%;
+        background: var(--faint);
+      }
+      .pulse.live {
+        background: var(--betel);
+        animation: pulse 1.6s ease-in-out infinite;
+      }
+      @keyframes pulse {
+        0%,
+        100% {
+          box-shadow: 0 0 0 0 rgba(245, 176, 106, 0.55);
+        }
+        50% {
+          box-shadow: 0 0 0 6px rgba(245, 176, 106, 0);
+        }
+      }
+      .who {
+        display: flex;
+        min-width: 0;
+        flex: 1;
+        flex-direction: column;
+        line-height: 1.2;
+      }
+      .who b {
+        font-size: 15px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .who span {
+        color: var(--muted);
+        font: 11px var(--mono);
+      }
+      a.done {
+        flex: none;
+        padding: 8px 12px;
+        border-radius: 10px;
+        background: var(--text);
+        color: var(--bg);
+        font-weight: 600;
+        font-size: 13px;
+        text-decoration: none;
+      }
+      main {
+        position: relative;
+        flex: 1;
+        min-height: 0;
+        background:
+          radial-gradient(circle at 70% 30%, rgba(124, 196, 255, 0.06), transparent 60%),
+          #05070b;
+        touch-action: none;
+      }
+      #screen {
+        position: absolute;
+        inset: 0;
+      }
+      .overlay {
+        position: absolute;
+        inset: 0;
+        display: grid;
+        place-items: center;
+        padding: 24px;
+        text-align: center;
+        color: var(--muted);
+        font: 12px var(--mono);
+        pointer-events: none;
+      }
+      .hint {
+        position: absolute;
+        left: 50%;
+        bottom: 12px;
+        transform: translateX(-50%);
+        padding: 7px 12px;
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        background: rgba(17, 22, 31, 0.92);
+        color: var(--muted);
+        font: 11px var(--mono);
+        white-space: nowrap;
+      }
+      nav {
+        display: flex;
+        gap: 6px;
+        padding: 8px 8px calc(env(safe-area-inset-bottom) + 8px);
+        overflow-x: auto;
+        background: var(--panel);
+        border-top: 1px solid var(--line);
+        scrollbar-width: none;
+      }
+      nav::-webkit-scrollbar {
+        display: none;
+      }
+      nav button {
+        flex: none;
+        min-width: 44px;
+        height: 44px;
+        padding: 0 12px;
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        background: var(--raised);
+        color: var(--text);
+        font: 600 13px var(--mono);
+      }
+      nav button:active {
+        background: #222b3a;
+      }
+      nav button.primary {
+        border-color: rgba(124, 196, 255, 0.45);
+        background: rgba(124, 196, 255, 0.14);
+        color: var(--rigel);
+      }
+      nav button.on {
+        border-color: var(--betel);
+        background: rgba(245, 176, 106, 0.16);
+        color: var(--betel);
+      }
+      #kbd {
+        position: fixed;
+        left: 0;
+        bottom: 0;
+        width: 1px;
+        height: 1px;
+        opacity: 0;
+        border: 0;
+        resize: none;
+      }
+      .below {
+        display: none;
+      }
+      /* Upright phone: the desktop sits at the top with the keys right under
+         it, so the keyboard opens over empty space instead of over the screen */
+      @media (orientation: portrait) {
+        main {
+          flex: none;
+          width: 100%;
+          aspect-ratio: 16 / 10;
+          max-height: 62dvh;
+        }
+        .hint {
+          display: none;
+        }
+        .below {
+          display: flex;
+          flex: 1;
+          min-height: 0;
+          flex-direction: column;
+          gap: 8px;
+          padding: 16px 16px calc(env(safe-area-inset-bottom) + 16px);
+          overflow: auto;
+          color: var(--muted);
+          font-size: 13px;
+        }
+        .below b {
+          color: var(--text);
+          font-weight: 600;
+        }
+        .below .k {
+          color: var(--faint);
+          font: 11px var(--mono);
+          text-transform: uppercase;
+          letter-spacing: 0.08em;
+        }
+        nav {
+          border-bottom: 1px solid var(--line);
+          padding-bottom: 8px;
+        }
+      }
+      .sheet {
+        position: fixed;
+        inset: 0;
+        display: none;
+        align-items: flex-end;
+        background: rgba(0, 0, 0, 0.55);
+      }
+      .sheet.open {
+        display: flex;
+      }
+      .sheet > div {
+        width: 100%;
+        padding: 16px 14px calc(env(safe-area-inset-bottom) + 14px);
+        border-top: 1px solid var(--line);
+        border-radius: 18px 18px 0 0;
+        background: var(--panel);
+      }
+      .sheet h2 {
+        margin: 0 0 4px;
+        font-size: 15px;
+      }
+      .sheet p {
+        margin: 0 0 10px;
+        color: var(--muted);
+        font-size: 12.5px;
+      }
+      .sheet textarea {
+        width: 100%;
+        min-height: 90px;
+        padding: 10px;
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        background: var(--bg);
+        color: var(--text);
+        font: 14px var(--mono);
+      }
+      .sheet .row {
+        display: flex;
+        gap: 8px;
+        margin-top: 10px;
+      }
+      .sheet .row button {
+        flex: 1;
+        height: 44px;
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        background: var(--raised);
+        color: var(--text);
+        font-weight: 600;
+      }
+      .sheet .row button.go {
+        border: 0;
+        background: var(--text);
+        color: var(--bg);
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <span class="pulse" id="pulse"></span>
+      <div class="who">
+        <b id="title">Agent's desktop</b>
+        <span id="sub">connecting…</span>
+      </div>
+      <a class="done" id="done" href="#">Done</a>
+    </header>
+
+    <main>
+      <div id="screen"></div>
+      <div class="overlay" id="overlay">connecting to the desktop…</div>
+      <div class="hint" id="hint" hidden>
+        tap = click · hold = right-click · two fingers = scroll
+      </div>
+    </main>
+
+    <nav>
+      <button class="primary" id="keyboard" aria-label="Keyboard">⌨ Keyboard</button>
+      <button id="paste">Paste text</button>
+      <button data-key="0xff0d">Enter ⏎</button>
+      <button data-key="0xff08" aria-label="Backspace">⌫</button>
+      <button data-key="0xff09">Tab</button>
+      <button data-key="0xff1b">Esc</button>
+      <button data-key="0xff51" aria-label="Left">←</button>
+      <button data-key="0xff53" aria-label="Right">→</button>
+      <button data-key="0xff52" aria-label="Up">↑</button>
+      <button data-key="0xff54" aria-label="Down">↓</button>
+      <button id="ctrl">Ctrl</button>
+    </nav>
+
+    <section class="below">
+      <span class="k">// how it works</span>
+      <span
+        ><b>Tap</b> to click, <b>hold</b> to right-click, drag with <b>two fingers</b> to
+        scroll.</span
+      >
+      <span
+        ><b>⌨ Keyboard</b> types on the desktop; <b>Paste text</b> types a longer piece in
+        one go.</span
+      >
+      <span>Turn your phone sideways for a bigger screen.</span>
+      <span
+        >Finished? Tap <b>Done</b> and reply “done” in Telegram — the agent takes it from
+        there.</span
+      >
+    </section>
+
+    <textarea
+      id="kbd"
+      autocomplete="off"
+      autocorrect="off"
+      autocapitalize="off"
+      spellcheck="false"
+      enterkeyhint="send"
+      aria-label="Type on the desktop"
+    ></textarea>
+
+    <div class="sheet" id="sheet">
+      <div>
+        <h2>Type text on the desktop</h2>
+        <p>Paste or write it here; it's typed into whatever is focused on the desktop.</p>
+        <textarea id="text" spellcheck="false"></textarea>
+        <div class="row">
+          <button id="cancel">Cancel</button>
+          <button class="go" id="send">Type it</button>
+        </div>
+      </div>
+    </div>
+
+    <script type="module">
+      import RFB from "./core/rfb.js"
+      import keysyms from "./core/input/keysymdef.js"
+
+      const KEY = { Return: 0xff0d, BackSpace: 0xff08, Control: 0xffe3 }
+      const params = new URLSearchParams(location.hash.slice(1))
+      const agent = params.get("agent") || "Agent"
+      const bot = params.get("bot")
+      const until = Number(params.get("until")) || 0
+
+      const $ = (id) => document.getElementById(id)
+      $("title").textContent = `${agent}'s desktop`
+      document.title = `${agent} · OwnDesk`
+      if (bot) $("done").href = `https://t.me/${bot}`
+      else $("done").hidden = true
+
+      // Keep the password out of the address bar and the history
+      const password = params.get("password") || ""
+      history.replaceState(null, "", location.pathname)
+
+      let rfb = null
+      let ctrl = false
+
+      function status(text) {
+        const left = until ? Math.max(0, Math.round((until - Date.now()) / 60000)) : null
+        $("sub").textContent =
+          text + (left !== null ? ` · link closes in ${left} min` : "")
+      }
+
+      function key(keysym) {
+        if (!rfb) return
+        if (ctrl) rfb.sendKey(KEY.Control, "ControlLeft", true)
+        rfb.sendKey(keysym, null)
+        if (ctrl) {
+          rfb.sendKey(KEY.Control, "ControlLeft", false)
+          ctrl = false
+          $("ctrl").classList.remove("on")
+        }
+      }
+
+      function typeChar(char) {
+        if (char === "\n") return key(KEY.Return)
+        const keysym = keysyms.lookup(char.codePointAt(0))
+        if (keysym) key(keysym)
+      }
+
+      function connect() {
+        const scheme = location.protocol === "https:" ? "wss" : "ws"
+        rfb = new RFB($("screen"), `${scheme}://${location.host}/websockify`, {
+          credentials: { password },
+        })
+        rfb.scaleViewport = true
+        rfb.background = "transparent"
+        // Taps drive the desktop; the phone keyboard stays where it is
+        rfb.focusOnClick = false
+        rfb.addEventListener("connect", () => {
+          $("overlay").hidden = true
+          $("pulse").classList.add("live")
+          $("hint").hidden = false
+          setTimeout(() => ($("hint").hidden = true), 6000)
+          status("you have control")
+        })
+        rfb.addEventListener("disconnect", (event) => {
+          $("pulse").classList.remove("live")
+          $("overlay").hidden = false
+          if (until && Date.now() > until) {
+            $("overlay").textContent = "This link has expired."
+            status("closed")
+            return
+          }
+          $("overlay").textContent = event.detail.clean
+            ? "Disconnected."
+            : "Connection lost · reconnecting…"
+          status("reconnecting")
+          setTimeout(connect, 2000)
+        })
+        rfb.addEventListener("credentialsrequired", () => {
+          $("overlay").textContent =
+            "This link is missing its password. Open it again from Telegram."
+        })
+      }
+      connect()
+      setInterval(
+        () =>
+          rfb &&
+          status(
+            $("pulse").classList.contains("live") ? "you have control" : "connecting"
+          ),
+        30000
+      )
+
+      /* The phone keyboard: a hidden text box whose changes become keystrokes.
+         Diffing against the previous value works with predictive keyboards,
+         which rewrite words instead of sending one key at a time. */
+      const kbd = $("kbd")
+      const BASE = "  "
+      let last = BASE
+      let composing = false
+      const resetKbd = () => {
+        kbd.value = BASE
+        last = BASE
+      }
+      resetKbd()
+
+      function flush() {
+        const value = kbd.value
+        let same = 0
+        while (same < last.length && same < value.length && last[same] === value[same])
+          same++
+        for (let i = same; i < last.length; i++) key(KEY.BackSpace)
+        for (const char of value.slice(same)) typeChar(char)
+        last = value
+        if (value.length < BASE.length || value.length > 64) resetKbd()
+      }
+      kbd.addEventListener("compositionstart", () => (composing = true))
+      kbd.addEventListener("compositionend", () => {
+        composing = false
+        flush()
+      })
+      kbd.addEventListener("input", () => {
+        if (!composing) flush()
+      })
+      kbd.addEventListener("keydown", (event) => {
+        if (event.key === "Enter") {
+          event.preventDefault()
+          key(KEY.Return)
+        }
+      })
+
+      $("keyboard").addEventListener("click", () => {
+        resetKbd()
+        kbd.focus()
+      })
+      // Toolbar buttons mustn't take focus away from the keyboard
+      document.querySelectorAll("nav button").forEach((button) =>
+        button.addEventListener("pointerdown", (event) => {
+          if (button.id !== "keyboard" && button.id !== "paste") event.preventDefault()
+        })
+      )
+      document
+        .querySelectorAll("[data-key]")
+        .forEach((button) =>
+          button.addEventListener("click", () => key(Number(button.dataset.key)))
+        )
+      $("ctrl").addEventListener("click", () => {
+        ctrl = !ctrl
+        $("ctrl").classList.toggle("on", ctrl)
+      })
+
+      $("paste").addEventListener("click", () => {
+        $("sheet").classList.add("open")
+        $("text").focus()
+      })
+      $("cancel").addEventListener("click", () => $("sheet").classList.remove("open"))
+      $("send").addEventListener("click", async () => {
+        const text = $("text").value
+        $("sheet").classList.remove("open")
+        $("text").value = ""
+        for (const char of text) {
+          typeChar(char)
+          await new Promise((resolve) => setTimeout(resolve, 12))
+        }
+      })
+    </script>
+  </body>
+</html>

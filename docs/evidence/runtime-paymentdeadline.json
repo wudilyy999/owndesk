@@ -1,0 +1,32 @@
+{
+  "passed": true,
+  "controlledProvider": true,
+  "realModelJudgmentEvaluated": false,
+  "applicationVersion": "0.11.0-dev",
+  "guestProtocolVersion": 4,
+  "controlledWebsite": true,
+  "paymentDeadlineBeforeReleaseVerified": true,
+  "paymentTasksEvaluated": 1,
+  "actualPaymentEvaluated": false,
+  "checks": [
+    {
+      "check": "Actual old guest3 image with a new container label is rejected by its real health; no task/model call or secret release",
+      "agentId": "_8tfTKIEqTVC"
+    },
+    {
+      "check": "A real 1.5-second DOM read begins before and ends after a short owner-grant deadline; no release, fill or submit after expiry",
+      "taskId": "8068855e-6101-445b-8c90-2895e4da4d15",
+      "expiresAt": "2026-10-25T08:40:09.124Z",
+      "inspectionStartedAt": 1792917608521,
+      "inspectionFinishedAt": 1792917610022
+    },
+    {
+      "check": "Provider key encrypted at rest, local config overrides env, masked settings view; plaintext key absent from task/DBOS records"
+    },
+    {
+      "check": "Completed Web/worker logs, actual guest journals/controller logs and model requests contain no sample secret values; website inputs are independently counted and matched"
+    }
+  ],
+  "directory": "data/experiments/agent_runtime_8dc89170de6e49cc82b1473a7ec76ccd",
+  "recordedAt": "2026-10-25T08:40:13.376Z"
+}

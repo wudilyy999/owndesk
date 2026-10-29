@@ -1,0 +1,17 @@
+{
+  "passed": true,
+  "recordedAt": "2026-10-26T01:48:58.765Z",
+  "checks": {
+    "exactWorkerProcessCount": 1,
+    "workers": [
+      "57068 /opt/homebrew/Cellar/node@24/24.20.0/bin/node --import tsx worker/main.ts"
+    ],
+    "isolatedWorkersStopped": true
+  },
+  "priorCheck": {
+    "passed": false,
+    "scope": "Post-run observational process-list assertion only; no Task/action/model work",
+    "cause": "Unanchored substring matching also counted the parent shell command containing its own script",
+    "correction": "Anchored the full executable/arguments line and observed the same retained processes; no application change or GUI/API rerun"
+  }
+}

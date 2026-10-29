@@ -1,0 +1,109 @@
+{
+  "passed": true,
+  "directory": "data/experiments/pa-c0-1792951178747",
+  "checks": [
+    {
+      "name": "actual desktop dimensions and native window",
+      "width": 1280,
+      "height": 800,
+      "window": {
+        "id": "0x1400002",
+        "title": "about:blank - Chromium",
+        "wmClass": "WM_CLASS(STRING) = \"chromium (/home/xiryn/.config/xiryn-browser)\", \"Chromium\"",
+        "boundsSpace": "screen_pixels_client_area",
+        "x": 0,
+        "y": 54,
+        "width": 1280,
+        "height": 746
+      },
+      "mapping": {
+        "scaleX": 1,
+        "scaleY": 1,
+        "offsetX": 0,
+        "offsetY": 0
+      }
+    },
+    {
+      "name": "superseded frame rejected before input",
+      "status": "rejected"
+    },
+    {
+      "name": "explicit pixel mapping; three points plus two independent positions",
+      "positions": [
+        {
+          "x": 160,
+          "y": 120,
+          "passed": true
+        },
+        {
+          "x": 1100,
+          "y": 120,
+          "passed": true
+        },
+        {
+          "x": 160,
+          "y": 680,
+          "passed": true
+        },
+        {
+          "x": 640,
+          "y": 400,
+          "passed": true
+        },
+        {
+          "x": 1100,
+          "y": 680,
+          "passed": true
+        }
+      ],
+      "modelCalibration": false
+    },
+    {
+      "name": "explicit normalized mapping including center and screen boundary",
+      "passed": true
+    },
+    {
+      "name": "single-input frame and actual-size bounds",
+      "passed": true
+    },
+    {
+      "name": "human handback rejects old frame and accepts fresh observation",
+      "passed": true
+    },
+    {
+      "name": "native Thunar title/class/bounds observation",
+      "window": {
+        "id": "0x2400007",
+        "title": "xiryn - Thunar",
+        "wmClass": "WM_CLASS(STRING) = \"thunar\", \"Thunar\"",
+        "boundsSpace": "screen_pixels_client_area",
+        "x": 320,
+        "y": 187,
+        "width": 640,
+        "height": 480
+      }
+    },
+    {
+      "name": "window resize rejects the old observation before input",
+      "window": {
+        "id": "0x2400007",
+        "title": "xiryn - Thunar",
+        "wmClass": "WM_CLASS(STRING) = \"thunar\", \"Thunar\"",
+        "boundsSpace": "screen_pixels_client_area",
+        "x": 320,
+        "y": 187,
+        "width": 900,
+        "height": 600
+      }
+    },
+    {
+      "name": "controller restart invalidates the previous boot's observations",
+      "passed": true
+    },
+    {
+      "name": "input succeeds with a lost post-action screenshot; old frame stays consumed and receipt replay never inputs again",
+      "passed": true
+    }
+  ],
+  "guestProtocol": 6
+}

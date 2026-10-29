@@ -1,0 +1,583 @@
+{
+  "passed": true,
+  "directory": "data/experiments/pa-linux-1792959408122/attempt-1792975364751/ui-resume-1792975870439",
+  "retainedAttempt": "data/experiments/pa-linux-1792959408122/attempt-1792975364751",
+  "retainedWorkflowTasks": [
+    {
+      "taskId": "78cd2d71-598c-43ff-b510-5ac07d2cf735",
+      "status": "completed"
+    },
+    {
+      "taskId": "669700bb-b4cb-4c3b-aa8c-fba756af4fc5",
+      "status": "completed"
+    },
+    {
+      "taskId": "35639238-5bec-4443-9d7b-7f14fbd53994",
+      "status": "completed"
+    },
+    {
+      "taskId": "069fca92-df4a-4062-a470-8aa2498a8bd8",
+      "status": "completed"
+    }
+  ],
+  "retainedWorkflowTaskCountGate": 4,
+  "additionalUiTaskCountGate": 1,
+  "taskId": "ee30f5fc-5f88-44b4-a6d9-00d37ac4c8d1",
+  "checks": [
+    "Actual optimized production noVNC canvas shows a non-uniform framebuffer during a real active workflow Task over Caddy HTTPS/WSS",
+    "Readonly WSS pointer/key input is dropped; worker reaches the actual Web endpoint while guest is blocked; guest has exact guest6 image/no secrets/socket/ports and Web remains non-root/read-only",
+    "Actual reviewed owner download exports the certified method without local Task/version IDs; 390px production UI has no horizontal overflow or page error",
+    "Original four successful Task metrics remain unchanged; exactly one new checked27-action UI Task, total5Tasks/135actions/0model/0human requests"
+  ],
+  "metrics": {
+    "taskId": "ee30f5fc-5f88-44b4-a6d9-00d37ac4c8d1",
+    "database": "personal_agent",
+    "ownerId": "04e0963b-3305-4530-b7aa-12d000e03d3d",
+    "phase": "ui",
+    "status": "completed",
+    "source": "web",
+    "requestKey": "281c529d-e246-48ba-9f7b-2432aa24250b",
+    "createdAt": "2026-10-26T00:51:28.706Z",
+    "terminalAt": "2026-10-26T00:52:06.844Z",
+    "contract": {
+      "directoryTree": {
+        "root": "/home/xiryn/PA-UI-Production-1792975888390",
+        "absent": [
+          "UI-draft"
+        ],
+        "directories": [
+          "UI-ready"
+        ]
+      },
+      "requireHumanReview": false
+    },
+    "grade": "program_checked",
+    "model": "workflow/deterministic",
+    "plan": {
+      "steps": [
+        {
+          "id": "step-1",
+          "label": "步骤 1：open_application",
+          "evidence": [],
+          "operation": "open_application",
+          "application": "Thunar"
+        },
+        {
+          "id": "step-2",
+          "key": "n",
+          "when": {
+            "title": [
+              {
+                "literal": "xiryn - Thunar"
+              }
+            ],
+            "application": "Thunar"
+          },
+          "label": "步骤 2：key_press",
+          "evidence": [],
+          "modifiers": [
+            "ctrl",
+            "shift"
+          ],
+          "operation": "key_press"
+        },
+        {
+          "id": "step-3",
+          "text": [
+            {
+              "parameter": "input1"
+            }
+          ],
+          "when": {
+            "title": [
+              {
+                "literal": "Create New Folder"
+              }
+            ],
+            "application": "Thunar"
+          },
+          "label": "步骤 3：key_type",
+          "evidence": [],
+          "operation": "key_type"
+        },
+        {
+          "id": "step-4",
+          "key": "enter",
+          "when": {
+            "title": [
+              {
+                "literal": "Create New Folder"
+              }
+            ],
+            "application": "Thunar"
+          },
+          "label": "步骤 4：key_press",
+          "evidence": [],
+          "modifiers": [],
+          "operation": "key_press"
+        },
+        {
+          "id": "step-5",
+          "key": "l",
+          "when": {
+            "title": [
+              {
+                "literal": "xiryn - Thunar"
+              }
+            ],
+            "application": "Thunar"
+          },
+          "label": "步骤 5：key_press",
+          "evidence": [],
+          "modifiers": [
+            "ctrl"
+          ],
+          "operation": "key_press"
+        },
+        {
+          "id": "step-6",
+          "text": [
+            {
+              "literal": "/home/xiryn/"
+            },
+            {
+              "parameter": "input1"
+            }
+          ],
+          "when": {
+            "title": [
+              {
+                "literal": "xiryn - Thunar"
+              }
+            ],
+            "application": "Thunar"
+          },
+          "label": "步骤 6：key_type",
+          "evidence": [],
+          "operation": "key_type"
+        },
+        {
+          "id": "step-7",
+          "key": "enter",
+          "when": {
+            "title": [
+              {
+                "literal": "xiryn - Thunar"
+              }
+            ],
+            "application": "Thunar"
+          },
+          "label": "步骤 7：key_press",
+          "evidence": [],
+          "modifiers": [],
+          "operation": "key_press"
+        },
+        {
+          "id": "step-8",
+          "key": "n",
+          "when": {
+            "title": [
+              {
+                "parameter": "input1"
+              },
+              {
+                "literal": " - Thunar"
+              }
+            ],
+            "application": "Thunar"
+          },
+          "label": "步骤 8：key_press",
+          "evidence": [],
+          "modifiers": [
+            "ctrl",
+            "shift"
+          ],
+          "operation": "key_press"
+        },
+        {
+          "id": "step-9",
+          "text": [
+            {
+              "parameter": "input2"
+            }
+          ],
+          "when": {
+            "title": [
+              {
+                "literal": "Create New Folder"
+              }
+            ],
+            "application": "Thunar"
+          },
+          "label": "步骤 9：key_type",
+          "evidence": [],
+          "operation": "key_type"
+        },
+        {
+          "id": "step-10",
+          "key": "enter",
+          "when": {
+            "title": [
+              {
+                "literal": "Create New Folder"
+              }
+            ],
+            "application": "Thunar"
+          },
+          "label": "步骤 10：key_press",
+          "evidence": [],
+          "modifiers": [],
+          "operation": "key_press"
+        },
+        {
+          "id": "step-11",
+          "key": "f2",
+          "when": {
+            "title": [
+              {
+                "parameter": "input1"
+              },
+              {
+                "literal": " - Thunar"
+              }
+            ],
+            "application": "Thunar"
+          },
+          "label": "步骤 11：key_press",
+          "evidence": [],
+          "modifiers": [],
+          "operation": "key_press"
+        },
+        {
+          "id": "step-12",
+          "text": [
+            {
+              "parameter": "input3"
+            }
+          ],
+          "when": {
+            "title": [
+              {
+                "literal": "Rename \""
+              },
+              {
+                "parameter": "input2"
+              },
+              {
+                "literal": "\""
+              }
+            ],
+            "application": "Thunar"
+          },
+          "label": "步骤 12：key_type",
+          "evidence": [],
+          "operation": "key_type"
+        },
+        {
+          "id": "step-13",
+          "key": "enter",
+          "when": {
+            "title": [
+              {
+                "literal": "Rename \""
+              },
+              {
+                "parameter": "input2"
+              },
+              {
+                "literal": "\""
+              }
+            ],
+            "application": "Thunar"
+          },
+          "label": "步骤 13：key_press",
+          "evidence": [],
+          "modifiers": [],
+          "operation": "key_press"
+        },
+        {
+          "id": "step-14",
+          "label": "步骤 14：assert",
+          "window": {
+            "title": [
+              {
+                "parameter": "input1"
+              },
+              {
+                "literal": " - Thunar"
+              }
+            ],
+            "application": "Thunar"
+          },
+          "evidence": [],
+          "operation": "assert"
+        },
+        {
+          "id": "step-15",
+          "label": "步骤 15：observe",
+          "share": true,
+          "evidence": [],
+          "operation": "observe"
+        }
+      ],
+      "completion": {
+        "root": [
+          {
+            "literal": "/home/xiryn/"
+          },
+          {
+            "parameter": "input1"
+          }
+        ],
+        "absent": [
+          [
+            {
+              "parameter": "input2"
+            }
+          ]
+        ],
+        "directories": [
+          [
+            {
+              "parameter": "input3"
+            }
+          ]
+        ]
+      },
+      "parameters": [
+        {
+          "name": "input1",
+          "label": "父目录名",
+          "sourceValue": "Example-1-Folder-1"
+        },
+        {
+          "name": "input2",
+          "label": "目录参数 2（核对完成合同）",
+          "sourceValue": "Example-1-Folder-2"
+        },
+        {
+          "name": "input3",
+          "label": "完成后保留的目录名",
+          "sourceValue": "Example-1-Folder-3"
+        }
+      ],
+      "description": "通过 Thunar 桌面操作处理参数化目录，使用固定宿主目录树检查器核对结果。",
+      "environment": {
+        "locale": "C.UTF-8",
+        "application": "Thunar",
+        "guestProtocol": 6,
+        "workstationImageId": "sha256:f8d2fbb12dc081ce3704fbfd06df87cc13afa4049ca51e8ce5e298c41b6f9add"
+      },
+      "sourceTaskId": null,
+      "schemaVersion": 1,
+      "sourceSegment": null,
+      "sourceActionNumbers": []
+    },
+    "parameters": {
+      "input1": "PA-UI-Production-1792975888390",
+      "input2": "UI-draft",
+      "input3": "UI-ready"
+    },
+    "environment": {
+      "locale": "C.UTF-8",
+      "application": "Thunar",
+      "guestProtocol": 6,
+      "workstationImageId": "sha256:f8d2fbb12dc081ce3704fbfd06df87cc13afa4049ca51e8ce5e298c41b6f9add"
+    },
+    "workstationChannel": null,
+    "attempts": [],
+    "actions": [
+      {
+        "segmentNo": 1,
+        "actionNo": 1,
+        "kind": "desktop_open_application",
+        "status": "succeeded",
+        "bootId": "cd8e3ec2-505f-42c5-9309-4bacbc1f2840"
+      },
+      {
+        "segmentNo": 1,
+        "actionNo": 2,
+        "kind": "screen_capture",
+        "status": "succeeded",
+        "bootId": "cd8e3ec2-505f-42c5-9309-4bacbc1f2840"
+      },
+      {
+        "segmentNo": 1,
+        "actionNo": 3,
+        "kind": "key_press",
+        "status": "succeeded",
+        "bootId": "cd8e3ec2-505f-42c5-9309-4bacbc1f2840"
+      },
+      {
+        "segmentNo": 1,
+        "actionNo": 4,
+        "kind": "screen_capture",
+        "status": "succeeded",
+        "bootId": "cd8e3ec2-505f-42c5-9309-4bacbc1f2840"
+      },
+      {
+        "segmentNo": 1,
+        "actionNo": 5,
+        "kind": "key_type",
+        "status": "succeeded",
+        "bootId": "cd8e3ec2-505f-42c5-9309-4bacbc1f2840"
+      },
+      {
+        "segmentNo": 1,
+        "actionNo": 6,
+        "kind": "screen_capture",
+        "status": "succeeded",
+        "bootId": "cd8e3ec2-505f-42c5-9309-4bacbc1f2840"
+      },
+      {
+        "segmentNo": 1,
+        "actionNo": 7,
+        "kind": "key_press",
+        "status": "succeeded",
+        "bootId": "cd8e3ec2-505f-42c5-9309-4bacbc1f2840"
+      },
+      {
+        "segmentNo": 1,
+        "actionNo": 8,
+        "kind": "screen_capture",
+        "status": "succeeded",
+        "bootId": "cd8e3ec2-505f-42c5-9309-4bacbc1f2840"
+      },
+      {
+        "segmentNo": 1,
+        "actionNo": 9,
+        "kind": "key_press",
+        "status": "succeeded",
+        "bootId": "cd8e3ec2-505f-42c5-9309-4bacbc1f2840"
+      },
+      {
+        "segmentNo": 1,
+        "actionNo": 10,
+        "kind": "screen_capture",
+        "status": "succeeded",
+        "bootId": "cd8e3ec2-505f-42c5-9309-4bacbc1f2840"
+      },
+      {
+        "segmentNo": 1,
+        "actionNo": 11,
+        "kind": "key_type",
+        "status": "succeeded",
+        "bootId": "cd8e3ec2-505f-42c5-9309-4bacbc1f2840"
+      },
+      {
+        "segmentNo": 1,
+        "actionNo": 12,
+        "kind": "screen_capture",
+        "status": "succeeded",
+        "bootId": "cd8e3ec2-505f-42c5-9309-4bacbc1f2840"
+      },
+      {
+        "segmentNo": 1,
+        "actionNo": 13,
+        "kind": "key_press",
+        "status": "succeeded",
+        "bootId": "cd8e3ec2-505f-42c5-9309-4bacbc1f2840"
+      },
+      {
+        "segmentNo": 1,
+        "actionNo": 14,
+        "kind": "screen_capture",
+        "status": "succeeded",
+        "bootId": "cd8e3ec2-505f-42c5-9309-4bacbc1f2840"
+      },
+      {
+        "segmentNo": 1,
+        "actionNo": 15,
+        "kind": "key_press",
+        "status": "succeeded",
+        "bootId": "cd8e3ec2-505f-42c5-9309-4bacbc1f2840"
+      },
+      {
+        "segmentNo": 1,
+        "actionNo": 16,
+        "kind": "screen_capture",
+        "status": "succeeded",
+        "bootId": "cd8e3ec2-505f-42c5-9309-4bacbc1f2840"
+      },
+      {
+        "segmentNo": 1,
+        "actionNo": 17,
+        "kind": "key_type",
+        "status": "succeeded",
+        "bootId": "cd8e3ec2-505f-42c5-9309-4bacbc1f2840"
+      },
+      {
+        "segmentNo": 1,
+        "actionNo": 18,
+        "kind": "screen_capture",
+        "status": "succeeded",
+        "bootId": "cd8e3ec2-505f-42c5-9309-4bacbc1f2840"
+      },
+      {
+        "segmentNo": 1,
+        "actionNo": 19,
+        "kind": "key_press",
+        "status": "succeeded",
+        "bootId": "cd8e3ec2-505f-42c5-9309-4bacbc1f2840"
+      },
+      {
+        "segmentNo": 1,
+        "actionNo": 20,
+        "kind": "screen_capture",
+        "status": "succeeded",
+        "bootId": "cd8e3ec2-505f-42c5-9309-4bacbc1f2840"
+      },
+      {
+        "segmentNo": 1,
+        "actionNo": 21,
+        "kind": "key_press",
+        "status": "succeeded",
+        "bootId": "cd8e3ec2-505f-42c5-9309-4bacbc1f2840"
+      },
+      {
+        "segmentNo": 1,
+        "actionNo": 22,
+        "kind": "screen_capture",
+        "status": "succeeded",
+        "bootId": "cd8e3ec2-505f-42c5-9309-4bacbc1f2840"
+      },
+      {
+        "segmentNo": 1,
+        "actionNo": 23,
+        "kind": "key_type",
+        "status": "succeeded",
+        "bootId": "cd8e3ec2-505f-42c5-9309-4bacbc1f2840"
+      },
+      {
+        "segmentNo": 1,
+        "actionNo": 24,
+        "kind": "screen_capture",
+        "status": "succeeded",
+        "bootId": "cd8e3ec2-505f-42c5-9309-4bacbc1f2840"
+      },
+      {
+        "segmentNo": 1,
+        "actionNo": 25,
+        "kind": "key_press",
+        "status": "succeeded",
+        "bootId": "cd8e3ec2-505f-42c5-9309-4bacbc1f2840"
+      },
+      {
+        "segmentNo": 1,
+        "actionNo": 26,
+        "kind": "screen_capture",
+        "status": "succeeded",
+        "bootId": "cd8e3ec2-505f-42c5-9309-4bacbc1f2840"
+      },
+      {
+        "segmentNo": 1,
+        "actionNo": 28,
+        "kind": "screen_share",
+        "status": "succeeded",
+        "bootId": "cd8e3ec2-505f-42c5-9309-4bacbc1f2840"
+      }
+    ],
+    "requests": []
+  },
+  "scope": "Targeted production UI/security/export tail with original four successful Tasks unchanged and one new actual active GUI Task; no repeat of four-sample acceptance, no cloud model, not full deployment/public DNS/restore acceptance"
+}

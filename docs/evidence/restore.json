@@ -1,0 +1,72 @@
+{
+  "passed": true,
+  "stage": "validate",
+  "directory": "data/experiments/pa-linux-1792903976167/attempt-1792904201499",
+  "checks": [
+    {
+      "check": "Clean separate Linux engine restored all task/request/attempt rows, actual artifact, memories and vault decryption; old sessions/tickets and synthetic live grant invalid; routines paused and Telegram generation revoked"
+    },
+    {
+      "check": "Restarted production Web/worker: old authenticated session and extended-life desktop ticket rejected; both unknown tasks wait without repeated HTTP/action; fresh production tool task with controlled model confirms restored browser cookie and home marker; original artifact still downloadable; mobile review visible",
+      "newTaskId": "2a826a41-dc0f-4af3-ba29-2fe9abbbcbfc",
+      "controlledProvider": true
+    }
+  ],
+  "recordedAt": "2026-10-25T04:58:11.337Z",
+  "applicationVersion": "0.9.0-dev",
+  "controlledProvider": true,
+  "realModelJudgmentEvaluated": false,
+  "actualCloudProviderEvaluated": false,
+  "ordinaryPublicDnsGatePassed": false,
+  "mainLocalDeploymentUnchanged": true,
+  "fullRestoreEvaluated": true,
+  "initialCleanRestoreDirectory": "data/experiments/pa-linux-1792903976167/attempt-1792903998168",
+  "scope": "controlled-clean-linux-snapshot-restore",
+  "sourcePreparationDirectory": "data/experiments/pa-linux-1792898258832/attempt-1792903681417",
+  "sourceSnapshotDirectory": "data/experiments/pa-linux-1792898258832/attempt-1792903681417/snapshot-full",
+  "snapshotFormat": 2,
+  "fileCount": 9,
+  "homeVolumeCount": 6,
+  "sourceTaskCount": 5,
+  "sourceStatusCounts": {
+    "completed": 1,
+    "cancelled": 2,
+    "needs_review": 2
+  },
+  "sourceActionAttemptCount": 10,
+  "sourceModelAttemptCount": 14,
+  "exportedImageCount": 5,
+  "totalSnapshotDataBytes": 3041186806,
+  "serverOsArchitecture": "linux/arm64",
+  "separateLinuxKernels": true,
+  "loginCookieSeededInControlledProfile": true,
+  "vaultGrantProbeSynthetic": true,
+  "desktopTicketLifetimeExtendedForRejectionTest": true,
+  "newPostRestoreTasks": 1,
+  "postRestoreProviderCalls": {
+    "restore-browser": 3
+  },
+  "unknownActionAutomaticReplays": 0,
+  "unknownModelAutomaticRequests": 0,
+  "sourceExternalSubmitCount": 1,
+  "targetExternalFixtureNewSubmits": 0,
+  "controlledExternalFixtureRecreatedOnTarget": true,
+  "legacyCachedInterruptedReceiptProbe": true,
+  "restoredGuestCredentialFillEvaluated": false,
+  "images": {
+    "web": "600afb5d58dd",
+    "worker": "182dc2e2d4d2",
+    "postgres": "c54a696c6801",
+    "caddy": "c7d68e4fa1bb",
+    "workstation": "441e717eefd1"
+  },
+  "unverified": [
+    "ordinary public DNS/HTTPS deployment",
+    "actual VPS/public ACME",
+    "cross-architecture restore",
+    "real-model/site judgment",
+    "full credential-fill flow after restore",
+    "capacity/long-running retention",
+    "matched Xiryn comparison"
+  ]
+}

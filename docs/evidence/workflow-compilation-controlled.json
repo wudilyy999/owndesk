@@ -1,0 +1,421 @@
+{
+  "passed": true,
+  "scope": "C1/T19 controlled-provider candidate compilation, not C2 execution, ready certification or Xiryn comparison",
+  "directory": "data/experiments/agent_compile_71ca1b29f16140aeb24f3b5b3c4449fb",
+  "checks": [
+    {
+      "check": "source ownership, immutable contract, parameter declarations, request deduplication and unverified-ready gate",
+      "passed": true
+    },
+    {
+      "check": "SQL0016 applied only to the new isolated clone; source Task retained byte-for-byte",
+      "passed": true
+    },
+    {
+      "check": "controlled provider compiled sanitized source through original Task/DBOS/model ledger; candidate persisted, no workstation actions, distinct billing",
+      "requests": 1,
+      "passed": true
+    },
+    {
+      "check": "all three parameters bound to independent names; version remains unavailable as ready",
+      "passed": true
+    },
+    {
+      "check": "authenticated workflow API, source form, readable candidate, desktop/390px layout and intercepted form response-loss/reload deduplication",
+      "passed": true
+    },
+    {
+      "check": "plaintext provider key absent from result and process logs",
+      "passed": true
+    }
+  ],
+  "database": "agent_compile_71ca1b29f16140aeb24f3b5b3c4449fb",
+  "taskId": "2d321b20-34f5-4407-bb7f-03c66ddb208d",
+  "sourceTaskId": "2935de0d-e34e-467a-bbdf-0f1135f5428b",
+  "state": {
+    "status": "completed",
+    "result": {
+      "files": [],
+      "summary": "已生成流程候选：Thunar 创建并重命名目录。等待独立样例验证，尚未启用。",
+      "workflow": {
+        "steps": 15,
+        "status": "verifying",
+        "versionId": "2d321b20-34f5-4407-bb7f-03c66ddb208d"
+      },
+      "verification": {
+        "grade": "schema_checked",
+        "unverified": [
+          "Candidate execution and cross-input reuse have not been verified."
+        ]
+      }
+    },
+    "error": null
+  },
+  "attempts": [
+    {
+      "decision_no": 1,
+      "attempt_no": 1,
+      "status": "succeeded",
+      "cost_micros": null,
+      "model": "custom/workflow-fixture",
+      "error": null
+    }
+  ],
+  "version": {
+    "id": "2d321b20-34f5-4407-bb7f-03c66ddb208d",
+    "workflowId": "2d321b20-34f5-4407-bb7f-03c66ddb208d",
+    "revision": 1,
+    "name": "Thunar 创建并重命名目录",
+    "sourceTaskId": "2935de0d-e34e-467a-bbdf-0f1135f5428b",
+    "compilationTaskId": "2d321b20-34f5-4407-bb7f-03c66ddb208d",
+    "compilationStatus": "completed",
+    "status": "verifying",
+    "environment": {
+      "locale": "C.UTF-8",
+      "application": "Thunar",
+      "guestProtocol": 6,
+      "workstationImageId": "sha256:c90794aae50fa9acdbea1a0dd8aae1b1d785023d438fc4fb2cd53616216770b3"
+    },
+    "plan": {
+      "steps": [
+        {
+          "id": "open",
+          "label": "打开 Thunar",
+          "evidence": [],
+          "operation": "open_application",
+          "application": "Thunar"
+        },
+        {
+          "id": "step-1",
+          "key": "n",
+          "when": {
+            "title": [
+              {
+                "literal": "xiryn - Thunar"
+              }
+            ],
+            "application": "Thunar"
+          },
+          "label": "按键 n",
+          "evidence": [],
+          "modifiers": [
+            "ctrl",
+            "shift"
+          ],
+          "operation": "key_press"
+        },
+        {
+          "id": "step-2",
+          "text": [
+            {
+              "parameter": "parentName"
+            }
+          ],
+          "when": {
+            "title": [
+              {
+                "literal": "Create New Folder"
+              }
+            ],
+            "application": "Thunar"
+          },
+          "label": "填写目录名或路径",
+          "evidence": [],
+          "operation": "key_type"
+        },
+        {
+          "id": "step-3",
+          "key": "enter",
+          "when": {
+            "title": [
+              {
+                "literal": "Create New Folder"
+              }
+            ],
+            "application": "Thunar"
+          },
+          "label": "按键 enter",
+          "evidence": [],
+          "modifiers": [],
+          "operation": "key_press"
+        },
+        {
+          "id": "step-4",
+          "key": "l",
+          "when": {
+            "title": [
+              {
+                "literal": "xiryn - Thunar"
+              }
+            ],
+            "application": "Thunar"
+          },
+          "label": "按键 l",
+          "evidence": [],
+          "modifiers": [
+            "ctrl"
+          ],
+          "operation": "key_press"
+        },
+        {
+          "id": "step-5",
+          "text": [
+            {
+              "literal": "/home/xiryn/"
+            },
+            {
+              "parameter": "parentName"
+            }
+          ],
+          "when": {
+            "title": [
+              {
+                "literal": "xiryn - Thunar"
+              }
+            ],
+            "application": "Thunar"
+          },
+          "label": "填写目录名或路径",
+          "evidence": [],
+          "operation": "key_type"
+        },
+        {
+          "id": "step-6",
+          "key": "enter",
+          "when": {
+            "title": [
+              {
+                "literal": "xiryn - Thunar"
+              }
+            ],
+            "application": "Thunar"
+          },
+          "label": "按键 enter",
+          "evidence": [],
+          "modifiers": [],
+          "operation": "key_press"
+        },
+        {
+          "id": "step-7",
+          "key": "n",
+          "when": {
+            "title": [
+              {
+                "parameter": "parentName"
+              },
+              {
+                "literal": " - Thunar"
+              }
+            ],
+            "application": "Thunar"
+          },
+          "label": "按键 n",
+          "evidence": [],
+          "modifiers": [
+            "ctrl",
+            "shift"
+          ],
+          "operation": "key_press"
+        },
+        {
+          "id": "step-8",
+          "text": [
+            {
+              "parameter": "draftName"
+            }
+          ],
+          "when": {
+            "title": [
+              {
+                "literal": "Create New Folder"
+              }
+            ],
+            "application": "Thunar"
+          },
+          "label": "填写目录名或路径",
+          "evidence": [],
+          "operation": "key_type"
+        },
+        {
+          "id": "step-9",
+          "key": "enter",
+          "when": {
+            "title": [
+              {
+                "literal": "Create New Folder"
+              }
+            ],
+            "application": "Thunar"
+          },
+          "label": "按键 enter",
+          "evidence": [],
+          "modifiers": [],
+          "operation": "key_press"
+        },
+        {
+          "id": "step-10",
+          "key": "f2",
+          "when": {
+            "title": [
+              {
+                "parameter": "parentName"
+              },
+              {
+                "literal": " - Thunar"
+              }
+            ],
+            "application": "Thunar"
+          },
+          "label": "按键 f2",
+          "evidence": [],
+          "modifiers": [],
+          "operation": "key_press"
+        },
+        {
+          "id": "step-11",
+          "text": [
+            {
+              "parameter": "readyName"
+            }
+          ],
+          "when": {
+            "title": [
+              {
+                "literal": "Rename \""
+              },
+              {
+                "parameter": "draftName"
+              },
+              {
+                "literal": "\""
+              }
+            ],
+            "application": "Thunar"
+          },
+          "label": "填写目录名或路径",
+          "evidence": [],
+          "operation": "key_type"
+        },
+        {
+          "id": "step-12",
+          "key": "enter",
+          "when": {
+            "title": [
+              {
+                "literal": "Rename \""
+              },
+              {
+                "parameter": "draftName"
+              },
+              {
+                "literal": "\""
+              }
+            ],
+            "application": "Thunar"
+          },
+          "label": "按键 enter",
+          "evidence": [],
+          "modifiers": [],
+          "operation": "key_press"
+        },
+        {
+          "id": "final-window",
+          "label": "核对当前目录窗口",
+          "window": {
+            "title": [
+              {
+                "parameter": "parentName"
+              },
+              {
+                "literal": " - Thunar"
+              }
+            ],
+            "application": "Thunar"
+          },
+          "evidence": [],
+          "operation": "assert"
+        },
+        {
+          "id": "share",
+          "label": "展示最后桌面",
+          "share": true,
+          "evidence": [],
+          "operation": "observe"
+        }
+      ],
+      "completion": {
+        "root": [
+          {
+            "literal": "/home/xiryn/"
+          },
+          {
+            "parameter": "parentName"
+          }
+        ],
+        "absent": [
+          [
+            {
+              "parameter": "draftName"
+            }
+          ]
+        ],
+        "directories": [
+          [
+            {
+              "parameter": "readyName"
+            }
+          ]
+        ]
+      },
+      "parameters": [
+        {
+          "name": "parentName",
+          "label": "父目录名",
+          "sourceValue": "Flow-C0-1792950841215"
+        },
+        {
+          "name": "draftName",
+          "label": "初始目录名",
+          "sourceValue": "Draft"
+        },
+        {
+          "name": "readyName",
+          "label": "最终目录名",
+          "sourceValue": "Ready"
+        }
+      ],
+      "description": "受控提供者生成的参数化 Thunar 计划，用于执行链与界面检查",
+      "environment": {
+        "locale": "C.UTF-8",
+        "application": "Thunar",
+        "guestProtocol": 6,
+        "workstationImageId": "sha256:c90794aae50fa9acdbea1a0dd8aae1b1d785023d438fc4fb2cd53616216770b3"
+      },
+      "sourceTaskId": "2935de0d-e34e-467a-bbdf-0f1135f5428b",
+      "schemaVersion": 1,
+      "sourceSegment": 1,
+      "sourceActionNumbers": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16
+      ]
+    },
+    "createdAt": "2026-10-25T18:24:03.207Z"
+  },
+  "model": "custom/workflow-fixture",
+  "controlledProvider": true,
+  "fixtureRequests": 1
+}

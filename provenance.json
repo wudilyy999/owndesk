@@ -1,0 +1,560 @@
+{
+  "repository": "https://github.com/SouravBeraAkaSpeed/xiryn",
+  "commit": "7b08375f3664e550ad89af83fd69923033b6b9c2",
+  "version": "0.6.0",
+  "license": "MIT",
+  "files": [
+    {
+      "sourcePath": "components/ui/alert-dialog.tsx",
+      "path": "components/ui/alert-dialog.tsx",
+      "mode": "copied",
+      "reason": "Reuse existing presentation, provider metadata, formatting and workstation base."
+    },
+    {
+      "sourcePath": "components/ui/button.tsx",
+      "path": "components/ui/button.tsx",
+      "mode": "copied",
+      "reason": "Reuse existing presentation, provider metadata, formatting and workstation base."
+    },
+    {
+      "sourcePath": "components/ui/checkbox.tsx",
+      "path": "components/ui/checkbox.tsx",
+      "mode": "copied",
+      "reason": "Reuse existing presentation, provider metadata, formatting and workstation base."
+    },
+    {
+      "sourcePath": "components/ui/collapsible.tsx",
+      "path": "components/ui/collapsible.tsx",
+      "mode": "copied",
+      "reason": "Reuse existing presentation, provider metadata, formatting and workstation base."
+    },
+    {
+      "sourcePath": "components/ui/command.tsx",
+      "path": "components/ui/command.tsx",
+      "mode": "copied",
+      "reason": "Reuse existing presentation, provider metadata, formatting and workstation base."
+    },
+    {
+      "sourcePath": "components/ui/dialog.tsx",
+      "path": "components/ui/dialog.tsx",
+      "mode": "copied",
+      "reason": "Reuse existing presentation, provider metadata, formatting and workstation base."
+    },
+    {
+      "sourcePath": "components/ui/dropdown-menu.tsx",
+      "path": "components/ui/dropdown-menu.tsx",
+      "mode": "copied",
+      "reason": "Reuse existing presentation, provider metadata, formatting and workstation base."
+    },
+    {
+      "sourcePath": "components/ui/field.tsx",
+      "path": "components/ui/field.tsx",
+      "mode": "copied",
+      "reason": "Reuse existing presentation, provider metadata, formatting and workstation base."
+    },
+    {
+      "sourcePath": "components/ui/input-group.tsx",
+      "path": "components/ui/input-group.tsx",
+      "mode": "copied",
+      "reason": "Reuse existing presentation, provider metadata, formatting and workstation base."
+    },
+    {
+      "sourcePath": "components/ui/input.tsx",
+      "path": "components/ui/input.tsx",
+      "mode": "copied",
+      "reason": "Reuse existing presentation, provider metadata, formatting and workstation base."
+    },
+    {
+      "sourcePath": "components/ui/kbd.tsx",
+      "path": "components/ui/kbd.tsx",
+      "mode": "copied",
+      "reason": "Reuse existing presentation, provider metadata, formatting and workstation base."
+    },
+    {
+      "sourcePath": "components/ui/label.tsx",
+      "path": "components/ui/label.tsx",
+      "mode": "copied",
+      "reason": "Reuse existing presentation, provider metadata, formatting and workstation base."
+    },
+    {
+      "sourcePath": "components/ui/popover.tsx",
+      "path": "components/ui/popover.tsx",
+      "mode": "copied",
+      "reason": "Reuse existing presentation, provider metadata, formatting and workstation base."
+    },
+    {
+      "sourcePath": "components/ui/resizable.tsx",
+      "path": "components/ui/resizable.tsx",
+      "mode": "copied",
+      "reason": "Reuse existing presentation, provider metadata, formatting and workstation base."
+    },
+    {
+      "sourcePath": "components/ui/separator.tsx",
+      "path": "components/ui/separator.tsx",
+      "mode": "copied",
+      "reason": "Reuse existing presentation, provider metadata, formatting and workstation base."
+    },
+    {
+      "sourcePath": "components/ui/spinner.tsx",
+      "path": "components/ui/spinner.tsx",
+      "mode": "copied",
+      "reason": "Reuse existing presentation, provider metadata, formatting and workstation base."
+    },
+    {
+      "sourcePath": "components/ui/textarea.tsx",
+      "path": "components/ui/textarea.tsx",
+      "mode": "copied",
+      "reason": "Reuse existing presentation, provider metadata, formatting and workstation base."
+    },
+    {
+      "sourcePath": "components/ui/toast.tsx",
+      "path": "components/ui/toast.tsx",
+      "mode": "copied",
+      "reason": "Reuse existing presentation, provider metadata, formatting and workstation base."
+    },
+    {
+      "sourcePath": "components/ui/tooltip.tsx",
+      "path": "components/ui/tooltip.tsx",
+      "mode": "copied",
+      "reason": "Reuse existing presentation, provider metadata, formatting and workstation base."
+    },
+    {
+      "sourcePath": "components/theme-provider.tsx",
+      "path": "components/theme-provider.tsx",
+      "mode": "copied",
+      "reason": "Reuse existing presentation, provider metadata, formatting and workstation base."
+    },
+    {
+      "sourcePath": "lib/utils.ts",
+      "path": "lib/utils.ts",
+      "mode": "copied",
+      "reason": "Reuse existing presentation, provider metadata, formatting and workstation base."
+    },
+    {
+      "sourcePath": "lib/glyph.ts",
+      "path": "lib/glyph.ts",
+      "mode": "adapted",
+      "reason": "Reuse existing presentation, provider metadata, formatting and workstation base. Local product naming adapted for OwnDesk; original sourcePath retained."
+    },
+    {
+      "sourcePath": "lib/providers/catalog.ts",
+      "path": "lib/providers/catalog.ts",
+      "mode": "adapted",
+      "reason": "Reuse existing presentation, provider metadata, formatting and workstation base. Local product naming adapted for OwnDesk; original sourcePath retained."
+    },
+    {
+      "sourcePath": "lib/providers/pricing.ts",
+      "path": "lib/providers/pricing.ts",
+      "mode": "copied",
+      "reason": "Reuse existing presentation, provider metadata, formatting and workstation base."
+    },
+    {
+      "sourcePath": "lib/telegram/format.ts",
+      "path": "lib/telegram/format.ts",
+      "mode": "copied",
+      "reason": "Reuse existing presentation, provider metadata, formatting and workstation base."
+    },
+    {
+      "sourcePath": "app/globals.css",
+      "path": "app/globals.css",
+      "mode": "adapted",
+      "reason": "Reuse existing presentation, provider metadata, formatting and workstation base. Local product naming adapted for OwnDesk; original sourcePath retained."
+    },
+    {
+      "sourcePath": "app/layout.tsx",
+      "path": "app/layout.tsx",
+      "mode": "adapted",
+      "reason": "Retain layout, fonts and providers; use independent product metadata and Chinese UI language. Local product naming adapted for OwnDesk; original sourcePath retained."
+    },
+    {
+      "sourcePath": "workstation/Dockerfile",
+      "path": "workstation/Dockerfile",
+      "mode": "adapted",
+      "reason": "Retain Linux desktop base; install one profile-owning controller, private relay and independent readonly viewer, and preserve Node license. Local product naming adapted for OwnDesk; original sourcePath retained."
+    },
+    {
+      "sourcePath": "workstation/rootfs/etc/chromium/policies/managed/xiryn.json",
+      "path": "workstation/rootfs/etc/chromium/policies/managed/owndesk.json",
+      "mode": "adapted",
+      "reason": "Reuse existing presentation, provider metadata, formatting and workstation base. Local product naming adapted for OwnDesk; original sourcePath retained."
+    },
+    {
+      "sourcePath": "workstation/rootfs/etc/chromium.d/xiryn",
+      "path": "workstation/rootfs/etc/chromium.d/owndesk",
+      "mode": "adapted",
+      "reason": "Reuse existing presentation, provider metadata, formatting and workstation base. Local product naming adapted for OwnDesk; original sourcePath retained."
+    },
+    {
+      "sourcePath": "workstation/rootfs/home/xiryn/.config/gtk-3.0/settings.ini",
+      "path": "workstation/rootfs/home/agent/.config/gtk-3.0/settings.ini",
+      "mode": "adapted",
+      "reason": "Reuse existing presentation, provider metadata, formatting and workstation base. Local product naming adapted for OwnDesk; original sourcePath retained."
+    },
+    {
+      "sourcePath": "workstation/rootfs/home/xiryn/.config/xfce4/panel/launcher-5/browser.desktop",
+      "path": "workstation/rootfs/home/agent/.config/xfce4/panel/launcher-5/browser.desktop",
+      "mode": "adapted",
+      "reason": "Reuse existing presentation, provider metadata, formatting and workstation base. Local product naming adapted for OwnDesk; original sourcePath retained."
+    },
+    {
+      "sourcePath": "workstation/rootfs/home/xiryn/.config/xfce4/panel/launcher-6/terminal.desktop",
+      "path": "workstation/rootfs/home/agent/.config/xfce4/panel/launcher-6/terminal.desktop",
+      "mode": "adapted",
+      "reason": "Reuse existing presentation, provider metadata, formatting and workstation base. Local product naming adapted for OwnDesk; original sourcePath retained."
+    },
+    {
+      "sourcePath": "workstation/rootfs/home/xiryn/.config/xfce4/xfconf/xfce-perchannel-xml/xfce4-panel.xml",
+      "path": "workstation/rootfs/home/agent/.config/xfce4/xfconf/xfce-perchannel-xml/xfce4-panel.xml",
+      "mode": "adapted",
+      "reason": "Reuse existing presentation, provider metadata, formatting and workstation base. Local product naming adapted for OwnDesk; original sourcePath retained."
+    },
+    {
+      "sourcePath": "workstation/rootfs/home/xiryn/.config/xfce4/xfconf/xfce-perchannel-xml/xfwm4.xml",
+      "path": "workstation/rootfs/home/agent/.config/xfce4/xfconf/xfce-perchannel-xml/xfwm4.xml",
+      "mode": "adapted",
+      "reason": "Reuse existing presentation, provider metadata, formatting and workstation base. Local product naming adapted for OwnDesk; original sourcePath retained."
+    },
+    {
+      "sourcePath": "workstation/rootfs/home/xiryn/.config/xfce4/xfconf/xfce-perchannel-xml/xsettings.xml",
+      "path": "workstation/rootfs/home/agent/.config/xfce4/xfconf/xfce-perchannel-xml/xsettings.xml",
+      "mode": "adapted",
+      "reason": "Reuse existing presentation, provider metadata, formatting and workstation base. Local product naming adapted for OwnDesk; original sourcePath retained."
+    },
+    {
+      "sourcePath": "workstation/rootfs/usr/local/bin/browser",
+      "path": "workstation/rootfs/usr/local/bin/browser",
+      "mode": "adapted",
+      "reason": "Route launcher through the one profile-owning controller."
+    },
+    {
+      "sourcePath": "workstation/rootfs/usr/local/bin/xiryn-desktop",
+      "path": "workstation/rootfs/usr/local/bin/owndesk-desktop",
+      "mode": "adapted",
+      "reason": "Supervise the shared browser controller; private control relay, no remote reconfiguration, orderly profile shutdown. Local product naming adapted for OwnDesk; original sourcePath retained."
+    },
+    {
+      "sourcePath": "workstation/rootfs/usr/local/bin/xiryn-mask",
+      "path": "workstation/rootfs/usr/local/bin/owndesk-mask",
+      "mode": "adapted",
+      "reason": "Reuse existing presentation, provider metadata, formatting and workstation base. Local product naming adapted for OwnDesk; original sourcePath retained."
+    },
+    {
+      "sourcePath": "workstation/rootfs/usr/local/bin/xiryn-ready",
+      "path": "workstation/rootfs/usr/local/bin/owndesk-ready",
+      "mode": "adapted",
+      "reason": "Wait for the shared browser controller and private control relay. Local product naming adapted for OwnDesk; original sourcePath retained."
+    },
+    {
+      "sourcePath": "workstation/rootfs/usr/local/bin/xiryn-run",
+      "path": "workstation/rootfs/usr/local/bin/owndesk-run",
+      "mode": "adapted",
+      "reason": "Reuse existing presentation, provider metadata, formatting and workstation base. Local product naming adapted for OwnDesk; original sourcePath retained."
+    },
+    {
+      "sourcePath": "workstation/rootfs/usr/local/bin/xiryn-shot",
+      "path": "workstation/rootfs/usr/local/bin/owndesk-shot",
+      "mode": "adapted",
+      "reason": "Reuse existing presentation, provider metadata, formatting and workstation base. Local product naming adapted for OwnDesk; original sourcePath retained."
+    },
+    {
+      "sourcePath": "workstation/rootfs/usr/local/bin/xiryn-tunnel",
+      "path": "workstation/rootfs/usr/local/bin/owndesk-tunnel",
+      "mode": "excluded",
+      "reason": "Remove the original unauthenticated temporary tunnel helper; access will use the authenticated gateway. Local product naming adapted for OwnDesk; original sourcePath retained."
+    },
+    {
+      "sourcePath": "workstation/rootfs/usr/share/novnc/xiryn.html",
+      "path": "workstation/rootfs/usr/share/novnc/owndesk.html",
+      "mode": "adapted",
+      "reason": "Reuse existing presentation, provider metadata, formatting and workstation base. Local product naming adapted for OwnDesk; original sourcePath retained."
+    },
+    {
+      "sourcePath": "workstation/rootfs/usr/share/xiryn/wallpaper.png",
+      "path": "workstation/rootfs/usr/share/owndesk/wallpaper.png",
+      "mode": "adapted",
+      "reason": "Reuse existing presentation, provider metadata, formatting and workstation base. Local product naming adapted for OwnDesk; original sourcePath retained."
+    },
+    {
+      "sourcePath": "tsconfig.json",
+      "path": "tsconfig.json",
+      "mode": "copied",
+      "reason": "Reuse existing presentation, provider metadata, formatting and workstation base."
+    },
+    {
+      "sourcePath": "postcss.config.mjs",
+      "path": "postcss.config.mjs",
+      "mode": "copied",
+      "reason": "Reuse existing presentation, provider metadata, formatting and workstation base."
+    },
+    {
+      "sourcePath": ".prettierrc",
+      "path": ".prettierrc",
+      "mode": "copied",
+      "reason": "Reuse existing presentation, provider metadata, formatting and workstation base."
+    },
+    {
+      "sourcePath": ".editorconfig",
+      "path": ".editorconfig",
+      "mode": "copied",
+      "reason": "Reuse existing presentation, provider metadata, formatting and workstation base."
+    },
+    {
+      "sourcePath": "LICENSE",
+      "path": "LICENSE",
+      "mode": "copied",
+      "reason": "Reuse existing presentation, provider metadata, formatting and workstation base."
+    },
+    {
+      "sourcePath": "db/schema.ts",
+      "path": "db/schema.ts",
+      "mode": "adapted",
+      "reason": "Retain entities and validation; convert to PostgreSQL and add durable task control. Local product naming adapted for OwnDesk; original sourcePath retained."
+    },
+    {
+      "sourcePath": "lib/docker.ts",
+      "path": "lib/docker.ts",
+      "mode": "adapted",
+      "reason": "Reuse Docker CLI and errors; expose background probe failures and add bounded-error bidirectional exec streams with remote EOF cleanup. Local product naming adapted for OwnDesk; original sourcePath retained."
+    },
+    {
+      "sourcePath": "lib/workstation.ts",
+      "path": "lib/workstation.ts",
+      "mode": "adapted",
+      "reason": "Retain named Docker workstation/home and stop/home lifecycle conventions; add PostgreSQL ownership, epoch fencing, trusted readonly sidecar, host containment, unpublished desktop transport and worker-owned idle eligibility. Guest3 image health and creation labels are independently checked before viewer preparation. Local product naming adapted for OwnDesk; original sourcePath retained."
+    },
+    {
+      "sourcePath": "lib/workstation.ts",
+      "path": "workstation/controller/desktop.mjs",
+      "mode": "adapted",
+      "reason": "Reuse xdotool key mapping, desktop operations and post-action screenshot conventions; add process tracking and explicit observation errors. Local product naming adapted for OwnDesk; original sourcePath retained."
+    },
+    {
+      "sourcePath": "components/workbench/screen.tsx",
+      "path": "components/desktop.tsx",
+      "mode": "adapted",
+      "reason": "Reuse the movable noVNC canvas, watch/expanded-control presentation and dynamic loading; replace client-only ownership with server ticket/epoch reconnection. Local product naming adapted for OwnDesk; original sourcePath retained."
+    },
+    {
+      "sourcePath": "lib/config.ts",
+      "path": "lib/config.ts",
+      "mode": "adapted",
+      "reason": "Retain setting names/environment precedence; use asynchronous PostgreSQL access, encrypted secrets and atomic validated batches. Local product naming adapted for OwnDesk; original sourcePath retained.",
+      "checks": ["runtime", "runtime-ui"]
+    },
+    {
+      "sourcePath": "lib/providers/registry.ts",
+      "path": "lib/providers/registry.ts",
+      "mode": "adapted",
+      "reason": "Retain all 11 provider adapters and Ollama options; resolve asynchronous credentials once per request. Local product naming adapted for OwnDesk; original sourcePath retained.",
+      "checks": ["runtime", "runtime-cua"]
+    },
+    {
+      "sourcePath": "lib/agent/runtime.ts",
+      "path": "lib/agent/context.ts",
+      "mode": "adapted",
+      "reason": "Extract upstream context compaction and provider-specific tool-image lifting; retain complete tool batches. Local product naming adapted for OwnDesk; original sourcePath retained.",
+      "checks": ["artifacts.test", "runtime-cua"]
+    },
+    {
+      "sourcePath": "lib/agent/tools.ts",
+      "path": "lib/agent/tools.ts",
+      "mode": "adapted",
+      "reason": "Retain workstation/memory tool names, schemas and descriptions; separate model decisions from durable effect execution. Extend the existing schemas with final payment_submit approval and read-only payment_result source evidence; execution remains in the original durable worker. Retain delegate(agentId,brief) and recipient-owns-the-rest semantics; expose owner agent discovery and bounded file-transfer declarations, with execution in transactional segments/target queues. Delegation discovery/execution are restricted to the owner-approved per-task roster (default empty), preserving the upstream bounded-member authorization concept without enabling all installation agents. Local product naming adapted for OwnDesk; original sourcePath retained.",
+      "checks": [
+        "runtime",
+        "runtime-cua",
+        "runtime-memory",
+        "payments-unit",
+        "runtime-paymentsubmit",
+        "delegation-unit",
+        "runtime-handoff"
+      ]
+    },
+    {
+      "sourcePath": "lib/agent/instructions.ts",
+      "path": "lib/agent/instructions.ts",
+      "mode": "adapted",
+      "reason": "Retain identity, workstation-first and human-handoff guidance; add control epochs, artifact contracts and explicit memory/privacy limits. Local product naming adapted for OwnDesk; original sourcePath retained.",
+      "checks": ["runtime-cua", "runtime-memory"]
+    },
+    {
+      "sourcePath": "components/settings/settings-form.tsx",
+      "path": "components/settings.tsx",
+      "mode": "adapted",
+      "reason": "Reuse SourceBadge and SecretInput; wire owner-authenticated provider/agent APIs and explicit form submission. Local product naming adapted for OwnDesk; original sourcePath retained.",
+      "checks": ["runtime-ui"]
+    },
+    {
+      "sourcePath": "components/workbench/memory.tsx",
+      "path": "components/memory.tsx",
+      "mode": "adapted",
+      "reason": "Reuse note-list layout and add/forget interaction; use scoped owner APIs, explicit errors and provider-context privacy wording. Local product naming adapted for OwnDesk; original sourcePath retained.",
+      "checks": ["runtime-ui"]
+    },
+    {
+      "sourcePath": "lib/agent/tools.ts",
+      "path": "worker/memory.ts",
+      "mode": "adapted",
+      "reason": "Adapt per-agent note mutations to an atomic PostgreSQL event receipt with cancellation/epoch fencing and replay-safe forgetting. Local product naming adapted for OwnDesk; original sourcePath retained.",
+      "checks": ["runtime-memory"]
+    },
+    {
+      "sourcePath": "components/thread/markdown.tsx",
+      "path": "components/thread/markdown.tsx",
+      "mode": "adapted",
+      "reason": "Reuse Streamdown/code wrapper; static completed Markdown, raw HTML disabled and remote images rendered as non-network placeholders. Local product naming adapted for OwnDesk; original sourcePath retained.",
+      "checks": ["thread.test", "runtime-chat", "runtime-ui"]
+    },
+    {
+      "sourcePath": "components/thread/composer.tsx",
+      "path": "components/thread/composer.tsx",
+      "mode": "adapted",
+      "reason": "Reuse keyboard/IME behavior, draft persistence and composer layout; retain text until durable acceptance, report storage errors and separate active control from sending. Local product naming adapted for OwnDesk; original sourcePath retained.",
+      "checks": ["thread.test", "runtime-chat", "runtime-ui"]
+    },
+    {
+      "sourcePath": "components/thread/transcript.tsx",
+      "path": "components/thread/transcript.tsx",
+      "mode": "adapted",
+      "reason": "Reuse user/reply layout and tool grouping; owner-scoped paginated durable turns, human interaction receipts, historical artifacts and existing stick-to-bottom behavior. Local product naming adapted for OwnDesk; original sourcePath retained.",
+      "checks": ["thread.test", "runtime-chat", "runtime-ui"]
+    },
+    {
+      "sourcePath": "lib/export.ts",
+      "path": "lib/export.ts",
+      "mode": "adapted",
+      "reason": "Reuse thread Markdown formatting and export filename rules; independent branding and no unverified price inference. Local product naming adapted for OwnDesk; original sourcePath retained.",
+      "checks": ["thread.test", "runtime-chat", "runtime-ui"]
+    },
+    {
+      "sourcePath": "lib/telegram/api.ts",
+      "path": "lib/telegram/api.ts",
+      "mode": "adapted",
+      "reason": "Retain plain-fetch Bot API protocol/types; async encrypted config, validated envelopes, redacted errors and explicit uncertain delivery. Local product naming adapted for OwnDesk; original sourcePath retained."
+    },
+    {
+      "sourcePath": "lib/telegram/bridge.ts",
+      "path": "lib/telegram/bridge.ts",
+      "mode": "adapted",
+      "reason": "Retain private pairing and remote command semantics; route through durable task APIs with frozen inbox intent, owner-approved delegation roster, generation binding and persisted cursor. /use and bot-identity revocation clear source-bound permissions. Local product naming adapted for OwnDesk; original sourcePath retained."
+    },
+    {
+      "sourcePath": "lib/telegram/bridge.ts",
+      "path": "lib/telegram/state.ts",
+      "mode": "adapted",
+      "reason": "Retain unambiguous random pairing alphabet; transactional owner state, 10-minute encrypted codes, generation revocation and explicit notification retry consent. Explicit delegation grants bind the current generation/source and clear on source or pairing changes."
+    },
+    {
+      "sourcePath": "components/settings/telegram-panel.tsx",
+      "path": "components/telegram.tsx",
+      "mode": "adapted",
+      "reason": "Retain token/pairing/target setup flow and native settings styling; Chinese UI, durable transport status/uncertain-send controls and owner roster form preserving same-context drafts across polling. Local product naming adapted for OwnDesk; original sourcePath retained."
+    },
+    {
+      "sourcePath": "lib/spend.ts",
+      "path": "lib/spend.ts",
+      "mode": "adapted",
+      "reason": "Retain custom model rates and monthly spending concepts; async PostgreSQL attempt receipts, owner timezone, strict monetary boundaries, shared admission lock and auditable reconciliation. Local product naming adapted for OwnDesk; original sourcePath retained."
+    },
+    {
+      "sourcePath": "components/usage/spend-controls.tsx",
+      "path": "components/usage.tsx",
+      "mode": "adapted",
+      "reason": "Retain monthly BudgetCard and custom input/output rate controls; Chinese owner usage screen, cache pricing, immutable request receipts, unknown costs, manual reconciliation and cursor history. Local product naming adapted for OwnDesk; original sourcePath retained."
+    },
+    {
+      "sourcePath": "lib/schedule.ts",
+      "path": "lib/schedule.ts",
+      "mode": "adapted",
+      "reason": "Reuse five schedule descriptions and weekday choices; Chinese labels avoid browser-local calendar interpretation. Recurrence uses PostgreSQL explicit time zones. Local product naming adapted for OwnDesk; original sourcePath retained.",
+      "checks": ["runtime-routines"]
+    },
+    {
+      "sourcePath": "lib/routines.ts",
+      "path": "lib/routines.ts",
+      "mode": "adapted",
+      "reason": "Reuse plan/manual/history semantics; replace timer and in-memory turns with frozen durable runs, versioned cursors and existing atomic Task submission. Owner-selected delegation rosters freeze with the plan occurrence and reuse the same task/segment runtime. Local product naming adapted for OwnDesk; original sourcePath retained.",
+      "checks": ["runtime-routines", "runtime-routinehandoff"]
+    },
+    {
+      "sourcePath": "components/routines/routines-view.tsx",
+      "path": "components/routines.tsx",
+      "mode": "adapted",
+      "reason": "Reuse editor fields, five schedule choices, enable/manual actions and history navigation; owner-authenticated Chinese UI with explicit timezone, missed-run policy, per-plan delegation roster and durable tasks. Local product naming adapted for OwnDesk; original sourcePath retained.",
+      "checks": ["runtime-routines", "runtime-routinehandoff"]
+    },
+    {
+      "sourcePath": "lib/vault.ts",
+      "path": "lib/vault-schema.ts",
+      "mode": "adapted",
+      "reason": "Retain five-kind validation, Luhn, brand/masked hints and derived fields; exact origins, strict fields, no stored CVV and client-safe schemas. Extend reference-only batch filling to identity and derived address using the existing authorization/receipt path; optional-field absence is an explicit safe rejection. Local product naming adapted for OwnDesk; original sourcePath retained.",
+      "checks": ["vault-unit", "runtime-vault", "runtime-identity", "runtime-vaultfill"]
+    },
+    {
+      "sourcePath": "lib/vault.ts",
+      "path": "lib/vault.ts",
+      "mode": "adapted",
+      "reason": "Retain vault storage/list/delete intent and expiry cleanup; async PostgreSQL, revisioned owner writes, bound deployment encryption and task-scoped ten-minute entries. Local product naming adapted for OwnDesk; original sourcePath retained.",
+      "checks": ["vault-unit", "runtime-vault"]
+    },
+    {
+      "sourcePath": "lib/vault-requests.ts",
+      "path": "lib/vault-requests.ts",
+      "mode": "adapted",
+      "reason": "Retain secure provisioning/selection intent; replace pending maps with an owner-authenticated transaction saving ciphertext, reference decision and DBOS wakeup together. Local product naming adapted for OwnDesk; original sourcePath retained.",
+      "checks": ["vault-unit", "runtime-vault"]
+    },
+    {
+      "sourcePath": "components/vault/vault-form.tsx",
+      "path": "components/vault/vault-form.tsx",
+      "mode": "adapted",
+      "reason": "Retain field specifications, form layout, save option and clearing values after success; Chinese labels, explicit origin, no CVV, accessible errors and authenticated submission. Local product naming adapted for OwnDesk; original sourcePath retained.",
+      "checks": ["vault-unit", "runtime-vault"]
+    },
+    {
+      "sourcePath": "components/settings/vault-panel.tsx",
+      "path": "components/vault.tsx",
+      "mode": "adapted",
+      "reason": "Retain vault list/add/delete interaction and styling; owner API, exact-origin/versioned full replacement and transparent automatic-fill migration status. Local product naming adapted for OwnDesk; original sourcePath retained.",
+      "checks": ["vault-unit", "runtime-vault"]
+    },
+    {
+      "sourcePath": "Dockerfile",
+      "path": "Dockerfile",
+      "mode": "adapted",
+      "reason": "Reuse pinned multi-stage npm build/prune and Docker CLI packaging; split unprivileged Web from trusted worker. Local product naming adapted for OwnDesk; original sourcePath retained."
+    },
+    {
+      "sourcePath": "docker-compose.yml",
+      "path": "deploy/compose.yaml",
+      "mode": "adapted",
+      "reason": "Reuse sibling workstation/socket, named data and loopback deployment conventions; separate authenticated Web/worker/PostgreSQL/Caddy and verified guest network policy. Local product naming adapted for OwnDesk; original sourcePath retained."
+    },
+    {
+      "sourcePath": "components/vault/request-cards.tsx",
+      "path": "components/vault/payment.tsx",
+      "mode": "adapted",
+      "reason": "Retain saved-method radio selection, merchant/amount/purpose presentation, decline and takeover intent; replace transient thread actions with exact-site durable owner choices and independently captured page evidence. Local product naming adapted for OwnDesk; original sourcePath retained.",
+      "checks": ["runtime-payments"]
+    },
+    {
+      "sourcePath": "lib/vault-requests.ts",
+      "path": "lib/payments.ts",
+      "mode": "adapted",
+      "reason": "Retain payment choice and takeover/decline intent; use owner-scoped PostgreSQL transaction, immutable item versions, atomic real takeover and original DBOS responder rather than thread text granting payment. Local product naming adapted for OwnDesk; original sourcePath retained.",
+      "checks": ["payments-unit", "runtime-payments", "runtime-paymentsubmit"]
+    }
+  ],
+  "additionalSources": [
+    {
+      "repository": "https://github.com/agent0ai/a0-connector",
+      "commit": "3741c8809f1f99b4efee2ed1a24234a98bf896d4",
+      "license": "MIT",
+      "notice": "licenses/a0-connector-LICENSE",
+      "sourcePath": "packages/a0-computer-use-wayland/src/a0_computer_use_wayland/computer_use_helper.py",
+      "path": "workstation/controller/atspi_core.py",
+      "mode": "selectively-adapted",
+      "scope": "34 named reader/window-ID/matching/scoring/tag helpers adapted or retained; local GI, X11/action identity and effect handling"
+    }
+  ]
+}

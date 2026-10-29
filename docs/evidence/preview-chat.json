@@ -1,0 +1,13 @@
+{
+  "passed": true,
+  "applicationVersion": "0.4.0-dev",
+  "checks": [
+    "Production build completed",
+    "Old workflows drained; migration 0006 applied and preview upgraded",
+    "Production fixture browser UI, SSE, CSV download, mobile layout and logout passed; see ui.json",
+    "Owner production home/settings/agent/thread routes accessible",
+    "Unauthenticated, signed-out and nonexistent conversation access rejected",
+    "Conversation pagination rejects zero/non-numeric/PostgreSQL-integer overflow cursors with HTTP 400; valid nonexistent conversation remains 404"
+  ],
+  "recordedAt": "2026-10-24T22:03:23.746Z"
+}

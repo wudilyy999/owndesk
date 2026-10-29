@@ -1,0 +1,11 @@
+{
+  "passed": true,
+  "applicationVersion": "0.7.0-dev",
+  "scope": "Production vault settings/storage UI and API; task provisioning, real models and guest filling not evaluated by this preview",
+  "checks": [
+    "Production owner page and mobile/desktop layout; legacy-compatible item id create/replace/delete, masked responses and no retained fixture",
+    "Anonymous and post-logout vault access rejected; no browser page errors"
+  ],
+  "directory": "data/experiments/vault-preview-1792889844783",
+  "recordedAt": "2026-10-25T00:57:26.279Z"
+}

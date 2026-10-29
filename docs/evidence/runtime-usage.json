@@ -1,0 +1,30 @@
+{
+  "passed": true,
+  "controlledProvider": true,
+  "realModelJudgmentEvaluated": false,
+  "checks": [
+    {
+      "check": "PostgreSQL owner-timezone month accounting at Taipei midnight and New York month boundary across DST; server timezone does not define the billing month"
+    },
+    {
+      "check": "Two real workstations compete for a capped month: only one paid call is admitted; waiting capacity can cancel; exhausted/unchanged cap sends no HTTP call; raising the cap resumes and can pause again mid-task"
+    },
+    {
+      "check": "Unknown current price blocks before HTTP; new custom rates affect new attempts; cancelled unreceipted request remains unknown, blocks paid work, and owner-only auditable reconciliation releases the hold without fabricating a provider receipt"
+    },
+    {
+      "check": "Zero cap pauses paid calls while the real local-compatible SDK path remains free; waiting month survives worker restart, an expired persisted month deadline automatically rechecks through the normal gate with calendar attribution"
+    },
+    {
+      "check": "BIGINT preserves a 3-billion-micro controlled charge; missing provider usage remains unknown; actual migration backfill retains unknown earlier attempt and known final receipt, labels legacy timestamps, and is idempotent"
+    },
+    {
+      "check": "Owner mobile/desktop usage UI: immutable price receipts, custom rates, unknown-cost reconciliation, zero monthly cap; API auth/Origin/money/cursor validation; pagination uses 53 explicitly seeded history rows without overlap"
+    },
+    {
+      "check": "Provider key encrypted at rest, local config overrides env, masked settings view; plaintext key absent from task/DBOS records"
+    }
+  ],
+  "directory": "data/experiments/agent_runtime_3b31bbbecc9b4b0b9f81c7f38e0d5d98",
+  "recordedAt": "2026-10-24T22:59:44.374Z"
+}

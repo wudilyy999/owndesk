@@ -1,0 +1,35 @@
+{
+  "passed": true,
+  "scope": "C2 native workflow cancellation, action limit, handback and real uncertain desktop effect; no model requests",
+  "database": "agent_flowcontrol_018d378f204b49ba8cfbc0fb78613575",
+  "directory": "data/experiments/agent_flowcontrol_018d378f204b49ba8cfbc0fb78613575",
+  "checks": [
+    {
+      "check": "real native action cancelled, workstation stopped/removed and action count stable",
+      "taskId": "1b6df5ee-a4ad-40bc-943b-b4886badb52c",
+      "passed": true
+    },
+    {
+      "check": "one-action hard limit cannot be bypassed by zero model calls or Continue; no additional desktop input",
+      "taskId": "347ee5c3-4d20-4bd0-a4bd-b30d164d0ba1",
+      "passed": true
+    },
+    {
+      "check": "takeover stops automatic input; explicit handback/new epoch/window movement observed and same workflow finishes with host checks",
+      "taskId": "695efd0b-ff49-443a-a4c3-885ab5dc3086",
+      "passed": true
+    },
+    {
+      "check": "real GUI directory effect before controller/container restart; unknown receipt remains blocked after Continue, no input replay",
+      "taskId": "1274cca3-956c-436c-a19b-6b3d7e907ee6",
+      "actionNo": 7,
+      "passed": true
+    }
+  ],
+  "tasks": [
+    "1b6df5ee-a4ad-40bc-943b-b4886badb52c",
+    "347ee5c3-4d20-4bd0-a4bd-b30d164d0ba1",
+    "695efd0b-ff49-443a-a4c3-885ab5dc3086",
+    "1274cca3-956c-436c-a19b-6b3d7e907ee6"
+  ]
+}

@@ -1,0 +1,390 @@
+{
+  "recordedAt": "2026-10-27T08:54:22.742Z",
+  "database": "agent_manual_live_fe50679296f7462e83a4be7ae6d80f03",
+  "installId": "004ec507-7f00-438f-b408-ab1dc8103389",
+  "sourceId": "4656c7c7-f841-4e85-8ca9-e244e1e50c58",
+  "agentId": "cdcda228-a385-43e0-9f49-36a2429af558",
+  "ownerId": "e1c17955-fc35-4de9-a992-7f9903291768",
+  "compilationKey": "ebd56963-88bc-4a50-bd35-1d683a2ae975",
+  "reuseKey": "2b7bd866-a439-43af-973b-bf47ef25bfbf",
+  "webRoot": "data/experiments/agent_manual_0fea1db958b34a7ea0656dce99c67b72/web-source",
+  "model": "openai/gpt-6.1-sol",
+  "compilationId": "1a625a44-08c9-40c0-9f22-6eef67cc1247",
+  "previousReuseIds": [
+    "314bf137-390d-453f-bcc0-c653eb72e4fe"
+  ],
+  "targetDirectory": "/tmp",
+  "reuseId": "9b37feb6-b20f-4553-a3ba-9c8d1015cecb",
+  "result": {
+    "stage": "reuse",
+    "status": "completed",
+    "passed": true,
+    "checks": {
+      "completed": true,
+      "discoveredManual": true,
+      "actionsSucceeded": true,
+      "noShellOrBrowser": true,
+      "targetWindow": true
+    },
+    "window": "tmp - Thunar",
+    "events": [
+      {
+        "type": "manual_loaded",
+        "payload": {
+          "id": "1a625a44-08c9-40c0-9f22-6eef67cc1247",
+          "name": "文件夹导航与位置核对"
+        }
+      }
+    ],
+    "actionCount": 4,
+    "summary": "已参考保存的操作手册，完全通过桌面界面在 Thunar 中打开 /tmp。已核对地址栏显示 /tmp/、窗口标题为“tmp - Thunar”，目录内容保持可见。全程仅浏览，未创建、修改或删除文件。"
+  },
+  "attempts": [
+    {
+      "task_id": "1a625a44-08c9-40c0-9f22-6eef67cc1247",
+      "decision_no": 1,
+      "attempt_no": 1,
+      "status": "succeeded",
+      "cost_micros": "12764",
+      "error": null,
+      "usage": {
+        "input": 922,
+        "cached": 0,
+        "output": 1092,
+        "missing": false,
+        "reasoning": 0
+      }
+    },
+    {
+      "task_id": "314bf137-390d-453f-bcc0-c653eb72e4fe",
+      "decision_no": 1,
+      "attempt_no": 1,
+      "status": "succeeded",
+      "cost_micros": "8822",
+      "error": null,
+      "usage": {
+        "input": 4206,
+        "cached": 0,
+        "output": 41,
+        "missing": false,
+        "reasoning": 0
+      }
+    },
+    {
+      "task_id": "314bf137-390d-453f-bcc0-c653eb72e4fe",
+      "decision_no": 2,
+      "attempt_no": 1,
+      "status": "succeeded",
+      "cost_micros": "8528",
+      "error": null,
+      "usage": {
+        "input": 6596,
+        "cached": 2560,
+        "output": 20,
+        "missing": false,
+        "reasoning": 0
+      }
+    },
+    {
+      "task_id": "314bf137-390d-453f-bcc0-c653eb72e4fe",
+      "decision_no": 3,
+      "attempt_no": 1,
+      "status": "succeeded",
+      "cost_micros": "4161",
+      "error": null,
+      "usage": {
+        "input": 8017,
+        "cached": 6528,
+        "output": 53,
+        "missing": false,
+        "reasoning": 0
+      }
+    },
+    {
+      "task_id": "314bf137-390d-453f-bcc0-c653eb72e4fe",
+      "decision_no": 4,
+      "attempt_no": 1,
+      "status": "succeeded",
+      "cost_micros": "19566",
+      "error": null,
+      "usage": {
+        "input": 9518,
+        "cached": 0,
+        "output": 53,
+        "missing": false,
+        "reasoning": 0
+      }
+    },
+    {
+      "task_id": "314bf137-390d-453f-bcc0-c653eb72e4fe",
+      "decision_no": 5,
+      "attempt_no": 1,
+      "status": "succeeded",
+      "cost_micros": "20162",
+      "error": null,
+      "usage": {
+        "input": 9846,
+        "cached": 0,
+        "output": 47,
+        "missing": false,
+        "reasoning": 0
+      }
+    },
+    {
+      "task_id": "314bf137-390d-453f-bcc0-c653eb72e4fe",
+      "decision_no": 6,
+      "attempt_no": 1,
+      "status": "succeeded",
+      "cost_micros": "10740",
+      "error": null,
+      "usage": {
+        "input": 10164,
+        "cached": 5120,
+        "output": 14,
+        "missing": false,
+        "reasoning": 0
+      }
+    },
+    {
+      "task_id": "314bf137-390d-453f-bcc0-c653eb72e4fe",
+      "decision_no": 7,
+      "attempt_no": 1,
+      "status": "succeeded",
+      "cost_micros": "11712",
+      "error": null,
+      "usage": {
+        "input": 10395,
+        "cached": 5120,
+        "output": 65,
+        "missing": false,
+        "reasoning": 20
+      }
+    },
+    {
+      "task_id": "314bf137-390d-453f-bcc0-c653eb72e4fe",
+      "decision_no": 8,
+      "attempt_no": 1,
+      "status": "succeeded",
+      "cost_micros": "11866",
+      "error": null,
+      "usage": {
+        "input": 10727,
+        "cached": 5120,
+        "output": 14,
+        "missing": false,
+        "reasoning": 0
+      }
+    },
+    {
+      "task_id": "314bf137-390d-453f-bcc0-c653eb72e4fe",
+      "decision_no": 9,
+      "attempt_no": 1,
+      "status": "succeeded",
+      "cost_micros": "12924",
+      "error": null,
+      "usage": {
+        "input": 10961,
+        "cached": 5120,
+        "output": 73,
+        "missing": false,
+        "reasoning": 16
+      }
+    },
+    {
+      "task_id": "314bf137-390d-453f-bcc0-c653eb72e4fe",
+      "decision_no": 10,
+      "attempt_no": 1,
+      "status": "succeeded",
+      "cost_micros": "13406",
+      "error": null,
+      "usage": {
+        "input": 11337,
+        "cached": 5120,
+        "output": 46,
+        "missing": false,
+        "reasoning": 0
+      }
+    },
+    {
+      "task_id": "314bf137-390d-453f-bcc0-c653eb72e4fe",
+      "decision_no": 11,
+      "attempt_no": 1,
+      "status": "succeeded",
+      "cost_micros": "14092",
+      "error": null,
+      "usage": {
+        "input": 11650,
+        "cached": 5120,
+        "output": 52,
+        "missing": false,
+        "reasoning": 10
+      }
+    },
+    {
+      "task_id": "314bf137-390d-453f-bcc0-c653eb72e4fe",
+      "decision_no": 12,
+      "attempt_no": 1,
+      "status": "succeeded",
+      "cost_micros": "14868",
+      "error": null,
+      "usage": {
+        "input": 11968,
+        "cached": 5120,
+        "output": 66,
+        "missing": false,
+        "reasoning": 18
+      }
+    },
+    {
+      "task_id": "314bf137-390d-453f-bcc0-c653eb72e4fe",
+      "decision_no": 13,
+      "attempt_no": 1,
+      "status": "succeeded",
+      "cost_micros": "13090",
+      "error": null,
+      "usage": {
+        "input": 11039,
+        "cached": 5120,
+        "output": 74,
+        "missing": false,
+        "reasoning": 19
+      }
+    },
+    {
+      "task_id": "314bf137-390d-453f-bcc0-c653eb72e4fe",
+      "decision_no": 14,
+      "attempt_no": 1,
+      "status": "succeeded",
+      "cost_micros": "13462",
+      "error": null,
+      "usage": {
+        "input": 11415,
+        "cached": 5120,
+        "output": 36,
+        "missing": false,
+        "reasoning": 20
+      }
+    },
+    {
+      "task_id": "314bf137-390d-453f-bcc0-c653eb72e4fe",
+      "decision_no": 15,
+      "attempt_no": 1,
+      "status": "succeeded",
+      "cost_micros": "14694",
+      "error": null,
+      "usage": {
+        "input": 11671,
+        "cached": 5120,
+        "output": 108,
+        "missing": false,
+        "reasoning": 0
+      }
+    },
+    {
+      "task_id": "9b37feb6-b20f-4553-a3ba-9c8d1015cecb",
+      "decision_no": 1,
+      "attempt_no": 1,
+      "status": "succeeded",
+      "cost_micros": "8812",
+      "error": null,
+      "usage": {
+        "input": 4201,
+        "cached": 0,
+        "output": 41,
+        "missing": false,
+        "reasoning": 0
+      }
+    },
+    {
+      "task_id": "9b37feb6-b20f-4553-a3ba-9c8d1015cecb",
+      "decision_no": 2,
+      "attempt_no": 1,
+      "status": "succeeded",
+      "cost_micros": "8518",
+      "error": null,
+      "usage": {
+        "input": 6591,
+        "cached": 2560,
+        "output": 20,
+        "missing": false,
+        "reasoning": 0
+      }
+    },
+    {
+      "task_id": "9b37feb6-b20f-4553-a3ba-9c8d1015cecb",
+      "decision_no": 3,
+      "attempt_no": 1,
+      "status": "succeeded",
+      "cost_micros": "4117",
+      "error": null,
+      "usage": {
+        "input": 8010,
+        "cached": 6528,
+        "output": 50,
+        "missing": false,
+        "reasoning": 0
+      }
+    },
+    {
+      "task_id": "9b37feb6-b20f-4553-a3ba-9c8d1015cecb",
+      "decision_no": 4,
+      "attempt_no": 1,
+      "status": "succeeded",
+      "cost_micros": "4852",
+      "error": null,
+      "usage": {
+        "input": 9502,
+        "cached": 7680,
+        "output": 44,
+        "missing": false,
+        "reasoning": 0
+      }
+    },
+    {
+      "task_id": "9b37feb6-b20f-4553-a3ba-9c8d1015cecb",
+      "decision_no": 5,
+      "attempt_no": 1,
+      "status": "succeeded",
+      "cost_micros": "20050",
+      "error": null,
+      "usage": {
+        "input": 9805,
+        "cached": 0,
+        "output": 44,
+        "missing": false,
+        "reasoning": 0
+      }
+    },
+    {
+      "task_id": "9b37feb6-b20f-4553-a3ba-9c8d1015cecb",
+      "decision_no": 6,
+      "attempt_no": 1,
+      "status": "succeeded",
+      "cost_micros": "8605",
+      "error": null,
+      "usage": {
+        "input": 10119,
+        "cached": 6528,
+        "output": 77,
+        "missing": false,
+        "reasoning": 0
+      }
+    }
+  ],
+  "mainBefore": {
+    "tasks": 12,
+    "attempts": 65,
+    "actions": 58,
+    "artifacts": 7,
+    "active": 0
+  },
+  "mainAfter": {
+    "tasks": 12,
+    "attempts": 65,
+    "actions": 58,
+    "artifacts": 7,
+    "active": 0
+  },
+  "mainConfigUnchanged": true,
+  "mainRestarted": false
+}

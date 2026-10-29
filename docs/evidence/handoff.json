@@ -1,0 +1,107 @@
+{
+  "scope": "F07 sequential handoff controlled mechanisms; not full T16/product acceptance",
+  "passed": true,
+  "recordedAt": "2026-10-25T10:16:41.146252+00:00",
+  "applicationVersion": "0.13.0-dev",
+  "migration": "0013",
+  "guestProtocolVersion": 5,
+  "controlledProvider": true,
+  "realModelJudgmentEvaluated": false,
+  "parallelDelegationEvaluated": false,
+  "fullT16Verified": false,
+  "productObjectiveComplete": false,
+  "completeRun": {
+    "evidence": "runtime-handoff.json",
+    "directory": "data/experiments/agent_runtime_c905a426a1fa4d6d9cffe66e3d828117",
+    "command": "npm run test:runtime:handoff",
+    "actualTasks": 11,
+    "completed": 9,
+    "cancelled": 2,
+    "originalCountGate": 11,
+    "passed": true
+  },
+  "ownerRoster": {
+    "input": "delegateAgentIds",
+    "default": "empty by omission; delegation disabled",
+    "maximumAgents": 32,
+    "ownerWebSubmissionVerified": true,
+    "clearedAfterAdmissionVerified": true,
+    "modelCannotExpand": true,
+    "outOfRosterDiscoveryAndExecutionDenied": true,
+    "telegramAndRoutinesConfigurationImplemented": false
+  },
+  "verifiedMechanisms": [
+    "real busy target partition and same-workstation queued segment",
+    "host-frozen files and target model/config/memory remain unchanged after source edits",
+    "byte-checked CSV recipient processing and owner-answer context",
+    "source-release before commit and handoff commit before framework checkpoint SIGKILL windows",
+    "total task model-step budget across segments",
+    "queued-recipient and post-release cancellation; no effect on another active task",
+    "stale source action/memory/request/reply fenced and remaining source batch skipped",
+    "idempotent handoff and conflicting parameter rejection",
+    "original conversation anchor and actual next-round web submission with selected roster"
+  ],
+  "screenshotsVisuallyInspected": true,
+  "screenshotScope": "final desktop/mobile include rendered original conversation, delegation choices and handoff event; earlier unscoped mobile image was captured while conversation loading",
+  "migrationEvidence": "handoff-migration.json",
+  "migrationScope": "one preexisting segment in isolated PostgreSQL relevant old table shapes; exact JSON backfill and NOT NULL; not full upgrade or restore",
+  "affectedUnitTests": 5,
+  "unitLog": "data/experiments/handoff-roster-unit.log",
+  "typecheckPassed": true,
+  "typecheckLog": "data/experiments/handoff-roster-final-typecheck.log",
+  "affectedRegressions": {
+    "recovery": {
+      "evidence": "runtime-recovery-0.13.0.json",
+      "passed": true,
+      "timing": "before owner roster tightening"
+    },
+    "memory": {
+      "evidence": "runtime-memory-0.13.0.json",
+      "passed": true,
+      "actualTasks": 2,
+      "timing": "before owner roster tightening"
+    }
+  },
+  "preservedIntermediateEvidence": [
+    "runtime-handoff-unscoped.json",
+    "data/experiments/handoff-recovery-old-image-attempt.json",
+    "runtime-recovery-pre-handoff.json",
+    "runtime-memory-pre-handoff.json"
+  ],
+  "productionBuildPassed": true,
+  "sourceImageEvidence": "data/experiments/handoff-source-image.json",
+  "images": {
+    "worker": "27e5d357c177",
+    "web": "1a69c5045924",
+    "workstation": "24fd2a5471bd"
+  },
+  "sourceFilesCompared": 100,
+  "runtimeSourceFilesCompared": 68,
+  "installedLockVersionsCompared": 340,
+  "rootLockVersionsCompared": 810,
+  "controllerFilesCompared": 6,
+  "productionContainerRuntimeSuiteEvaluated": false,
+  "newCandidateLinuxCloudDeploymentEvaluated": false,
+  "newDependencies": false,
+  "provenance": {
+    "copied": 44,
+    "adapted": 40,
+    "excluded": 1
+  },
+  "mainServicesChanged": false,
+  "newMigrationsAppliedToMain": false,
+  "mainStateEvidence": "data/experiments/handoff-main-state.json",
+  "mainRunningApplicationVersion": "0.8.1-dev",
+  "mainBusinessMigrations": 12,
+  "mainConfiguredWorkstationImage": "personal-agent-workstation:0.2.0",
+  "mainConfiguredProviderCount": 0,
+  "mainDefaultModelResolvable": false,
+  "realModelServiceChoice": "existing-cloud-api",
+  "realModelAcceptanceSpendCapMode": "user-authorized-unlimited",
+  "remaining": [
+    "owner roster entry for Telegram/routines and retained squad product UI",
+    "Shell cold handoff, large files/types and long chains",
+    "remaining retained features and matched Xiryn comparison",
+    "real models/services, ordinary public DNS/VPS/ACME, new-candidate paired deployment and long-running capacity"
+  ]
+}

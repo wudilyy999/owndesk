@@ -1,0 +1,129 @@
+{
+  "status": "development-only",
+  "passed": true,
+  "recordedAt": "2026-10-27T06:37:50.329Z",
+  "versions": {
+    "source": "0.17.0-dev",
+    "businessMigration": "0018",
+    "candidateImage": "personal-agent-workstation:0.7.0",
+    "protocol": 6,
+    "capability": "ui-elements-v1",
+    "mainImage": "personal-agent-workstation:0.6.3"
+  },
+  "guest": {
+    "directory": "data/experiments/ui-elements-101fb6a0",
+    "checks": [
+      "native",
+      "native-fences",
+      "dom",
+      "dom-fences",
+      "vision",
+      "boot-fence",
+      "dom-invalidation",
+      "vision-invalidation",
+      "dom-mutation-scope",
+      "image-only-overlay",
+      "vision-scene-scope"
+    ],
+    "modelRequests": 0,
+    "taskSubmissions": 0,
+    "resumedStages": true,
+    "retainedFailures": [
+      "failure-1793079988343.json",
+      "failure-1793080028585.json",
+      "failure-1793080064710.json",
+      "failure-1793080131029.json",
+      "failure-1793080173765.json",
+      "failure-1793080299807.json",
+      "failure-1793080340605.json"
+    ]
+  },
+  "runtime": {
+    "passed": true,
+    "database": "agent_ui_34b3c10bcd8c4932b832e94088e6e781",
+    "directory": "data/experiments/agent_ui_34b3c10bcd8c4932b832e94088e6e781",
+    "taskId": "ce1f581a-7fca-4dd9-8b74-d6423ca4022f",
+    "modelCalls": 4,
+    "cloudModelRequests": 0,
+    "replayVerified": true,
+    "checks": [
+      "Production runtime: desktop-only schemas, two-image context, actual AT-SPI dispatch, durable same-action replay and completed Task"
+    ],
+    "modelErrors": [],
+    "totalLocalFixtureRequestsIncludingRetainedFailure": 6,
+    "retainedFailure": {
+      "database": "agent_ui_9e6b51fbcd0a4948bb56815948bff1b9",
+      "taskId": "09a69519-a62b-4dad-a47f-e2bc41457f37",
+      "modelCalls": 2,
+      "status": "needs_review",
+      "unknownAttempts": 1
+    },
+    "ledgerEvidence": "data/experiments/ui-elements-build/runtime-ledgers.json"
+  },
+  "verification": {
+    "newUnits": 3,
+    "priorContextUnits": 16,
+    "finalAffectedContextChecks": 8,
+    "typecheck": true,
+    "format": true,
+    "javascriptSyntax": true,
+    "pythonSyntax": true,
+    "imageSourceByteMatches": [
+      {
+        "file": "workstation/controller/desktop.mjs",
+        "matches": true
+      },
+      {
+        "file": "workstation/controller/dom.mjs",
+        "matches": true
+      },
+      {
+        "file": "workstation/controller/server.mjs",
+        "matches": true
+      },
+      {
+        "file": "workstation/controller/ui-elements.py",
+        "matches": true
+      },
+      {
+        "file": "workstation/rootfs/usr/local/bin/xiryn-desktop",
+        "matches": true
+      }
+    ]
+  },
+  "preview": {
+    "upgraded": false,
+    "restarted": false,
+    "ownerChoice": "keep-development-version",
+    "configurationChanged": false,
+    "recordsUnchanged": {
+      "tasks": 12,
+      "attempts": 65,
+      "actions": 58,
+      "artifacts": 7,
+      "active": 0
+    },
+    "webPid": 26072,
+    "workerPid": 25794
+  },
+  "visualDetector": "Tesseract + Pillow, CPU-only; visual candidates are not verified clickable controls",
+  "coverage": [
+    "Thunar semantic click and editable text",
+    "web main/iframe/open shadow DOM",
+    "Canvas visual target and click"
+  ],
+  "limits": [
+    "complex unlabeled icons and arbitrary applications not certified",
+    "no real-model quality/latency/accuracy benchmark",
+    "no cloud API requests",
+    "no production web/worker release or main deployment",
+    "no new workflow certification for numbered actions"
+  ],
+  "images": [
+    "ui-elements-native.jpg",
+    "ui-elements-clean.jpg",
+    "ui-elements-dom.jpg",
+    "ui-elements-vision.jpg"
+  ],
+  "cloudModelRequests": 0
+}

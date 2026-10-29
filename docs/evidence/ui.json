@@ -1,0 +1,15 @@
+{
+  "passed": true,
+  "fixtureOnly": true,
+  "taskId": "2fd6300a-eb3f-4ff6-83fe-ff2887d25e97",
+  "browser": "151.0.7922.34",
+  "checks": [
+    "Owner login",
+    "Submit and render real task events",
+    "Download verified artifact",
+    "Desktop/mobile layout",
+    "Sign out"
+  ],
+  "evidence": "data/experiments/ui-1792867962661",
+  "recordedAt": "2026-10-24T18:52:55.380Z"
+}

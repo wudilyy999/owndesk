@@ -1,0 +1,32 @@
+{
+  "passed": true,
+  "trials": [
+    {
+      "directory": "data/experiments/agent_flowshare_af27d02d67074a4bb12df4ac3312bd43",
+      "database": "agent_flowshare_af27d02d67074a4bb12df4ac3312bd43",
+      "sourceCopy": "agent_sharesource_25550402d38b44bd94dcdb48127c0128",
+      "passed": false,
+      "taskIds": [],
+      "cloudRequests": 0,
+      "reason": "Default Playwright executable absent; stopped before Tasks; rerun used existing explicitly configured browser"
+    },
+    {
+      "directory": "data/experiments/agent_flowshare_e1b366c4df2041ba81118894118926c9",
+      "database": "agent_flowshare_e1b366c4df2041ba81118894118926c9",
+      "sourceCopy": "agent_sharesource_3722c885a43f4840b9aec87f80b1e769",
+      "passed": true,
+      "taskIds": [
+        "7ccaa4d3-a3e9-4df3-8c8c-08b9f2ea504e",
+        "40b223e3-ef58-4559-acaa-c6f8e4af3209",
+        "d04e108c-444b-4fd2-84f1-75da34073fcc",
+        "0a31013b-62bf-492f-b3cb-c9dad95ecca9"
+      ],
+      "cloudRequests": 0,
+      "reason": "Independent installation acceptance completed"
+    }
+  ],
+  "realTaskCount": 4,
+  "realActionCount": 108,
+  "cloudRequests": 0,
+  "scope": "Preserve failed setup and successful C5 installation; no GUI rerun of an already completed sample"
+}

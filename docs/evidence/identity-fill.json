@@ -1,0 +1,48 @@
+{
+  "scope": "S5-A identity and affected login/code regression",
+  "passed": true,
+  "recordedAt": "2026-10-25T07:48:58.046909+00:00",
+  "applicationVersion": "0.10.0-dev",
+  "migration": "0011",
+  "guestProtocolVersion": 3,
+  "images": {
+    "worker": "af4bff1c91b5",
+    "web": "4e558c792da2",
+    "workstation": "fdccff8575be"
+  },
+  "controlledProvider": true,
+  "controlledWebsite": true,
+  "realModelJudgmentEvaluated": false,
+  "identityTasksEvaluated": 10,
+  "loginCodeTasksEvaluated": 13,
+  "identityRuntimeEvidence": "runtime-identity.json",
+  "loginCodeRuntimeEvidence": "runtime-vaultfill-0.10.0.json",
+  "retainedGuest2Baseline": "runtime-vaultfill-0.8.0.json",
+  "sourceImageEvidence": "data/experiments/s5-identity-source-image.json",
+  "mainStateEvidence": "data/experiments/s5-identity-main-state.json",
+  "runtimeScope": "isolated host Node worker, Next dev Web and PostgreSQL database with real Docker guest",
+  "productionImagesBuilt": true,
+  "newCandidateLinuxDeploymentEvaluated": false,
+  "oldImageHealthRejectionVerified": true,
+  "vaultUnitTests": 5,
+  "deploymentConfigTests": 2,
+  "screenshotsVisuallyInspected": true,
+  "noNewDependencies": true,
+  "noNewBusinessMigrations": true,
+  "provenance": {
+    "copied": 44,
+    "adapted": 38,
+    "excluded": 1
+  },
+  "paymentFillEvaluated": false,
+  "paymentSubmissionEvaluated": false,
+  "completeS5Verified": false,
+  "mainServicesChanged": false,
+  "priorFailedIdentityAttempts": [
+    "agent_runtime_da2bf13c1b624fafa1d5e3ccc8fbe8f7",
+    "agent_runtime_c6df1787ede84919a379f7b75372b47d",
+    "agent_runtime_ba14d5f934074f5299b5c0a30eb64d69",
+    "agent_runtime_7b73d78a0fb94194b05da3b5344e7f2c"
+  ],
+  "nextScope": "card/UPI, payment request with merchant/amount/site evidence, explicit selection/decline/takeover; real services and matched comparison"
+}

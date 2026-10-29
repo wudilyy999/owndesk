@@ -1,0 +1,21 @@
+{
+  "passed": true,
+  "directory": "data/experiments/desktop-stdio-preview-1792896239007",
+  "recordedAt": "2026-10-25T02:43:59.587Z",
+  "checks": [
+    "production 0.8.1-dev health; owner settings/API; anonymous and logged-out access denied; desktop/mobile layout",
+    "migration 0011 remains applied (12 business migrations); no active main tasks; no production model task created"
+  ],
+  "applicationVersion": "0.8.1-dev",
+  "migration": "0011",
+  "mainTaskCount": 5,
+  "configuredProviders": [],
+  "defaultModel": null,
+  "realModelJudgmentEvaluated": false,
+  "guestDesktopVerifiedBySeparateChecks": [
+    "docker-stream.json",
+    "desktop-transport.json",
+    "desktop.json"
+  ],
+  "cloudNetworkIsolationVerified": false
+}

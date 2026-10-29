@@ -1,0 +1,139 @@
+{
+  "desktop": {
+    "before": {
+      "sidebar": {
+        "bottom": 818.1817626953125,
+        "height": 818.1817626953125,
+        "left": 0,
+        "right": 303.9985656738281,
+        "top": 0,
+        "width": 303.9985656738281,
+        "x": 0,
+        "y": 0
+      },
+      "viewport": {
+        "height": 818,
+        "width": 1309
+      },
+      "windowScroll": 0,
+      "workspace": {
+        "bottom": 818.1817626953125,
+        "height": 818.1817626953125,
+        "left": 422.5497131347656,
+        "right": 1190.546844482422,
+        "top": 0,
+        "width": 767.9971313476562,
+        "x": 422.5497131347656,
+        "y": 0
+      },
+      "workspaceHeight": 2107,
+      "workspaceScroll": 0
+    },
+    "after": {
+      "sidebar": {
+        "bottom": 818.1817626953125,
+        "height": 818.1817626953125,
+        "left": 0,
+        "right": 303.9985656738281,
+        "top": 0,
+        "width": 303.9985656738281,
+        "x": 0,
+        "y": 0
+      },
+      "windowScroll": 0,
+      "workspaceScroll": 1288.6363525390625
+    },
+    "passed": true
+  },
+  "mobile": {
+    "layout": {
+      "listHeight": 230,
+      "listScrollHeight": 395,
+      "pageWidth": 458,
+      "rect": {
+        "bottom": 740,
+        "height": 740,
+        "left": 0,
+        "right": 303.9985656738281,
+        "top": 0,
+        "width": 303.9985656738281,
+        "x": 0,
+        "y": 0
+      },
+      "viewport": {
+        "height": 740,
+        "width": 458
+      }
+    },
+    "openingTransitionObservation": {
+      "before": {
+        "footer": {
+          "bottom": 559.342357635498,
+          "height": 35.8519401550293,
+          "left": 12.52200698852539,
+          "right": 291.47656631469727,
+          "top": 523.4904174804688,
+          "width": 278.9545593261719,
+          "x": 12.52200698852539,
+          "y": 523.4904174804688
+        },
+        "listScroll": 0,
+        "workspaceScroll": 1206.818115234375
+      },
+      "after": {
+        "footer": {
+          "bottom": 560.0567932128906,
+          "height": 35.987213134765625,
+          "left": 11.99573802947998,
+          "right": 292.002818107605,
+          "top": 524.069580078125,
+          "width": 280.007080078125,
+          "x": 11.99573802947998,
+          "y": 524.069580078125
+        },
+        "listScroll": 164.5454559326172,
+        "workspaceScroll": 1206.818115234375
+      },
+      "note": "Initial exact rectangle comparison included dialog opening animation; retained. Settled observation below verifies the scroll boundary."
+    },
+    "settledBefore": {
+      "footer": {
+        "bottom": 560.0567932128906,
+        "height": 35.987213134765625,
+        "left": 11.99573802947998,
+        "right": 292.002818107605,
+        "top": 524.069580078125,
+        "width": 280.007080078125,
+        "x": 11.99573802947998,
+        "y": 524.069580078125
+      },
+      "listScroll": 164.5454559326172,
+      "workspaceScroll": 1206.818115234375
+    },
+    "settledAfter": {
+      "footer": {
+        "bottom": 560.0567932128906,
+        "height": 35.987213134765625,
+        "left": 11.99573802947998,
+        "right": 292.002818107605,
+        "top": 524.069580078125,
+        "width": 280.007080078125,
+        "x": 11.99573802947998,
+        "y": 524.069580078125
+      },
+      "listScroll": 0,
+      "workspaceScroll": 1206.818115234375
+    },
+    "passed": true
+  },
+  "restored": {
+    "height": 740,
+    "openDialogs": 0,
+    "pageWidth": 458,
+    "width": 458,
+    "workspaceScroll": 0
+  },
+  "newTasks": 0,
+  "modelRequests": 0,
+  "recordedAt": "2026-10-26T09:42:30.700Z"
+}

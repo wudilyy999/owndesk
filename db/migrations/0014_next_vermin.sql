@@ -1,0 +1,1 @@
+ALTER TABLE "routines" ADD COLUMN "delegate_agent_ids" jsonb DEFAULT '[]'::jsonb NOT NULL;

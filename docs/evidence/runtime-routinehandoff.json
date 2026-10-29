@@ -1,0 +1,38 @@
+{
+  "passed": true,
+  "applicationVersion": "0.14.0-dev",
+  "migration": "0014",
+  "controlledProvider": true,
+  "realModelJudgmentEvaluated": false,
+  "guestProtocolVersion": 5,
+  "routineDelegationRosterEvaluated": true,
+  "routineHandoffTasksEvaluated": 3,
+  "originalHandoffSuiteRerun": false,
+  "checks": [
+    {
+      "check": "Unmodified SQL0014 in an isolated schema fills one preexisting row and a new omitted value with []; NOT NULL rejects null. Narrow column migration, not a full upgrade/restore rehearsal."
+    },
+    {
+      "check": "Actual phone form creates an owner-approved roster, manual acceptance freezes it, later edits/toggles and duplicate old-version run leave the accepted payload unchanged; real worker hands off to the original recipient, whose discovery stays on that roster.",
+      "taskId": "3db75561-dd7e-4123-a194-65e1ae6aa651"
+    },
+    {
+      "check": "A new empty-roster run preserves omission, exposes no agents and rejects an actual delegate call; it cannot inherit the preceding run's permission or create a recipient segment.",
+      "taskId": "8b17e897-a653-46ec-b901-bda9a765b951"
+    },
+    {
+      "check": "Actual DBOS timed once trigger uses the current roster and hands off to its new recipient; all three real tasks completed, two with new segments and one with denied delegation. Mobile/desktop history, no overflow and no browser errors.",
+      "taskIds": [
+        "3db75561-dd7e-4123-a194-65e1ae6aa651",
+        "8b17e897-a653-46ec-b901-bda9a765b951",
+        "e86fb2d4-375c-4ade-b232-08095f4856d8"
+      ],
+      "taskCount": 3
+    },
+    {
+      "check": "Provider key encrypted at rest, local config overrides env, masked settings view; plaintext key absent from task/DBOS records"
+    }
+  ],
+  "directory": "data/experiments/agent_runtime_cb035034d1cc43f2b269e8e4f126eb88",
+  "recordedAt": "2026-10-25T10:25:06.277Z"
+}

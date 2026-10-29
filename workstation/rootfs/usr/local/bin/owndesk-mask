@@ -1,0 +1,54 @@
+#!/usr/bin/env node
+// owndesk-mask: shows the focused field as dots, like a password, on every page
+// and frame of the browser. Used right after OwnDesk fills a card number, a
+// security code or a UPI ID, so screenshots (and anyone watching) don't show
+// it. The value itself is unchanged and is submitted normally.
+
+const expression = `(() => {
+  const field = document.activeElement
+  if (!field || !("value" in field)) return false
+  field.style.setProperty("-webkit-text-security", "disc", "important")
+  return true
+})()`
+
+async function evaluate(target) {
+  return new Promise((resolve) => {
+    let socket
+    const finish = (value) => {
+      clearTimeout(timer)
+      try {
+        socket?.close()
+      } catch {}
+      resolve(value)
+    }
+    const timer = setTimeout(() => finish(false), 3000)
+    try {
+      socket = new WebSocket(target.webSocketDebuggerUrl)
+    } catch {
+      return finish(false)
+    }
+    socket.onopen = () =>
+      socket.send(
+        JSON.stringify({
+          id: 1,
+          method: "Runtime.evaluate",
+          params: { expression, returnByValue: true },
+        })
+      )
+    socket.onmessage = (event) => {
+      const message = JSON.parse(String(event.data))
+      if (message.id === 1) finish(message.result?.result?.value === true)
+    }
+    socket.onerror = () => finish(false)
+  })
+}
+
+;(async () => {
+  const response = await fetch("http://127.0.0.1:9222/json/list")
+  const targets = (await response.json()).filter(
+    (target) =>
+      (target.type === "page" || target.type === "iframe") && target.webSocketDebuggerUrl
+  )
+  const masked = await Promise.all(targets.map(evaluate))
+  console.log(masked.filter(Boolean).length)
+})().catch(() => console.log(0))

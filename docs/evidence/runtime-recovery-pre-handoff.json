@@ -1,0 +1,18 @@
+{
+  "passed": true,
+  "controlledProvider": true,
+  "realModelJudgmentEvaluated": false,
+  "checks": [
+    {
+      "check": "Saved model response survives a missing DBOS checkpoint; no repeat generation, stale decision refused and a fresh CUA screenshot reaches the next model call"
+    },
+    {
+      "check": "Unanswered model request + worker SIGKILL waits for owner consent; explicit retry succeeds and retains the possibly billed attempt as unknown cost"
+    },
+    {
+      "check": "Provider key encrypted at rest, local config overrides env, masked settings view; plaintext key absent from task/DBOS records"
+    }
+  ],
+  "directory": "data/experiments/agent_runtime_9be5e5e3c9144663a116e21829cd1883",
+  "recordedAt": "2026-10-25T05:03:06.027Z"
+}

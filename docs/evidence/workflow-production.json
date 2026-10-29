@@ -1,0 +1,134 @@
+{
+  "passed": true,
+  "recordedAt": "2026-10-26T00:53:03.588Z",
+  "applicationVersion": "0.17.0-dev",
+  "runtimeMetadata": {
+    "version": "0.17.0-dev",
+    "businessMigrations": 19
+  },
+  "scope": "Composite controlled guarded Linux production workflow acceptance: original four successful import/verification/reuse Tasks retained unchanged plus one targeted in-flight production noVNC/security/export/mobile Task. Earlier raw fixture failure remains preserved.",
+  "coreTaskCountGate": 4,
+  "additionalUiTaskCountGate": 1,
+  "actualTasks": 5,
+  "completed": 5,
+  "workstationActions": 135,
+  "modelRequests": 0,
+  "humanRequests": 0,
+  "coreTaskResults": [
+    {
+      "taskId": "78cd2d71-598c-43ff-b510-5ac07d2cf735",
+      "status": "completed"
+    },
+    {
+      "taskId": "669700bb-b4cb-4c3b-aa8c-fba756af4fc5",
+      "status": "completed"
+    },
+    {
+      "taskId": "35639238-5bec-4443-9d7b-7f14fbd53994",
+      "status": "completed"
+    },
+    {
+      "taskId": "069fca92-df4a-4062-a470-8aa2498a8bd8",
+      "status": "completed"
+    }
+  ],
+  "additionalUiTaskId": "ee30f5fc-5f88-44b4-a6d9-00d37ac4c8d1",
+  "checks": [
+    {
+      "check": "Fresh rootful Linux Docker: absent policy rejected; scoped bridge/firewall initialized and live rules verified",
+      "detail": {
+        "ready": true,
+        "policy": "private-v1",
+        "name": "pa-82db58a5-egress",
+        "bridge": "pag82db58a5",
+        "subnet": "172.30.201.0/24",
+        "controlIPs": [
+          "127.0.0.1",
+          "93.184.216.9"
+        ]
+      }
+    },
+    {
+      "check": "Production Linux Compose: migrations/one-owner init, HTTPS chain validation, owner settings and private DB/Web/worker; only worker mounts Docker"
+    },
+    {
+      "check": "Optimized production Web imports the reviewed package into an unverified source-less draft; no Task/workstation/provider configuration created",
+      "detail": {
+        "versionId": "1cc861a1-6c43-4f02-bfa8-fd4adeaeca9c",
+        "packageId": "b586471c-5906-4391-9ef9-73ef5186c220",
+        "tasks": 0,
+        "workstations": 0,
+        "providers": 0
+      }
+    },
+    {
+      "check": "Production GUI workflow 1: changed parameters/host directory check/27 actions, local version verifying",
+      "detail": {
+        "taskId": "78cd2d71-598c-43ff-b510-5ac07d2cf735",
+        "versionId": "1cc861a1-6c43-4f02-bfa8-fd4adeaeca9c"
+      }
+    },
+    {
+      "check": "Production GUI workflow 2: changed parameters/host directory check/27 actions, local version verifying",
+      "detail": {
+        "taskId": "669700bb-b4cb-4c3b-aa8c-fba756af4fc5",
+        "versionId": "1cc861a1-6c43-4f02-bfa8-fd4adeaeca9c"
+      }
+    },
+    {
+      "check": "Production GUI workflow 3: changed parameters/host directory check/27 actions, local version ready",
+      "detail": {
+        "taskId": "35639238-5bec-4443-9d7b-7f14fbd53994",
+        "versionId": "1cc861a1-6c43-4f02-bfa8-fd4adeaeca9c"
+      }
+    },
+    {
+      "check": "Production GUI workflow 4: changed parameters/host directory check/27 actions, local version ready",
+      "detail": {
+        "taskId": "069fca92-df4a-4062-a470-8aa2498a8bd8",
+        "versionId": "1cc861a1-6c43-4f02-bfa8-fd4adeaeca9c"
+      }
+    },
+    {
+      "check": "Actual optimized production noVNC canvas shows a non-uniform framebuffer during a real active workflow Task over Caddy HTTPS/WSS"
+    },
+    {
+      "check": "Readonly WSS pointer/key input is dropped; worker reaches the actual Web endpoint while guest is blocked; guest has exact guest6 image/no secrets/socket/ports and Web remains non-root/read-only"
+    },
+    {
+      "check": "Actual reviewed owner download exports the certified method without local Task/version IDs; 390px production UI has no horizontal overflow or page error"
+    },
+    {
+      "check": "Original four successful Task metrics remain unchanged; exactly one new checked27-action UI Task, total5Tasks/135actions/0model/0human requests"
+    }
+  ],
+  "images": [
+    {
+      "image": "personal-agent-web:0.17.0-dev",
+      "id": "sha256:fdfeac24fe1483a2d958715070561f0cfe503c2999a5c4f547fb446fd260c2e8",
+      "files": {
+        "worker/artifacts.ts": true,
+        "worker/workflow-execution.ts": true
+      }
+    },
+    {
+      "image": "personal-agent-worker:0.17.0-dev",
+      "id": "sha256:df82548bd24a64e72115d6df9279f586d33023609268ac80d981990d0d027ccf",
+      "files": {
+        "worker/artifacts.ts": true,
+        "worker/workflow-execution.ts": true
+      }
+    }
+  ],
+  "workstationVersion": "0.6.2",
+  "guestProtocol": 6,
+  "originalCoreAttempt": "data/experiments/pa-linux-1792959408122/attempt-1792975364751",
+  "uiEvidence": "data/experiments/pa-linux-1792959408122/attempt-1792975364751/ui-resume-1792975870439",
+  "originalFourTasksRerun": false,
+  "fullDeploymentPassed": false,
+  "ordinaryPublicDnsEvaluated": false,
+  "realModelJudgmentEvaluated": false,
+  "actualCloudProviderEvaluated": false,
+  "fullRestoreEvaluated": false,
+  "mainLocalDeploymentUnchanged": true
+}

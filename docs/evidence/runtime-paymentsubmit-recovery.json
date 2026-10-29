@@ -1,0 +1,38 @@
+{
+  "passed": true,
+  "controlledProvider": true,
+  "realModelJudgmentEvaluated": false,
+  "applicationVersion": "0.12.0-dev",
+  "guestProtocolVersion": 5,
+  "workstationImage": "personal-agent-workstation:0.5.0",
+  "migration": "0012",
+  "controlledWebsite": true,
+  "paymentSubmissionControlledEvaluated": false,
+  "paymentSubmissionRecoveryEvaluated": true,
+  "focusedLostReceiptOnly": true,
+  "paymentTasksEvaluated": 1,
+  "realPaymentEvaluated": false,
+  "independentSettlementVerified": false,
+  "checks": [
+    {
+      "check": "Actual old guest4 image with a new container label is rejected by its real health; no task/model call or secret release",
+      "agentId": "zH_u8XqEDmdU"
+    },
+    {
+      "check": "Actual effect plus lost guest receipt and SIGKILL becomes unknown; continue/cancel only, no second dispatch/click, fresh result evidence remains readable",
+      "taskId": "559e996f-498c-4293-a7e6-980c2630f726"
+    },
+    {
+      "check": "One actual lost-receipt submission task; final approval, exactly one external effect, durable marker, SIGKILL/receipt deletion, continue-only review and fresh page evidence",
+      "taskCount": 1
+    },
+    {
+      "check": "Provider key encrypted at rest, local config overrides env, masked settings view; plaintext key absent from task/DBOS records"
+    },
+    {
+      "check": "Completed Web/worker logs, actual guest journals/controller logs and model requests contain no sample secret values; website inputs are independently counted and matched"
+    }
+  ],
+  "directory": "data/experiments/agent_runtime_078534415b624f18a786a3514c0952b7",
+  "recordedAt": "2026-10-25T09:05:27.754Z"
+}

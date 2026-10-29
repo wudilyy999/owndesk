@@ -1,0 +1,13 @@
+{
+  "passed": true,
+  "database": "agent_a0_1320f760e90940c2b971a533aee1c4df",
+  "directory": "data/experiments/agent_a0_1320f760e90940c2b971a533aee1c4df",
+  "taskId": "99d07ed3-8992-4088-9fce-acabba539ad5",
+  "modelCalls": 5,
+  "cloudModelRequests": 0,
+  "replayVerified": true,
+  "checks": [
+    "Official Plugin Index plus pinned original rg and todo_list sources installed through owner API; foreign-origin and anonymous calls rejected",
+    "Production worker, real Linux desktop, original rg search and todo create/read, same-action replay, frozen config after disable; one Task and five local model responses"
+  ]
+}

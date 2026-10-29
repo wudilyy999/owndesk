@@ -1,0 +1,57 @@
+{
+  "recordedAt": "2026-10-26T02:35:44.658Z",
+  "passed": true,
+  "contextPolicy": "pa-context-v1",
+  "sourceVersion": "0.17.0-dev",
+  "policy": {
+    "recentToolTextChars": 12000,
+    "oldToolTextChars": 600,
+    "batchSize": 6,
+    "maximumRecentFullOutputs": 11,
+    "currentEpochImages": 1,
+    "completeToolCallResultPairsRetained": true,
+    "userGoalsAndOwnerNotesUnchanged": true,
+    "rawAuditImmutable": true,
+    "wholeHistorySemanticCompaction": false,
+    "modelSpecificTokenBudget": false
+  },
+  "realSavedResponseCheck": {
+    "taskId": "f9cb0de4-5ed7-471c-91c7-bc9e978614fa",
+    "threadId": "030499a8-44f2-4f17-ab12-9443244657f8",
+    "sourceModel": "openai/gpt-6.1-sol",
+    "store": false,
+    "promptCacheKey": "pa-context-v1:030499a8-44f2-4f17-ab12-9443244657f8:1",
+    "remoteItemReferences": 0,
+    "encryptedReasoningIncluded": true,
+    "callResultIdMatched": true,
+    "mockFetchCalls": 1,
+    "networkModelRequests": 0,
+    "sourceAttemptsUnchanged": true,
+    "currentTaskStatus": "needs_review"
+  },
+  "truncationExample": {
+    "sourceChars": 70031,
+    "preparedChars": 12000,
+    "beginningPreserved": true,
+    "errorTailPreserved": true
+  },
+  "checks": {
+    "targetedTests": 13,
+    "typecheck": true,
+    "formats": "checked separately",
+    "main": {
+      "health": {
+        "ready": true,
+        "version": "0.15.1-dev"
+      },
+      "businessMigrations": 16,
+      "activeTasks": 0,
+      "envUnchanged": true,
+      "processes": "57067 next-server (v16.4.3)      \n57068 /opt/homebrew/Cellar/node@24/24.20.0/bin/node --import tsx worker/main.ts"
+    },
+    "noMigrationOrServiceRestart": true,
+    "applicationImagesRebuilt": false,
+    "sqlAndGuestUnchanged": true
+  },
+  "scope": "Original journal/runtime/attempt ledger reused. Actual installed SDK serialized original saved Sol response through the production preparation function with mocked fetch; no real model request or cache-hit/latency/quality claim. Semantic compaction and total token budgeting remain future work; existing unknown-cost consent remains consumed."
+}
