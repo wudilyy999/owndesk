@@ -23,6 +23,8 @@ import {
 import { processControlRequests, waitForControlRequests } from "./control"
 import { attachDesktopGateway } from "./desktop-gateway"
 import { runTelegram } from "@/lib/telegram/bridge"
+import { channelTick } from "@/lib/channels/hub"
+import { runWechat } from "@/lib/channels/wechat"
 import { resumeMonthlyBudgets } from "./budgets"
 import { startRoutineSchedule } from "./routines"
 import { sweepVault } from "@/lib/vault"
@@ -142,6 +144,14 @@ export async function startWorker() {
   const telegram = runTelegram(abort.signal).catch(async (error) => {
     if (!abort.signal.aborted) await failStop(error)
   })
+  // QQ / WeChat / Telegram companion channels: answer saved inbound messages, send queued ones
+  const channels = (async () => {
+    while (!abort.signal.aborted) {
+      await channelTick().catch((error) => console.error("channel tick failed", error))
+      await delay(2000, undefined, { signal: abort.signal })
+    }
+  })().catch(() => {})
+  const wechat = runWechat(abort.signal).catch(() => {})
   const idleWorkstations = (async () => {
     while (!abort.signal.aborted) {
       const stopped = await sweepIdleWorkstations()
@@ -160,6 +170,8 @@ export async function startWorker() {
     await closeGateway()
     await controls
     await telegram
+    await channels
+    await wechat
     await idleWorkstations
     await stopInstallationWorkstations()
     await waitForControlRequests()

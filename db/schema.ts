@@ -1209,3 +1209,110 @@ export const coviewRequests = pgTable(
   },
   (t) => [index("coview_requests_agent_idx").on(t.agentId, t.status, t.createdAt)]
 )
+
+/* ─────────────────────── companion channels ─────────────────────── */
+
+export const channelIds = ["telegram", "qq", "wechat", "wechat_oa"] as const
+export type ChannelId = (typeof channelIds)[number]
+
+// What the adapter needs to remember about one person's chat on one channel,
+// for example the last QQ msg_id or the WeChat context_token
+export type ChannelLinkState = Record<string, unknown>
+
+// One person (one openid / chat id) on one channel, bound to one companion.
+// Every channel reads and writes the same companion_messages and memories.
+export const channelLinks = pgTable(
+  "channel_links",
+  {
+    id: id(),
+    agentId: text()
+      .notNull()
+      .references(() => agents.id, { onDelete: "cascade" }),
+    ownerId: text().notNull(),
+    channel: text({ enum: channelIds }).notNull(),
+    externalId: text().notNull(),
+    state: jsonb().notNull().$type<ChannelLinkState>().default({}),
+    lastInboundAt: pgTimestamp({ withTimezone: true, mode: "date" }),
+    createdAt: timestamp(),
+  },
+  (t) => [
+    uniqueIndex("channel_links_external_idx").on(t.channel, t.externalId),
+    uniqueIndex("channel_links_agent_idx").on(t.agentId, t.channel),
+  ]
+)
+
+// One-time codes the person sends to the bot to bind an account (stored hashed)
+export const channelPairCodes = pgTable(
+  "channel_pair_codes",
+  {
+    id: id(),
+    agentId: text()
+      .notNull()
+      .references(() => agents.id, { onDelete: "cascade" }),
+    ownerId: text().notNull(),
+    codeHash: text().notNull(),
+    expiresAt: pgTimestamp({ withTimezone: true, mode: "date" }).notNull(),
+    usedAt: pgTimestamp({ withTimezone: true, mode: "date" }),
+    createdAt: timestamp(),
+  },
+  (t) => [uniqueIndex("channel_pair_codes_hash_idx").on(t.codeHash)]
+)
+
+// Messages received from channels, saved before anything slow happens so a
+// redelivered event is never answered twice
+export const channelInbound = pgTable(
+  "channel_inbound",
+  {
+    id: id(),
+    channel: text({ enum: channelIds }).notNull(),
+    eventKey: text().notNull(),
+    externalId: text().notNull(),
+    text: text().notNull(),
+    context: jsonb().notNull().$type<Record<string, unknown>>().default({}),
+    status: text({ enum: ["pending", "processing", "done", "failed"] })
+      .notNull()
+      .default("pending"),
+    attempts: integer().notNull().default(0),
+    lastError: text(),
+    createdAt: timestamp(),
+    processedAt: pgTimestamp({ withTimezone: true, mode: "date" }),
+  },
+  (t) => [
+    uniqueIndex("channel_inbound_event_idx").on(t.channel, t.eventKey),
+    index("channel_inbound_status_idx").on(t.status, t.createdAt),
+  ]
+)
+
+// Outgoing messages. `held` ones cannot be sent now (the platform only allows replies)
+// and are folded into her next reply on that channel.
+export const channelOutbox = pgTable(
+  "channel_outbox",
+  {
+    id: id(),
+    linkId: text()
+      .notNull()
+      .references(() => channelLinks.id, { onDelete: "cascade" }),
+    // The companion_messages row this was made from; makes fan-out idempotent
+    messageId: text().references(() => companionMessages.id, { onDelete: "set null" }),
+    kind: text({ enum: ["reply", "share", "update"] }).notNull(),
+    text: text().notNull(),
+    // Reply context captured when it was queued (QQ msg_id, WeChat context_token)
+    context: jsonb().$type<Record<string, unknown>>(),
+    status: text({ enum: ["pending", "held", "sent", "bundled", "failed", "skipped"] })
+      .notNull()
+      .default("pending"),
+    attempts: integer().notNull().default(0),
+    lastError: text(),
+    notBefore: pgTimestamp({ withTimezone: true, mode: "date" }),
+    createdAt: timestamp(),
+    sentAt: pgTimestamp({ withTimezone: true, mode: "date" }),
+  },
+  (t) => [
+    uniqueIndex("channel_outbox_message_idx").on(t.linkId, t.messageId),
+    index("channel_outbox_status_idx").on(t.status, t.createdAt),
+  ]
+)
+
+export type ChannelLink = typeof channelLinks.$inferSelect
+export type ChannelInbound = typeof channelInbound.$inferSelect
+export type ChannelOutbox = typeof channelOutbox.$inferSelect

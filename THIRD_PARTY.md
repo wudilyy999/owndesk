@@ -13,6 +13,11 @@ The inherited pricing catalog is a dated reference, not a live price guarantee.
 The working name "OwnDesk" is independent of Xiryn. Upstream release checks,
 feedback links and update/install programs are not enabled in this project.
 
+## Companion channels (QQ / WeChat)
+
+Protocol knowledge only, no code copied: tencent-connect/botpy (MIT), Tencent/openclaw-weixin (MIT),
+the official QQ bot and WeChat Official Account documentation. See `docs/channels.md`.
+
 ## Private Linux packaging candidate (0.9.0-dev)
 
 | Image/component                      | Role                                                          | Primary license source for release audit                                       |

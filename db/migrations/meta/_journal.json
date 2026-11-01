@@ -155,6 +155,13 @@
       "when": 1793512934049,
       "tag": "0021_life_favorites",
       "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1793523465033,
+      "tag": "0022_companion_channels",
+      "breakpoints": true
     }
   ]
 }

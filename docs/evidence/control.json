@@ -20,13 +20,13 @@
     {
       "check": "G03: background cancellation stops actual effects and removes the container boundary",
       "detail": {
-        "elapsedMs": 4694
+        "elapsedMs": 4535
       }
     },
     {
       "check": "G03: active-shell cancellation stops actual effects and removes the container boundary",
       "detail": {
-        "elapsedMs": 4705
+        "elapsedMs": 4534
       }
     },
     {
@@ -36,6 +36,6 @@
       "check": "G04: POST commits without reply, worker and controller die; recovery requests review without replaying the submit"
     }
   ],
-  "recordedAt": "2026-11-01T08:57:08.496Z",
-  "directory": "data/experiments/agent_control_da3f8ff422de4308ad88d6a471b07509"
+  "recordedAt": "2026-11-01T09:18:17.510Z",
+  "directory": "data/experiments/agent_control_0759bade95ee47f286d83ae2241a175e"
 }

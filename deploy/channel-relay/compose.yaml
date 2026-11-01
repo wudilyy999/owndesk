@@ -1,0 +1,12 @@
+# On the fixed-IP server:  RELAY_KEY=$(openssl rand -hex 24) docker compose up -d --build
+# Put HTTPS in front (Caddy / nginx) and give owndesk the https:// URL.
+services:
+  relay:
+    build: .
+    restart: unless-stopped
+    environment:
+      RELAY_KEY: ${RELAY_KEY:?set RELAY_KEY}
+      # Optional: also be the public webhook URL, passing /api/channels/* on to owndesk
+      APP_UPSTREAM: ${APP_UPSTREAM:-}
+    ports:
+      - "127.0.0.1:8787:8787"

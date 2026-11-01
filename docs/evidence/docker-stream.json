@@ -6,6 +6,6 @@
     "destroy delivers EOF and leaves neither remote process nor local Docker CLI",
     "missing-container transport failure propagates"
   ],
-  "directory": "data/experiments/pa-stream-8c5e870b-a99e-4436-830c-30e91038a717",
-  "recordedAt": "2026-11-01T08:57:09.412Z"
+  "directory": "data/experiments/pa-stream-2461ef37-f786-4c46-8752-2a7daae6899b",
+  "recordedAt": "2026-11-01T09:18:18.373Z"
 }

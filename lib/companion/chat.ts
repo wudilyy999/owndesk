@@ -84,7 +84,15 @@ async function insertMessages(
 }
 
 export async function companionChat(
-  input: { ownerId: string; agentId: string; text: string; channel?: string },
+  input: {
+    ownerId: string
+    agentId: string
+    text: string
+    channel?: string
+    // Things she wanted to tell the person but could not send on this channel; she works them
+    // into this reply (channels that only allow replies, see lib/channels/hub.ts)
+    awayDigest?: string[]
+  },
   deps: ChatDeps = {},
   emit: (event: ChatEvent) => void = () => {}
 ) {
@@ -156,6 +164,7 @@ export async function companionChat(
     timeZone: companion.timeZone,
     rhythm: rhythmAt(now, companion.timeZone, companion.rhythm),
     link,
+    awayDigest: input.awayDigest ?? [],
     memories: selectNotes(notes),
     recentLife: activities.reverse().map((a) => ({
       kind: a.kind,

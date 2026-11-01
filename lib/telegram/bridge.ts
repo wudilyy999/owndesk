@@ -4,7 +4,10 @@
 import { randomUUID } from "node:crypto"
 import { setTimeout as delay } from "node:timers/promises"
 import type { PoolClient } from "pg"
-import { pool } from "@/db"
+import { and, eq } from "drizzle-orm"
+import { db, pool } from "@/db"
+import { channelLinks } from "@/db/schema"
+import { enqueueInbound } from "@/lib/channels/inbound"
 import { getSetting } from "@/lib/config"
 import { decryptSecret, encryptSecret } from "@/lib/secrets"
 import { HttpError } from "@/lib/errors"
@@ -211,6 +214,21 @@ async function makeCommand(
   }
 }
 
+async function companionLinked(state: { chat_id: string | null }, agentId: string) {
+  if (!state.chat_id) return false
+  const [link] = await db
+    .select({ id: channelLinks.id })
+    .from(channelLinks)
+    .where(
+      and(
+        eq(channelLinks.channel, "telegram"),
+        eq(channelLinks.externalId, state.chat_id),
+        eq(channelLinks.agentId, agentId)
+      )
+    )
+  return !!link
+}
+
 export async function processTelegramUpdate(generation: string, update: TgUpdate) {
   const sender = update.callback_query?.from ?? update.message?.from
   const client = await pool.connect()
@@ -267,7 +285,24 @@ export async function processTelegramUpdate(generation: string, update: TgUpdate
         text = `配对成功。只有此 Telegram 账号可以交办任务。\n\n${HELP}`
       } else if (authorized && command.type !== "ignore" && command.type !== "pair") {
         try {
-          if (command.type === "task") {
+          if (
+            command.type === "task" &&
+            (await companionLinked(current, command.input.agentId))
+          ) {
+            // This chat is linked to a companion (opt-in on the channel settings page): plain text
+            // is a chat with her, tasks go through her errand cards. Handled by the channel hub.
+            await enqueueInbound({
+              channel: "telegram",
+              eventKey: `${generation}:${update.update_id}`,
+              externalId: current.chat_id!,
+              text: command.input.goal,
+              context: {
+                trusted: true,
+                agentId: command.input.agentId,
+                ownerId: current.owner_id,
+              },
+            })
+          } else if (command.type === "task") {
             const task = await submitTask(current.owner_id, "telegram", command.input)
             await client.query(
               "UPDATE telegram_connection SET task_id=$1,thread_id=$2 WHERE id=1",

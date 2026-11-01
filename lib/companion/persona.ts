@@ -72,6 +72,8 @@ export type PromptContext = {
   rhythm: RhythmState
   // A link the person just sent: she has not opened it yet
   link: { url: string; queued: boolean } | null
+  // Real things she wanted to share while the person was away but could not send
+  awayDigest?: string[]
   memories: { id: string; content: string }[]
   recentLife: {
     kind: string
@@ -90,6 +92,16 @@ function stateText(rhythm: RhythmState) {
   if (rhythm.state === "away")
     return `你现在不在电脑前${rhythm.label ? `（${rhythm.label}）` : "，在外面"}。用手机回，回得短一点；不要说自己正在电脑上看东西。`
   return "你现在醒着，有空。"
+}
+
+function awayText(items: string[] | undefined) {
+  if (!items?.length) return ""
+  return `# 想告诉对方、但还没说的事
+对方这会儿回你了。你之前有这些事想跟对方说，当时没办法发出去：
+${items.map((item) => `- ${item}`).join("\n")}
+在回复里先回应对方说的话，再用一两句自然地带出最值得说的一件，其余的可以下次再说。不要罗列，不要说“攒了”“一直没发出去”这类话，就像刚想起来顺口提一句。
+
+`
 }
 
 function linkText(link: PromptContext["link"]) {
@@ -140,7 +152,7 @@ ${RELATION[ctx.mode]}
 # 现在的状态
 ${stateText(ctx.rhythm)}
 
-${linkText(ctx.link)}# 最近的生活
+${linkText(ctx.link)}${awayText(ctx.awayDigest)}# 最近的生活
 ${life}
 
 # 记住对方
