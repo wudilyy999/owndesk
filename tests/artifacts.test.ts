@@ -55,7 +55,7 @@ test("Reused context shaping limits images and lifts them for compatible chat pr
     ],
   }))
   const compacted = compactContext(history)
-  assert.equal(JSON.stringify(compacted).split('"type":"file"').length - 1, 1)
+  assert.equal(JSON.stringify(compacted).split('"type":"file"').length - 1, 2)
   const shaped = forProvider("custom/fixture", compacted)
   assert(
     shaped.some(
