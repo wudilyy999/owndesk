@@ -20,9 +20,7 @@
     "directoryTree": {
       "root": "/home/xiryn/Flow-C0-1792950841215",
       "grade": "program_checked",
-      "absent": [
-        "Draft"
-      ],
+      "absent": ["Draft"],
       "checks": {
         "linksRejected": true,
         "hostReadOnlyArchive": true
@@ -38,9 +36,7 @@
         }
       ],
       "checkerId": "directory-tree-v1",
-      "directories": [
-        "Ready"
-      ]
+      "directories": ["Ready"]
     }
   },
   "error": null,
@@ -215,10 +211,7 @@
           "mediaType": "image/jpeg",
           "observationId": "f0eb8401-4af2-46a7-bd40-a13a2c9987a3",
           "coordinateSpace": "screenshot_pixels",
-          "acceptedCoordinateModes": [
-            "pixels",
-            "normalized_1000"
-          ]
+          "acceptedCoordinateModes": ["pixels", "normalized_1000"]
         }
       }
     },
@@ -273,10 +266,7 @@
           "observationId": "5a93a290-72d7-4cd5-a20d-93f6f6044025",
           "coordinateMode": "normalized_1000",
           "coordinateSpace": "screenshot_pixels",
-          "acceptedCoordinateModes": [
-            "pixels",
-            "normalized_1000"
-          ]
+          "acceptedCoordinateModes": ["pixels", "normalized_1000"]
         }
       }
     },
@@ -331,10 +321,7 @@
           "observationId": "f83a46ee-90b0-4cf3-9611-6574dcc79dca",
           "coordinateMode": "normalized_1000",
           "coordinateSpace": "screenshot_pixels",
-          "acceptedCoordinateModes": [
-            "pixels",
-            "normalized_1000"
-          ]
+          "acceptedCoordinateModes": ["pixels", "normalized_1000"]
         }
       }
     },
@@ -389,10 +376,7 @@
           "observationId": "90db9814-b89a-45b5-9599-cd05ac47fde7",
           "coordinateMode": "normalized_1000",
           "coordinateSpace": "screenshot_pixels",
-          "acceptedCoordinateModes": [
-            "pixels",
-            "normalized_1000"
-          ]
+          "acceptedCoordinateModes": ["pixels", "normalized_1000"]
         }
       }
     },
@@ -447,10 +431,7 @@
           "observationId": "dd49dca2-6446-437f-9788-a80a4bf00262",
           "coordinateMode": "normalized_1000",
           "coordinateSpace": "screenshot_pixels",
-          "acceptedCoordinateModes": [
-            "pixels",
-            "normalized_1000"
-          ]
+          "acceptedCoordinateModes": ["pixels", "normalized_1000"]
         }
       }
     },
@@ -493,10 +474,7 @@
           },
           "observationId": "ba85c152-90e0-4ddd-87bf-b13c4a84cc42",
           "coordinateSpace": "screenshot_pixels",
-          "acceptedCoordinateModes": [
-            "pixels",
-            "normalized_1000"
-          ]
+          "acceptedCoordinateModes": ["pixels", "normalized_1000"]
         }
       }
     },
@@ -542,10 +520,7 @@
           },
           "observationId": "5e926e4e-3b82-409d-8c69-d5d1e373bc54",
           "coordinateSpace": "screenshot_pixels",
-          "acceptedCoordinateModes": [
-            "pixels",
-            "normalized_1000"
-          ]
+          "acceptedCoordinateModes": ["pixels", "normalized_1000"]
         }
       }
     },
@@ -591,10 +566,7 @@
           },
           "observationId": "16f6717b-3014-4945-b917-374c7576334e",
           "coordinateSpace": "screenshot_pixels",
-          "acceptedCoordinateModes": [
-            "pixels",
-            "normalized_1000"
-          ]
+          "acceptedCoordinateModes": ["pixels", "normalized_1000"]
         }
       }
     },
@@ -649,10 +621,7 @@
           "observationId": "18e04768-fab5-4ec2-8013-b6098323ebbd",
           "coordinateMode": "normalized_1000",
           "coordinateSpace": "screenshot_pixels",
-          "acceptedCoordinateModes": [
-            "pixels",
-            "normalized_1000"
-          ]
+          "acceptedCoordinateModes": ["pixels", "normalized_1000"]
         }
       }
     },
@@ -707,10 +676,7 @@
           "observationId": "82cecedc-64b5-42d0-b16c-9b1ebe70ff42",
           "coordinateMode": "normalized_1000",
           "coordinateSpace": "screenshot_pixels",
-          "acceptedCoordinateModes": [
-            "pixels",
-            "normalized_1000"
-          ]
+          "acceptedCoordinateModes": ["pixels", "normalized_1000"]
         }
       }
     },
@@ -753,10 +719,7 @@
           },
           "observationId": "978eae55-f0f6-4284-8cce-19aa8d8edc63",
           "coordinateSpace": "screenshot_pixels",
-          "acceptedCoordinateModes": [
-            "pixels",
-            "normalized_1000"
-          ]
+          "acceptedCoordinateModes": ["pixels", "normalized_1000"]
         }
       }
     },
@@ -802,10 +765,7 @@
           },
           "observationId": "8c91e387-d168-4ab1-9f59-b80fcd89f086",
           "coordinateSpace": "screenshot_pixels",
-          "acceptedCoordinateModes": [
-            "pixels",
-            "normalized_1000"
-          ]
+          "acceptedCoordinateModes": ["pixels", "normalized_1000"]
         }
       }
     },
@@ -851,10 +811,7 @@
           },
           "observationId": "d9b29719-097d-416c-90a7-806b2944c74e",
           "coordinateSpace": "screenshot_pixels",
-          "acceptedCoordinateModes": [
-            "pixels",
-            "normalized_1000"
-          ]
+          "acceptedCoordinateModes": ["pixels", "normalized_1000"]
         }
       }
     },
@@ -897,10 +854,7 @@
           },
           "observationId": "497844d0-0848-4057-83b5-b9fa4e58e9c3",
           "coordinateSpace": "screenshot_pixels",
-          "acceptedCoordinateModes": [
-            "pixels",
-            "normalized_1000"
-          ]
+          "acceptedCoordinateModes": ["pixels", "normalized_1000"]
         }
       }
     },
@@ -946,10 +900,7 @@
           },
           "observationId": "e6a75173-01d0-40a3-b4c8-359de446b24b",
           "coordinateSpace": "screenshot_pixels",
-          "acceptedCoordinateModes": [
-            "pixels",
-            "normalized_1000"
-          ]
+          "acceptedCoordinateModes": ["pixels", "normalized_1000"]
         }
       }
     },
@@ -984,10 +935,7 @@
           "mediaType": "image/jpeg",
           "observationId": "b8ecbd4a-e06f-4466-af91-f52e12d2a434",
           "coordinateSpace": "screenshot_pixels",
-          "acceptedCoordinateModes": [
-            "pixels",
-            "normalized_1000"
-          ]
+          "acceptedCoordinateModes": ["pixels", "normalized_1000"]
         }
       }
     }

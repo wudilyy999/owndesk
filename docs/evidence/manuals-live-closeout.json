@@ -51,10 +51,7 @@
       "active": 0
     },
     "mainEnvUnchanged": true,
-    "mainPidsUnchanged": [
-      26072,
-      25794
-    ],
+    "mainPidsUnchanged": [26072, 25794],
     "mainWebHttp": 307,
     "isolatedPortsStopped": true,
     "isolatedContainersStopped": true

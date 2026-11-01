@@ -11,9 +11,7 @@
       "id": "rg",
       "commit": "66e6d6ddf6ef115985ac60a2c1f79bb56c36b010",
       "enabled": false,
-      "tools": [
-        "rg"
-      ]
+      "tools": ["rg"]
     },
     {
       "id": "todo_list",

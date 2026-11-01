@@ -46,18 +46,13 @@
           "id": "outside-setup",
           "label": "Resolve omitted outside-Thunar setup",
           "reason": "The initial observation and pointer interaction occurred outside Thunar and their contents are unavailable. A human must resolve any necessary setup without inferring hidden actions.",
-          "evidence": [
-            1,
-            2
-          ],
+          "evidence": [1, 2],
           "operation": "human_checkpoint"
         },
         {
           "id": "open-thunar",
           "label": "Open a fresh Thunar window at home",
-          "evidence": [
-            3
-          ],
+          "evidence": [3],
           "operation": "open_application",
           "application": "Thunar"
         },
@@ -79,10 +74,7 @@
             ],
             "application": "Thunar"
           },
-          "evidence": [
-            3,
-            4
-          ],
+          "evidence": [3, 4],
           "operation": "assert"
         },
         {
@@ -98,9 +90,7 @@
           },
           "label": "Focus the location bar",
           "evidence": [],
-          "modifiers": [
-            "ctrl"
-          ],
+          "modifiers": ["ctrl"],
           "operation": "key_press"
         },
         {
@@ -157,14 +147,8 @@
             "application": "Thunar"
           },
           "label": "Open the new folder dialog for the parent",
-          "evidence": [
-            4,
-            5
-          ],
-          "modifiers": [
-            "ctrl",
-            "shift"
-          ],
+          "evidence": [4, 5],
+          "modifiers": ["ctrl", "shift"],
           "operation": "key_press"
         },
         {
@@ -178,9 +162,7 @@
             ],
             "application": "Thunar"
           },
-          "evidence": [
-            5
-          ],
+          "evidence": [5],
           "operation": "assert"
         },
         {
@@ -199,9 +181,7 @@
             "application": "Thunar"
           },
           "label": "Enter the parameterized parent name",
-          "evidence": [
-            6
-          ],
+          "evidence": [6],
           "operation": "key_type"
         },
         {
@@ -216,9 +196,7 @@
             "application": "Thunar"
           },
           "label": "Create the parent directory",
-          "evidence": [
-            6
-          ],
+          "evidence": [6],
           "modifiers": [],
           "operation": "key_press"
         },
@@ -226,9 +204,7 @@
           "id": "observe-parent-created",
           "label": "Observe the parent creation result",
           "share": false,
-          "evidence": [
-            7
-          ],
+          "evidence": [7],
           "operation": "observe"
         },
         {
@@ -244,9 +220,7 @@
           },
           "label": "Focus location for explicit parent navigation",
           "evidence": [],
-          "modifiers": [
-            "ctrl"
-          ],
+          "modifiers": ["ctrl"],
           "operation": "key_press"
         },
         {
@@ -283,10 +257,7 @@
             "application": "Thunar"
           },
           "label": "Navigate into the parent directory",
-          "evidence": [
-            7,
-            8
-          ],
+          "evidence": [7, 8],
           "modifiers": [],
           "operation": "key_press"
         },
@@ -311,10 +282,7 @@
             ],
             "application": "Thunar"
           },
-          "evidence": [
-            8,
-            9
-          ],
+          "evidence": [8, 9],
           "operation": "assert"
         },
         {
@@ -332,14 +300,8 @@
             "application": "Thunar"
           },
           "label": "Open the new folder dialog for the draft",
-          "evidence": [
-            9,
-            10
-          ],
-          "modifiers": [
-            "ctrl",
-            "shift"
-          ],
+          "evidence": [9, 10],
+          "modifiers": ["ctrl", "shift"],
           "operation": "key_press"
         },
         {
@@ -353,9 +315,7 @@
             ],
             "application": "Thunar"
           },
-          "evidence": [
-            10
-          ],
+          "evidence": [10],
           "operation": "assert"
         },
         {
@@ -374,9 +334,7 @@
             "application": "Thunar"
           },
           "label": "Enter the parameterized draft name",
-          "evidence": [
-            11
-          ],
+          "evidence": [11],
           "operation": "key_type"
         },
         {
@@ -391,9 +349,7 @@
             "application": "Thunar"
           },
           "label": "Create the draft directory",
-          "evidence": [
-            11
-          ],
+          "evidence": [11],
           "modifiers": [],
           "operation": "key_press"
         },
@@ -401,9 +357,7 @@
           "id": "observe-draft-created",
           "label": "Observe draft creation and parent view",
           "share": false,
-          "evidence": [
-            12
-          ],
+          "evidence": [12],
           "operation": "observe"
         },
         {
@@ -469,9 +423,7 @@
             "application": "Thunar"
           },
           "label": "Open Rename for the selected draft",
-          "evidence": [
-            13
-          ],
+          "evidence": [13],
           "modifiers": [],
           "operation": "key_press"
         },
@@ -492,10 +444,7 @@
             ],
             "application": "Thunar"
           },
-          "evidence": [
-            13,
-            14
-          ],
+          "evidence": [13, 14],
           "operation": "assert"
         },
         {
@@ -517,9 +466,7 @@
           },
           "label": "Select the entire existing name",
           "evidence": [],
-          "modifiers": [
-            "ctrl"
-          ],
+          "modifiers": ["ctrl"],
           "operation": "key_press"
         },
         {
@@ -544,9 +491,7 @@
             "application": "Thunar"
           },
           "label": "Replace the draft name with the final name",
-          "evidence": [
-            14
-          ],
+          "evidence": [14],
           "operation": "key_type"
         },
         {
@@ -567,9 +512,7 @@
             "application": "Thunar"
           },
           "label": "Confirm the directory rename",
-          "evidence": [
-            14
-          ],
+          "evidence": [14],
           "modifiers": [],
           "operation": "key_press"
         },
@@ -577,9 +520,7 @@
           "id": "observe-rename-result",
           "label": "Observe the result of renaming",
           "share": false,
-          "evidence": [
-            15
-          ],
+          "evidence": [15],
           "operation": "observe"
         },
         {
@@ -596,19 +537,14 @@
             ],
             "application": "Thunar"
           },
-          "evidence": [
-            15,
-            16
-          ],
+          "evidence": [15, 16],
           "operation": "assert"
         },
         {
           "id": "share-final-view",
           "label": "Share the final parent view for completion verification",
           "share": true,
-          "evidence": [
-            16
-          ],
+          "evidence": [16],
           "operation": "observe"
         }
       ],
@@ -663,24 +599,7 @@
       "sourceTaskId": "2935de0d-e34e-467a-bbdf-0f1135f5428b",
       "schemaVersion": 1,
       "sourceSegment": 1,
-      "sourceActionNumbers": [
-        1,
-        2,
-        3,
-        4,
-        5,
-        6,
-        7,
-        8,
-        9,
-        10,
-        11,
-        12,
-        13,
-        14,
-        15,
-        16
-      ]
+      "sourceActionNumbers": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]
     },
     "createdAt": "2026-10-26T01:37:58.909Z",
     "importedPackage": null
@@ -698,12 +617,8 @@
     "contract": {
       "directoryTree": {
         "root": "/home/xiryn/Flow-C0-1792950841215",
-        "absent": [
-          "Draft"
-        ],
-        "directories": [
-          "Ready"
-        ]
+        "absent": ["Draft"],
+        "directories": ["Ready"]
       },
       "requireHumanReview": false
     },

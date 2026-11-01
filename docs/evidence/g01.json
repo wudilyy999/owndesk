@@ -33,11 +33,7 @@
             "completed": true
           }
         ],
-        "callbackInvocations": [
-          "prepare",
-          "materialize",
-          "verify"
-        ],
+        "callbackInvocations": ["prepare", "materialize", "verify"],
         "artifactCount": 1
       }
     },
@@ -64,11 +60,7 @@
             "completed": true
           }
         ],
-        "callbackInvocations": [
-          "prepare",
-          "materialize",
-          "verify"
-        ],
+        "callbackInvocations": ["prepare", "materialize", "verify"],
         "artifactCount": 1
       }
     }

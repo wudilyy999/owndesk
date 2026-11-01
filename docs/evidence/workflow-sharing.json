@@ -91,9 +91,7 @@
           "directoryTree": {
             "root": "/home/xiryn/PA-C5-0-1792958864387",
             "grade": "program_checked",
-            "absent": [
-              "Incoming-A"
-            ],
+            "absent": ["Incoming-A"],
             "checks": {
               "linksRejected": true,
               "hostReadOnlyArchive": true
@@ -109,21 +107,15 @@
               }
             ],
             "checkerId": "directory-tree-v1",
-            "directories": [
-              "Finished-A"
-            ]
+            "directories": ["Finished-A"]
           }
         },
         "error": null,
         "completion_contract": {
           "directoryTree": {
             "root": "/home/xiryn/PA-C5-0-1792958864387",
-            "absent": [
-              "Incoming-A"
-            ],
-            "directories": [
-              "Finished-A"
-            ]
+            "absent": ["Incoming-A"],
+            "directories": ["Finished-A"]
           },
           "requireHumanReview": false
         },
@@ -159,10 +151,7 @@
                   },
                   "label": "步骤 2：key_press",
                   "evidence": [],
-                  "modifiers": [
-                    "ctrl",
-                    "shift"
-                  ],
+                  "modifiers": ["ctrl", "shift"],
                   "operation": "key_press"
                 },
                 {
@@ -213,9 +202,7 @@
                   },
                   "label": "步骤 5：key_press",
                   "evidence": [],
-                  "modifiers": [
-                    "ctrl"
-                  ],
+                  "modifiers": ["ctrl"],
                   "operation": "key_press"
                 },
                 {
@@ -272,10 +259,7 @@
                   },
                   "label": "步骤 8：key_press",
                   "evidence": [],
-                  "modifiers": [
-                    "ctrl",
-                    "shift"
-                  ],
+                  "modifiers": ["ctrl", "shift"],
                   "operation": "key_press"
                 },
                 {
@@ -524,10 +508,7 @@
               "mediaType": "image/jpeg",
               "observationId": "0c7e9321-794d-4c57-81de-b05a74dbe055",
               "coordinateSpace": "screenshot_pixels",
-              "acceptedCoordinateModes": [
-                "pixels",
-                "normalized_1000"
-              ]
+              "acceptedCoordinateModes": ["pixels", "normalized_1000"]
             }
           }
         },
@@ -562,10 +543,7 @@
               "mediaType": "image/jpeg",
               "observationId": "bd6b66e9-024d-4abe-ab76-d05814be23d7",
               "coordinateSpace": "screenshot_pixels",
-              "acceptedCoordinateModes": [
-                "pixels",
-                "normalized_1000"
-              ]
+              "acceptedCoordinateModes": ["pixels", "normalized_1000"]
             }
           }
         },
@@ -574,10 +552,7 @@
           "kind": "key_press",
           "input": {
             "key": "n",
-            "modifiers": [
-              "ctrl",
-              "shift"
-            ],
+            "modifiers": ["ctrl", "shift"],
             "observationId": "bd6b66e9-024d-4abe-ab76-d05814be23d7"
           },
           "status": "succeeded",
@@ -606,24 +581,15 @@
                 "offsetY": 0
               },
               "mediaType": "image/jpeg",
-              "modifiers": [
-                "ctrl",
-                "shift"
-              ],
+              "modifiers": ["ctrl", "shift"],
               "executedInput": {
                 "key": "n",
-                "modifiers": [
-                  "ctrl",
-                  "shift"
-                ],
+                "modifiers": ["ctrl", "shift"],
                 "observationId": "bd6b66e9-024d-4abe-ab76-d05814be23d7"
               },
               "observationId": "abeb3a7b-616e-4757-9e2c-9e0bd3163a2a",
               "coordinateSpace": "screenshot_pixels",
-              "acceptedCoordinateModes": [
-                "pixels",
-                "normalized_1000"
-              ]
+              "acceptedCoordinateModes": ["pixels", "normalized_1000"]
             }
           }
         },
@@ -658,10 +624,7 @@
               "mediaType": "image/jpeg",
               "observationId": "14b347a6-e8b2-4927-8cff-16bf784ae011",
               "coordinateSpace": "screenshot_pixels",
-              "acceptedCoordinateModes": [
-                "pixels",
-                "normalized_1000"
-              ]
+              "acceptedCoordinateModes": ["pixels", "normalized_1000"]
             }
           }
         },
@@ -704,10 +667,7 @@
               },
               "observationId": "6c26775a-1025-405f-a2f6-096ef4d6ae4d",
               "coordinateSpace": "screenshot_pixels",
-              "acceptedCoordinateModes": [
-                "pixels",
-                "normalized_1000"
-              ]
+              "acceptedCoordinateModes": ["pixels", "normalized_1000"]
             }
           }
         },
@@ -742,10 +702,7 @@
               "mediaType": "image/jpeg",
               "observationId": "24f78331-e2e2-4690-a667-e28b41165633",
               "coordinateSpace": "screenshot_pixels",
-              "acceptedCoordinateModes": [
-                "pixels",
-                "normalized_1000"
-              ]
+              "acceptedCoordinateModes": ["pixels", "normalized_1000"]
             }
           }
         },
@@ -791,10 +748,7 @@
               },
               "observationId": "3a45057e-e559-4125-99a0-890430747d20",
               "coordinateSpace": "screenshot_pixels",
-              "acceptedCoordinateModes": [
-                "pixels",
-                "normalized_1000"
-              ]
+              "acceptedCoordinateModes": ["pixels", "normalized_1000"]
             }
           }
         },
@@ -829,10 +783,7 @@
               "mediaType": "image/jpeg",
               "observationId": "4a9bcdec-9805-49cc-8355-223eaaa806b2",
               "coordinateSpace": "screenshot_pixels",
-              "acceptedCoordinateModes": [
-                "pixels",
-                "normalized_1000"
-              ]
+              "acceptedCoordinateModes": ["pixels", "normalized_1000"]
             }
           }
         },
@@ -841,9 +792,7 @@
           "kind": "key_press",
           "input": {
             "key": "l",
-            "modifiers": [
-              "ctrl"
-            ],
+            "modifiers": ["ctrl"],
             "observationId": "4a9bcdec-9805-49cc-8355-223eaaa806b2"
           },
           "status": "succeeded",
@@ -872,22 +821,15 @@
                 "offsetY": 0
               },
               "mediaType": "image/jpeg",
-              "modifiers": [
-                "ctrl"
-              ],
+              "modifiers": ["ctrl"],
               "executedInput": {
                 "key": "l",
-                "modifiers": [
-                  "ctrl"
-                ],
+                "modifiers": ["ctrl"],
                 "observationId": "4a9bcdec-9805-49cc-8355-223eaaa806b2"
               },
               "observationId": "17bf4093-2be8-4ec6-9503-5511bd25d06a",
               "coordinateSpace": "screenshot_pixels",
-              "acceptedCoordinateModes": [
-                "pixels",
-                "normalized_1000"
-              ]
+              "acceptedCoordinateModes": ["pixels", "normalized_1000"]
             }
           }
         },
@@ -922,10 +864,7 @@
               "mediaType": "image/jpeg",
               "observationId": "625f8ebc-e653-4f73-8a99-244e9d7f6fb7",
               "coordinateSpace": "screenshot_pixels",
-              "acceptedCoordinateModes": [
-                "pixels",
-                "normalized_1000"
-              ]
+              "acceptedCoordinateModes": ["pixels", "normalized_1000"]
             }
           }
         },
@@ -968,10 +907,7 @@
               },
               "observationId": "6f4f9fdb-a946-4dc5-a5f8-4e687ec0de62",
               "coordinateSpace": "screenshot_pixels",
-              "acceptedCoordinateModes": [
-                "pixels",
-                "normalized_1000"
-              ]
+              "acceptedCoordinateModes": ["pixels", "normalized_1000"]
             }
           }
         },
@@ -1006,10 +942,7 @@
               "mediaType": "image/jpeg",
               "observationId": "99af1d59-92de-4ca9-b085-0c7725338192",
               "coordinateSpace": "screenshot_pixels",
-              "acceptedCoordinateModes": [
-                "pixels",
-                "normalized_1000"
-              ]
+              "acceptedCoordinateModes": ["pixels", "normalized_1000"]
             }
           }
         },
@@ -1055,10 +988,7 @@
               },
               "observationId": "b9c3eebc-e692-45d4-8c20-11bf0cb6d351",
               "coordinateSpace": "screenshot_pixels",
-              "acceptedCoordinateModes": [
-                "pixels",
-                "normalized_1000"
-              ]
+              "acceptedCoordinateModes": ["pixels", "normalized_1000"]
             }
           }
         },
@@ -1093,10 +1023,7 @@
               "mediaType": "image/jpeg",
               "observationId": "f0f43ec4-3a1b-45c7-9fcc-63f31dbf47dc",
               "coordinateSpace": "screenshot_pixels",
-              "acceptedCoordinateModes": [
-                "pixels",
-                "normalized_1000"
-              ]
+              "acceptedCoordinateModes": ["pixels", "normalized_1000"]
             }
           }
         },
@@ -1105,10 +1032,7 @@
           "kind": "key_press",
           "input": {
             "key": "n",
-            "modifiers": [
-              "ctrl",
-              "shift"
-            ],
+            "modifiers": ["ctrl", "shift"],
             "observationId": "f0f43ec4-3a1b-45c7-9fcc-63f31dbf47dc"
           },
           "status": "succeeded",
@@ -1137,24 +1061,15 @@
                 "offsetY": 0
               },
               "mediaType": "image/jpeg",
-              "modifiers": [
-                "ctrl",
-                "shift"
-              ],
+              "modifiers": ["ctrl", "shift"],
               "executedInput": {
                 "key": "n",
-                "modifiers": [
-                  "ctrl",
-                  "shift"
-                ],
+                "modifiers": ["ctrl", "shift"],
                 "observationId": "f0f43ec4-3a1b-45c7-9fcc-63f31dbf47dc"
               },
               "observationId": "ee83b52a-8ec5-4db4-a001-151f353dce1f",
               "coordinateSpace": "screenshot_pixels",
-              "acceptedCoordinateModes": [
-                "pixels",
-                "normalized_1000"
-              ]
+              "acceptedCoordinateModes": ["pixels", "normalized_1000"]
             }
           }
         },
@@ -1189,10 +1104,7 @@
               "mediaType": "image/jpeg",
               "observationId": "57db0974-aa48-450a-b2a2-6794c0dbafb2",
               "coordinateSpace": "screenshot_pixels",
-              "acceptedCoordinateModes": [
-                "pixels",
-                "normalized_1000"
-              ]
+              "acceptedCoordinateModes": ["pixels", "normalized_1000"]
             }
           }
         },
@@ -1235,10 +1147,7 @@
               },
               "observationId": "fb1f2c51-6081-4950-8630-a0545db9c2b1",
               "coordinateSpace": "screenshot_pixels",
-              "acceptedCoordinateModes": [
-                "pixels",
-                "normalized_1000"
-              ]
+              "acceptedCoordinateModes": ["pixels", "normalized_1000"]
             }
           }
         },
@@ -1273,10 +1182,7 @@
               "mediaType": "image/jpeg",
               "observationId": "5d9c6e23-328a-46e7-8a33-81b87edda68f",
               "coordinateSpace": "screenshot_pixels",
-              "acceptedCoordinateModes": [
-                "pixels",
-                "normalized_1000"
-              ]
+              "acceptedCoordinateModes": ["pixels", "normalized_1000"]
             }
           }
         },
@@ -1322,10 +1228,7 @@
               },
               "observationId": "cb9caaf8-2a49-4f82-bd59-e7468a39df8b",
               "coordinateSpace": "screenshot_pixels",
-              "acceptedCoordinateModes": [
-                "pixels",
-                "normalized_1000"
-              ]
+              "acceptedCoordinateModes": ["pixels", "normalized_1000"]
             }
           }
         },
@@ -1360,10 +1263,7 @@
               "mediaType": "image/jpeg",
               "observationId": "cb44001b-bac3-4265-9953-d7cc9d238561",
               "coordinateSpace": "screenshot_pixels",
-              "acceptedCoordinateModes": [
-                "pixels",
-                "normalized_1000"
-              ]
+              "acceptedCoordinateModes": ["pixels", "normalized_1000"]
             }
           }
         },
@@ -1409,10 +1309,7 @@
               },
               "observationId": "4e766ece-6e48-46eb-b911-59e9b8432db0",
               "coordinateSpace": "screenshot_pixels",
-              "acceptedCoordinateModes": [
-                "pixels",
-                "normalized_1000"
-              ]
+              "acceptedCoordinateModes": ["pixels", "normalized_1000"]
             }
           }
         },
@@ -1447,10 +1344,7 @@
               "mediaType": "image/jpeg",
               "observationId": "e123b3a9-4069-49b0-8d11-bf0dbd2d6aa2",
               "coordinateSpace": "screenshot_pixels",
-              "acceptedCoordinateModes": [
-                "pixels",
-                "normalized_1000"
-              ]
+              "acceptedCoordinateModes": ["pixels", "normalized_1000"]
             }
           }
         },
@@ -1493,10 +1387,7 @@
               },
               "observationId": "5de91330-8798-48e9-856f-2079f951e3f3",
               "coordinateSpace": "screenshot_pixels",
-              "acceptedCoordinateModes": [
-                "pixels",
-                "normalized_1000"
-              ]
+              "acceptedCoordinateModes": ["pixels", "normalized_1000"]
             }
           }
         },
@@ -1531,10 +1422,7 @@
               "mediaType": "image/jpeg",
               "observationId": "4ff2396b-92f9-4644-81d3-c854ee759f45",
               "coordinateSpace": "screenshot_pixels",
-              "acceptedCoordinateModes": [
-                "pixels",
-                "normalized_1000"
-              ]
+              "acceptedCoordinateModes": ["pixels", "normalized_1000"]
             }
           }
         },
@@ -1580,10 +1468,7 @@
               },
               "observationId": "99c62891-0d41-4efb-9c60-45df7cf80be3",
               "coordinateSpace": "screenshot_pixels",
-              "acceptedCoordinateModes": [
-                "pixels",
-                "normalized_1000"
-              ]
+              "acceptedCoordinateModes": ["pixels", "normalized_1000"]
             }
           }
         },
@@ -1618,10 +1503,7 @@
               "mediaType": "image/jpeg",
               "observationId": "cd38f139-b648-4490-9970-2c405d91d119",
               "coordinateSpace": "screenshot_pixels",
-              "acceptedCoordinateModes": [
-                "pixels",
-                "normalized_1000"
-              ]
+              "acceptedCoordinateModes": ["pixels", "normalized_1000"]
             }
           }
         },
@@ -1656,10 +1538,7 @@
               "mediaType": "image/jpeg",
               "observationId": "8108e373-5404-49a9-b45e-7d7b32baa5aa",
               "coordinateSpace": "screenshot_pixels",
-              "acceptedCoordinateModes": [
-                "pixels",
-                "normalized_1000"
-              ]
+              "acceptedCoordinateModes": ["pixels", "normalized_1000"]
             }
           }
         }
@@ -1701,9 +1580,7 @@
           "directoryTree": {
             "root": "/home/xiryn/PA-C5-1-1792958902215",
             "grade": "program_checked",
-            "absent": [
-              "Draft with spaces"
-            ],
+            "absent": ["Draft with spaces"],
             "checks": {
               "linksRejected": true,
               "hostReadOnlyArchive": true
@@ -1719,21 +1596,15 @@
               }
             ],
             "checkerId": "directory-tree-v1",
-            "directories": [
-              "Ready with spaces"
-            ]
+            "directories": ["Ready with spaces"]
           }
         },
         "error": null,
         "completion_contract": {
           "directoryTree": {
             "root": "/home/xiryn/PA-C5-1-1792958902215",
-            "absent": [
-              "Draft with spaces"
-            ],
-            "directories": [
-              "Ready with spaces"
-            ]
+            "absent": ["Draft with spaces"],
+            "directories": ["Ready with spaces"]
           },
           "requireHumanReview": false
         },
@@ -1769,10 +1640,7 @@
                   },
                   "label": "步骤 2：key_press",
                   "evidence": [],
-                  "modifiers": [
-                    "ctrl",
-                    "shift"
-                  ],
+                  "modifiers": ["ctrl", "shift"],
                   "operation": "key_press"
                 },
                 {
@@ -1823,9 +1691,7 @@
                   },
                   "label": "步骤 5：key_press",
                   "evidence": [],
-                  "modifiers": [
-                    "ctrl"
-                  ],
+                  "modifiers": ["ctrl"],
                   "operation": "key_press"
                 },
                 {
@@ -1882,10 +1748,7 @@
                   },
                   "label": "步骤 8：key_press",
                   "evidence": [],
-                  "modifiers": [
-                    "ctrl",
-                    "shift"
-                  ],
+                  "modifiers": ["ctrl", "shift"],
                   "operation": "key_press"
                 },
                 {
@@ -2134,10 +1997,7 @@
               "mediaType": "image/jpeg",
               "observationId": "f201dfa3-f6be-4b1b-ac3c-0dd61ab266e5",
               "coordinateSpace": "screenshot_pixels",
-              "acceptedCoordinateModes": [
-                "pixels",
-                "normalized_1000"
-              ]
+              "acceptedCoordinateModes": ["pixels", "normalized_1000"]
             }
           }
         },
@@ -2172,10 +2032,7 @@
               "mediaType": "image/jpeg",
               "observationId": "8347f63e-3a94-4b08-857c-8319e7e4f6db",
               "coordinateSpace": "screenshot_pixels",
-              "acceptedCoordinateModes": [
-                "pixels",
-                "normalized_1000"
-              ]
+              "acceptedCoordinateModes": ["pixels", "normalized_1000"]
             }
           }
         },
@@ -2184,10 +2041,7 @@
           "kind": "key_press",
           "input": {
             "key": "n",
-            "modifiers": [
-              "ctrl",
-              "shift"
-            ],
+            "modifiers": ["ctrl", "shift"],
             "observationId": "8347f63e-3a94-4b08-857c-8319e7e4f6db"
           },
           "status": "succeeded",
@@ -2216,24 +2070,15 @@
                 "offsetY": 0
               },
               "mediaType": "image/jpeg",
-              "modifiers": [
-                "ctrl",
-                "shift"
-              ],
+              "modifiers": ["ctrl", "shift"],
               "executedInput": {
                 "key": "n",
-                "modifiers": [
-                  "ctrl",
-                  "shift"
-                ],
+                "modifiers": ["ctrl", "shift"],
                 "observationId": "8347f63e-3a94-4b08-857c-8319e7e4f6db"
               },
               "observationId": "0e98c708-951f-4e06-85bf-212cc745d2e6",
               "coordinateSpace": "screenshot_pixels",
-              "acceptedCoordinateModes": [
-                "pixels",
-                "normalized_1000"
-              ]
+              "acceptedCoordinateModes": ["pixels", "normalized_1000"]
             }
           }
         },
@@ -2268,10 +2113,7 @@
               "mediaType": "image/jpeg",
               "observationId": "b0e28ca2-1147-41ba-80b3-53ea4e614e9d",
               "coordinateSpace": "screenshot_pixels",
-              "acceptedCoordinateModes": [
-                "pixels",
-                "normalized_1000"
-              ]
+              "acceptedCoordinateModes": ["pixels", "normalized_1000"]
             }
           }
         },
@@ -2314,10 +2156,7 @@
               },
               "observationId": "05e12063-0a28-46dc-a5b2-9feb601d0304",
               "coordinateSpace": "screenshot_pixels",
-              "acceptedCoordinateModes": [
-                "pixels",
-                "normalized_1000"
-              ]
+              "acceptedCoordinateModes": ["pixels", "normalized_1000"]
             }
           }
         },
@@ -2352,10 +2191,7 @@
               "mediaType": "image/jpeg",
               "observationId": "fcd93516-a918-4059-9a21-aac73ac3410f",
               "coordinateSpace": "screenshot_pixels",
-              "acceptedCoordinateModes": [
-                "pixels",
-                "normalized_1000"
-              ]
+              "acceptedCoordinateModes": ["pixels", "normalized_1000"]
             }
           }
         },
@@ -2401,10 +2237,7 @@
               },
               "observationId": "8094113f-e9c3-4b58-8359-7274b9ee4ae1",
               "coordinateSpace": "screenshot_pixels",
-              "acceptedCoordinateModes": [
-                "pixels",
-                "normalized_1000"
-              ]
+              "acceptedCoordinateModes": ["pixels", "normalized_1000"]
             }
           }
         },
@@ -2439,10 +2272,7 @@
               "mediaType": "image/jpeg",
               "observationId": "7f78637b-7cfc-46da-9104-493d17fd39b7",
               "coordinateSpace": "screenshot_pixels",
-              "acceptedCoordinateModes": [
-                "pixels",
-                "normalized_1000"
-              ]
+              "acceptedCoordinateModes": ["pixels", "normalized_1000"]
             }
           }
         },
@@ -2451,9 +2281,7 @@
           "kind": "key_press",
           "input": {
             "key": "l",
-            "modifiers": [
-              "ctrl"
-            ],
+            "modifiers": ["ctrl"],
             "observationId": "7f78637b-7cfc-46da-9104-493d17fd39b7"
           },
           "status": "succeeded",
@@ -2482,22 +2310,15 @@
                 "offsetY": 0
               },
               "mediaType": "image/jpeg",
-              "modifiers": [
-                "ctrl"
-              ],
+              "modifiers": ["ctrl"],
               "executedInput": {
                 "key": "l",
-                "modifiers": [
-                  "ctrl"
-                ],
+                "modifiers": ["ctrl"],
                 "observationId": "7f78637b-7cfc-46da-9104-493d17fd39b7"
               },
               "observationId": "8198245c-5d6d-437b-9a09-624937cc52b3",
               "coordinateSpace": "screenshot_pixels",
-              "acceptedCoordinateModes": [
-                "pixels",
-                "normalized_1000"
-              ]
+              "acceptedCoordinateModes": ["pixels", "normalized_1000"]
             }
           }
         },
@@ -2532,10 +2353,7 @@
               "mediaType": "image/jpeg",
               "observationId": "cb362b5e-2945-4bbe-907b-5e3a9e7cc9a2",
               "coordinateSpace": "screenshot_pixels",
-              "acceptedCoordinateModes": [
-                "pixels",
-                "normalized_1000"
-              ]
+              "acceptedCoordinateModes": ["pixels", "normalized_1000"]
             }
           }
         },
@@ -2578,10 +2396,7 @@
               },
               "observationId": "8cb4f6b7-fc4a-4865-a0f5-e0db05a3ace2",
               "coordinateSpace": "screenshot_pixels",
-              "acceptedCoordinateModes": [
-                "pixels",
-                "normalized_1000"
-              ]
+              "acceptedCoordinateModes": ["pixels", "normalized_1000"]
             }
           }
         },
@@ -2616,10 +2431,7 @@
               "mediaType": "image/jpeg",
               "observationId": "83dc744d-238a-4202-9b52-8e5daf735098",
               "coordinateSpace": "screenshot_pixels",
-              "acceptedCoordinateModes": [
-                "pixels",
-                "normalized_1000"
-              ]
+              "acceptedCoordinateModes": ["pixels", "normalized_1000"]
             }
           }
         },
@@ -2665,10 +2477,7 @@
               },
               "observationId": "7f565ab3-eea8-45cb-9692-b252cfa95b65",
               "coordinateSpace": "screenshot_pixels",
-              "acceptedCoordinateModes": [
-                "pixels",
-                "normalized_1000"
-              ]
+              "acceptedCoordinateModes": ["pixels", "normalized_1000"]
             }
           }
         },
@@ -2703,10 +2512,7 @@
               "mediaType": "image/jpeg",
               "observationId": "bab8c87b-261a-4f92-8d96-498eb25f9757",
               "coordinateSpace": "screenshot_pixels",
-              "acceptedCoordinateModes": [
-                "pixels",
-                "normalized_1000"
-              ]
+              "acceptedCoordinateModes": ["pixels", "normalized_1000"]
             }
           }
         },
@@ -2715,10 +2521,7 @@
           "kind": "key_press",
           "input": {
             "key": "n",
-            "modifiers": [
-              "ctrl",
-              "shift"
-            ],
+            "modifiers": ["ctrl", "shift"],
             "observationId": "bab8c87b-261a-4f92-8d96-498eb25f9757"
           },
           "status": "succeeded",
@@ -2747,24 +2550,15 @@
                 "offsetY": 0
               },
               "mediaType": "image/jpeg",
-              "modifiers": [
-                "ctrl",
-                "shift"
-              ],
+              "modifiers": ["ctrl", "shift"],
               "executedInput": {
                 "key": "n",
-                "modifiers": [
-                  "ctrl",
-                  "shift"
-                ],
+                "modifiers": ["ctrl", "shift"],
                 "observationId": "bab8c87b-261a-4f92-8d96-498eb25f9757"
               },
               "observationId": "0e9a9958-b52b-4ead-8ec4-7d2e34910610",
               "coordinateSpace": "screenshot_pixels",
-              "acceptedCoordinateModes": [
-                "pixels",
-                "normalized_1000"
-              ]
+              "acceptedCoordinateModes": ["pixels", "normalized_1000"]
             }
           }
         },
@@ -2799,10 +2593,7 @@
               "mediaType": "image/jpeg",
               "observationId": "dbb91f80-4e5b-4935-841b-19e92beaacda",
               "coordinateSpace": "screenshot_pixels",
-              "acceptedCoordinateModes": [
-                "pixels",
-                "normalized_1000"
-              ]
+              "acceptedCoordinateModes": ["pixels", "normalized_1000"]
             }
           }
         },
@@ -2845,10 +2636,7 @@
               },
               "observationId": "5ff15f40-e1fa-420d-a35b-6121a6706413",
               "coordinateSpace": "screenshot_pixels",
-              "acceptedCoordinateModes": [
-                "pixels",
-                "normalized_1000"
-              ]
+              "acceptedCoordinateModes": ["pixels", "normalized_1000"]
             }
           }
         },
@@ -2883,10 +2671,7 @@
               "mediaType": "image/jpeg",
               "observationId": "0259d0a0-09eb-4abe-995f-554ac7eb21f8",
               "coordinateSpace": "screenshot_pixels",
-              "acceptedCoordinateModes": [
-                "pixels",
-                "normalized_1000"
-              ]
+              "acceptedCoordinateModes": ["pixels", "normalized_1000"]
             }
           }
         },
@@ -2932,10 +2717,7 @@
               },
               "observationId": "818e1f47-7cdb-4cf5-a683-382a8fc1ce23",
               "coordinateSpace": "screenshot_pixels",
-              "acceptedCoordinateModes": [
-                "pixels",
-                "normalized_1000"
-              ]
+              "acceptedCoordinateModes": ["pixels", "normalized_1000"]
             }
           }
         },
@@ -2970,10 +2752,7 @@
               "mediaType": "image/jpeg",
               "observationId": "7b1157cc-8776-4a97-83e6-1e6f366e3e84",
               "coordinateSpace": "screenshot_pixels",
-              "acceptedCoordinateModes": [
-                "pixels",
-                "normalized_1000"
-              ]
+              "acceptedCoordinateModes": ["pixels", "normalized_1000"]
             }
           }
         },
@@ -3019,10 +2798,7 @@
               },
               "observationId": "4099b215-4fa7-46d4-aeb7-ed93143cc7a0",
               "coordinateSpace": "screenshot_pixels",
-              "acceptedCoordinateModes": [
-                "pixels",
-                "normalized_1000"
-              ]
+              "acceptedCoordinateModes": ["pixels", "normalized_1000"]
             }
           }
         },
@@ -3057,10 +2833,7 @@
               "mediaType": "image/jpeg",
               "observationId": "c64e7b1a-b3b5-468f-8601-65aabe11e2f5",
               "coordinateSpace": "screenshot_pixels",
-              "acceptedCoordinateModes": [
-                "pixels",
-                "normalized_1000"
-              ]
+              "acceptedCoordinateModes": ["pixels", "normalized_1000"]
             }
           }
         },
@@ -3103,10 +2876,7 @@
               },
               "observationId": "57a2baaf-4699-4630-81e0-75883986a4d7",
               "coordinateSpace": "screenshot_pixels",
-              "acceptedCoordinateModes": [
-                "pixels",
-                "normalized_1000"
-              ]
+              "acceptedCoordinateModes": ["pixels", "normalized_1000"]
             }
           }
         },
@@ -3141,10 +2911,7 @@
               "mediaType": "image/jpeg",
               "observationId": "7b566648-72df-4f9b-8459-1aaa79182c38",
               "coordinateSpace": "screenshot_pixels",
-              "acceptedCoordinateModes": [
-                "pixels",
-                "normalized_1000"
-              ]
+              "acceptedCoordinateModes": ["pixels", "normalized_1000"]
             }
           }
         },
@@ -3190,10 +2957,7 @@
               },
               "observationId": "febd01e7-2960-42d3-acf1-2b0d32188d35",
               "coordinateSpace": "screenshot_pixels",
-              "acceptedCoordinateModes": [
-                "pixels",
-                "normalized_1000"
-              ]
+              "acceptedCoordinateModes": ["pixels", "normalized_1000"]
             }
           }
         },
@@ -3228,10 +2992,7 @@
               "mediaType": "image/jpeg",
               "observationId": "bc517c6a-9a18-4a7b-a642-845a56b2e2b5",
               "coordinateSpace": "screenshot_pixels",
-              "acceptedCoordinateModes": [
-                "pixels",
-                "normalized_1000"
-              ]
+              "acceptedCoordinateModes": ["pixels", "normalized_1000"]
             }
           }
         },
@@ -3266,10 +3027,7 @@
               "mediaType": "image/jpeg",
               "observationId": "b3e2767c-fbcc-4c00-a161-38b14b13c760",
               "coordinateSpace": "screenshot_pixels",
-              "acceptedCoordinateModes": [
-                "pixels",
-                "normalized_1000"
-              ]
+              "acceptedCoordinateModes": ["pixels", "normalized_1000"]
             }
           }
         }
@@ -3311,9 +3069,7 @@
           "directoryTree": {
             "root": "/home/xiryn/PA-C5-2-1792958936722",
             "grade": "program_checked",
-            "absent": [
-              "待归档"
-            ],
+            "absent": ["待归档"],
             "checks": {
               "linksRejected": true,
               "hostReadOnlyArchive": true
@@ -3329,21 +3085,15 @@
               }
             ],
             "checkerId": "directory-tree-v1",
-            "directories": [
-              "已归档"
-            ]
+            "directories": ["已归档"]
           }
         },
         "error": null,
         "completion_contract": {
           "directoryTree": {
             "root": "/home/xiryn/PA-C5-2-1792958936722",
-            "absent": [
-              "待归档"
-            ],
-            "directories": [
-              "已归档"
-            ]
+            "absent": ["待归档"],
+            "directories": ["已归档"]
           },
           "requireHumanReview": false
         },
@@ -3379,10 +3129,7 @@
                   },
                   "label": "步骤 2：key_press",
                   "evidence": [],
-                  "modifiers": [
-                    "ctrl",
-                    "shift"
-                  ],
+                  "modifiers": ["ctrl", "shift"],
                   "operation": "key_press"
                 },
                 {
@@ -3433,9 +3180,7 @@
                   },
                   "label": "步骤 5：key_press",
                   "evidence": [],
-                  "modifiers": [
-                    "ctrl"
-                  ],
+                  "modifiers": ["ctrl"],
                   "operation": "key_press"
                 },
                 {
@@ -3492,10 +3237,7 @@
                   },
                   "label": "步骤 8：key_press",
                   "evidence": [],
-                  "modifiers": [
-                    "ctrl",
-                    "shift"
-                  ],
+                  "modifiers": ["ctrl", "shift"],
                   "operation": "key_press"
                 },
                 {
@@ -3744,10 +3486,7 @@
               "mediaType": "image/jpeg",
               "observationId": "e40b438c-c5d0-4cd0-ba07-f07eddd6ae76",
               "coordinateSpace": "screenshot_pixels",
-              "acceptedCoordinateModes": [
-                "pixels",
-                "normalized_1000"
-              ]
+              "acceptedCoordinateModes": ["pixels", "normalized_1000"]
             }
           }
         },
@@ -3782,10 +3521,7 @@
               "mediaType": "image/jpeg",
               "observationId": "417e9be0-1938-4403-98e8-b2506b470f9a",
               "coordinateSpace": "screenshot_pixels",
-              "acceptedCoordinateModes": [
-                "pixels",
-                "normalized_1000"
-              ]
+              "acceptedCoordinateModes": ["pixels", "normalized_1000"]
             }
           }
         },
@@ -3794,10 +3530,7 @@
           "kind": "key_press",
           "input": {
             "key": "n",
-            "modifiers": [
-              "ctrl",
-              "shift"
-            ],
+            "modifiers": ["ctrl", "shift"],
             "observationId": "417e9be0-1938-4403-98e8-b2506b470f9a"
           },
           "status": "succeeded",
@@ -3826,24 +3559,15 @@
                 "offsetY": 0
               },
               "mediaType": "image/jpeg",
-              "modifiers": [
-                "ctrl",
-                "shift"
-              ],
+              "modifiers": ["ctrl", "shift"],
               "executedInput": {
                 "key": "n",
-                "modifiers": [
-                  "ctrl",
-                  "shift"
-                ],
+                "modifiers": ["ctrl", "shift"],
                 "observationId": "417e9be0-1938-4403-98e8-b2506b470f9a"
               },
               "observationId": "d245b7b8-1eb5-4520-a643-984d7af2d7b3",
               "coordinateSpace": "screenshot_pixels",
-              "acceptedCoordinateModes": [
-                "pixels",
-                "normalized_1000"
-              ]
+              "acceptedCoordinateModes": ["pixels", "normalized_1000"]
             }
           }
         },
@@ -3878,10 +3602,7 @@
               "mediaType": "image/jpeg",
               "observationId": "ea088de9-362f-4ae0-9b19-e76c574be77c",
               "coordinateSpace": "screenshot_pixels",
-              "acceptedCoordinateModes": [
-                "pixels",
-                "normalized_1000"
-              ]
+              "acceptedCoordinateModes": ["pixels", "normalized_1000"]
             }
           }
         },
@@ -3924,10 +3645,7 @@
               },
               "observationId": "6951ba2c-ea46-48c0-aa82-838f1eba5e31",
               "coordinateSpace": "screenshot_pixels",
-              "acceptedCoordinateModes": [
-                "pixels",
-                "normalized_1000"
-              ]
+              "acceptedCoordinateModes": ["pixels", "normalized_1000"]
             }
           }
         },
@@ -3962,10 +3680,7 @@
               "mediaType": "image/jpeg",
               "observationId": "dae5c4cd-c056-4267-9158-348e03cafe1d",
               "coordinateSpace": "screenshot_pixels",
-              "acceptedCoordinateModes": [
-                "pixels",
-                "normalized_1000"
-              ]
+              "acceptedCoordinateModes": ["pixels", "normalized_1000"]
             }
           }
         },
@@ -4011,10 +3726,7 @@
               },
               "observationId": "274bccb5-c352-4740-94f5-97441f84df0e",
               "coordinateSpace": "screenshot_pixels",
-              "acceptedCoordinateModes": [
-                "pixels",
-                "normalized_1000"
-              ]
+              "acceptedCoordinateModes": ["pixels", "normalized_1000"]
             }
           }
         },
@@ -4049,10 +3761,7 @@
               "mediaType": "image/jpeg",
               "observationId": "887f95b8-d3bb-4285-9d8a-865bb382f3a7",
               "coordinateSpace": "screenshot_pixels",
-              "acceptedCoordinateModes": [
-                "pixels",
-                "normalized_1000"
-              ]
+              "acceptedCoordinateModes": ["pixels", "normalized_1000"]
             }
           }
         },
@@ -4061,9 +3770,7 @@
           "kind": "key_press",
           "input": {
             "key": "l",
-            "modifiers": [
-              "ctrl"
-            ],
+            "modifiers": ["ctrl"],
             "observationId": "887f95b8-d3bb-4285-9d8a-865bb382f3a7"
           },
           "status": "succeeded",
@@ -4092,22 +3799,15 @@
                 "offsetY": 0
               },
               "mediaType": "image/jpeg",
-              "modifiers": [
-                "ctrl"
-              ],
+              "modifiers": ["ctrl"],
               "executedInput": {
                 "key": "l",
-                "modifiers": [
-                  "ctrl"
-                ],
+                "modifiers": ["ctrl"],
                 "observationId": "887f95b8-d3bb-4285-9d8a-865bb382f3a7"
               },
               "observationId": "287e0f49-0fb3-4409-86a0-003a8af3bfea",
               "coordinateSpace": "screenshot_pixels",
-              "acceptedCoordinateModes": [
-                "pixels",
-                "normalized_1000"
-              ]
+              "acceptedCoordinateModes": ["pixels", "normalized_1000"]
             }
           }
         },
@@ -4142,10 +3842,7 @@
               "mediaType": "image/jpeg",
               "observationId": "b9f53436-396b-44fa-815a-eea33ebf32dd",
               "coordinateSpace": "screenshot_pixels",
-              "acceptedCoordinateModes": [
-                "pixels",
-                "normalized_1000"
-              ]
+              "acceptedCoordinateModes": ["pixels", "normalized_1000"]
             }
           }
         },
@@ -4188,10 +3885,7 @@
               },
               "observationId": "11d47a3e-1661-4dad-8c99-1af77973f402",
               "coordinateSpace": "screenshot_pixels",
-              "acceptedCoordinateModes": [
-                "pixels",
-                "normalized_1000"
-              ]
+              "acceptedCoordinateModes": ["pixels", "normalized_1000"]
             }
           }
         },
@@ -4226,10 +3920,7 @@
               "mediaType": "image/jpeg",
               "observationId": "52c22d5b-562c-4da2-b0f1-cc5e816188d4",
               "coordinateSpace": "screenshot_pixels",
-              "acceptedCoordinateModes": [
-                "pixels",
-                "normalized_1000"
-              ]
+              "acceptedCoordinateModes": ["pixels", "normalized_1000"]
             }
           }
         },
@@ -4275,10 +3966,7 @@
               },
               "observationId": "e6c75467-1fd3-4510-8ea5-af320b64faec",
               "coordinateSpace": "screenshot_pixels",
-              "acceptedCoordinateModes": [
-                "pixels",
-                "normalized_1000"
-              ]
+              "acceptedCoordinateModes": ["pixels", "normalized_1000"]
             }
           }
         },
@@ -4313,10 +4001,7 @@
               "mediaType": "image/jpeg",
               "observationId": "b2b01635-2200-4859-81e2-59543c6caa55",
               "coordinateSpace": "screenshot_pixels",
-              "acceptedCoordinateModes": [
-                "pixels",
-                "normalized_1000"
-              ]
+              "acceptedCoordinateModes": ["pixels", "normalized_1000"]
             }
           }
         },
@@ -4325,10 +4010,7 @@
           "kind": "key_press",
           "input": {
             "key": "n",
-            "modifiers": [
-              "ctrl",
-              "shift"
-            ],
+            "modifiers": ["ctrl", "shift"],
             "observationId": "b2b01635-2200-4859-81e2-59543c6caa55"
           },
           "status": "succeeded",
@@ -4357,24 +4039,15 @@
                 "offsetY": 0
               },
               "mediaType": "image/jpeg",
-              "modifiers": [
-                "ctrl",
-                "shift"
-              ],
+              "modifiers": ["ctrl", "shift"],
               "executedInput": {
                 "key": "n",
-                "modifiers": [
-                  "ctrl",
-                  "shift"
-                ],
+                "modifiers": ["ctrl", "shift"],
                 "observationId": "b2b01635-2200-4859-81e2-59543c6caa55"
               },
               "observationId": "648f4bb2-596d-4d58-998b-a5cdc1a56485",
               "coordinateSpace": "screenshot_pixels",
-              "acceptedCoordinateModes": [
-                "pixels",
-                "normalized_1000"
-              ]
+              "acceptedCoordinateModes": ["pixels", "normalized_1000"]
             }
           }
         },
@@ -4409,10 +4082,7 @@
               "mediaType": "image/jpeg",
               "observationId": "7ab8f342-7691-4d38-9215-23980909d471",
               "coordinateSpace": "screenshot_pixels",
-              "acceptedCoordinateModes": [
-                "pixels",
-                "normalized_1000"
-              ]
+              "acceptedCoordinateModes": ["pixels", "normalized_1000"]
             }
           }
         },
@@ -4455,10 +4125,7 @@
               },
               "observationId": "29939a7e-3aff-40f0-94de-8a53c73526d4",
               "coordinateSpace": "screenshot_pixels",
-              "acceptedCoordinateModes": [
-                "pixels",
-                "normalized_1000"
-              ]
+              "acceptedCoordinateModes": ["pixels", "normalized_1000"]
             }
           }
         },
@@ -4493,10 +4160,7 @@
               "mediaType": "image/jpeg",
               "observationId": "b79d4c36-1e21-4b5d-a69d-5b538b170f70",
               "coordinateSpace": "screenshot_pixels",
-              "acceptedCoordinateModes": [
-                "pixels",
-                "normalized_1000"
-              ]
+              "acceptedCoordinateModes": ["pixels", "normalized_1000"]
             }
           }
         },
@@ -4542,10 +4206,7 @@
               },
               "observationId": "c83d1ab5-8e61-43a7-8943-b1e708e65399",
               "coordinateSpace": "screenshot_pixels",
-              "acceptedCoordinateModes": [
-                "pixels",
-                "normalized_1000"
-              ]
+              "acceptedCoordinateModes": ["pixels", "normalized_1000"]
             }
           }
         },
@@ -4580,10 +4241,7 @@
               "mediaType": "image/jpeg",
               "observationId": "a057617f-4d0a-4ef0-be4d-9d9d5369649c",
               "coordinateSpace": "screenshot_pixels",
-              "acceptedCoordinateModes": [
-                "pixels",
-                "normalized_1000"
-              ]
+              "acceptedCoordinateModes": ["pixels", "normalized_1000"]
             }
           }
         },
@@ -4629,10 +4287,7 @@
               },
               "observationId": "2129e4b4-be79-4d78-9ddb-7ee2db4f0434",
               "coordinateSpace": "screenshot_pixels",
-              "acceptedCoordinateModes": [
-                "pixels",
-                "normalized_1000"
-              ]
+              "acceptedCoordinateModes": ["pixels", "normalized_1000"]
             }
           }
         },
@@ -4667,10 +4322,7 @@
               "mediaType": "image/jpeg",
               "observationId": "47ba1803-32b9-4296-8e04-32a7e9f9e5fb",
               "coordinateSpace": "screenshot_pixels",
-              "acceptedCoordinateModes": [
-                "pixels",
-                "normalized_1000"
-              ]
+              "acceptedCoordinateModes": ["pixels", "normalized_1000"]
             }
           }
         },
@@ -4713,10 +4365,7 @@
               },
               "observationId": "ee7d2ef2-013b-4527-be4c-4c9cc356239a",
               "coordinateSpace": "screenshot_pixels",
-              "acceptedCoordinateModes": [
-                "pixels",
-                "normalized_1000"
-              ]
+              "acceptedCoordinateModes": ["pixels", "normalized_1000"]
             }
           }
         },
@@ -4751,10 +4400,7 @@
               "mediaType": "image/jpeg",
               "observationId": "6beca1e5-2c98-44aa-8608-daacb5e7f40e",
               "coordinateSpace": "screenshot_pixels",
-              "acceptedCoordinateModes": [
-                "pixels",
-                "normalized_1000"
-              ]
+              "acceptedCoordinateModes": ["pixels", "normalized_1000"]
             }
           }
         },
@@ -4800,10 +4446,7 @@
               },
               "observationId": "9c36492f-74c7-47ae-b21e-4990838aa396",
               "coordinateSpace": "screenshot_pixels",
-              "acceptedCoordinateModes": [
-                "pixels",
-                "normalized_1000"
-              ]
+              "acceptedCoordinateModes": ["pixels", "normalized_1000"]
             }
           }
         },
@@ -4838,10 +4481,7 @@
               "mediaType": "image/jpeg",
               "observationId": "0f1e0f5d-246b-48b7-83bc-a69edcea2e20",
               "coordinateSpace": "screenshot_pixels",
-              "acceptedCoordinateModes": [
-                "pixels",
-                "normalized_1000"
-              ]
+              "acceptedCoordinateModes": ["pixels", "normalized_1000"]
             }
           }
         },
@@ -4876,10 +4516,7 @@
               "mediaType": "image/jpeg",
               "observationId": "340773e5-3f1d-42d7-a699-79bfcd13a27c",
               "coordinateSpace": "screenshot_pixels",
-              "acceptedCoordinateModes": [
-                "pixels",
-                "normalized_1000"
-              ]
+              "acceptedCoordinateModes": ["pixels", "normalized_1000"]
             }
           }
         }
@@ -4921,9 +4558,7 @@
           "directoryTree": {
             "root": "/home/xiryn/PA-C5-3-1792958971416",
             "grade": "program_checked",
-            "absent": [
-              "New-input-four"
-            ],
+            "absent": ["New-input-four"],
             "checks": {
               "linksRejected": true,
               "hostReadOnlyArchive": true
@@ -4939,21 +4574,15 @@
               }
             ],
             "checkerId": "directory-tree-v1",
-            "directories": [
-              "Final-four"
-            ]
+            "directories": ["Final-four"]
           }
         },
         "error": null,
         "completion_contract": {
           "directoryTree": {
             "root": "/home/xiryn/PA-C5-3-1792958971416",
-            "absent": [
-              "New-input-four"
-            ],
-            "directories": [
-              "Final-four"
-            ]
+            "absent": ["New-input-four"],
+            "directories": ["Final-four"]
           },
           "requireHumanReview": false
         },
@@ -4989,10 +4618,7 @@
                   },
                   "label": "步骤 2：key_press",
                   "evidence": [],
-                  "modifiers": [
-                    "ctrl",
-                    "shift"
-                  ],
+                  "modifiers": ["ctrl", "shift"],
                   "operation": "key_press"
                 },
                 {
@@ -5043,9 +4669,7 @@
                   },
                   "label": "步骤 5：key_press",
                   "evidence": [],
-                  "modifiers": [
-                    "ctrl"
-                  ],
+                  "modifiers": ["ctrl"],
                   "operation": "key_press"
                 },
                 {
@@ -5102,10 +4726,7 @@
                   },
                   "label": "步骤 8：key_press",
                   "evidence": [],
-                  "modifiers": [
-                    "ctrl",
-                    "shift"
-                  ],
+                  "modifiers": ["ctrl", "shift"],
                   "operation": "key_press"
                 },
                 {
@@ -5359,10 +4980,7 @@
               "mediaType": "image/jpeg",
               "observationId": "f45297d0-0b27-49ab-96a1-c6b540d8328c",
               "coordinateSpace": "screenshot_pixels",
-              "acceptedCoordinateModes": [
-                "pixels",
-                "normalized_1000"
-              ]
+              "acceptedCoordinateModes": ["pixels", "normalized_1000"]
             }
           }
         },
@@ -5397,10 +5015,7 @@
               "mediaType": "image/jpeg",
               "observationId": "dbfe443f-16cc-4c17-96a3-344978404947",
               "coordinateSpace": "screenshot_pixels",
-              "acceptedCoordinateModes": [
-                "pixels",
-                "normalized_1000"
-              ]
+              "acceptedCoordinateModes": ["pixels", "normalized_1000"]
             }
           }
         },
@@ -5409,10 +5024,7 @@
           "kind": "key_press",
           "input": {
             "key": "n",
-            "modifiers": [
-              "ctrl",
-              "shift"
-            ],
+            "modifiers": ["ctrl", "shift"],
             "observationId": "dbfe443f-16cc-4c17-96a3-344978404947"
           },
           "status": "succeeded",
@@ -5441,24 +5053,15 @@
                 "offsetY": 0
               },
               "mediaType": "image/jpeg",
-              "modifiers": [
-                "ctrl",
-                "shift"
-              ],
+              "modifiers": ["ctrl", "shift"],
               "executedInput": {
                 "key": "n",
-                "modifiers": [
-                  "ctrl",
-                  "shift"
-                ],
+                "modifiers": ["ctrl", "shift"],
                 "observationId": "dbfe443f-16cc-4c17-96a3-344978404947"
               },
               "observationId": "3b2ca437-1e5e-4324-8054-b5728e7b1d60",
               "coordinateSpace": "screenshot_pixels",
-              "acceptedCoordinateModes": [
-                "pixels",
-                "normalized_1000"
-              ]
+              "acceptedCoordinateModes": ["pixels", "normalized_1000"]
             }
           }
         },
@@ -5493,10 +5096,7 @@
               "mediaType": "image/jpeg",
               "observationId": "947e1c25-b3f7-4d17-8f38-a1eb16d62394",
               "coordinateSpace": "screenshot_pixels",
-              "acceptedCoordinateModes": [
-                "pixels",
-                "normalized_1000"
-              ]
+              "acceptedCoordinateModes": ["pixels", "normalized_1000"]
             }
           }
         },
@@ -5539,10 +5139,7 @@
               },
               "observationId": "0b83897b-1dd6-478e-b23d-092db5284ddb",
               "coordinateSpace": "screenshot_pixels",
-              "acceptedCoordinateModes": [
-                "pixels",
-                "normalized_1000"
-              ]
+              "acceptedCoordinateModes": ["pixels", "normalized_1000"]
             }
           }
         },
@@ -5577,10 +5174,7 @@
               "mediaType": "image/jpeg",
               "observationId": "a03885e6-7f13-47db-9248-04256793309b",
               "coordinateSpace": "screenshot_pixels",
-              "acceptedCoordinateModes": [
-                "pixels",
-                "normalized_1000"
-              ]
+              "acceptedCoordinateModes": ["pixels", "normalized_1000"]
             }
           }
         },
@@ -5626,10 +5220,7 @@
               },
               "observationId": "37d91ec8-5e84-4327-9806-b1c82a3f5dad",
               "coordinateSpace": "screenshot_pixels",
-              "acceptedCoordinateModes": [
-                "pixels",
-                "normalized_1000"
-              ]
+              "acceptedCoordinateModes": ["pixels", "normalized_1000"]
             }
           }
         },
@@ -5664,10 +5255,7 @@
               "mediaType": "image/jpeg",
               "observationId": "920b7e23-36fe-4843-a9b9-5766b6ad3497",
               "coordinateSpace": "screenshot_pixels",
-              "acceptedCoordinateModes": [
-                "pixels",
-                "normalized_1000"
-              ]
+              "acceptedCoordinateModes": ["pixels", "normalized_1000"]
             }
           }
         },
@@ -5676,9 +5264,7 @@
           "kind": "key_press",
           "input": {
             "key": "l",
-            "modifiers": [
-              "ctrl"
-            ],
+            "modifiers": ["ctrl"],
             "observationId": "920b7e23-36fe-4843-a9b9-5766b6ad3497"
           },
           "status": "succeeded",
@@ -5707,22 +5293,15 @@
                 "offsetY": 0
               },
               "mediaType": "image/jpeg",
-              "modifiers": [
-                "ctrl"
-              ],
+              "modifiers": ["ctrl"],
               "executedInput": {
                 "key": "l",
-                "modifiers": [
-                  "ctrl"
-                ],
+                "modifiers": ["ctrl"],
                 "observationId": "920b7e23-36fe-4843-a9b9-5766b6ad3497"
               },
               "observationId": "17e4072d-e2b0-4e25-86ff-c24bf92a5fd9",
               "coordinateSpace": "screenshot_pixels",
-              "acceptedCoordinateModes": [
-                "pixels",
-                "normalized_1000"
-              ]
+              "acceptedCoordinateModes": ["pixels", "normalized_1000"]
             }
           }
         },
@@ -5757,10 +5336,7 @@
               "mediaType": "image/jpeg",
               "observationId": "77645a03-249d-4a17-81d0-5343b92aa87f",
               "coordinateSpace": "screenshot_pixels",
-              "acceptedCoordinateModes": [
-                "pixels",
-                "normalized_1000"
-              ]
+              "acceptedCoordinateModes": ["pixels", "normalized_1000"]
             }
           }
         },
@@ -5803,10 +5379,7 @@
               },
               "observationId": "a60f54fe-a27f-4e0a-a38a-340eca2886d7",
               "coordinateSpace": "screenshot_pixels",
-              "acceptedCoordinateModes": [
-                "pixels",
-                "normalized_1000"
-              ]
+              "acceptedCoordinateModes": ["pixels", "normalized_1000"]
             }
           }
         },
@@ -5841,10 +5414,7 @@
               "mediaType": "image/jpeg",
               "observationId": "7fd04ddc-7cb2-462a-ac1d-d68d5b420b13",
               "coordinateSpace": "screenshot_pixels",
-              "acceptedCoordinateModes": [
-                "pixels",
-                "normalized_1000"
-              ]
+              "acceptedCoordinateModes": ["pixels", "normalized_1000"]
             }
           }
         },
@@ -5890,10 +5460,7 @@
               },
               "observationId": "1d998b2a-0d00-4adf-be12-f1223a5902ef",
               "coordinateSpace": "screenshot_pixels",
-              "acceptedCoordinateModes": [
-                "pixels",
-                "normalized_1000"
-              ]
+              "acceptedCoordinateModes": ["pixels", "normalized_1000"]
             }
           }
         },
@@ -5928,10 +5495,7 @@
               "mediaType": "image/jpeg",
               "observationId": "0ca6e1c1-ec1f-4542-877e-06bdcc495270",
               "coordinateSpace": "screenshot_pixels",
-              "acceptedCoordinateModes": [
-                "pixels",
-                "normalized_1000"
-              ]
+              "acceptedCoordinateModes": ["pixels", "normalized_1000"]
             }
           }
         },
@@ -5940,10 +5504,7 @@
           "kind": "key_press",
           "input": {
             "key": "n",
-            "modifiers": [
-              "ctrl",
-              "shift"
-            ],
+            "modifiers": ["ctrl", "shift"],
             "observationId": "0ca6e1c1-ec1f-4542-877e-06bdcc495270"
           },
           "status": "succeeded",
@@ -5972,24 +5533,15 @@
                 "offsetY": 0
               },
               "mediaType": "image/jpeg",
-              "modifiers": [
-                "ctrl",
-                "shift"
-              ],
+              "modifiers": ["ctrl", "shift"],
               "executedInput": {
                 "key": "n",
-                "modifiers": [
-                  "ctrl",
-                  "shift"
-                ],
+                "modifiers": ["ctrl", "shift"],
                 "observationId": "0ca6e1c1-ec1f-4542-877e-06bdcc495270"
               },
               "observationId": "ebaa116a-90a9-4160-93f3-f004dec4f7da",
               "coordinateSpace": "screenshot_pixels",
-              "acceptedCoordinateModes": [
-                "pixels",
-                "normalized_1000"
-              ]
+              "acceptedCoordinateModes": ["pixels", "normalized_1000"]
             }
           }
         },
@@ -6024,10 +5576,7 @@
               "mediaType": "image/jpeg",
               "observationId": "18f41ce6-5902-4205-a26f-ca1070bada42",
               "coordinateSpace": "screenshot_pixels",
-              "acceptedCoordinateModes": [
-                "pixels",
-                "normalized_1000"
-              ]
+              "acceptedCoordinateModes": ["pixels", "normalized_1000"]
             }
           }
         },
@@ -6070,10 +5619,7 @@
               },
               "observationId": "8a5d4cf7-a0be-49be-affa-de782a1ff3da",
               "coordinateSpace": "screenshot_pixels",
-              "acceptedCoordinateModes": [
-                "pixels",
-                "normalized_1000"
-              ]
+              "acceptedCoordinateModes": ["pixels", "normalized_1000"]
             }
           }
         },
@@ -6108,10 +5654,7 @@
               "mediaType": "image/jpeg",
               "observationId": "84c2c4d6-7987-4a48-a076-15026404e4ad",
               "coordinateSpace": "screenshot_pixels",
-              "acceptedCoordinateModes": [
-                "pixels",
-                "normalized_1000"
-              ]
+              "acceptedCoordinateModes": ["pixels", "normalized_1000"]
             }
           }
         },
@@ -6157,10 +5700,7 @@
               },
               "observationId": "88c57351-7256-40e4-9490-4645de5f2ac1",
               "coordinateSpace": "screenshot_pixels",
-              "acceptedCoordinateModes": [
-                "pixels",
-                "normalized_1000"
-              ]
+              "acceptedCoordinateModes": ["pixels", "normalized_1000"]
             }
           }
         },
@@ -6195,10 +5735,7 @@
               "mediaType": "image/jpeg",
               "observationId": "b26fe3e5-bd29-4aab-9db7-ad7c0522185a",
               "coordinateSpace": "screenshot_pixels",
-              "acceptedCoordinateModes": [
-                "pixels",
-                "normalized_1000"
-              ]
+              "acceptedCoordinateModes": ["pixels", "normalized_1000"]
             }
           }
         },
@@ -6244,10 +5781,7 @@
               },
               "observationId": "97627a2a-4951-4eda-9077-bc5e1923ab40",
               "coordinateSpace": "screenshot_pixels",
-              "acceptedCoordinateModes": [
-                "pixels",
-                "normalized_1000"
-              ]
+              "acceptedCoordinateModes": ["pixels", "normalized_1000"]
             }
           }
         },
@@ -6282,10 +5816,7 @@
               "mediaType": "image/jpeg",
               "observationId": "c12f443d-6631-4732-985f-e962190631cb",
               "coordinateSpace": "screenshot_pixels",
-              "acceptedCoordinateModes": [
-                "pixels",
-                "normalized_1000"
-              ]
+              "acceptedCoordinateModes": ["pixels", "normalized_1000"]
             }
           }
         },
@@ -6328,10 +5859,7 @@
               },
               "observationId": "4842de37-aa73-4e05-bca6-4a8f7d2b3583",
               "coordinateSpace": "screenshot_pixels",
-              "acceptedCoordinateModes": [
-                "pixels",
-                "normalized_1000"
-              ]
+              "acceptedCoordinateModes": ["pixels", "normalized_1000"]
             }
           }
         },
@@ -6366,10 +5894,7 @@
               "mediaType": "image/jpeg",
               "observationId": "f49ddf3a-6fe4-45ef-9a84-31efaac5107d",
               "coordinateSpace": "screenshot_pixels",
-              "acceptedCoordinateModes": [
-                "pixels",
-                "normalized_1000"
-              ]
+              "acceptedCoordinateModes": ["pixels", "normalized_1000"]
             }
           }
         },
@@ -6415,10 +5940,7 @@
               },
               "observationId": "4b48bab7-5efc-44bc-af79-7cd6693ffbc9",
               "coordinateSpace": "screenshot_pixels",
-              "acceptedCoordinateModes": [
-                "pixels",
-                "normalized_1000"
-              ]
+              "acceptedCoordinateModes": ["pixels", "normalized_1000"]
             }
           }
         },
@@ -6453,10 +5975,7 @@
               "mediaType": "image/jpeg",
               "observationId": "b7867caa-6ed1-463b-b7fc-3aa98c276771",
               "coordinateSpace": "screenshot_pixels",
-              "acceptedCoordinateModes": [
-                "pixels",
-                "normalized_1000"
-              ]
+              "acceptedCoordinateModes": ["pixels", "normalized_1000"]
             }
           }
         },
@@ -6491,10 +6010,7 @@
               "mediaType": "image/jpeg",
               "observationId": "206bd139-00af-40db-9bbe-687ae00c034b",
               "coordinateSpace": "screenshot_pixels",
-              "acceptedCoordinateModes": [
-                "pixels",
-                "normalized_1000"
-              ]
+              "acceptedCoordinateModes": ["pixels", "normalized_1000"]
             }
           }
         }

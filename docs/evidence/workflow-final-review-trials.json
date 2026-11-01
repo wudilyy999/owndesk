@@ -17,12 +17,8 @@
     "contract": {
       "directoryTree": {
         "root": "/home/xiryn/PA-Final-Review-1792975180391",
-        "absent": [
-          "Actual-final-folder"
-        ],
-        "directories": [
-          "Required-but-renamed"
-        ]
+        "absent": ["Actual-final-folder"],
+        "directories": ["Required-but-renamed"]
       },
       "requireHumanReview": false
     },
@@ -50,10 +46,7 @@
           },
           "label": "步骤 2：key_press",
           "evidence": [],
-          "modifiers": [
-            "ctrl",
-            "shift"
-          ],
+          "modifiers": ["ctrl", "shift"],
           "operation": "key_press"
         },
         {
@@ -104,9 +97,7 @@
           },
           "label": "步骤 5：key_press",
           "evidence": [],
-          "modifiers": [
-            "ctrl"
-          ],
+          "modifiers": ["ctrl"],
           "operation": "key_press"
         },
         {
@@ -163,10 +154,7 @@
           },
           "label": "步骤 8：key_press",
           "evidence": [],
-          "modifiers": [
-            "ctrl",
-            "shift"
-          ],
+          "modifiers": ["ctrl", "shift"],
           "operation": "key_press"
         },
         {

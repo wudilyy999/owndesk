@@ -113,10 +113,7 @@
           "kind": "key_press",
           "input": {
             "key": "n",
-            "modifiers": [
-              "ctrl",
-              "shift"
-            ],
+            "modifiers": ["ctrl", "shift"],
             "observationId": "361ce06a-534f-440e-98db-f714c29e38b8"
           },
           "status": "succeeded"
@@ -284,9 +281,7 @@
                 },
                 "label": "按键 l",
                 "evidence": [],
-                "modifiers": [
-                  "ctrl"
-                ],
+                "modifiers": ["ctrl"],
                 "operation": "key_press"
               }
             ],
@@ -353,10 +348,7 @@
           "kind": "key_press",
           "input": {
             "key": "n",
-            "modifiers": [
-              "ctrl",
-              "shift"
-            ],
+            "modifiers": ["ctrl", "shift"],
             "observationId": "7a736f36-fa5d-4b05-83f8-a9f54fd4a706"
           },
           "status": "succeeded"
@@ -556,10 +548,7 @@
           "kind": "key_press",
           "input": {
             "key": "n",
-            "modifiers": [
-              "ctrl",
-              "shift"
-            ],
+            "modifiers": ["ctrl", "shift"],
             "observationId": "cc36fea0-11c5-4c89-9308-20d28d872a30"
           },
           "status": "succeeded"
