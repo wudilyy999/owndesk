@@ -24,6 +24,8 @@ import { getCustomPrices, monthlyBlock, monthlyUsage } from "@/lib/spend"
 import { crisisReply, detectCrisis } from "./crisis"
 import { addNote, deleteNote, listNotes, selectNotes, updateNote } from "./memory"
 import { buildCompanionPrompt } from "./persona"
+import { queueCoview } from "./coview"
+import { rhythmAt } from "./rules"
 import { ensureCompanion } from "./store"
 
 const HISTORY = 30
@@ -40,6 +42,7 @@ export type ChatDeps = {
   spec?: string
   price?: Price | null
   now?: Date
+  linkCheck?: Parameters<typeof queueCoview>[3]
 }
 
 // A reply with blank lines becomes separate chat bubbles, like a person sending several texts
@@ -129,8 +132,9 @@ export async function companionChat(
     model = await createModel(spec, await getProviderCredentials(parsed.provider))
   }
 
+  const link = await queueCoview(input.agentId, input.text, now, deps.linkCheck)
   const [notes, activities, recent] = await Promise.all([
-    listNotes(input.agentId),
+    listNotes(input.agentId, "active"),
     db
       .select()
       .from(lifeActivities)
@@ -150,6 +154,8 @@ export async function companionChat(
     mode: companion.mode,
     now: now.toISOString(),
     timeZone: companion.timeZone,
+    rhythm: rhythmAt(now, companion.timeZone, companion.rhythm),
+    link,
     memories: selectNotes(notes),
     recentLife: activities.reverse().map((a) => ({
       kind: a.kind,
@@ -167,13 +173,25 @@ export async function companionChat(
   })
 
   const proposals: string[] = []
+  const candidates: { memoryId: string; note: string }[] = []
   const tools = {
     remember: tool({
-      description: "记下一条关于对方的长期信息，一句话。",
-      inputSchema: z.object({ note: z.string().trim().min(1).max(500) }),
-      execute: async ({ note }) => {
-        const saved = await addNote(input.agentId, note, "agent")
-        return { id: saved.id, saved: saved.content }
+      description:
+        "记下一条关于对方的长期信息，一句话。对方明确说出的事实用 sure；你只是推测、对方顺口一提、或涉及健康、感情、钱、家人等敏感内容时用 unsure，会先让对方确认才算数。",
+      inputSchema: z.object({
+        note: z.string().trim().min(1).max(500),
+        certainty: z.enum(["sure", "unsure"]).default("sure"),
+      }),
+      execute: async ({ note, certainty }) => {
+        const saved = await addNote(
+          input.agentId,
+          note,
+          "agent",
+          certainty === "sure" ? "active" : "candidate"
+        )
+        if (certainty === "unsure" && saved.status === "candidate")
+          candidates.push({ memoryId: saved.id, note: saved.content })
+        return { id: saved.id, saved: saved.content, status: saved.status }
       },
     }),
     update_memory: tool({
@@ -257,6 +275,14 @@ export async function companionChat(
       content: goal,
       channel,
       metadata: { goal, status: "pending" },
+    })
+  for (const candidate of candidates)
+    rows.push({
+      role: "assistant",
+      kind: "memory_candidate",
+      content: candidate.note,
+      channel,
+      metadata: { memoryId: candidate.memoryId, status: "pending" },
     })
   const replies = rows.length ? await insertMessages(input.agentId, rows) : []
   emit({ type: "messages", messages: replies })

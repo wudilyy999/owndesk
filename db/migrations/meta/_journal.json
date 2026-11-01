@@ -141,6 +141,20 @@
       "when": 1793510938771,
       "tag": "0019_companion",
       "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1793512497023,
+      "tag": "0020_companion_room",
+      "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1793512934049,
+      "tag": "0021_life_favorites",
+      "breakpoints": true
     }
   ]
 }

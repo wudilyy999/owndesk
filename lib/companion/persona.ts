@@ -4,6 +4,7 @@
 // remember / update / forget tools), mem0 (durable facts as short notes).
 import { z } from "zod"
 import { taskInputSchema, type CompanionPersona } from "@/db/schema"
+import type { RhythmState } from "./rules"
 
 export const personaSchema = z.object({
   personality: z.string().trim().max(1200),
@@ -20,6 +21,18 @@ export const defaultPersona: CompanionPersona = {
   callsYou: "你",
   interests: "科技新闻、咖啡馆、老电影、手帐",
 }
+
+const time = z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/)
+const rhythmBlock = z.object({
+  start: time,
+  end: time,
+  label: z.string().trim().max(40).optional(),
+})
+export const rhythmSchema = z.object({
+  sleep: rhythmBlock,
+  nap: rhythmBlock.nullable(),
+  away: z.array(rhythmBlock).max(6),
+})
 
 export const companionSettingsSchema = z.object({
   name: z.string().trim().min(1).max(40).optional(),
@@ -46,6 +59,7 @@ export const companionSettingsSchema = z.object({
     .optional(),
   lifeDailyBudgetMicros: z.number().int().min(0).max(5_000_000).optional(),
   lifeSessionMaxSteps: z.number().int().min(5).max(60).optional(),
+  rhythm: rhythmSchema.optional(),
 })
 export type CompanionSettingsInput = z.infer<typeof companionSettingsSchema>
 
@@ -55,6 +69,9 @@ export type PromptContext = {
   mode: "friend" | "partner"
   now: string
   timeZone: string
+  rhythm: RhythmState
+  // A link the person just sent: she has not opened it yet
+  link: { url: string; queued: boolean } | null
   memories: { id: string; content: string }[]
   recentLife: {
     kind: string
@@ -63,6 +80,29 @@ export type PromptContext = {
     url: string | null
     at: string
   }[]
+}
+
+function stateText(rhythm: RhythmState) {
+  if (rhythm.state === "asleep")
+    return "你现在在睡觉。对方发来消息时你刚好被吵醒或迷迷糊糊看到：回得短，带点睡意，可以说困了、醒了再聊；不要假装一直醒着，也不要在这时说自己在电脑前做事。"
+  if (rhythm.state === "nap")
+    return "你现在在午休。被消息叫醒的话，回得短、懒懒的，可以说睡醒了再细聊。"
+  if (rhythm.state === "away")
+    return `你现在不在电脑前${rhythm.label ? `（${rhythm.label}）` : "，在外面"}。用手机回，回得短一点；不要说自己正在电脑上看东西。`
+  return "你现在醒着，有空。"
+}
+
+function linkText(link: PromptContext["link"]) {
+  if (!link) return ""
+  return link.queued
+    ? `# 对方刚发来的链接
+对方发来了 ${link.url}。你还没有点开它：用一两句自然地回应，比如等下去看看，按你现在的状态说（睡着或不在电脑前就说醒了或回去再看）。不要评论链接里的内容，也不要猜。看完后你会另外回复。
+
+`
+    : `# 对方刚发来的链接
+对方发来了 ${link.url}，但这个地址你没法打开（内网、不安全或次数太多）。如实说你打不开，请对方把内容告诉你。
+
+`
 }
 
 const RELATION = {
@@ -97,11 +137,14 @@ ${RELATION[ctx.mode]}
 像真人发消息：短句、口语，一次说一两件事，不用标题和列表，不要每次都先问候或总结。用对方使用的语言回复。记得前文聊过的内容，自然地接话。
 你有自己的生活：每天会在自己的电脑上上网、读东西、写日记。只讲下面“最近的生活”里真实记录过的事，没有记录的就不要编造活动和链接。
 
-# 最近的生活
+# 现在的状态
+${stateText(ctx.rhythm)}
+
+${linkText(ctx.link)}# 最近的生活
 ${life}
 
 # 记住对方
-下面是你记得的关于对方的事。对方说出值得长期记住的信息（喜好、重要的人和日子、近况、计划）时，用 remember 记下，一条一句。信息变了用 update_memory，对方说“忘掉这个”或记错了就立刻用 forget。不要记密码、验证码、证件号。
+下面是你记得的关于对方的事。对方说出值得长期记住的信息（喜好、重要的人和日子、近况、计划）时，用 remember 记下，一条一句；拿不准或涉及敏感内容时 certainty 用 unsure，对方会在界面里确认。信息变了用 update_memory，对方说“忘掉这个”或记错了就立刻用 forget。不要记密码、验证码、证件号。
 ${notes}
 
 # 办事

@@ -1,5 +1,5 @@
 // Pure scheduling rules for a companion's life sessions and shares (no database access).
-import type { Companion } from "@/db/schema"
+import type { Companion, CompanionRhythm } from "@/db/schema"
 
 const SLOT_GRACE_MINUTES = 120
 const SHARE_SPACING_MS = 2 * 3600_000
@@ -47,13 +47,34 @@ export function inQuietHours(now: Date, timeZone: string, start: string, end: st
   return from < to ? minutes >= from && minutes < to : minutes >= from || minutes < to
 }
 
+export type RhythmState = {
+  state: "online" | "asleep" | "nap" | "away"
+  label: string | null
+}
+
+// Sleep beats nap beats away. Only "online" does her own things or sends first.
+export function rhythmAt(
+  now: Date,
+  timeZone: string,
+  rhythm: CompanionRhythm
+): RhythmState {
+  const within = (block: { start: string; end: string }) =>
+    inQuietHours(now, timeZone, block.start, block.end)
+  if (within(rhythm.sleep)) return { state: "asleep", label: rhythm.sleep.label ?? null }
+  if (rhythm.nap && within(rhythm.nap))
+    return { state: "nap", label: rhythm.nap.label ?? null }
+  const away = rhythm.away.find(within)
+  if (away) return { state: "away", label: away.label ?? null }
+  return { state: "online", label: null }
+}
+
 export type ShareDecision = { send: true } | { send: false; skip?: string }
 
 export function decideShare(input: {
   now: Date
   companion: Pick<
     Companion,
-    "sharesPaused" | "maxSharesPerDay" | "quietStart" | "quietEnd" | "timeZone"
+    "sharesPaused" | "maxSharesPerDay" | "quietStart" | "quietEnd" | "timeZone" | "rhythm"
   >
   createdAt: Date
   sentToday: number
@@ -65,6 +86,8 @@ export function decideShare(input: {
   if (companion.sharesPaused) return { send: false }
   if (input.sentToday >= companion.maxSharesPerDay) return { send: false }
   if (inQuietHours(now, companion.timeZone, companion.quietStart, companion.quietEnd))
+    return { send: false }
+  if (rhythmAt(now, companion.timeZone, companion.rhythm).state !== "online")
     return { send: false }
   if (input.lastSentAt && now.getTime() - input.lastSentAt.getTime() < SHARE_SPACING_MS)
     return { send: false }

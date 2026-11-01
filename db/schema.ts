@@ -143,6 +143,10 @@ export const memories = pgTable(
     source: text({ enum: ["user", "agent"] })
       .notNull()
       .default("agent"),
+    // A candidate is something the companion is unsure about; it is not used until confirmed
+    status: text({ enum: ["active", "candidate"] })
+      .notNull()
+      .default("active"),
     createdAt: timestamp(),
     updatedAt: pgTimestamp({ withTimezone: true, mode: "date" }).notNull().defaultNow(),
   },
@@ -544,7 +548,15 @@ export const taskInputSchema = z.object({
   workflowCompilation: workflowCompilationInputSchema.optional(),
   workflowExecution: workflowExecutionInputSchema.optional(),
   workstationChannel: z.literal("desktop").optional(),
-  lifeSession: z.object({ prompt: z.string().min(1).max(8000) }).optional(),
+  lifeSession: z
+    .object({
+      prompt: z.string().min(1).max(8000),
+      // A co-viewing session opens one link the person sent
+      coview: z
+        .object({ requestId: z.string().min(1).max(100), url: z.url() })
+        .optional(),
+    })
+    .optional(),
   desktopCoordinateMode: z.enum(["pixels", "normalized_1000"]).optional(),
   delegateAgentIds: z.array(z.string().min(1).max(100)).max(32).optional(),
   threadId: z.string().min(1).max(100).optional(),
@@ -638,7 +650,7 @@ export const tasks = pgTable(
       workflowExecution?: WorkflowExecution
       workstationChannel?: "desktop"
       // A companion's daily-life session: restricted tools, own prompt
-      lifeSession?: { prompt: string }
+      lifeSession?: { prompt: string; coview?: { requestId: string; url: string } }
       runtime: "fixture" | "agent"
     }>(),
     budget: jsonb().notNull().$type<TaskInput["budget"]>(),
@@ -878,6 +890,8 @@ export const desktopTickets = pgTable("desktop_tickets", {
   epoch: integer().notNull(),
   expiresAt: pgTimestamp({ withTimezone: true }).notNull(),
   usedAt: pgTimestamp({ withTimezone: true }),
+  // A timed peek: the gateway closes the connection at this moment
+  watchUntil: pgTimestamp({ withTimezone: true }),
 })
 
 /* Model responses are journaled independently of action receipts. API keys never enter this table. */
@@ -1029,6 +1043,19 @@ export const telegramOutbox = pgTable(
 
 /* ─────────────────────────── companion ──────────────────────────── */
 
+// Daily rhythm in the companion's time zone ("HH:MM"); a block may wrap midnight
+export type RhythmBlock = { start: string; end: string; label?: string }
+export type CompanionRhythm = {
+  sleep: RhythmBlock
+  nap: RhythmBlock | null
+  away: RhythmBlock[]
+}
+export const defaultRhythm: CompanionRhythm = {
+  sleep: { start: "23:30", end: "07:30" },
+  nap: null,
+  away: [],
+}
+
 export type CompanionPersona = {
   personality: string
   speakingStyle: string
@@ -1061,6 +1088,7 @@ export const companions = pgTable("companions", {
   lifeTimes: jsonb().notNull().$type<string[]>().default(["10:30", "20:30"]),
   lifeDailyBudgetMicros: integer().notNull().default(100_000),
   lifeSessionMaxSteps: integer().notNull().default(25),
+  rhythm: jsonb().notNull().$type<CompanionRhythm>().default(defaultRhythm),
   createdAt: timestamp(),
   updatedAt: timestamp(),
 })
@@ -1074,7 +1102,15 @@ export const companionMessages = pgTable(
       .references(() => agents.id, { onDelete: "cascade" }),
     role: text({ enum: ["user", "assistant"] }).notNull(),
     kind: text({
-      enum: ["chat", "share", "errand_proposal", "errand_update", "crisis"],
+      enum: [
+        "chat",
+        "share",
+        "errand_proposal",
+        "errand_update",
+        "crisis",
+        "memory_candidate",
+        "coview",
+      ],
     })
       .notNull()
       .default("chat"),
@@ -1115,10 +1151,15 @@ export const lifeActivities = pgTable(
       .notNull()
       .references(() => agents.id, { onDelete: "cascade" }),
     taskId: text().references(() => tasks.id, { onDelete: "set null" }),
-    kind: text({ enum: ["read", "watch", "diary", "save", "other"] }).notNull(),
+    kind: text({ enum: ["read", "watch", "diary", "save", "coview", "other"] }).notNull(),
     title: text().notNull(),
     summary: text().notNull(),
     url: text(),
+    // Diary text, and a page screenshot kept under the artifact directory
+    body: text(),
+    imagePath: text(),
+    // The person's own favorites; her saved items are favorites too
+    starred: boolean().notNull().default(false),
     createdAt: timestamp(),
   },
   (t) => [index("life_activities_agent_idx").on(t.agentId, t.createdAt)]
@@ -1149,3 +1190,22 @@ export type Companion = typeof companions.$inferSelect
 export type CompanionMessage = typeof companionMessages.$inferSelect
 export type LifeActivity = typeof lifeActivities.$inferSelect
 export type LifeShare = typeof lifeShares.$inferSelect
+
+// A link the person sent: the companion opens it on her own computer and comments.
+// It waits here while she is asleep or away, or while the desktop is busy.
+export const coviewRequests = pgTable(
+  "coview_requests",
+  {
+    id: id(),
+    agentId: text()
+      .notNull()
+      .references(() => agents.id, { onDelete: "cascade" }),
+    url: text().notNull(),
+    status: text({ enum: ["pending", "started", "done", "skipped"] })
+      .notNull()
+      .default("pending"),
+    taskId: text().references(() => tasks.id, { onDelete: "set null" }),
+    createdAt: timestamp(),
+  },
+  (t) => [index("coview_requests_agent_idx").on(t.agentId, t.status, t.createdAt)]
+)
