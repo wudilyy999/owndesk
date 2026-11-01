@@ -1,10 +1,11 @@
 import { startCoviews, syncCoviews } from "./coview"
-import { deliverShares, startLifeSessions } from "./life"
+import { deliverShares, startLifeSessions, stopStalledSessions } from "./life"
 import { syncErrands } from "./errands"
 
 // Called by the worker's 30-second dispatcher
 export async function companionTick(now = new Date()) {
   await syncErrands()
+  await stopStalledSessions()
   await syncCoviews(now)
   for (const task of await startCoviews(now))
     console.info(`co-view session started: ${task}`)

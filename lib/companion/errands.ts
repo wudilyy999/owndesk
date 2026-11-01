@@ -89,9 +89,30 @@ export async function syncErrands() {
     `SELECT m.id,m.agent_id,t.status,t.result->>'summary' AS summary,t.error,t.id AS task_id
      FROM companion_messages m JOIN tasks t ON t.id=m.metadata->>'taskId'
      WHERE m.kind='errand_proposal' AND m.metadata->>'status'='confirmed'
-     AND t.status IN ('completed','failed','cancelled')`
+     AND (t.status IN ('completed','failed','cancelled')
+       OR (t.status='needs_review' AND NOT m.metadata ? 'reviewNotified'))`
   )
   for (const row of rows) {
+    // A task stopped for review still holds her computer; tell the owner once and leave it open
+    if (row.status === "needs_review") {
+      await db.transaction(async (tx) => {
+        await tx
+          .update(companionMessages)
+          .set({
+            metadata: sql`${companionMessages.metadata} || '{"reviewNotified":true}'::jsonb`,
+          })
+          .where(eq(companionMessages.id, row.id))
+        await tx.insert(companionMessages).values({
+          agentId: row.agent_id,
+          role: "assistant",
+          kind: "errand_update",
+          content: "这件事卡住了，需要你到任务页看一下再决定继续还是停掉。",
+          metadata: { taskId: row.task_id, proposalId: row.id, outcome: row.status },
+          channel: "web",
+        })
+      })
+      continue
+    }
     const text =
       row.status === "completed"
         ? `办完了。\n${row.summary ?? ""}`.trim()

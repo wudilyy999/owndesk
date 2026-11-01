@@ -39,7 +39,7 @@ try {
   const { startLifeSessions, deliverShares } = await import("@/lib/companion/life")
   const { setCustomPrice } = await import("@/lib/spend")
   const { companionMessages, lifeActivities, lifeShares } = await import("@/db/schema")
-  const { eq } = await import("drizzle-orm")
+  const { desc, eq } = await import("drizzle-orm")
 
   const ownerId = "companion-owner"
   const agentId = randomUUID()
@@ -190,6 +190,9 @@ try {
   await assert.rejects(cancelErrand(ownerId, card.id), /already answered/)
   await assert.rejects(confirmErrand("someone-else", card.id))
   assert.equal(await syncErrands(), 0, "nothing to report while the task is running")
+  await pool.query("UPDATE tasks SET status='needs_review' WHERE id=$1", [task.taskId])
+  assert.equal(await syncErrands(), 1, "a task stopped for review is reported")
+  assert.equal(await syncErrands(), 0, "the review notice is sent once")
   await pool.query("UPDATE tasks SET status='completed',result=$2 WHERE id=$1", [
     task.taskId,
     JSON.stringify({ summary: "最早一班 07:10" }),
@@ -200,6 +203,8 @@ try {
     .select()
     .from(companionMessages)
     .where(eq(companionMessages.kind, "errand_update"))
+    .orderBy(desc(companionMessages.createdAt))
+    .limit(1)
   assert.match(update.content, /07:10/)
 
   // 5. Cancelled proposals never start a task
@@ -252,6 +257,18 @@ try {
     0
   )
   await pool.query("UPDATE tasks SET status=$2 WHERE id=$1", [
+    started.started[0],
+    taskStatus,
+  ])
+  // A session stopped for review is cancelled, once, so it cannot hold her computer forever
+  const { stopStalledSessions } = await import("@/lib/companion/life")
+  assert.equal(await stopStalledSessions(), 0, "a running session is left alone")
+  await pool.query("UPDATE tasks SET status='needs_review' WHERE id=$1", [
+    started.started[0],
+  ])
+  assert.equal(await stopStalledSessions(), 1)
+  assert.equal(await stopStalledSessions(), 0)
+  await pool.query("UPDATE tasks SET status=$2,cancel_requested_at=NULL WHERE id=$1", [
     started.started[0],
     taskStatus,
   ])

@@ -13,6 +13,7 @@ import {
 import { findPrice } from "@/lib/providers/pricing"
 import { resolveModelSpec } from "@/lib/providers/registry"
 import { getCustomPrices } from "@/lib/spend"
+import { requestCancellation } from "@/lib/task-control"
 import { submitTask } from "@/lib/tasks"
 import { listNotes, selectNotes } from "./memory"
 import { decideShare, dueLifeSlots, lifeBudgetForSession, rhythmAt } from "./rules"
@@ -180,4 +181,15 @@ export async function deliverShares(now = new Date()) {
     delivered.push(pending.id)
   }
   return delivered
+}
+
+// A life or co-view session that stopped for review has no one to review it, and would hold her
+// computer forever; stop it so the next slot can run
+export async function stopStalledSessions() {
+  const { rows } = await pool.query<{ id: string; owner_id: string }>(
+    `SELECT id,owner_id FROM tasks
+     WHERE status='needs_review' AND cancel_requested_at IS NULL AND config_snapshot ? 'lifeSession'`
+  )
+  for (const row of rows) await requestCancellation(row.owner_id, row.id)
+  return rows.length
 }
