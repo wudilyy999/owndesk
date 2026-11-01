@@ -232,7 +232,10 @@ async function controlState(task: Pick<Task, "id" | "agentId" | "activeSegment">
     health.bootId !== workspace.bootId ||
     health.epoch !== workspace.epoch
   )
-    workspace = await acquireWorkspace(task)
+    workspace = await acquireWorkspace(
+      task,
+      state.configSnapshot.lifeSession ? "life" : "errand"
+    )
   return { requestId: null, epoch: workspace.epoch, budget: state.budget, handbacks }
 }
 
@@ -519,7 +522,11 @@ async function runTool(
         ok: false,
         output: { error: `In your own time you may only use files under ${LIFE_DIR}.` },
       }
-    if (toolName === "life_log" || toolName === "life_share")
+    if (
+      toolName === "life_log" ||
+      toolName === "life_share" ||
+      toolName === "coview_reply"
+    )
       return executeLifeTool(task.id, segmentNo, actionNo, toolName, input, epoch)
   }
   if (toolName === "load_manual") {

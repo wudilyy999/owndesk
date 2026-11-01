@@ -15,14 +15,14 @@ import { resolveModelSpec } from "@/lib/providers/registry"
 import { getCustomPrices } from "@/lib/spend"
 import { submitTask } from "@/lib/tasks"
 import { listNotes, selectNotes } from "./memory"
-import { decideShare, dueLifeSlots, lifeBudgetForSession } from "./rules"
+import { decideShare, dueLifeSlots, lifeBudgetForSession, rhythmAt } from "./rules"
 
 export async function lifeSpentToday(agentId: string, timeZone: string, now: Date) {
   const { rows } = await pool.query<{ spent: string; unknown: number }>(
     `SELECT COALESCE(sum(COALESCE(a.cost_micros,a.reconciled_cost_micros)),0)::text AS spent,
      count(*) FILTER(WHERE a.status<>'pending' AND a.cost_micros IS NULL AND a.reconciled_cost_micros IS NULL)::int AS unknown
      FROM task_model_attempts a JOIN tasks t ON t.id=a.task_id
-     WHERE t.agent_id=$1 AND t.config_snapshot ? 'lifeSession'
+     WHERE t.agent_id=$1 AND t.config_snapshot ? 'lifeSession' AND NOT (t.config_snapshot->'lifeSession' ? 'coview')
      AND (a.started_at AT TIME ZONE $2)::date = ($3::timestamptz AT TIME ZONE $2)::date`,
     [agentId, timeZone, now]
   )
@@ -62,6 +62,11 @@ export async function startLifeSessions(now = new Date()) {
   for (const { companion, name, model } of rows) {
     const due = dueLifeSlots(now, companion.timeZone, companion.lifeTimes)
     if (!due.length) continue
+    const rhythm = rhythmAt(now, companion.timeZone, companion.rhythm)
+    if (rhythm.state !== "online") {
+      skipped.push({ agentId: companion.agentId, reason: `rhythm: ${rhythm.state}` })
+      continue
+    }
     const busy = await pool.query(
       "SELECT 1 FROM tasks WHERE agent_id=$1 AND status NOT IN ('completed','failed','cancelled') LIMIT 1",
       [companion.agentId]
@@ -156,7 +161,12 @@ export async function deliverShares(now = new Date()) {
         role: "assistant",
         kind: "share",
         content: activity.url ? `${pending.text}\n${activity.url}` : pending.text,
-        metadata: { shareId: pending.id, activityId: activity.id, title: activity.title },
+        metadata: {
+          shareId: pending.id,
+          activityId: activity.id,
+          title: activity.title,
+          hasImage: activity.imagePath !== null,
+        },
         channel: "web",
       })
     })

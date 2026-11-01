@@ -1,9 +1,18 @@
 // life_log / life_share: a companion's daily-life session records what it did and queues
 // messages for the person. Same atomic receipt pattern as worker/memory.ts.
 import { randomUUID } from "node:crypto"
+import { mkdir, writeFile } from "node:fs/promises"
+import path from "node:path"
 import { pool } from "@/db"
+import { artifactDir } from "@/lib/env"
 import { appendEventInTransaction } from "@/lib/task-events"
-import { TaskCancelled, SegmentSuperseded, WorkspacePaused } from "@/lib/workstation"
+import {
+  controller,
+  ControllerError,
+  TaskCancelled,
+  SegmentSuperseded,
+  WorkspacePaused,
+} from "@/lib/workstation"
 import type { ActionResult } from "./actions"
 
 // Links the model writes down must resolve; a made-up URL is rejected so it cannot be shared.
@@ -33,11 +42,34 @@ export function lifePathAllowed(path: string) {
   return normal === LIFE_DIR || normal.startsWith(`${LIFE_DIR}/`)
 }
 
+// A page screenshot kept with an activity. The controller refuses a stale epoch or a page
+// that is gone; that is reported to the model instead of saving nothing silently.
+async function saveScreenshot(
+  agentId: string,
+  activityId: string,
+  pageId: string,
+  epoch: number
+) {
+  try {
+    const shot = await controller<{ image: string }>(agentId, "/screenshot", {
+      pageId,
+      epoch,
+    })
+    const relative = path.join("life", `${activityId}.jpg`)
+    await mkdir(path.join(artifactDir, "life"), { recursive: true })
+    await writeFile(path.join(artifactDir, relative), Buffer.from(shot.image, "base64"))
+    return { relative }
+  } catch (error) {
+    if (!(error instanceof ControllerError)) throw error
+    return { error: `Screenshot failed: ${error.message}` }
+  }
+}
+
 export async function executeLifeTool(
   taskId: string,
   segmentNo: number,
   actionNo: number,
-  name: "life_log" | "life_share",
+  name: "life_log" | "life_share" | "coview_reply",
   input: Record<string, unknown>,
   epoch: number
 ): Promise<ActionResult> {
@@ -53,6 +85,23 @@ export async function executeLifeTool(
         error: "That link does not open. Log the real address of the page you read.",
       },
     }
+  const activityId = randomUUID()
+  let image: string | null = null
+  if (typeof input.screenshotPageId === "string") {
+    const {
+      rows: [owner],
+    } = await pool.query<{ agent_id: string }>("SELECT agent_id FROM tasks WHERE id=$1", [
+      taskId,
+    ])
+    const shot = await saveScreenshot(
+      owner.agent_id,
+      activityId,
+      input.screenshotPageId,
+      epoch
+    )
+    if ("error" in shot) return { ok: false, output: { error: shot.error } }
+    image = shot.relative
+  }
   const client = await pool.connect()
   try {
     await client.query("BEGIN")
@@ -62,8 +111,9 @@ export async function executeLifeTool(
       agent_id: string
       cancel_requested_at: Date | null
       active_segment: number
+      coview: { requestId: string; url: string } | null
     }>(
-      "SELECT agent_id,cancel_requested_at,active_segment FROM tasks WHERE id=$1 FOR UPDATE",
+      "SELECT agent_id,cancel_requested_at,active_segment,config_snapshot->'lifeSession'->'coview' AS coview FROM tasks WHERE id=$1 FOR UPDATE",
       [taskId]
     )
     if (task.cancel_requested_at) throw new TaskCancelled()
@@ -102,20 +152,66 @@ export async function executeLifeTool(
     }
     let result: { ok: boolean; output: Record<string, unknown> }
     if (name === "life_log") {
-      const id = randomUUID()
       await client.query(
-        "INSERT INTO life_activities(id,agent_id,task_id,kind,title,summary,url,created_at) VALUES($1,$2,$3,$4,$5,$6,$7,now())",
+        "INSERT INTO life_activities(id,agent_id,task_id,kind,title,summary,url,body,image_path,created_at) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,now())",
         [
-          id,
+          activityId,
           task.agent_id,
           taskId,
           input.kind,
           input.title,
           input.summary,
           input.url ?? null,
+          input.body ?? null,
+          image,
         ]
       )
-      result = { ok: true, output: { activityId: id } }
+      result = { ok: true, output: { activityId } }
+    } else if (name === "coview_reply") {
+      const answered = task.coview
+        ? await client.query(
+            "SELECT 1 FROM life_activities WHERE task_id=$1 AND kind='coview'",
+            [taskId]
+          )
+        : null
+      if (!task.coview || answered?.rowCount)
+        result = {
+          ok: false,
+          output: { error: "There is no link waiting for your reaction." },
+        }
+      else {
+        await client.query(
+          "INSERT INTO life_activities(id,agent_id,task_id,kind,title,summary,url,image_path,created_at) VALUES($1,$2,$3,'coview',$4,$5,$6,$7,now())",
+          [
+            activityId,
+            task.agent_id,
+            taskId,
+            input.title,
+            input.text,
+            task.coview.url,
+            image,
+          ]
+        )
+        await client.query(
+          "INSERT INTO companion_messages(id,agent_id,role,kind,content,channel,metadata,created_at) VALUES($1,$2,'assistant','coview',$3,'web',$4,now())",
+          [
+            randomUUID(),
+            task.agent_id,
+            input.text,
+            JSON.stringify({
+              activityId,
+              url: task.coview.url,
+              title: input.title,
+              hasImage: image !== null,
+            }),
+          ]
+        )
+        await client.query(
+          "UPDATE coview_requests SET status='done' WHERE id=$1 AND agent_id=$2",
+          [task.coview.requestId, task.agent_id]
+        )
+        result = { ok: true, output: { sent: true } }
+      }
     } else {
       const activity = await client.query(
         "SELECT 1 FROM life_activities WHERE id=$1 AND agent_id=$2",

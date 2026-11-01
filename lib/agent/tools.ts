@@ -319,6 +319,28 @@ export const lifeTools = {
         .url()
         .refine((url) => ["http:", "https:"].includes(new URL(url).protocol))
         .optional(),
+      body: z
+        .string()
+        .trim()
+        .min(1)
+        .max(4000)
+        .optional()
+        .describe("For a diary entry: the diary text itself, in your own words"),
+      screenshotPageId: z
+        .uuid()
+        .optional()
+        .describe(
+          "The pageId of an open page whose screenshot should be kept with this record. Use it for a page worth showing; never for pages with personal or sign-in content"
+        ),
+    }),
+  }),
+  coview_reply: tool({
+    description:
+      "Only in a session where the person sent you a link: after you have really opened and read it, send them your honest reaction, written the way you would text a friend. Say what you actually saw on the page. Call it once.",
+    inputSchema: z.object({
+      title: z.string().trim().min(1).max(200).describe("The page title you saw"),
+      text: z.string().trim().min(1).max(600),
+      screenshotPageId: z.uuid().optional(),
     }),
   }),
   life_share: tool({
@@ -330,6 +352,16 @@ export const lifeTools = {
     }),
   }),
 }
+// A session that opens one link for the person keeps only reading tools and coview_reply
+const coviewToolNames = new Set([
+  "browser_open",
+  "browser_pages",
+  "browser_observe",
+  "browser_click",
+  "browser_screenshot",
+  "complete_task",
+  "coview_reply",
+])
 const lifeToolNames = new Set([
   "browser_open",
   "browser_pages",
@@ -341,7 +373,7 @@ const lifeToolNames = new Set([
   "fs_list",
   "screen_capture",
   "complete_task",
-  ...Object.keys(lifeTools),
+  ...Object.keys(lifeTools).filter((name) => name !== "coview_reply"),
 ])
 export const tools = {
   ...lifeTools,
@@ -430,14 +462,16 @@ export function toolsForTask(config: {
   workflowCompilation?: unknown
   workflowExecution?: { allowRepair?: boolean }
   workstationChannel?: "desktop"
-  lifeSession?: unknown
+  lifeSession?: { prompt?: string; coview?: unknown }
 }) {
-  if (config.lifeSession)
+  if (config.lifeSession) {
+    const allowed = config.lifeSession.coview ? coviewToolNames : lifeToolNames
     return Object.fromEntries(
       Object.entries(toolsForCoordinateMode("pixels")).filter(([name]) =>
-        lifeToolNames.has(name)
+        allowed.has(name)
       )
     )
+  }
   const available = config.manualCompilation
     ? manualCompilationTools
     : config.workflowCompilation
