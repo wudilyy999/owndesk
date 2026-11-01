@@ -131,6 +131,34 @@ const catalog: Record<string, Entry> = {
   },
   "google/gemini-2.5-flash": { input: 0.3, cached: 0.03, output: 2.5 },
   "google/gemini-2.5-flash-lite": { input: 0.1, cached: 0.01, output: 0.4 },
+
+  // DeepSeek · api-docs.deepseek.com/quick_start/pricing, checked 1 November 2026.
+  // Peak-hour rates (01:00–04:00 and 06:00–10:00 UTC on weekdays; off-peak is half),
+  // so a spend cap always holds at the dearest rate.
+  "deepseek/deepseek-flash": { input: 0.3, cached: 0.006, output: 1.2 },
+  "deepseek/deepseek-v4-flash": { input: 0.3, cached: 0.006, output: 1.2 },
+  "deepseek/deepseek-v4-pro": { input: 1.32, cached: 0.044, output: 3.96 },
+
+  // xAI · docs.x.ai/developers/models, checked 1 November 2026
+  "xai/grok-4.7": {
+    input: 2,
+    cached: 0.5,
+    output: 6,
+    long: { above: 200_000, input: 4, cached: 1, output: 12 },
+  },
+  "xai/grok-4.3": {
+    input: 1.25,
+    cached: 0.2,
+    output: 2.5,
+    long: { above: 200_000, input: 2.5, cached: 0.4, output: 5 },
+  },
+
+  // Groq · console.groq.com/docs/models, checked 1 November 2026
+  "groq/openai/gpt-oss-120b": { input: 0.15, output: 0.6 },
+  "groq/openai/gpt-oss-20b": { input: 0.075, output: 0.3 },
+
+  // Mistral · mistral.ai/pricing, checked 1 November 2026
+  "mistral/mistral-large-latest": { input: 0.5, output: 1.5 },
 }
 
 // Prices the person set themselves, by model spec
