@@ -1,11 +1,13 @@
 {
   "passed": true,
+  "applicationVersion": "0.17.0-dev",
+  "migration": "0021",
   "controlledProvider": true,
   "realModelJudgmentEvaluated": false,
   "checks": [
     {
       "check": "Production provider/SDK/workflow: invalid CSV rejected, model corrects it, trusted extraction checks date/columns, owner approval resumes, one artifact and four non-duplicated model charges",
-      "taskId": "977bda2f-9ad9-44e3-a357-b46b57cb723d"
+      "taskId": "e329a0a1-50c3-4865-a85c-aa5597871e69"
     },
     {
       "check": "Cancellation aborts the real HTTP model request, stops the workstation, and dispatches no model tools"
@@ -14,6 +16,6 @@
       "check": "Provider key encrypted at rest, local config overrides env, masked settings view; plaintext key absent from task/DBOS records"
     }
   ],
-  "directory": "data/experiments/agent_runtime_1af313a779a94333a24a6710568cf8ab",
-  "recordedAt": "2026-10-24T20:36:12.709Z"
+  "directory": "data/experiments/agent_runtime_3f8cb350690f42febbfc9335a6c6ab4b",
+  "recordedAt": "2026-11-01T08:57:32.420Z"
 }

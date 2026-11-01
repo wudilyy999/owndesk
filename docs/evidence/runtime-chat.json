@@ -1,16 +1,18 @@
 {
   "passed": true,
+  "applicationVersion": "0.17.0-dev",
+  "migration": "0021",
   "controlledProvider": true,
   "realModelJudgmentEvaluated": false,
   "checks": [
     {
       "check": "23 actual durable chat turns: historical goals/replies/artifact paths, guest-file correction with original delivery preserved, duplicate submission and concurrent-turn exclusion, owner/agent isolation, question wait + worker restart, cancellation followed by another turn, complete ordered pagination and rename",
-      "threadId": "e2942511-0ee7-49df-9248-5d03a6a88429"
+      "threadId": "6378de13-f960-43a3-bb20-f4d1fe767860"
     },
     {
       "check": "Provider key encrypted at rest, local config overrides env, masked settings view; plaintext key absent from task/DBOS records"
     }
   ],
-  "directory": "data/experiments/agent_runtime_ee4a6e6b1e284620975ce0a40f2a6fcf",
-  "recordedAt": "2026-10-24T21:45:57.672Z"
+  "directory": "data/experiments/agent_runtime_c0d6b0a32a3349ca9a45a0b950165d2d",
+  "recordedAt": "2026-11-01T08:58:56.310Z"
 }
