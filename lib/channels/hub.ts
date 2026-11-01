@@ -275,14 +275,12 @@ export async function processInbound(
       const patch = adapters[bound.channel].onInbound(bound, inbound.context, now)
       await setLinkState(bound.id, patch, { lastInboundAt: now })
       // Through the outbox so reply numbering (QQ msg_seq) stays in order
-      await db
-        .insert(channelOutbox)
-        .values({
-          linkId: bound.id,
-          kind: "reply",
-          text: BOUND_TEXT,
-          context: inbound.context,
-        })
+      await db.insert(channelOutbox).values({
+        linkId: bound.id,
+        kind: "reply",
+        text: BOUND_TEXT,
+        context: inbound.context,
+      })
       await deliverOutbox(now)
     } else
       await reply(

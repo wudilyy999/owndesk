@@ -1,7 +1,7 @@
 {
   "passed": true,
   "fixtureOnly": true,
-  "taskId": "f1bf765c-e4cc-468e-bba0-3604631e92e9",
+  "taskId": "2c0c8217-778e-42cb-a160-92cc8e5d412a",
   "checks": [
     "Unauthenticated tasks rejected; public registration disabled",
     "Authenticated submit, source deduplication and Origin checks",
@@ -9,5 +9,5 @@
     "SSE resumes after Last-Event-ID without replaying acknowledged events",
     "Sign-out invalidates the owner session"
   ],
-  "recordedAt": "2026-11-01T08:55:01.581Z"
+  "recordedAt": "2026-11-01T09:26:26.784Z"
 }
