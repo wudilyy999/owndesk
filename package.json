@@ -15,6 +15,7 @@
     "worker": "tsx worker/main.ts",
     "db:migrate": "tsx scripts/migrate.ts",
     "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
     "test": "tsx --import ./tests/setup-env.mjs --test tests/*.test.ts",
     "test:g01": "tsx tests/g01.ts",
     "workstation:build": "docker build -t owndesk-workstation:0.6.5 workstation",
