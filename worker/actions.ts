@@ -240,7 +240,10 @@ export async function executeAction(
     workspace.bootId !== health.bootId ||
     workspace.epoch !== health.epoch
   )
-    workspace = await acquireWorkspace(task)
+    workspace = await acquireWorkspace(
+      task,
+      task.configSnapshot.lifeSession ? "life" : "errand"
+    )
   await assertAgentControl(taskId, task.agentId)
   if (task.configSnapshot.workstationChannel === "desktop") {
     const key = `desktop-environment:${segmentNo}:${workspace.bootId}`

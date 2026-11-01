@@ -17,7 +17,13 @@ import {
 
 const token = process.env.PA_WORKSPACE_TOKEN
 if (!token || token.length < 32) throw new Error("PA_WORKSPACE_TOKEN must be configured")
-const profile = "/home/agent/.config/owndesk-browser"
+// The errand profile is the one the person's desktop browser uses. A companion's own
+// browsing keeps its cookies and history in a separate profile.
+const profiles = {
+  errand: "/home/agent/.config/owndesk-browser",
+  life: "/home/agent/.config/owndesk-life-browser",
+}
+let profileName = "errand"
 const bootId = randomUUID()
 const journalDir = "/home/agent/.local/state/personal-agent/actions"
 await mkdir(journalDir, { recursive: true })
@@ -44,7 +50,7 @@ let browser
 let firstPage
 function ensureBrowser() {
   browser ??= chromium
-    .launchPersistentContext(profile, {
+    .launchPersistentContext(profiles[profileName], {
       executablePath: "/usr/bin/chromium",
       headless: false,
       viewport: null,
@@ -93,6 +99,7 @@ const openInput = base.extend({
 const controlInput = z.object({
   epoch: z.number().int().nonnegative(),
   mode: z.enum(["idle", "agent", "quiescing", "human", "quarantined"]),
+  profile: z.enum(["errand", "life"]).default("errand"),
 })
 const vaultField = z.enum([
   "username",
@@ -668,6 +675,11 @@ async function dispatch(route, body, actionId = randomUUID(), transient) {
       throw Object.assign(new Error("A control transfer must advance the epoch"), {
         status: 409,
       })
+    if (input.profile !== profileName) {
+      // The browser reopens on the other profile at its next use
+      if (browser) await (await browser).close()
+      profileName = input.profile
+    }
     epoch = input.epoch
     mode = input.mode
     invalidateDesktopObservation()

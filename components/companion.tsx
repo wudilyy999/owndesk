@@ -6,26 +6,21 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
+import { Room } from "@/components/companion-room"
 import { cn } from "@/lib/utils"
-import type {
-  Companion as CompanionRow,
-  CompanionMessage,
-  LifeActivity,
-  LifeShare,
-} from "@/db/schema"
+import type { Companion as CompanionRow, CompanionMessage } from "@/db/schema"
 
 type View = CompanionRow & { name: string }
-type Note = { id: string; content: string; source: string; createdAt: string }
-type Life = {
-  activities: LifeActivity[]
-  shares: LifeShare[]
-  spentTodayMicros: number
-  unknownCostRequests: number
-  dailyBudgetMicros: number
+type Note = {
+  id: string
+  content: string
+  source: string
+  status: "active" | "candidate"
+  createdAt: string
 }
 const tabs = [
   ["chat", "聊天"],
-  ["life", "她的生活"],
+  ["life", "房间"],
   ["memory", "记忆"],
   ["settings", "设置"],
 ] as const
@@ -92,7 +87,7 @@ export function Companion() {
       </header>
       {error && <p className="pb-2 text-sm text-destructive">{error}</p>}
       {view && tab === "chat" && <Chat zone={view.timeZone} />}
-      {view && tab === "life" && <LifeFeed zone={view.timeZone} />}
+      {view && tab === "life" && <Room agentId={view.agentId} zone={view.timeZone} />}
       {view && tab === "memory" && <Notes zone={view.timeZone} />}
       {view && tab === "settings" && <SettingsForm view={view} onSaved={setView} />}
     </main>
@@ -103,13 +98,21 @@ function Bubble({
   message,
   zone,
   onAnswer,
+  onMemory,
 }: {
   message: CompanionMessage
   zone: string
   onAnswer: (id: string, action: "confirm" | "cancel") => void
+  onMemory: (memoryId: string, action: "accept" | "dismiss") => void
 }) {
   const mine = message.role === "user"
-  const meta = (message.metadata ?? {}) as { goal?: string; status?: string }
+  const meta = (message.metadata ?? {}) as {
+    goal?: string
+    status?: string
+    memoryId?: string
+    activityId?: string
+    hasImage?: boolean
+  }
   return (
     <div className={cn("flex", mine ? "justify-end" : "justify-start")}>
       <div
@@ -142,8 +145,42 @@ function Bubble({
               </p>
             )}
           </div>
+        ) : message.kind === "memory_candidate" ? (
+          <div className="space-y-2">
+            <p className="text-xs text-faint">我想把这件事记下来，可以吗？</p>
+            <p>{message.content}</p>
+            {meta.status === "pending" ? (
+              <div className="flex gap-2">
+                <Button size="sm" onClick={() => onMemory(meta.memoryId!, "accept")}>
+                  记住
+                </Button>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => onMemory(meta.memoryId!, "dismiss")}
+                >
+                  不用记
+                </Button>
+              </div>
+            ) : (
+              <p className="text-xs text-faint">
+                {meta.status === "accepted" ? "已记住" : "没有记"}
+              </p>
+            )}
+          </div>
         ) : (
-          message.content
+          <>
+            {message.content}
+            {meta.hasImage && meta.activityId && (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={`/api/companion/images/${meta.activityId}`}
+                alt="页面截图"
+                loading="lazy"
+                className="mt-2 max-h-60 rounded-lg border border-border"
+              />
+            )}
+          </>
         )}
       </div>
     </div>
@@ -217,6 +254,15 @@ function Chat({ zone }: { zone: string }) {
     }
   }
 
+  async function remember(memoryId: string, action: "accept" | "dismiss") {
+    try {
+      await api(`/api/companion/memories/${memoryId}/review`, send("POST", { action }))
+      await refresh()
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : String(cause))
+    }
+  }
+
   async function answer(id: string, action: "confirm" | "cancel") {
     try {
       await api(`/api/companion/errands/${id}`, send("POST", { action }))
@@ -233,7 +279,13 @@ function Chat({ zone }: { zone: string }) {
           <p className="text-center text-sm text-faint">说点什么吧</p>
         )}
         {messages.map((message) => (
-          <Bubble key={message.id} message={message} zone={zone} onAnswer={answer} />
+          <Bubble
+            key={message.id}
+            message={message}
+            zone={zone}
+            onAnswer={answer}
+            onMemory={remember}
+          />
         ))}
         {streaming && (
           <div className="flex justify-start">
@@ -263,80 +315,6 @@ function Chat({ zone }: { zone: string }) {
           发送
         </Button>
       </form>
-    </section>
-  )
-}
-
-const kindLabels: Record<string, string> = {
-  read: "读到",
-  watch: "看了",
-  diary: "日记",
-  save: "收藏",
-  other: "其他",
-}
-const shareLabels: Record<string, string> = {
-  pending: "待分享",
-  sent: "已发给你",
-  skipped: "没有发",
-}
-
-function LifeFeed({ zone }: { zone: string }) {
-  const [life, setLife] = useState<Life | null>(null),
-    [error, setError] = useState("")
-  useEffect(() => {
-    api<Life>("/api/companion/life").then(setLife, (cause) => setError(String(cause)))
-  }, [])
-  if (error) return <p className="text-sm text-destructive">{error}</p>
-  if (!life) return null
-  const shares = new Map(life.shares.map((share) => [share.activityId, share]))
-  return (
-    <section className="min-h-0 flex-1 space-y-3 overflow-y-auto">
-      <p className="text-xs text-faint">
-        今天已用 ${(life.spentTodayMicros / 1e6).toFixed(4)} / 上限 $
-        {(life.dailyBudgetMicros / 1e6).toFixed(2)}
-        {life.unknownCostRequests > 0 &&
-          `；有 ${life.unknownCostRequests} 次调用没有价格，费用未计入（先在“用量与预算”里给模型设价格）`}
-      </p>
-      {life.activities.length === 0 && (
-        <p className="text-sm text-faint">
-          她还没有记录过自己的生活。在设置里打开“自己的生活”。
-        </p>
-      )}
-      {life.activities.map((activity) => {
-        const share = shares.get(activity.id)
-        const url = safeUrl(activity.url)
-        return (
-          <article
-            key={activity.id}
-            className="space-y-1 rounded-xl border border-border bg-surface p-3 text-sm"
-          >
-            <div className="flex justify-between text-xs text-faint">
-              <span>{kindLabels[activity.kind]}</span>
-              <span>{when(activity.createdAt, zone)}</span>
-            </div>
-            <p className="font-medium">{activity.title}</p>
-            <p className="whitespace-pre-wrap text-muted-foreground">
-              {activity.summary}
-            </p>
-            {url && (
-              <a
-                href={url}
-                target="_blank"
-                rel="noreferrer noopener"
-                className="block text-xs break-all underline underline-offset-4"
-              >
-                {url}
-              </a>
-            )}
-            {share && (
-              <p className="text-xs text-faint">
-                {shareLabels[share.status]}
-                {share.skipReason ? `（${share.skipReason}）` : ""}：{share.text}
-              </p>
-            )}
-          </article>
-        )
-      })}
     </section>
   )
 }
@@ -389,75 +367,230 @@ function Notes({ zone }: { zone: string }) {
         </Button>
       </form>
       {error && <p className="text-sm text-destructive">{error}</p>}
-      {notes?.map((note) => (
-        <article
-          key={note.id}
-          className="flex items-start justify-between gap-2 rounded-xl border border-border bg-surface p-3 text-sm"
-        >
-          {editing?.id === note.id ? (
-            <Input
-              value={editing.content}
-              onChange={(event) =>
-                setEditing({ id: note.id, content: event.target.value })
-              }
-              maxLength={500}
-            />
-          ) : (
-            <div>
-              <p>{note.content}</p>
-              <p className="text-xs text-faint">
-                {note.source === "agent" ? "她记的" : "你加的"} ·{" "}
-                {when(note.createdAt, zone)}
-              </p>
+      {notes?.some((note) => note.status === "candidate") && (
+        <h2 className="pt-1 text-xs font-medium text-faint">
+          等你确认（确认前她不会用）
+        </h2>
+      )}
+      {notes
+        ?.filter((note) => note.status === "candidate")
+        .map((note) => (
+          <article
+            key={note.id}
+            className="flex items-start justify-between gap-2 rounded-xl border border-dashed border-border bg-surface p-3 text-sm"
+          >
+            <p>{note.content}</p>
+            <div className="flex shrink-0 gap-1">
+              {(["accept", "dismiss"] as const).map((action) => (
+                <Button
+                  key={action}
+                  size="sm"
+                  variant={action === "accept" ? "secondary" : "ghost"}
+                  onClick={() =>
+                    void run(async () => {
+                      await api(
+                        `/api/companion/memories/${note.id}/review`,
+                        send("POST", { action })
+                      )
+                      await load()
+                    })
+                  }
+                >
+                  {action === "accept" ? "记住" : "不用记"}
+                </Button>
+              ))}
             </div>
-          )}
-          <div className="flex shrink-0 gap-1">
+          </article>
+        ))}
+      {notes
+        ?.filter((note) => note.status === "active")
+        .map((note) => (
+          <article
+            key={note.id}
+            className="flex items-start justify-between gap-2 rounded-xl border border-border bg-surface p-3 text-sm"
+          >
             {editing?.id === note.id ? (
+              <Input
+                value={editing.content}
+                onChange={(event) =>
+                  setEditing({ id: note.id, content: event.target.value })
+                }
+                maxLength={500}
+              />
+            ) : (
+              <div>
+                <p>{note.content}</p>
+                <p className="text-xs text-faint">
+                  {note.source === "agent" ? "她记的" : "你加的"} ·{" "}
+                  {when(note.createdAt, zone)}
+                </p>
+              </div>
+            )}
+            <div className="flex shrink-0 gap-1">
+              {editing?.id === note.id ? (
+                <Button
+                  size="sm"
+                  onClick={() =>
+                    void run(async () => {
+                      await api(
+                        `/api/companion/memories/${note.id}`,
+                        send("PATCH", { content: editing.content })
+                      )
+                      setEditing(null)
+                      await load()
+                    })
+                  }
+                >
+                  保存
+                </Button>
+              ) : (
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => setEditing({ id: note.id, content: note.content })}
+                >
+                  编辑
+                </Button>
+              )}
               <Button
                 size="sm"
+                variant="ghost"
                 onClick={() =>
                   void run(async () => {
-                    await api(
-                      `/api/companion/memories/${note.id}`,
-                      send("PATCH", { content: editing.content })
-                    )
-                    setEditing(null)
+                    await api(`/api/companion/memories/${note.id}`, { method: "DELETE" })
                     await load()
                   })
                 }
               >
-                保存
+                删除
               </Button>
-            ) : (
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={() => setEditing({ id: note.id, content: note.content })}
-              >
-                编辑
-              </Button>
-            )}
-            <Button
-              size="sm"
-              variant="ghost"
-              onClick={() =>
-                void run(async () => {
-                  await api(`/api/companion/memories/${note.id}`, { method: "DELETE" })
-                  await load()
-                })
-              }
-            >
-              删除
-            </Button>
-          </div>
-        </article>
-      ))}
+            </div>
+          </article>
+        ))}
       {notes?.length === 0 && <p className="text-sm text-faint">还没有记下什么。</p>}
     </section>
   )
 }
 
 const field = "space-y-1 text-sm"
+
+type Rhythm = CompanionRow["rhythm"]
+type Block = Rhythm["sleep"]
+
+function BlockRow({
+  block,
+  onChange,
+  onRemove,
+  labeled,
+}: {
+  block: Block
+  onChange: (block: Block) => void
+  onRemove?: () => void
+  labeled?: boolean
+}) {
+  return (
+    <div className="flex flex-wrap items-center gap-2">
+      <Input
+        type="time"
+        className="w-28"
+        value={block.start}
+        onChange={(event) => onChange({ ...block, start: event.target.value })}
+      />
+      <span className="text-xs text-faint">到</span>
+      <Input
+        type="time"
+        className="w-28"
+        value={block.end}
+        onChange={(event) => onChange({ ...block, end: event.target.value })}
+      />
+      {labeled && (
+        <Input
+          className="w-32"
+          placeholder="在做什么"
+          maxLength={40}
+          value={block.label ?? ""}
+          onChange={(event) => onChange({ ...block, label: event.target.value })}
+        />
+      )}
+      {onRemove && (
+        <Button type="button" size="sm" variant="ghost" onClick={onRemove}>
+          删除
+        </Button>
+      )}
+    </div>
+  )
+}
+
+// While she sleeps, naps or is away she still answers you, but does not browse or message first
+function RhythmFields({
+  rhythm,
+  onChange,
+}: {
+  rhythm: Rhythm
+  onChange: (rhythm: Rhythm) => void
+}) {
+  return (
+    <fieldset className="space-y-2 rounded-xl border border-border p-3">
+      <legend className="px-1 text-sm">她的作息（按她的时区）</legend>
+      <p className="text-xs text-faint">
+        睡觉、午休和外出时，她仍会回复你，但回得短、带着状态；不会自己上网，也不会主动发消息。
+      </p>
+      <p className="text-xs">睡觉</p>
+      <BlockRow
+        block={rhythm.sleep}
+        onChange={(sleep) => onChange({ ...rhythm, sleep })}
+      />
+      <label className="flex items-center gap-2 text-sm">
+        <input
+          type="checkbox"
+          checked={rhythm.nap !== null}
+          onChange={(event) =>
+            onChange({
+              ...rhythm,
+              nap: event.target.checked ? { start: "13:00", end: "14:00" } : null,
+            })
+          }
+        />
+        午休
+      </label>
+      {rhythm.nap && (
+        <BlockRow block={rhythm.nap} onChange={(nap) => onChange({ ...rhythm, nap })} />
+      )}
+      <p className="text-xs">外出（上班、通勤等，最多 6 段）</p>
+      {rhythm.away.map((block, index) => (
+        <BlockRow
+          key={index}
+          labeled
+          block={block}
+          onChange={(next) =>
+            onChange({
+              ...rhythm,
+              away: rhythm.away.map((old, i) => (i === index ? next : old)),
+            })
+          }
+          onRemove={() =>
+            onChange({ ...rhythm, away: rhythm.away.filter((_, i) => i !== index) })
+          }
+        />
+      ))}
+      {rhythm.away.length < 6 && (
+        <Button
+          type="button"
+          size="sm"
+          variant="ghost"
+          onClick={() =>
+            onChange({
+              ...rhythm,
+              away: [...rhythm.away, { start: "09:00", end: "12:00", label: "上班" }],
+            })
+          }
+        >
+          添加外出时段
+        </Button>
+      )}
+    </fieldset>
+  )
+}
 const personaFields = [
   ["personality", "性格"],
   ["speakingStyle", "说话方式"],
@@ -494,6 +627,7 @@ function SettingsForm({ view, onSaved }: { view: View; onSaved: (view: View) => 
           maxSharesPerDay: form.maxSharesPerDay,
           quietStart: form.quietStart,
           quietEnd: form.quietEnd,
+          rhythm: form.rhythm,
           lifeEnabled: form.lifeEnabled,
           lifeTimes,
           lifeDailyBudgetMicros: form.lifeDailyBudgetMicros,
@@ -561,6 +695,7 @@ function SettingsForm({ view, onSaved }: { view: View; onSaved: (view: View) => 
           onChange={(event) => set("timeZone", event.target.value)}
         />
       </label>
+      <RhythmFields rhythm={form.rhythm} onChange={(rhythm) => set("rhythm", rhythm)} />
       <fieldset className="space-y-2 rounded-xl border border-border p-3">
         <legend className="px-1 text-sm">她自己的生活</legend>
         <label className="flex items-center gap-2 text-sm">

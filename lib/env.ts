@@ -11,7 +11,7 @@ const schema = z.object({
   MASTER_KEY: z.string().regex(/^[a-f0-9]{64}$/),
   INSTALL_ID: z.uuid(),
   ARTIFACT_DIR: z.string().default("./data/artifacts"),
-  WORKSTATION_IMAGE: z.string().default("owndesk-workstation:0.6.5"),
+  WORKSTATION_IMAGE: z.string().default("owndesk-workstation:0.6.6"),
   WORKER_PORT: z.coerce.number().int().min(1024).max(65535).default(6798),
   WORKER_HOST: z.enum(["127.0.0.1", "0.0.0.0"]).default("127.0.0.1"),
   WORKSTATION_NETWORK: z.string().min(1).optional(),

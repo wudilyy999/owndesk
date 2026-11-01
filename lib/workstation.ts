@@ -340,7 +340,8 @@ async function prepareViewer(agentId: string, row: Workspace) {
 }
 
 export async function acquireWorkspace(
-  task: Pick<Task, "id" | "agentId" | "activeSegment">
+  task: Pick<Task, "id" | "agentId" | "activeSegment">,
+  profile: "errand" | "life" = "errand"
 ): Promise<Workspace> {
   await ensureWorkstation(task.agentId)
   return withWorkspaceOperation(task.agentId, async () => {
@@ -395,7 +396,11 @@ export async function acquireWorkspace(
     const current = await workspaceRow(task.agentId)
     if (current.desiredMode) throw new WorkspacePaused()
     const epoch = fence + 1
-    await controller(task.agentId, "/control", { epoch, mode: "agent" })
+    await controller(task.agentId, "/control", {
+      epoch,
+      mode: "agent",
+      profile,
+    })
     await db
       .update(workstationControl)
       .set({
