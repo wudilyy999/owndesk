@@ -257,15 +257,19 @@ export async function processInbound(
     const bound = code
       ? await redeemPairCode(inbound.channel, inbound.externalId, code, now)
       : null
-    if (bound)
+    if (bound) {
+      const patch = adapters[bound.channel].onInbound(bound, inbound.context, now)
+      await setLinkState(bound.id, patch, { lastInboundAt: now })
+      // Through the outbox so reply numbering (QQ msg_seq) stays in order
       await db
-        .update(channelLinks)
-        .set({
-          lastInboundAt: now,
-          state: sql`${channelLinks.state} || ${JSON.stringify(adapters[bound.channel].onInbound(bound, inbound.context, now))}::jsonb`,
-        })
-        .where(eq(channelLinks.id, bound.id))
-    await reply(inbound, bound ? BOUND_TEXT : code ? "绑定码不对或已过期，请在网页重新生成一个。" : UNBOUND_TEXT)
+        .insert(channelOutbox)
+        .values({ linkId: bound.id, kind: "reply", text: BOUND_TEXT, context: inbound.context })
+      await deliverOutbox(now)
+    } else
+      await reply(
+        inbound,
+        code ? "绑定码不对或已过期，请在网页重新生成一个。" : UNBOUND_TEXT
+      )
     await finish("done")
     return "unbound" as const
   }

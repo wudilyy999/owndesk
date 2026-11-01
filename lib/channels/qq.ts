@@ -266,8 +266,11 @@ export const qqAdapter: ChannelAdapter = {
     if (route.type === "none")
       throw new ChannelSendError(route.reason, { hold: true })
     const hosts = ((await getSetting("qq.allowedUrlHosts")) ?? "").split(",")
-    const parts = chunkText(sanitizeQqText(item.text, hosts), this.maxLength)
+    let parts = chunkText(sanitizeQqText(item.text, hosts), this.maxLength)
     if (route.type === "passive") {
+      // Never go past the per-message reply limit: fold the overflow into the last part
+      const room = Math.max(1, QQ_MAX_PASSIVE_REPLIES - route.seq + 1)
+      if (parts.length > room) parts = [...parts.slice(0, room - 1), parts.slice(room - 1).join("\n")]
       let seq = route.seq
       for (const part of parts) {
         await qqRequest(creds, `/v2/users/${link.externalId}/messages`, {
@@ -281,7 +284,7 @@ export const qqAdapter: ChannelAdapter = {
     }
     // Wake-up: one message per period, so only the first part goes out
     await qqRequest(creds, `/v2/users/${link.externalId}/messages`, {
-      content: parts.join("\n"),
+      content: parts[0],
       msg_type: 0,
       is_wakeup: true,
     })
