@@ -139,7 +139,14 @@ export const memories = pgTable(
       .notNull()
       .references(() => agents.id, { onDelete: "cascade" }),
     content: text().notNull(),
+    // Who wrote the note: the person on the memory page, or the agent while chatting
+    source: text({ enum: ["user", "agent"] })
+      .notNull()
+      .default("agent"),
     createdAt: timestamp(),
+    updatedAt: pgTimestamp({ withTimezone: true, mode: "date" })
+      .notNull()
+      .defaultNow(),
   },
   (t) => [index("memories_agent_idx").on(t.agentId, t.createdAt)]
 )
@@ -539,6 +546,7 @@ export const taskInputSchema = z.object({
   workflowCompilation: workflowCompilationInputSchema.optional(),
   workflowExecution: workflowExecutionInputSchema.optional(),
   workstationChannel: z.literal("desktop").optional(),
+  lifeSession: z.literal(true).optional(),
   desktopCoordinateMode: z.enum(["pixels", "normalized_1000"]).optional(),
   delegateAgentIds: z.array(z.string().min(1).max(100)).max(32).optional(),
   threadId: z.string().min(1).max(100).optional(),
@@ -631,6 +639,8 @@ export const tasks = pgTable(
       workflowCompilation?: WorkflowCompilation
       workflowExecution?: WorkflowExecution
       workstationChannel?: "desktop"
+      // A companion's daily-life session: restricted tools, own prompt
+      lifeSession?: { prompt: string }
       runtime: "fixture" | "agent"
     }>(),
     budget: jsonb().notNull().$type<TaskInput["budget"]>(),
@@ -1018,3 +1028,126 @@ export const telegramOutbox = pgTable(
     index("telegram_outbox_pending_idx").on(t.status, t.createdAt),
   ]
 )
+
+/* ─────────────────────────── companion ──────────────────────────── */
+
+export type CompanionPersona = {
+  personality: string
+  speakingStyle: string
+  background: string
+  // How she addresses the person
+  callsYou: string
+  interests: string
+}
+
+// One persona, one chat and one daily life per agent. Chat memory is the
+// shared `memories` table. Design reference for the split between persona,
+// memory and activity: SillyTavern character cards, Letta memory blocks.
+export const companions = pgTable("companions", {
+  agentId: text()
+    .primaryKey()
+    .references(() => agents.id, { onDelete: "cascade" }),
+  ownerId: text().notNull(),
+  persona: jsonb().notNull().$type<CompanionPersona>(),
+  mode: text({ enum: ["friend", "partner"] })
+    .notNull()
+    .default("friend"),
+  // Set only when the person confirmed being 18 or older; partner mode needs it
+  adultConfirmedAt: pgTimestamp({ withTimezone: true }),
+  timeZone: text().notNull().default("UTC"),
+  sharesPaused: boolean().notNull().default(false),
+  maxSharesPerDay: integer().notNull().default(2),
+  quietStart: text().notNull().default("23:00"),
+  quietEnd: text().notNull().default("08:00"),
+  lifeEnabled: boolean().notNull().default(false),
+  lifeTimes: jsonb().notNull().$type<string[]>().default(["10:30", "20:30"]),
+  lifeDailyBudgetMicros: integer().notNull().default(100_000),
+  lifeSessionMaxSteps: integer().notNull().default(25),
+  createdAt: timestamp(),
+  updatedAt: timestamp(),
+})
+
+export const companionMessages = pgTable(
+  "companion_messages",
+  {
+    id: id(),
+    agentId: text()
+      .notNull()
+      .references(() => agents.id, { onDelete: "cascade" }),
+    role: text({ enum: ["user", "assistant"] }).notNull(),
+    kind: text({
+      enum: ["chat", "share", "errand_proposal", "errand_update", "crisis"],
+    })
+      .notNull()
+      .default("chat"),
+    content: text().notNull(),
+    metadata: jsonb().$type<Record<string, unknown>>(),
+    channel: text().notNull().default("web"),
+    createdAt: pgTimestamp({ withTimezone: true, mode: "date" })
+      .notNull()
+      .$defaultFn(() => new Date()),
+  },
+  (t) => [index("companion_messages_agent_idx").on(t.agentId, t.createdAt)]
+)
+
+// Spend of the light chat path; tasks are in task_model_attempts
+export const companionUsage = pgTable(
+  "companion_usage",
+  {
+    id: id(),
+    agentId: text()
+      .notNull()
+      .references(() => agents.id, { onDelete: "cascade" }),
+    model: text().notNull(),
+    inputTokens: integer().notNull().default(0),
+    outputTokens: integer().notNull().default(0),
+    cachedTokens: integer().notNull().default(0),
+    costMicros: integer(),
+    durationMs: integer().notNull().default(0),
+    createdAt: timestamp(),
+  },
+  (t) => [index("companion_usage_agent_idx").on(t.agentId, t.createdAt)]
+)
+
+export const lifeActivities = pgTable(
+  "life_activities",
+  {
+    id: id(),
+    agentId: text()
+      .notNull()
+      .references(() => agents.id, { onDelete: "cascade" }),
+    taskId: text().references(() => tasks.id, { onDelete: "set null" }),
+    kind: text({ enum: ["read", "watch", "diary", "save", "other"] }).notNull(),
+    title: text().notNull(),
+    summary: text().notNull(),
+    url: text(),
+    createdAt: timestamp(),
+  },
+  (t) => [index("life_activities_agent_idx").on(t.agentId, t.createdAt)]
+)
+
+export const lifeShares = pgTable(
+  "life_shares",
+  {
+    id: id(),
+    agentId: text()
+      .notNull()
+      .references(() => agents.id, { onDelete: "cascade" }),
+    activityId: text()
+      .notNull()
+      .references(() => lifeActivities.id, { onDelete: "cascade" }),
+    text: text().notNull(),
+    status: text({ enum: ["pending", "sent", "skipped"] })
+      .notNull()
+      .default("pending"),
+    skipReason: text(),
+    createdAt: timestamp(),
+    sentAt: pgTimestamp({ withTimezone: true, mode: "date" }),
+  },
+  (t) => [index("life_shares_status_idx").on(t.agentId, t.status, t.createdAt)]
+)
+
+export type Companion = typeof companions.$inferSelect
+export type CompanionMessage = typeof companionMessages.$inferSelect
+export type LifeActivity = typeof lifeActivities.$inferSelect
+export type LifeShare = typeof lifeShares.$inferSelect

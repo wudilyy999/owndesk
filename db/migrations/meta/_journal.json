@@ -134,6 +134,13 @@
       "when": 1792958630242,
       "tag": "0018_workflow_packages",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1793510938771,
+      "tag": "0019_companion",
+      "breakpoints": true
     }
   ]
 }
