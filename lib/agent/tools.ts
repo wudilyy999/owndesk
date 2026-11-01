@@ -299,7 +299,52 @@ export const vaultTools = {
   }),
 }
 
+// Only a companion's daily-life session can call these (see toolsForTask)
+export const lifeTools = {
+  life_log: tool({
+    description:
+      "Record one thing you really did in this session (read an article, watched a video, wrote a diary entry, saved something). The title, summary and URL must come from pages you actually opened; an unreachable URL is rejected. Returns the activity id.",
+    inputSchema: z.object({
+      kind: z.enum(["read", "watch", "diary", "save", "other"]),
+      title: z.string().trim().min(1).max(200),
+      summary: z
+        .string()
+        .trim()
+        .min(1)
+        .max(600)
+        .describe(
+          "One or two sentences in your own words: what it was and what you thought"
+        ),
+      url: z
+        .url()
+        .refine((url) => ["http:", "https:"].includes(new URL(url).protocol))
+        .optional(),
+    }),
+  }),
+  life_share: tool({
+    description:
+      "Queue a short message to the person about one logged activity, written the way you would text a friend. It is delivered later, within their daily limit and quiet hours; it may be dropped. Share only what you really found, with its real link.",
+    inputSchema: z.object({
+      activityId: z.string().min(1).max(100),
+      text: z.string().trim().min(1).max(500),
+    }),
+  }),
+}
+const lifeToolNames = new Set([
+  "browser_open",
+  "browser_pages",
+  "browser_observe",
+  "browser_click",
+  "browser_screenshot",
+  "fs_read",
+  "fs_write",
+  "fs_list",
+  "screen_capture",
+  "complete_task",
+  ...Object.keys(lifeTools),
+])
 export const tools = {
+  ...lifeTools,
   agent_zero_call: tool({
     description:
       "Call an enabled Agent Zero Python plugin tool in this task's Linux desktop. Select plugin and tool from the frozen plugin list; pass original tool arguments in args. Results use the existing task/action ledger. Plugin break_loop never marks the overall task complete; use complete_task after checking results.",
@@ -385,7 +430,14 @@ export function toolsForTask(config: {
   workflowCompilation?: unknown
   workflowExecution?: { allowRepair?: boolean }
   workstationChannel?: "desktop"
+  lifeSession?: unknown
 }) {
+  if (config.lifeSession)
+    return Object.fromEntries(
+      Object.entries(toolsForCoordinateMode("pixels")).filter(([name]) =>
+        lifeToolNames.has(name)
+      )
+    )
   const available = config.manualCompilation
     ? manualCompilationTools
     : config.workflowCompilation
@@ -411,7 +463,9 @@ export function toolsForTask(config: {
             )
   return Object.fromEntries(
     Object.entries(available).filter(
-      ([name]) => name !== "load_manual" || !!config.manuals?.length
+      ([name]) =>
+        !Object.hasOwn(lifeTools, name) &&
+        (name !== "load_manual" || !!config.manuals?.length)
     )
   )
 }

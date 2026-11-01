@@ -28,6 +28,7 @@ import { assertDelegationRoster } from "@/lib/agent/roster"
 import { freezeWorkflowCompilation, freezeWorkflowExecution } from "@/lib/workflows"
 import { freezeManualCompilation } from "@/lib/manuals"
 import { HttpError } from "@/lib/errors"
+import { requestCancellation } from "@/lib/task-control"
 import { appendEventInTransaction } from "@/lib/task-events"
 import {
   conversationContext,
@@ -40,6 +41,15 @@ type SubmittedTask = {
   thread_id: string | null
   thread_turn: number | null
   request_payload: Omit<TaskInput, "clientRequestId">
+}
+
+// A person's own task always wins over the companion's daily-life session on the same agent
+async function preemptLifeSessions(ownerId: string, agentId: string) {
+  const { rows } = await pool.query<{ id: string }>(
+    "SELECT id FROM tasks WHERE owner_id=$1 AND agent_id=$2 AND config_snapshot ? 'lifeSession' AND status NOT IN ('completed','failed','cancelled')",
+    [ownerId, agentId]
+  )
+  for (const row of rows) await requestCancellation(ownerId, row.id)
 }
 
 export async function submitTask(ownerId: string, source: string, raw: TaskInput) {
@@ -107,6 +117,23 @@ export async function submitTask(ownerId: string, source: string, raw: TaskInput
       throw new HttpError(409, "The selected manual is disabled or unavailable")
     config.manualId = input.manualId
   }
+  if (input.lifeSession) {
+    if (
+      config.runtime !== "agent" ||
+      input.threadId ||
+      input.delegateAgentIds?.length ||
+      input.workflowCompilation ||
+      input.workflowExecution ||
+      input.manualCompilation ||
+      input.manualId ||
+      input.workstationChannel ||
+      input.completionContract.artifact ||
+      input.completionContract.directoryTree ||
+      input.completionContract.requireHumanReview
+    )
+      throw new HttpError(400, "A life session is a plain single-agent task")
+    config.lifeSession = input.lifeSession
+  } else await preemptLifeSessions(ownerId, agent.id)
   if (input.workstationChannel) {
     if (
       config.runtime !== "agent" ||
@@ -241,7 +268,7 @@ export async function submitTask(ownerId: string, source: string, raw: TaskInput
     }
     let threadId: string | null = null,
       threadTurn: number | null = null
-    if (runtime === "agent") {
+    if (runtime === "agent" && !input.lifeSession) {
       threadId = input.threadId ?? randomUUID()
       if (input.threadId) {
         const thread = await client.query(
@@ -488,7 +515,8 @@ export async function listTasks(ownerId: string) {
     .where(
       and(
         eq(tasks.ownerId, ownerId),
-        sql`${tasks.configSnapshot}->>'runtime' IS DISTINCT FROM 'fixture'`
+        sql`${tasks.configSnapshot}->>'runtime' IS DISTINCT FROM 'fixture'`,
+        sql`NOT ${tasks.configSnapshot} ? 'lifeSession'`
       )
     )
     .orderBy(desc(tasks.createdAt))

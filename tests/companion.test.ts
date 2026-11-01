@@ -1,0 +1,257 @@
+import assert from "node:assert/strict"
+import test from "node:test"
+import { crisisReply, detectCrisis, regionOf } from "@/lib/companion/crisis"
+import { buildCompanionPrompt, defaultPersona } from "@/lib/companion/persona"
+import { selectNotes } from "@/lib/companion/memory"
+import { splitBubbles, historyMessages } from "@/lib/companion/chat"
+import { resolveModeChange } from "@/lib/companion/store"
+import {
+  decideShare,
+  dueLifeSlots,
+  inQuietHours,
+  lifeBudgetForSession,
+} from "@/lib/companion/rules"
+import { linkResolves, lifePathAllowed } from "@/worker/life"
+import { toolsForTask } from "@/lib/agent/tools"
+import type { CompanionMessage } from "@/db/schema"
+
+const context = {
+  name: "小满",
+  persona: defaultPersona,
+  mode: "friend" as const,
+  now: "2026-11-01T05:00:00Z",
+  timeZone: "Asia/Taipei",
+  memories: [{ id: "n1", content: "生日是12月15日" }],
+  recentLife: [
+    {
+      kind: "read",
+      title: "一篇关于咖啡的文章",
+      summary: "写了手冲",
+      url: "https://example.com/coffee",
+      at: "11月1日 10:30",
+    },
+  ],
+}
+
+test("crisis wording is detected in Chinese and English, ordinary talk is not", () => {
+  for (const text of [
+    "我不想活了",
+    "最近总想自杀",
+    "I want to die",
+    "thinking about suicide",
+  ])
+    assert.equal(detectCrisis(text), true, text)
+  for (const text of ["今天好累", "这个bug快把我杀了", "我想死记硬背这些单词不太行"])
+    assert.equal(detectCrisis(text), false, text)
+})
+
+test("crisis reply names hotlines for the person's region and no persona text", () => {
+  assert.match(crisisReply("Asia/Taipei"), /1925/)
+  assert.match(crisisReply("Asia/Taipei"), /1995/)
+  assert.match(crisisReply("Asia/Shanghai"), /12356/)
+  assert.match(crisisReply("America/New_York"), /988/)
+  assert.match(crisisReply("Europe/Paris"), /findahelpline/)
+  assert.equal(regionOf("Asia/Hong_Kong"), "OTHER")
+})
+
+test("persona prompt: real-person tone, one honesty rule, no AI repetition, memory ids and life log", () => {
+  const prompt = buildCompanionPrompt(context)
+  assert.match(prompt, /你是小满/)
+  assert.match(prompt, /\[n1\] 生日是12月15日/)
+  assert.match(prompt, /https:\/\/example\.com\/coffee/)
+  assert.match(prompt, /如实回答，不撒谎/)
+  assert.match(prompt, /propose_errand/)
+  assert.equal(/人工智能|AI助手|作为AI|语言模型/.test(prompt), false)
+  assert.match(prompt, /朋友/)
+  const partner = buildCompanionPrompt({ ...context, mode: "partner" })
+  assert.match(partner, /恋人/)
+  assert.match(partner, /不控制对方/)
+})
+
+test("partner mode needs an 18+ confirmation, once given it stays", () => {
+  const now = new Date("2026-11-01T00:00:00Z")
+  assert.throws(
+    () =>
+      resolveModeChange({ mode: "friend", adultConfirmedAt: null }, { mode: "partner" }),
+    /18/
+  )
+  const confirmed = resolveModeChange(
+    { mode: "friend", adultConfirmedAt: null },
+    { mode: "partner", adultConfirmed: true },
+    now
+  )
+  assert.equal(confirmed.mode, "partner")
+  assert.equal(confirmed.adultConfirmedAt, now)
+  const back = resolveModeChange(
+    { mode: "partner", adultConfirmedAt: now },
+    { mode: "friend" }
+  )
+  assert.equal(back.adultConfirmedAt, now)
+  assert.equal(
+    resolveModeChange({ mode: "friend", adultConfirmedAt: now }, { mode: "partner" })
+      .mode,
+    "partner"
+  )
+})
+
+test("replies split into at most four bubbles; errand cards reach the model as text", () => {
+  assert.deepEqual(splitBubbles("a\n\nb\n\n\nc"), ["a", "b", "c"])
+  assert.equal(splitBubbles("1\n\n2\n\n3\n\n4\n\n5\n\n6").length, 4)
+  assert.deepEqual(splitBubbles("  \n\n "), [])
+  const rows = [
+    {
+      role: "assistant",
+      kind: "errand_proposal",
+      content: "x",
+      metadata: { goal: "查票价" },
+    },
+    { role: "user", kind: "chat", content: "好", metadata: null },
+  ] as CompanionMessage[]
+  assert.match(String(historyMessages(rows)[0].content), /查票价/)
+})
+
+test("prompt notes are capped by count and size", () => {
+  const many = Array.from({ length: 200 }, (_, i) => ({
+    id: `id${i}`,
+    content: "x".repeat(300),
+  }))
+  const picked = selectNotes(many)
+  assert.ok(picked.length <= 60)
+  assert.ok(picked.reduce((n, note) => n + note.content.length, 0) <= 12000)
+  assert.equal(picked[0].id, "id0")
+})
+
+test("life slots fire within two hours after their time, in the companion's zone", () => {
+  const times = ["10:30", "20:30"]
+  // 11:00 in Taipei = 03:00 UTC
+  assert.deepEqual(dueLifeSlots(new Date("2026-11-01T03:00:00Z"), "Asia/Taipei", times), [
+    { date: "2026-11-01", slot: "10:30" },
+  ])
+  assert.deepEqual(
+    dueLifeSlots(new Date("2026-11-01T02:00:00Z"), "Asia/Taipei", times),
+    []
+  )
+  // 14:00 Taipei: the 10:30 slot is stale
+  assert.deepEqual(
+    dueLifeSlots(new Date("2026-11-01T06:00:00Z"), "Asia/Taipei", times),
+    []
+  )
+  // The same instant is the previous evening in New York
+  assert.deepEqual(
+    dueLifeSlots(new Date("2026-11-01T03:00:00Z"), "America/New_York", times),
+    []
+  )
+})
+
+test("quiet hours wrap midnight", () => {
+  const at = (iso: string) => inQuietHours(new Date(iso), "Asia/Taipei", "23:00", "08:00")
+  assert.equal(at("2026-11-01T15:30:00Z"), true) // 23:30
+  assert.equal(at("2026-11-01T22:00:00Z"), true) // 06:00
+  assert.equal(at("2026-11-01T02:00:00Z"), false) // 10:00
+  assert.equal(inQuietHours(new Date(), "UTC", "09:00", "09:00"), false)
+})
+
+test("share gate: pause, daily limit, quiet hours, spacing, expiry", () => {
+  const companion = {
+    sharesPaused: false,
+    maxSharesPerDay: 2,
+    quietStart: "23:00",
+    quietEnd: "08:00",
+    timeZone: "Asia/Taipei",
+  }
+  const now = new Date("2026-11-01T04:00:00Z") // 12:00 Taipei
+  const base = {
+    now,
+    companion,
+    createdAt: new Date("2026-11-01T02:00:00Z"),
+    sentToday: 0,
+    lastSentAt: null,
+  }
+  assert.deepEqual(decideShare(base), { send: true })
+  assert.deepEqual(
+    decideShare({ ...base, companion: { ...companion, sharesPaused: true } }),
+    { send: false }
+  )
+  assert.deepEqual(decideShare({ ...base, sentToday: 2 }), { send: false })
+  assert.deepEqual(
+    decideShare({ ...base, lastSentAt: new Date("2026-11-01T03:00:00Z") }),
+    { send: false }
+  )
+  assert.deepEqual(decideShare({ ...base, now: new Date("2026-11-01T16:00:00Z") }), {
+    send: false,
+  })
+  assert.deepEqual(
+    decideShare({ ...base, createdAt: new Date("2026-10-30T00:00:00Z") }),
+    {
+      send: false,
+      skip: "expired",
+    }
+  )
+})
+
+test("daily life budget leaves the remainder to the next session and stops at zero", () => {
+  const input = {
+    sessionMaxSteps: 25,
+    dailyBudgetMicros: 100_000,
+    spentTodayMicros: 30_000,
+  }
+  assert.deepEqual(lifeBudgetForSession(input), { maxSteps: 25, maxCostMicros: 70_000 })
+  assert.equal(lifeBudgetForSession({ ...input, spentTodayMicros: 100_000 }), null)
+  assert.equal(
+    lifeBudgetForSession({ ...input, dailyBudgetMicros: 0, spentTodayMicros: 0 }),
+    null
+  )
+})
+
+test("life sessions may touch only ~/Life", () => {
+  for (const path of [
+    "/home/agent/Life",
+    "Life/diary/2026-11-01.md",
+    "/home/agent/Life/a/../b",
+  ])
+    assert.equal(lifePathAllowed(path), true, path)
+  for (const path of [
+    "/etc/passwd",
+    ".",
+    "/home/agent/Life/../.ssh/id",
+    "Lifeboat/x",
+    "/home/agent/.config/owndesk-browser",
+  ])
+    assert.equal(lifePathAllowed(path), false, path)
+})
+
+test("a life link must resolve: real pages and bot walls pass, dead links fail", async () => {
+  const answer = (status: number) =>
+    (async () => new Response(null, { status })) as typeof fetch
+  assert.equal(await linkResolves("https://a.test", answer(200)), true)
+  assert.equal(await linkResolves("https://a.test", answer(403)), true)
+  assert.equal(await linkResolves("https://a.test", answer(404)), false)
+  assert.equal(
+    await linkResolves("https://a.test", (async () => {
+      throw new Error("ENOTFOUND")
+    }) as typeof fetch),
+    false
+  )
+})
+
+test("a life session gets browse/read/log tools only; ordinary tasks never see life tools", () => {
+  const life = Object.keys(toolsForTask({ lifeSession: { prompt: "x" } })).sort()
+  assert.deepEqual(life, [
+    "browser_click",
+    "browser_observe",
+    "browser_open",
+    "browser_pages",
+    "browser_screenshot",
+    "complete_task",
+    "fs_list",
+    "fs_read",
+    "fs_write",
+    "life_log",
+    "life_share",
+    "screen_capture",
+  ])
+  const ordinary = Object.keys(toolsForTask({}))
+  assert.equal(ordinary.includes("life_log"), false)
+  assert.equal(ordinary.includes("life_share"), false)
+  assert.equal(ordinary.includes("shell"), true)
+})

@@ -22,6 +22,7 @@ export const defaultPersona: CompanionPersona = {
 }
 
 export const companionSettingsSchema = z.object({
+  name: z.string().trim().min(1).max(40).optional(),
   persona: personaSchema.optional(),
   mode: z.enum(["friend", "partner"]).optional(),
   // Sent only together with an explicit "I am 18 or older" confirmation

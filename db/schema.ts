@@ -144,9 +144,7 @@ export const memories = pgTable(
       .notNull()
       .default("agent"),
     createdAt: timestamp(),
-    updatedAt: pgTimestamp({ withTimezone: true, mode: "date" })
-      .notNull()
-      .defaultNow(),
+    updatedAt: pgTimestamp({ withTimezone: true, mode: "date" }).notNull().defaultNow(),
   },
   (t) => [index("memories_agent_idx").on(t.agentId, t.createdAt)]
 )
@@ -546,7 +544,7 @@ export const taskInputSchema = z.object({
   workflowCompilation: workflowCompilationInputSchema.optional(),
   workflowExecution: workflowExecutionInputSchema.optional(),
   workstationChannel: z.literal("desktop").optional(),
-  lifeSession: z.literal(true).optional(),
+  lifeSession: z.object({ prompt: z.string().min(1).max(8000) }).optional(),
   desktopCoordinateMode: z.enum(["pixels", "normalized_1000"]).optional(),
   delegateAgentIds: z.array(z.string().min(1).max(100)).max(32).optional(),
   threadId: z.string().min(1).max(100).optional(),

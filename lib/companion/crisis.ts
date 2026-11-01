@@ -1,7 +1,7 @@
 // A crisis message is answered with a fixed, human-written reply before any model call,
 // so persona and model behaviour cannot change it.
 const patterns = [
-  /自杀|轻生|不想活|想死|去死|结束(?:自己的)?生命|活着没(?:有)?意思|了结(?:自己)?|割腕|跳楼|吞药|伤害自己|自残/,
+  /自杀|轻生|不想活|想死(?!记)|去死|结束(?:自己的)?生命|活着没(?:有)?意思|了结(?:自己)?|割腕|跳楼|吞药|伤害自己|自残/,
   /\b(?:kill myself|suicide|suicidal|end my life|want to die|self[- ]?harm|hurt myself)\b/i,
 ]
 

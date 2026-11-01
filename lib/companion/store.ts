@@ -42,7 +42,9 @@ export async function updateCompanion(
 ) {
   const current = await ensureCompanion(ownerId, agentId, input.timeZone)
   const { mode, adultConfirmedAt } = resolveModeChange(current, input)
-  const { adultConfirmed: _confirmed, ...fields } = input
+  const { name, adultConfirmed, ...fields } = input
+  void adultConfirmed
+  if (name) await db.update(agents).set({ name }).where(eq(agents.id, agentId))
   const [row] = await db
     .update(companions)
     .set({ ...fields, mode, adultConfirmedAt, updatedAt: new Date() })
