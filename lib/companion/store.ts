@@ -1,6 +1,6 @@
 import { eq } from "drizzle-orm"
 import { db } from "@/db"
-import { agents, companions, type Companion } from "@/db/schema"
+import { agents, companions, owners, type Companion } from "@/db/schema"
 import { HttpError } from "@/lib/errors"
 import { defaultPersona, type CompanionSettingsInput } from "./persona"
 
@@ -20,16 +20,25 @@ export function resolveModeChange(
 export async function ensureCompanion(
   ownerId: string,
   agentId: string,
-  timeZone = "UTC"
+  timeZone?: string
 ) {
   const [agent] = await db
     .select({ id: agents.id })
     .from(agents)
     .where(eq(agents.id, agentId))
   if (!agent) throw new HttpError(404, "Agent not found")
+  const [owner] = await db
+    .select({ timeZone: owners.timeZone })
+    .from(owners)
+    .where(eq(owners.userId, ownerId))
   await db
     .insert(companions)
-    .values({ agentId, ownerId, persona: defaultPersona, timeZone })
+    .values({
+      agentId,
+      ownerId,
+      persona: defaultPersona,
+      timeZone: timeZone ?? owner?.timeZone ?? "UTC",
+    })
     .onConflictDoNothing()
   const [row] = await db.select().from(companions).where(eq(companions.agentId, agentId))
   return row

@@ -10,6 +10,6 @@ export async function companionContext(request: Request) {
   const agents = await listAgents()
   const agent = requested ? agents.find((a) => a.id === requested) : agents[0]
   if (!agent) throw new HttpError(404, "Create an agent first")
-  const companion = await ensureCompanion(owner.userId, agent.id, owner.timeZone)
+  const companion = await ensureCompanion(owner.userId, agent.id)
   return { ownerId: owner.userId, agent, companion }
 }
