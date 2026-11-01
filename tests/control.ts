@@ -677,8 +677,26 @@ print(json.dumps({'keys':list(keys),'mask':mask.value}))`,
       await cancel(slow.taskId)
     }
     if (desktopOnly) {
-      const current = await task("handoff")
-      await ready(current.taskId)
+      // The UI hides fixture tasks and their desktop, so the owner-facing flow uses a model-driven
+      // agent; the control worker still replaces the model's decisions and never calls it.
+      const { setSetting } = await import("@/lib/config")
+      await setSetting("provider.custom.apiKey", "controlled-provider-key")
+      await setSetting("provider.custom.baseUrl", "http://127.0.0.1:9/v1")
+      const agentId = randomUUID()
+      agentIds.push(agentId)
+      await pool.query(
+        "INSERT INTO agents(id,name,role,model,glyph,created_at,updated_at) VALUES($1,'Desktop fixture','Test','custom/desktop-fixture','test',now(),now())",
+        [agentId]
+      )
+      const { taskId } = await submitTask(owner.userId, "test", {
+        agentId,
+        goal: "handoff",
+        clientRequestId: randomUUID(),
+        completionContract: { requireHumanReview: false },
+        budget: { maxSteps: 40 },
+      })
+      const current = { taskId, agentId }
+      await ready(taskId)
       const web = spawn(
         process.execPath,
         [
@@ -739,7 +757,7 @@ print(json.dumps({'keys':list(keys),'mask':mask.value}))`,
         assert(!JSON.stringify(detail).includes("connectionSecret"))
         await page.getByRole("button", { name: "连接桌面", exact: true }).click()
         await page.getByRole("status").filter({ hasText: "已连接" }).waitFor()
-        // A handshake alone can succeed while the VNC framebuffer stays black.
+        // A handshake alone can succeed while the VNC framebuffer stays black; the dark wallpaper is not black.
         async function visibleDesktop() {
           await page.waitForFunction(
             () => {
@@ -753,7 +771,7 @@ print(json.dumps({'keys':list(keys),'mask':mask.value}))`,
                   1,
                   1
                 ).data
-              return pixel[0] > 100 && pixel[1] > 100 && pixel[2] > 100
+              return Math.max(pixel[0], pixel[1], pixel[2]) > 10
             },
             undefined,
             { timeout: 15000 }
