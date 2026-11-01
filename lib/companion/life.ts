@@ -98,16 +98,23 @@ export async function startLifeSessions(now = new Date()) {
       continue
     }
     const { date, slot } = due[due.length - 1]
+    const clientRequestId = `life:${companion.agentId}:${date}:${slot}`
+    const ran = await pool.query(
+      "SELECT 1 FROM tasks WHERE owner_id=$1 AND source='life' AND request_key=$2",
+      [companion.ownerId, clientRequestId]
+    )
+    // One session per slot; the prompt changes between ticks, so a rerun would not be the same request
+    if (ran.rowCount) continue
     const result = await submitTask(companion.ownerId, "life", {
       agentId: companion.agentId,
       goal: "开始你自己的时间。",
-      clientRequestId: `life:${companion.agentId}:${date}:${slot}`,
+      clientRequestId,
       timeZone: companion.timeZone,
       completionContract: { requireHumanReview: false },
       budget,
       lifeSession: { prompt: await lifePrompt(companion, name, now) },
     })
-    if (!result.reused) started.push(result.taskId)
+    started.push(result.taskId)
   }
   return { started, skipped }
 }

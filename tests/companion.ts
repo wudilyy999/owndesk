@@ -240,6 +240,21 @@ try {
   const started = await startLifeSessions(slot)
   assert.equal(started.started.length, 1)
   assert.equal((await startLifeSessions(slot)).started.length, 0)
+  // Once the session has ended, a later tick in the same slot must not start or fail on a second one
+  const {
+    rows: [{ status: taskStatus }],
+  } = await pool.query("SELECT status FROM tasks WHERE id=$1", [started.started[0]])
+  await pool.query("UPDATE tasks SET status='completed' WHERE id=$1", [
+    started.started[0],
+  ])
+  assert.equal(
+    (await startLifeSessions(new Date(slot.getTime() + 60_000))).started.length,
+    0
+  )
+  await pool.query("UPDATE tasks SET status=$2 WHERE id=$1", [
+    started.started[0],
+    taskStatus,
+  ])
   const lifeTask = await pool.query(
     "SELECT config_snapshot->'lifeSession'->>'prompt' AS prompt, budget FROM tasks WHERE id=$1",
     [started.started[0]]

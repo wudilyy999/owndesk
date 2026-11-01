@@ -34,3 +34,30 @@ A light chat path next to the errand agent: persona chat, editable memory notes,
 
 - Letta, mem0: the model owns explicit, short, editable memory notes.
 - SillyTavern, AIRI (AGPL, concepts only): persona fields, life feed and share cadence.
+
+# Companion (Stage 2)
+
+## Added
+
+| Feature                 | How it works                                                                                                                                                                                                                                                                                                         |
+| ----------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Room page               | `房间` tab: status card, 7-day timeline, diary, favorites (star), screenshots. `components/companion-room.tsx`, `GET /api/companion/life`.                                                                                                                                                                           |
+| Rhythm                  | `companions.rhythm` (sleep 23:30–07:30 by default, optional nap, away blocks). Precedence sleep > nap > away > online. Only online browses or messages first; chat always answers, in her state (`rhythmAt` in `lib/companion/rules.ts`).                                                                            |
+| Peek                    | Read-only, time-limited (10–120 s) viewer of the life desktop. The ticket carries `watch_until`; the gateway closes with code 4000 at the deadline; control mode is never issued with a limit. Only available while she is on her computer (`lib/companion/peek.ts`).                                                |
+| Viewer retry            | The embedded and expanded viewer have a retry button and retry twice with a fresh ticket after an unclean drop (`components/desktop.tsx`).                                                                                                                                                                           |
+| Link co-viewing         | A link in chat is queued (`coview_requests`). When she is online, idle and the model is priced, she opens it on her own computer and answers with `coview_reply`. Private and localhost addresses are refused, requests expire after 24 h, at most 10 per 24 h, and each session is capped by the daily life budget. |
+| Memory candidates       | Unsure or sensitive notes are saved as `candidate`, stay out of every prompt and errand snapshot until the person accepts them in a chat card or the memory tab; dismissing deletes them.                                                                                                                            |
+| Screenshots in shares   | `life_log` can attach a screenshot of a page she has open; images live under `ARTIFACT_DIR/life/` and are served only to the signed-in owner.                                                                                                                                                                        |
+| Separate browser        | The life session uses its own Chromium profile (`~/.config/owndesk-life-browser`); errands and the shared desktop keep `owndesk-browser`. The controller switches by closing and relaunching the context (workstation `0.6.6`, protocol unchanged).                                                                  |
+| One life session a slot | A slot starts at most one session even if the tick runs again after it ends (earlier the retry hit a request-key conflict every 30 s).                                                                                                                                                                               |
+
+## Borrowed ideas (no code copied)
+
+- Letta, mem0: candidate-then-confirm memory writes.
+- SillyTavern, AIRI (AGPL, concepts only): room/diary layout and presence states.
+
+## Known limits
+
+- Share delivery is web-only until Stage 3 channels exist.
+- Life sessions cost about $0.17 each at the placeholder price; raise the daily budget or set the relay's real price.
+- Deleting a note does not rewrite chat history that already mentions it.
