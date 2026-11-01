@@ -32,6 +32,38 @@ const integrationSettings = {
     fallback: "https://api.telegram.org",
     internal: true,
   },
+  // Companion channels (docs/channels.md). Nothing here is needed for the web chat.
+  "qq.appId": { env: "QQ_BOT_APP_ID", internal: true },
+  "qq.appSecret": { env: "QQ_BOT_APP_SECRET", secret: true, internal: true },
+  "qq.apiBase": {
+    env: "QQ_API_BASE",
+    fallback: "https://api.bot.qq.com",
+    internal: true,
+  },
+  // Comma-separated hosts registered under "消息URL配置"; other links are not sent to QQ
+  "qq.allowedUrlHosts": { env: "QQ_ALLOWED_URL_HOSTS", internal: true },
+  // Optional fixed-IP egress relay for platforms that whitelist the caller's IP
+  "channel.relayUrl": { env: "CHANNEL_RELAY_URL", internal: true },
+  "channel.relayKey": { env: "CHANNEL_RELAY_KEY", secret: true, internal: true },
+  "wechat.baseUrl": {
+    env: "WECHAT_ILINK_BASE_URL",
+    fallback: "https://ilinkai.weixin.qq.com",
+    internal: true,
+  },
+  "wechat.botToken": { env: null, secret: true, internal: true },
+  "wechat.cursor": { env: null, internal: true },
+  "wechat.userId": { env: null, internal: true },
+  "wechat.agentId": { env: null, internal: true },
+  "wechat.status": { env: null, internal: true },
+  "wechatOa.appId": { env: "WECHAT_OA_APP_ID", internal: true },
+  "wechatOa.appSecret": { env: "WECHAT_OA_APP_SECRET", secret: true, internal: true },
+  "wechatOa.token": { env: "WECHAT_OA_TOKEN", secret: true, internal: true },
+  "wechatOa.aesKey": { env: "WECHAT_OA_AES_KEY", secret: true, internal: true },
+  "wechatOa.apiBase": {
+    env: "WECHAT_OA_API_BASE",
+    fallback: "https://api.weixin.qq.com",
+    internal: true,
+  },
 } satisfies Record<string, SettingDef>
 const providerSettings = Object.fromEntries(
   providers.flatMap((provider) => [
