@@ -3,7 +3,7 @@
 // speaking style / background fields), Letta self-editing memory blocks (the model owns
 // remember / update / forget tools), mem0 (durable facts as short notes).
 import { z } from "zod"
-import type { CompanionPersona } from "@/db/schema"
+import { taskInputSchema, type CompanionPersona } from "@/db/schema"
 
 export const personaSchema = z.object({
   personality: z.string().trim().max(1200),
@@ -27,7 +27,7 @@ export const companionSettingsSchema = z.object({
   mode: z.enum(["friend", "partner"]).optional(),
   // Sent only together with an explicit "I am 18 or older" confirmation
   adultConfirmed: z.literal(true).optional(),
-  timeZone: z.string().min(1).max(100).optional(),
+  timeZone: taskInputSchema.shape.timeZone,
   sharesPaused: z.boolean().optional(),
   maxSharesPerDay: z.number().int().min(0).max(5).optional(),
   quietStart: z

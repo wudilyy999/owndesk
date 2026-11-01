@@ -1,7 +1,11 @@
 import assert from "node:assert/strict"
 import test from "node:test"
 import { crisisReply, detectCrisis, regionOf } from "@/lib/companion/crisis"
-import { buildCompanionPrompt, defaultPersona } from "@/lib/companion/persona"
+import {
+  buildCompanionPrompt,
+  companionSettingsSchema,
+  defaultPersona,
+} from "@/lib/companion/persona"
 import { selectNotes } from "@/lib/companion/memory"
 import { splitBubbles, historyMessages } from "@/lib/companion/chat"
 import { resolveModeChange } from "@/lib/companion/store"
@@ -254,4 +258,23 @@ test("a life session gets browse/read/log tools only; ordinary tasks never see l
   assert.equal(ordinary.includes("life_log"), false)
   assert.equal(ordinary.includes("life_share"), false)
   assert.equal(ordinary.includes("shell"), true)
+})
+
+test("settings reject an unknown time zone and out-of-range life budget", () => {
+  assert.equal(
+    companionSettingsSchema.safeParse({ timeZone: "Mars/Base" }).success,
+    false
+  )
+  assert.equal(
+    companionSettingsSchema.safeParse({ timeZone: "Asia/Taipei" }).success,
+    true
+  )
+  assert.equal(
+    companionSettingsSchema.safeParse({ lifeDailyBudgetMicros: 5_000_001 }).success,
+    false
+  )
+  assert.equal(
+    companionSettingsSchema.safeParse({ adultConfirmed: false }).success,
+    false
+  )
 })
