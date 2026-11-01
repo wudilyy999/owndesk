@@ -14,7 +14,8 @@ export const RELAYED_HOSTS = new Set([
 export async function relayTarget(url: string) {
   const target = new URL(url)
   const relay = await getSetting("channel.relayUrl")
-  if (!relay || !RELAYED_HOSTS.has(target.host)) return { url, headers: {} as Record<string, string> }
+  if (!relay || !RELAYED_HOSTS.has(target.host))
+    return { url, headers: {} as Record<string, string> }
   const key = await getSetting("channel.relayKey")
   return {
     url: `${relay.replace(/\/+$/, "")}/forward/${target.host}${target.pathname}${target.search}`,
@@ -22,7 +23,11 @@ export async function relayTarget(url: string) {
   }
 }
 
-export async function egressFetch(url: string, init: RequestInit = {}, timeoutMs = 15_000) {
+export async function egressFetch(
+  url: string,
+  init: RequestInit = {},
+  timeoutMs = 15_000
+) {
   const target = await relayTarget(url)
   return fetch(target.url, {
     ...init,

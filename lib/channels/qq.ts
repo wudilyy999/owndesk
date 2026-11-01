@@ -94,7 +94,11 @@ export async function qqCredentials(): Promise<Credentials | null> {
     getSetting("qq.apiBase"),
   ])
   return appId && appSecret
-    ? { appId, appSecret, apiBase: (apiBase ?? "https://api.bot.qq.com").replace(/\/+$/, "") }
+    ? {
+        appId,
+        appSecret,
+        apiBase: (apiBase ?? "https://api.bot.qq.com").replace(/\/+$/, ""),
+      }
     : null
 }
 
@@ -244,7 +248,9 @@ export const qqAdapter: ChannelAdapter = {
   proactive: "limited",
   plan(link, _kind, now) {
     const route = qqRoute(link, now)
-    return route.type === "none" ? { mode: "hold", reason: route.reason } : { mode: "send" }
+    return route.type === "none"
+      ? { mode: "hold", reason: route.reason }
+      : { mode: "send" }
   },
   onInbound(link, context, now) {
     const state = link.state as QqState
@@ -263,14 +269,14 @@ export const qqAdapter: ChannelAdapter = {
     const creds = await qqCredentials()
     if (!creds) throw new ChannelSendError("QQ 机器人还没有配置", { retryable: false })
     const route = qqRoute(link, now)
-    if (route.type === "none")
-      throw new ChannelSendError(route.reason, { hold: true })
+    if (route.type === "none") throw new ChannelSendError(route.reason, { hold: true })
     const hosts = ((await getSetting("qq.allowedUrlHosts")) ?? "").split(",")
     let parts = chunkText(sanitizeQqText(item.text, hosts), this.maxLength)
     if (route.type === "passive") {
       // Never go past the per-message reply limit: fold the overflow into the last part
       const room = Math.max(1, QQ_MAX_PASSIVE_REPLIES - route.seq + 1)
-      if (parts.length > room) parts = [...parts.slice(0, room - 1), parts.slice(room - 1).join("\n")]
+      if (parts.length > room)
+        parts = [...parts.slice(0, room - 1), parts.slice(room - 1).join("\n")]
       let seq = route.seq
       for (const part of parts) {
         await qqRequest(creds, `/v2/users/${link.externalId}/messages`, {
@@ -308,7 +314,13 @@ export const qqAdapter: ChannelAdapter = {
 
 export type WebhookResult = { status: number; body: unknown }
 export type QqEvent =
-  | { type: "message"; eventKey: string; openid: string; text: string; context: InboundContext }
+  | {
+      type: "message"
+      eventKey: string
+      openid: string
+      text: string
+      context: InboundContext
+    }
   | { type: "reject" | "receive"; openid: string }
   | { type: "friend_add"; openid: string }
 

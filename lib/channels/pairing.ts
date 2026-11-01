@@ -30,7 +30,9 @@ export async function createPairCode(ownerId: string, agentId: string, now = new
     .update(channelPairCodes)
     .set({ usedAt: now })
     .where(and(eq(channelPairCodes.agentId, agentId), isNull(channelPairCodes.usedAt)))
-  const code = [...randomBytes(8)].map((byte) => ALPHABET[byte % ALPHABET.length]).join("")
+  const code = [...randomBytes(8)]
+    .map((byte) => ALPHABET[byte % ALPHABET.length])
+    .join("")
   const expiresAt = new Date(now.getTime() + 10 * 60_000)
   await db
     .insert(channelPairCodes)
@@ -72,17 +74,29 @@ export async function bindChannel(input: {
     await tx
       .delete(channelLinks)
       .where(
-        and(eq(channelLinks.channel, input.channel), eq(channelLinks.externalId, input.externalId))
+        and(
+          eq(channelLinks.channel, input.channel),
+          eq(channelLinks.externalId, input.externalId)
+        )
       )
     await tx
       .delete(channelLinks)
-      .where(and(eq(channelLinks.channel, input.channel), eq(channelLinks.agentId, input.agentId)))
+      .where(
+        and(
+          eq(channelLinks.channel, input.channel),
+          eq(channelLinks.agentId, input.agentId)
+        )
+      )
     const [link] = await tx.insert(channelLinks).values(input).returning()
     return link
   })
 }
 
-export async function unbindChannel(ownerId: string, agentId: string, channel: ChannelId) {
+export async function unbindChannel(
+  ownerId: string,
+  agentId: string,
+  channel: ChannelId
+) {
   const rows = await db
     .delete(channelLinks)
     .where(

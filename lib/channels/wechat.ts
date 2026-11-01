@@ -57,7 +57,9 @@ export async function ilinkPost<T>(
       method: "POST",
       headers: headers(session.token),
       body: JSON.stringify({ ...body, base_info: baseInfo }),
-      signal: signal ? AbortSignal.any([signal, AbortSignal.timeout(timeoutMs)]) : undefined,
+      signal: signal
+        ? AbortSignal.any([signal, AbortSignal.timeout(timeoutMs)])
+        : undefined,
     },
     timeoutMs
   )
@@ -320,7 +322,10 @@ export async function runWechat(signal: AbortSignal) {
       ).catch((error) => {
         if (signal.aborted) throw error
         // A timed-out long poll is an empty answer
-        if ((error as Error).name === "TimeoutError" || (error as Error).name === "AbortError")
+        if (
+          (error as Error).name === "TimeoutError" ||
+          (error as Error).name === "AbortError"
+        )
           return {
             msgs: [] as IlinkMessage[],
             ret: undefined,
@@ -335,7 +340,8 @@ export async function runWechat(signal: AbortSignal) {
         await setSetting("wechat.status", "expired")
         continue
       }
-      if (result.ret || result.errcode) throw new Error(result.errmsg ?? "getupdates failed")
+      if (result.ret || result.errcode)
+        throw new Error(result.errmsg ?? "getupdates failed")
       await storeWechatMessages(result.msgs ?? [], userId)
       if (result.get_updates_buf && result.get_updates_buf !== cursor)
         await setSetting("wechat.cursor", result.get_updates_buf)

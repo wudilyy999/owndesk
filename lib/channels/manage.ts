@@ -71,7 +71,10 @@ export async function channelStatus(ownerId: string, agentId: string) {
 const text = z.string().trim().max(400)
 export const channelActionSchema = z.discriminatedUnion("action", [
   z.object({ action: z.literal("pair-code"), channel: z.enum(["qq", "wechat_oa"]) }),
-  z.object({ action: z.literal("unbind"), channel: z.enum(["telegram", "qq", "wechat", "wechat_oa"]) }),
+  z.object({
+    action: z.literal("unbind"),
+    channel: z.enum(["telegram", "qq", "wechat", "wechat_oa"]),
+  }),
   z.object({ action: z.literal("telegram-link") }),
   z.object({
     action: z.literal("configure"),
@@ -79,12 +82,20 @@ export const channelActionSchema = z.discriminatedUnion("action", [
     values: z.record(z.string(), text),
   }),
   z.object({ action: z.literal("wechat-login-start") }),
-  z.object({ action: z.literal("wechat-login-poll"), qrcode: text, verifyCode: text.optional() }),
+  z.object({
+    action: z.literal("wechat-login-poll"),
+    qrcode: text,
+    verifyCode: text.optional(),
+  }),
   z.object({ action: z.literal("wechat-disconnect") }),
 ])
 
 const FIELDS: Record<"qq" | "wechat_oa" | "relay", Record<string, SettingKey>> = {
-  qq: { appId: "qq.appId", appSecret: "qq.appSecret", allowedUrlHosts: "qq.allowedUrlHosts" },
+  qq: {
+    appId: "qq.appId",
+    appSecret: "qq.appSecret",
+    allowedUrlHosts: "qq.allowedUrlHosts",
+  },
   wechat_oa: {
     appId: "wechatOa.appId",
     appSecret: "wechatOa.appSecret",
@@ -127,7 +138,8 @@ export async function channelAction(
       }
       if (input.channel === "relay") {
         const url = updates.find((item) => item.key === "channel.relayUrl")?.value
-        if (url && !/^https?:\/\//.test(url)) throw new HttpError(400, "中转地址需要以 http(s):// 开头")
+        if (url && !/^https?:\/\//.test(url))
+          throw new HttpError(400, "中转地址需要以 http(s):// 开头")
       }
       await setSettings(updates)
       return { saved: updates.length }
@@ -137,7 +149,12 @@ export async function channelAction(
     case "wechat-login-poll": {
       const result = await pollWechatLogin(input.qrcode, agentId, input.verifyCode)
       if (result.status === "confirmed")
-        await bindChannel({ channel: "wechat", externalId: result.userId, agentId, ownerId })
+        await bindChannel({
+          channel: "wechat",
+          externalId: result.userId,
+          agentId,
+          ownerId,
+        })
       return result
     }
     case "wechat-disconnect":

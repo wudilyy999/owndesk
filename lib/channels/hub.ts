@@ -26,12 +26,15 @@ const MAX_ATTEMPTS = 5
 const MAX_INBOUND_ATTEMPTS = 3
 const FOLDED_LIMIT = 6
 
-export const UNBOUND_TEXT = "还没认出你。到网页聊天页的「聊天软件」里生成绑定码，然后发给我：绑定 + 空格 + 绑定码"
+export const UNBOUND_TEXT =
+  "还没认出你。到网页聊天页的「聊天软件」里生成绑定码，然后发给我：绑定 + 空格 + 绑定码"
 export const BOUND_TEXT = "绑定好了，以后在这里也能找到我。"
 export const FAILED_TEXT = "我这边卡了一下，等会儿再说一次好吗？"
 
 // What a companion_messages row looks like as plain text on a channel; null = web only
-export function renderMessage(message: Pick<CompanionMessage, "kind" | "content" | "metadata">) {
+export function renderMessage(
+  message: Pick<CompanionMessage, "kind" | "content" | "metadata">
+) {
   switch (message.kind) {
     case "errand_proposal": {
       const goal = (message.metadata as { goal?: string } | null)?.goal ?? message.content
@@ -50,7 +53,10 @@ const kindOf = (message: Pick<CompanionMessage, "kind">): OutboundKind =>
 async function setLinkState(linkId: string, patch: Record<string, unknown>, extra = {}) {
   await db
     .update(channelLinks)
-    .set({ state: sql`${channelLinks.state} || ${JSON.stringify(patch)}::jsonb`, ...extra })
+    .set({
+      state: sql`${channelLinks.state} || ${JSON.stringify(patch)}::jsonb`,
+      ...extra,
+    })
     .where(eq(channelLinks.id, linkId))
 }
 
@@ -173,7 +179,11 @@ export async function deliverOutbox(now = new Date(), limit = 50) {
       } else {
         await db
           .update(channelOutbox)
-          .set({ status: "failed", attempts: row.attempts + 1, lastError: failure.message })
+          .set({
+            status: "failed",
+            attempts: row.attempts + 1,
+            lastError: failure.message,
+          })
           .where(eq(channelOutbox.id, row.id))
       }
     }
@@ -214,7 +224,11 @@ export async function recoverInbound(olderThanMs = 5 * 60_000) {
 
 async function reply(inbound: ChannelInbound, text: string) {
   try {
-    await adapters[inbound.channel].sendUnlinked(inbound.externalId, inbound.context, text)
+    await adapters[inbound.channel].sendUnlinked(
+      inbound.externalId,
+      inbound.context,
+      text
+    )
   } catch (error) {
     console.error(`${inbound.channel} reply failed`, (error as Error).message)
   }
@@ -263,7 +277,12 @@ export async function processInbound(
       // Through the outbox so reply numbering (QQ msg_seq) stays in order
       await db
         .insert(channelOutbox)
-        .values({ linkId: bound.id, kind: "reply", text: BOUND_TEXT, context: inbound.context })
+        .values({
+          linkId: bound.id,
+          kind: "reply",
+          text: BOUND_TEXT,
+          context: inbound.context,
+        })
       await deliverOutbox(now)
     } else
       await reply(

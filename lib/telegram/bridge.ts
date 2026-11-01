@@ -285,7 +285,10 @@ export async function processTelegramUpdate(generation: string, update: TgUpdate
         text = `配对成功。只有此 Telegram 账号可以交办任务。\n\n${HELP}`
       } else if (authorized && command.type !== "ignore" && command.type !== "pair") {
         try {
-          if (command.type === "task" && (await companionLinked(current, command.input.agentId))) {
+          if (
+            command.type === "task" &&
+            (await companionLinked(current, command.input.agentId))
+          ) {
             // This chat is linked to a companion (opt-in on the channel settings page): plain text
             // is a chat with her, tasks go through her errand cards. Handled by the channel hub.
             await enqueueInbound({
@@ -293,7 +296,11 @@ export async function processTelegramUpdate(generation: string, update: TgUpdate
               eventKey: `${generation}:${update.update_id}`,
               externalId: current.chat_id!,
               text: command.input.goal,
-              context: { trusted: true, agentId: command.input.agentId, ownerId: current.owner_id },
+              context: {
+                trusted: true,
+                agentId: command.input.agentId,
+                ownerId: current.owner_id,
+              },
             })
           } else if (command.type === "task") {
             const task = await submitTask(current.owner_id, "telegram", command.input)

@@ -6,18 +6,16 @@
 import { createDecipheriv, createCipheriv, createHash, randomBytes } from "node:crypto"
 import { getSetting } from "@/lib/config"
 import { egressFetch } from "./egress"
-import {
-  ChannelSendError,
-  chunkText,
-  type ChannelAdapter,
-} from "./types"
+import { ChannelSendError, chunkText, type ChannelAdapter } from "./types"
 
 export const OA_WINDOW_MS = 48 * 3600_000
 export const OA_MAX_MESSAGES = 5
 type OaState = { sent?: number; windowAt?: string }
 
 const sha1 = (parts: string[]) =>
-  createHash("sha1").update([...parts].sort().join("")).digest("hex")
+  createHash("sha1")
+    .update([...parts].sort().join(""))
+    .digest("hex")
 
 export function oaVerifySignature(
   token: string,
@@ -41,7 +39,10 @@ export function oaDecrypt(encodingKey: string, encrypted: string, appId: string)
   const { key, iv } = aes(encodingKey)
   const decipher = createDecipheriv("aes-256-cbc", key, iv)
   decipher.setAutoPadding(false)
-  let plain = Buffer.concat([decipher.update(Buffer.from(encrypted, "base64")), decipher.final()])
+  let plain = Buffer.concat([
+    decipher.update(Buffer.from(encrypted, "base64")),
+    decipher.final(),
+  ])
   plain = plain.subarray(0, plain.length - plain[plain.length - 1]) // PKCS#7 with 32-byte blocks
   const length = plain.readUInt32BE(16)
   const message = plain.subarray(20, 20 + length).toString("utf8")
@@ -91,7 +92,8 @@ export function parseOaMessage(xml: string): OaMessage | null {
       event: oaField(xml, "Event") ?? undefined,
     }
   const id = oaField(xml, "MsgId") ?? `${openid}:${oaField(xml, "CreateTime")}`
-  if (type === "text") return { openid, eventKey: id, text: (oaField(xml, "Content") ?? "").trim() }
+  if (type === "text")
+    return { openid, eventKey: id, text: (oaField(xml, "Content") ?? "").trim() }
   if (type === "voice") {
     const text = oaField(xml, "Recognition")?.trim()
     return { openid, eventKey: id, text: text || "[发来了一段语音，你听不清内容]" }
@@ -128,10 +130,16 @@ async function oaToken(now = Date.now()) {
     errmsg?: string
   } | null
   if (!response.ok || !body?.access_token)
-    throw new ChannelSendError(`WeChat OA token failed: ${body?.errcode ?? response.status}`, {
-      retryable: !body?.errcode,
-    })
-  tokens.set(appId, { token: body.access_token, expiresAt: now + (body.expires_in ?? 7200) * 1000 })
+    throw new ChannelSendError(
+      `WeChat OA token failed: ${body?.errcode ?? response.status}`,
+      {
+        retryable: !body?.errcode,
+      }
+    )
+  tokens.set(appId, {
+    token: body.access_token,
+    expiresAt: now + (body.expires_in ?? 7200) * 1000,
+  })
   return body.access_token
 }
 
@@ -167,10 +175,14 @@ export const wechatOaAdapter: ChannelAdapter = {
   plan(link, kind, now) {
     const state = link.state as OaState
     if (kind !== "reply")
-      return { mode: "hold", reason: "公众号客服消息只能在对方发话后回复，等对方下次开口时一起说" }
+      return {
+        mode: "hold",
+        reason: "公众号客服消息只能在对方发话后回复，等对方下次开口时一起说",
+      }
     if (!state.windowAt || now.getTime() - Date.parse(state.windowAt) > OA_WINDOW_MS)
       return { mode: "hold", reason: "超过 48 小时" }
-    if ((state.sent ?? 0) >= OA_MAX_MESSAGES) return { mode: "hold", reason: "回复条数已用完" }
+    if ((state.sent ?? 0) >= OA_MAX_MESSAGES)
+      return { mode: "hold", reason: "回复条数已用完" }
     return { mode: "send" }
   },
   onInbound(_link, _context, now) {
@@ -180,7 +192,8 @@ export const wechatOaAdapter: ChannelAdapter = {
     const state = link.state as OaState
     let sent = state.sent ?? 0
     for (const part of chunkText(item.text, this.maxLength)) {
-      if (sent >= OA_MAX_MESSAGES) throw new ChannelSendError("回复条数已用完", { hold: true })
+      if (sent >= OA_MAX_MESSAGES)
+        throw new ChannelSendError("回复条数已用完", { hold: true })
       await sendCustom(link.externalId, part)
       sent++
     }

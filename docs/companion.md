@@ -58,6 +58,6 @@ A light chat path next to the errand agent: persona chat, editable memory notes,
 
 ## Known limits
 
-- Share delivery is web-only until Stage 3 channels exist.
+- Share delivery reaches Telegram, QQ and WeChat through the channel layer (Stage 3, see `docs/channels.md`); QQ and WeChat only ever reply.
 - Life sessions cost about $0.17 each at the placeholder price; raise the daily budget or set the relay's real price.
 - Deleting a note does not rewrite chat history that already mentions it.

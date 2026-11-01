@@ -27,7 +27,12 @@ Object.assign(process.env, {
   OWNER_PASSWORD: randomUUID(),
 })
 
-type Call = { method: string; path: string; headers: IncomingMessage["headers"]; body: any }
+type Call = {
+  method: string
+  path: string
+  headers: IncomingMessage["headers"]
+  body: any
+}
 function fake(handler: (call: Call) => unknown) {
   const calls: Call[] = []
   const server = createServer((req, res) => {
@@ -46,7 +51,11 @@ function fake(handler: (call: Call) => unknown) {
   })
   return new Promise<{ calls: Call[]; server: Server; origin: string }>((resolve) =>
     server.listen(0, "127.0.0.1", () =>
-      resolve({ calls, server, origin: `http://127.0.0.1:${(server.address() as AddressInfo).port}` })
+      resolve({
+        calls,
+        server,
+        origin: `http://127.0.0.1:${(server.address() as AddressInfo).port}`,
+      })
     )
   )
 }
@@ -91,7 +100,11 @@ try {
     rhythm: { sleep: { start: "03:00", end: "03:01" }, nap: null, away: [] },
   } as never)
 
-  const price = { kind: "priced", source: "custom", price: { input: 1, output: 4 } } as const
+  const price = {
+    kind: "priced",
+    source: "custom",
+    price: { input: 1, output: 4 },
+  } as const
   const prompts: string[] = []
   const model = (replies: string[]) => {
     let call = 0
@@ -129,7 +142,12 @@ try {
     const [row] = await db
       .select()
       .from(schema.channelLinks)
-      .where(and(eq(schema.channelLinks.channel, channel), eq(schema.channelLinks.agentId, agentId)))
+      .where(
+        and(
+          eq(schema.channelLinks.channel, channel),
+          eq(schema.channelLinks.agentId, agentId)
+        )
+      )
     return row
   }
   const outbox = async (linkId: string) =>
@@ -151,7 +169,10 @@ try {
   const relay = createRelay({
     key: relayKey,
     upstreamInsecure: true,
-    upstreamResolve: () => ({ host: "127.0.0.1", port: Number(new URL(qqApi.origin).port) }),
+    upstreamResolve: () => ({
+      host: "127.0.0.1",
+      port: Number(new URL(qqApi.origin).port),
+    }),
   })
   await new Promise<void>((resolve) => relay.listen(0, "127.0.0.1", resolve))
   servers.push(relay)
@@ -164,7 +185,10 @@ try {
 
   // 1. Address validation is answered with the documented signature; other posts need one
   const validation = await hooks.handleQqWebhook(
-    JSON.stringify({ op: 13, d: { plain_token: "Arq0D5A61EgUu4OxUvOp", event_ts: "1725442341" } }),
+    JSON.stringify({
+      op: 13,
+      d: { plain_token: "Arq0D5A61EgUu4OxUvOp", event_ts: "1725442341" },
+    }),
     { timestamp: null, signature: null }
   )
   assert.equal(validation.status, 200)
@@ -172,7 +196,12 @@ try {
     (validation.body as { signature: string }).signature,
     "87befc99c42c651b3aac0278e71ada338433ae26fcb24307bdc5ad38c1adc2d01bcfcadc0842edac85e85205028a1132afe09280305f13aa6909ffc2d652c706"
   )
-  const qqEvent = (id: string, text: string, openid = "OPENID-A", type = "C2C_MESSAGE_CREATE") => ({
+  const qqEvent = (
+    id: string,
+    text: string,
+    openid = "OPENID-A",
+    type = "C2C_MESSAGE_CREATE"
+  ) => ({
     id: `evt-${id}`,
     op: 0,
     t: type,
@@ -187,7 +216,10 @@ try {
     })
   }
   assert.equal((await send(qqEvent("x", "hi"), false)).status, 401)
-  assert.equal((await hooks.handleQqWebhook("{}", { timestamp: null, signature: null })).status, 401)
+  assert.equal(
+    (await hooks.handleQqWebhook("{}", { timestamp: null, signature: null })).status,
+    401
+  )
   assert.equal((await db.select().from(schema.channelInbound)).length, 0)
 
   // 2. A stranger is told how to bind and nothing reaches the companion
@@ -226,29 +258,56 @@ try {
   const before = qqApi.calls.length
   await send(qqEvent("5", "今天好累"))
   await send(qqEvent("5", "今天好累"))
-  assert.equal((await db.select().from(schema.channelInbound).where(eq(schema.channelInbound.eventKey, "evt-5"))).length, 1)
+  assert.equal(
+    (
+      await db
+        .select()
+        .from(schema.channelInbound)
+        .where(eq(schema.channelInbound.eventKey, "evt-5"))
+    ).length,
+    1
+  )
   await run(["抱抱你\n\n怎么啦"])
   const replies = qqApi.calls.slice(before).filter((c) => c.path.includes("/messages"))
-  assert.deepEqual(replies.map((c) => [c.body.content, c.body.msg_id, c.body.msg_seq]), [
-    ["抱抱你", "msg-5", 1],
-    ["怎么啦", "msg-5", 2],
-  ])
-  const history = await db.select().from(schema.companionMessages).orderBy(asc(schema.companionMessages.createdAt))
-  assert.deepEqual(history.map((m) => [m.role, m.channel, m.content]), [
-    ["user", "qq", "今天好累"],
-    ["assistant", "qq", "抱抱你"],
-    ["assistant", "qq", "怎么啦"],
-  ])
+  assert.deepEqual(
+    replies.map((c) => [c.body.content, c.body.msg_id, c.body.msg_seq]),
+    [
+      ["抱抱你", "msg-5", 1],
+      ["怎么啦", "msg-5", 2],
+    ]
+  )
+  const history = await db
+    .select()
+    .from(schema.companionMessages)
+    .orderBy(asc(schema.companionMessages.createdAt))
+  assert.deepEqual(
+    history.map((m) => [m.role, m.channel, m.content]),
+    [
+      ["user", "qq", "今天好累"],
+      ["assistant", "qq", "抱抱你"],
+      ["assistant", "qq", "怎么啦"],
+    ]
+  )
 
   // 5. Passive window over: a share uses the one wake-up allowed today, the next one is held
   await db
     .update(schema.channelLinks)
-    .set({ state: { ...(link.state as object), msgIdAt: new Date(Date.now() - 10 * 60_000).toISOString() } })
+    .set({
+      state: {
+        ...(link.state as object),
+        msgIdAt: new Date(Date.now() - 10 * 60_000).toISOString(),
+      },
+    })
     .where(eq(schema.channelLinks.id, link.id))
   const share = async (content: string) => {
     await new Promise((r) => setTimeout(r, 5))
     await db.insert(schema.companionMessages).values({
-      agentId, role: "assistant", kind: "share", content, channel: "web", metadata: null,
+      agentId,
+      role: "assistant",
+      kind: "share",
+      content,
+      channel: "web",
+      metadata: null,
     })
   }
   await share("刚刷到一只会骑自行车的猫")
@@ -263,7 +322,11 @@ try {
   await share("还有一家新开的面包店")
   await hub.routeBackgroundMessages()
   await hub.deliverOutbox()
-  assert.equal(qqApi.calls.slice(mark).filter((c) => c.path.includes("/messages")).length, 1, "second wake-up in the same period is not sent")
+  assert.equal(
+    qqApi.calls.slice(mark).filter((c) => c.path.includes("/messages")).length,
+    1,
+    "second wake-up in the same period is not sent"
+  )
   link = (await linkOf("qq"))!
   let rows = await outbox(link.id)
   assert.equal(rows.filter((r) => r.status === "held").length, 1)
@@ -290,7 +353,9 @@ try {
   assert.equal(qq.wakeupPeriod(new Date("2026-10-20T01:00:00Z"), t0), 3)
   assert.equal(qq.wakeupPeriod(new Date("2026-09-20T01:00:00Z"), t0), null)
   assert.equal(
-    qq.sanitizeQqText("看这个 https://a.example.com/x 和 https://b.test/y", ["a.example.com"]),
+    qq.sanitizeQqText("看这个 https://a.example.com/x 和 https://b.test/y", [
+      "a.example.com",
+    ]),
     "看这个 https://a.example.com/x 和 （链接在网页里）"
   )
   await send(qqEvent("7", "", "OPENID-A", "C2C_MSG_REJECT"))
@@ -303,7 +368,12 @@ try {
     if (call.path.startsWith("/ilink/bot/get_bot_qrcode"))
       return { qrcode: "QR1", qrcode_img_content: "https://weixin.example/qr" }
     if (call.path.startsWith("/ilink/bot/get_qrcode_status"))
-      return { status: "confirmed", bot_token: "BOT-TOKEN", ilink_user_id: "wx-user@im.wechat", baseurl: "" }
+      return {
+        status: "confirmed",
+        bot_token: "BOT-TOKEN",
+        ilink_user_id: "wx-user@im.wechat",
+        baseurl: "",
+      }
     if (call.path === "/ilink/bot/getupdates")
       return call.body.get_updates_buf
         ? { ret: 0, msgs: [], get_updates_buf: call.body.get_updates_buf }
@@ -318,7 +388,13 @@ try {
                 context_token: "CTX-1",
                 item_list: [{ type: 1, text_item: { text: "在吗" } }],
               },
-              { message_id: 1002, from_user_id: "stranger@im.wechat", message_type: 1, context_token: "CTX-X", item_list: [{ type: 1, text_item: { text: "hi" } }] },
+              {
+                message_id: 1002,
+                from_user_id: "stranger@im.wechat",
+                message_type: 1,
+                context_token: "CTX-X",
+                item_list: [{ type: 1, text_item: { text: "hi" } }],
+              },
             ],
           }
     return { ret: 0 }
@@ -327,16 +403,32 @@ try {
   await setSetting("wechat.baseUrl", ilink.origin)
   const qr = await wechat.startWechatLogin()
   assert.equal(qr.qrcode, "QR1")
-  const login = await channelAction(ownerId, agentId, { action: "wechat-login-poll", qrcode: "QR1" })
+  const login = await channelAction(ownerId, agentId, {
+    action: "wechat-login-poll",
+    qrcode: "QR1",
+  })
   assert.equal((login as { status: string }).status, "confirmed")
   assert.equal((await linkOf("wechat"))!.externalId, "wx-user@im.wechat")
   const abort = new AbortController()
   const poller = wechat.runWechat(abort.signal)
-  for (let i = 0; i < 50 && !(await db.select().from(schema.channelInbound).where(eq(schema.channelInbound.channel, "wechat"))).length; i++)
+  for (
+    let i = 0;
+    i < 50 &&
+    !(
+      await db
+        .select()
+        .from(schema.channelInbound)
+        .where(eq(schema.channelInbound.channel, "wechat"))
+    ).length;
+    i++
+  )
     await new Promise((r) => setTimeout(r, 100))
   abort.abort()
   await poller
-  const wxInbound = await db.select().from(schema.channelInbound).where(eq(schema.channelInbound.channel, "wechat"))
+  const wxInbound = await db
+    .select()
+    .from(schema.channelInbound)
+    .where(eq(schema.channelInbound.channel, "wechat"))
   assert.equal(wxInbound.length, 1, "only the person who scanned the QR is accepted")
   assert.equal(
     ilink.calls.find((c) => c.path === "/ilink/bot/getupdates")!.headers.authorization,
@@ -358,16 +450,25 @@ try {
   prompts.length = 0
   await hub.channelTick() // nothing pending: must not send anything
   await db.insert(schema.channelInbound).values({
-    channel: "wechat", eventKey: "1003", externalId: "wx-user@im.wechat", text: "晚上好",
+    channel: "wechat",
+    eventKey: "1003",
+    externalId: "wx-user@im.wechat",
+    text: "晚上好",
     context: { contextToken: "CTX-2" },
   })
   await run(["晚上好呀\n\n路过一棵开花的树，想起你了"])
   assert.match(prompts[0], /开花的树/)
-  assert.equal(ilink.calls.filter((c) => c.path === "/ilink/bot/sendmessage").at(-1)!.body.msg.context_token, "CTX-2")
+  assert.equal(
+    ilink.calls.filter((c) => c.path === "/ilink/bot/sendmessage").at(-1)!.body.msg
+      .context_token,
+    "CTX-2"
+  )
 
   // ───────────────────────── WeChat official account ─────────────────────────
   const oaApi = await fake((call) =>
-    call.path.startsWith("/cgi-bin/token") ? { access_token: "OATOKEN", expires_in: 7200 } : { errcode: 0, errmsg: "ok" }
+    call.path.startsWith("/cgi-bin/token")
+      ? { access_token: "OATOKEN", expires_in: 7200 }
+      : { errcode: 0, errmsg: "ok" }
   )
   servers.push(oaApi.server)
   const oaToken = "oa-token-" + randomUUID().slice(0, 8)
@@ -379,22 +480,60 @@ try {
   await setSetting("wechatOa.aesKey", aesKey)
   await setSetting("channel.relayUrl", null) // direct for this part
   const sign = (parts: string[]) =>
-    createHash("sha1").update([...parts].sort().join("")).digest("hex")
-  const ts = "1700000000", nonce = "n0nce"
-  assert.equal((await hooks.handleOaVerify({ signature: sign([oaToken, ts, nonce]), timestamp: ts, nonce, echostr: "ECHO" })).body, "ECHO")
-  assert.equal((await hooks.handleOaVerify({ signature: "bad", timestamp: ts, nonce, echostr: "ECHO" })).status, 403)
+    createHash("sha1")
+      .update([...parts].sort().join(""))
+      .digest("hex")
+  const ts = "1700000000",
+    nonce = "n0nce"
+  assert.equal(
+    (
+      await hooks.handleOaVerify({
+        signature: sign([oaToken, ts, nonce]),
+        timestamp: ts,
+        nonce,
+        echostr: "ECHO",
+      })
+    ).body,
+    "ECHO"
+  )
+  assert.equal(
+    (
+      await hooks.handleOaVerify({
+        signature: "bad",
+        timestamp: ts,
+        nonce,
+        echostr: "ECHO",
+      })
+    ).status,
+    403
+  )
   const xml = (id: number, from: string, content: string) =>
     `<xml><ToUserName><![CDATA[gh_x]]></ToUserName><FromUserName><![CDATA[${from}]]></FromUserName><CreateTime>1700000001</CreateTime><MsgType><![CDATA[text]]></MsgType><Content><![CDATA[${content}]]></Content><MsgId>${id}</MsgId></xml>`
   const plainQuery = { signature: sign([oaToken, ts, nonce]), timestamp: ts, nonce }
-  assert.equal((await hooks.handleOaMessage(xml(1, "oa-user", "绑定 ZZZZ2222"), { ...plainQuery, signature: "bad" })).status, 403)
+  assert.equal(
+    (
+      await hooks.handleOaMessage(xml(1, "oa-user", "绑定 ZZZZ2222"), {
+        ...plainQuery,
+        signature: "bad",
+      })
+    ).status,
+    403
+  )
   const pair2 = await createPairCode(ownerId, agentId)
   // security mode (AES)
-  const cipher = oa.oaEncrypt(aesKey, xml(2, "oa-user", `绑定 ${pair2.code}`), "wxappid123")
+  const cipher = oa.oaEncrypt(
+    aesKey,
+    xml(2, "oa-user", `绑定 ${pair2.code}`),
+    "wxappid123"
+  )
   assert.equal(oa.oaDecrypt(aesKey, cipher, "wxappid123").includes("oa-user"), true)
   assert.throws(() => oa.oaDecrypt(aesKey, cipher, "other-app"))
   const encryptedBody = `<xml><ToUserName><![CDATA[gh_x]]></ToUserName><Encrypt><![CDATA[${cipher}]]></Encrypt></xml>`
   const ok = await hooks.handleOaMessage(encryptedBody, {
-    signature: null, timestamp: ts, nonce, msg_signature: sign([oaToken, ts, nonce, cipher]),
+    signature: null,
+    timestamp: ts,
+    nonce,
+    msg_signature: sign([oaToken, ts, nonce, cipher]),
   })
   assert.equal(ok.body, "success")
   await run(["x"])
@@ -407,7 +546,10 @@ try {
   assert.equal(oaApi.calls.at(-1)!.body.touser, "oa-user")
   // customer-service limit: five messages per inbound, the rest wait
   const oaLink = (await linkOf("wechat_oa"))!
-  await db.update(schema.channelLinks).set({ state: { ...(oaLink.state as object), sent: 5 } }).where(eq(schema.channelLinks.id, oaLink.id))
+  await db
+    .update(schema.channelLinks)
+    .set({ state: { ...(oaLink.state as object), sent: 5 } })
+    .where(eq(schema.channelLinks.id, oaLink.id))
   const oaBefore = oaApi.calls.length
   await share("给你看看今天的云")
   await hub.routeBackgroundMessages()
@@ -423,42 +565,81 @@ try {
   await share("给你发张今天的晚霞")
   await hub.routeBackgroundMessages()
   await hub.deliverOutbox()
-  const tg = await pool.query("SELECT chat_id,payload FROM telegram_outbox ORDER BY created_at")
+  const tg = await pool.query(
+    "SELECT chat_id,payload FROM telegram_outbox ORDER BY created_at"
+  )
   assert.equal(tg.rows.length, 1)
   assert.equal(tg.rows[0].chat_id, "555")
   assert.match(tg.rows[0].payload.text, /晚霞/)
   await db.insert(schema.channelInbound).values({
-    channel: "telegram", eventKey: "g1:1", externalId: "555", text: "在吗",
+    channel: "telegram",
+    eventKey: "g1:1",
+    externalId: "555",
+    text: "在吗",
     context: { trusted: true, agentId, ownerId },
   })
   await run(["在呀"])
   assert.equal((await pool.query("SELECT 1 FROM telegram_outbox")).rowCount, 2)
 
   // ───────────────────────── management API ─────────────────────────
-  await channelAction(ownerId, agentId, { action: "configure", channel: "qq", values: { appId: "1020304050", appSecret: "never-shown-secret-value" } })
+  await channelAction(ownerId, agentId, {
+    action: "configure",
+    channel: "qq",
+    values: { appId: "1020304050", appSecret: "never-shown-secret-value" },
+  })
   const status = await channelStatus(ownerId, agentId)
   const dump = JSON.stringify(status)
-  for (const hidden of ["never-shown-secret-value", secret, relayKey, "BOT-TOKEN", "oa-secret", oaToken, aesKey])
+  for (const hidden of [
+    "never-shown-secret-value",
+    secret,
+    relayKey,
+    "BOT-TOKEN",
+    "oa-secret",
+    oaToken,
+    aesKey,
+  ])
     assert.ok(!dump.includes(hidden), "status must not expose secrets")
   assert.equal(status.channels.qq.linked, true)
   assert.equal(status.channels.qq.configured, true)
   assert.equal(status.channels.wechat_oa.encrypted, true)
   assert.equal(status.channels.wechat.connected, true)
   await assert.rejects(
-    channelAction(ownerId, agentId, { action: "configure", channel: "relay", values: { url: "ftp://x" } })
+    channelAction(ownerId, agentId, {
+      action: "configure",
+      channel: "relay",
+      values: { url: "ftp://x" },
+    })
   )
   await assert.rejects(
-    channelAction(ownerId, agentId, { action: "configure", channel: "qq", values: { nope: "x" } })
+    channelAction(ownerId, agentId, {
+      action: "configure",
+      channel: "qq",
+      values: { nope: "x" },
+    })
   )
-  assert.equal((await channelAction(ownerId, agentId, { action: "unbind", channel: "qq" }) as { unbound: boolean }).unbound, true)
+  assert.equal(
+    (
+      (await channelAction(ownerId, agentId, { action: "unbind", channel: "qq" })) as {
+        unbound: boolean
+      }
+    ).unbound,
+    true
+  )
   assert.equal(await linkOf("qq"), undefined)
   await channelAction(ownerId, agentId, { action: "wechat-disconnect" })
   assert.equal(await linkOf("wechat"), undefined)
 
   // One person, one memory: every channel wrote into the same history
-  const channelsSeen = new Set((await db.select().from(schema.companionMessages)).map((m) => m.channel))
-  assert.deepEqual([...channelsSeen].sort(), ["qq", "telegram", "web", "wechat", "wechat_oa"].filter((c) => channelsSeen.has(c)))
-  assert.ok(channelsSeen.has("qq") && channelsSeen.has("wechat") && channelsSeen.has("telegram"))
+  const channelsSeen = new Set(
+    (await db.select().from(schema.companionMessages)).map((m) => m.channel)
+  )
+  assert.deepEqual(
+    [...channelsSeen].sort(),
+    ["qq", "telegram", "web", "wechat", "wechat_oa"].filter((c) => channelsSeen.has(c))
+  )
+  assert.ok(
+    channelsSeen.has("qq") && channelsSeen.has("wechat") && channelsSeen.has("telegram")
+  )
 
   await closeDurableClient()
   await pool.end()

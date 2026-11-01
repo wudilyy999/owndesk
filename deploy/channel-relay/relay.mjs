@@ -14,19 +14,32 @@ import { request as httpsRequest } from "node:https"
 import { request as httpRequest } from "node:http"
 import { timingSafeEqual } from "node:crypto"
 
-const DEFAULT_HOSTS = "api.bot.qq.com,bots.qq.com,sandbox.api.sgroup.qq.com,api.weixin.qq.com"
+const DEFAULT_HOSTS =
+  "api.bot.qq.com,bots.qq.com,sandbox.api.sgroup.qq.com,api.weixin.qq.com"
 
 export function createRelay(config) {
   const key = Buffer.from(config.key ?? "")
   if (key.length < 16) throw new Error("RELAY_KEY must be at least 16 characters")
   const hosts = new Set(
-    (config.hosts ?? DEFAULT_HOSTS).split(",").map((host) => host.trim().toLowerCase()).filter(Boolean)
+    (config.hosts ?? DEFAULT_HOSTS)
+      .split(",")
+      .map((host) => host.trim().toLowerCase())
+      .filter(Boolean)
   )
   const upstreamRequest = config.upstreamInsecure ? httpRequest : httpsRequest
   const app = config.appUpstream ? new URL(config.appUpstream) : null
   const hop = new Set([
-    "connection", "keep-alive", "proxy-authenticate", "proxy-authorization", "te", "trailer",
-    "transfer-encoding", "upgrade", "host", "content-length", "x-relay-key",
+    "connection",
+    "keep-alive",
+    "proxy-authenticate",
+    "proxy-authorization",
+    "te",
+    "trailer",
+    "transfer-encoding",
+    "upgrade",
+    "host",
+    "content-length",
+    "x-relay-key",
   ])
 
   const authorised = (header) => {
@@ -41,7 +54,9 @@ export function createRelay(config) {
       res.writeHead(answer.statusCode ?? 502, headers)
       answer.pipe(res)
     })
-    upstream.setTimeout(config.timeoutMs ?? 30_000, () => upstream.destroy(new Error("timeout")))
+    upstream.setTimeout(config.timeoutMs ?? 30_000, () =>
+      upstream.destroy(new Error("timeout"))
+    )
     upstream.on("error", (error) => {
       if (!res.headersSent) res.writeHead(502, { "content-type": "application/json" })
       res.end(JSON.stringify({ error: "upstream", message: error.message }))

@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Room } from "@/components/companion-room"
+import { Channels } from "@/components/companion-channels"
 import { cn } from "@/lib/utils"
 import type { Companion as CompanionRow, CompanionMessage } from "@/db/schema"
 
@@ -22,6 +23,7 @@ const tabs = [
   ["chat", "聊天"],
   ["life", "房间"],
   ["memory", "记忆"],
+  ["channels", "聊天软件"],
   ["settings", "设置"],
 ] as const
 type Tab = (typeof tabs)[number][0]
@@ -89,6 +91,7 @@ export function Companion() {
       {view && tab === "chat" && <Chat zone={view.timeZone} />}
       {view && tab === "life" && <Room agentId={view.agentId} zone={view.timeZone} />}
       {view && tab === "memory" && <Notes zone={view.timeZone} />}
+      {view && tab === "channels" && <Channels />}
       {view && tab === "settings" && <SettingsForm view={view} onSaved={setView} />}
     </main>
   )

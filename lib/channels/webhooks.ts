@@ -33,7 +33,10 @@ export async function handleQqWebhook(
       return { status: 400, body: { error: "bad validation" } }
     return {
       status: 200,
-      body: { plain_token: plainToken, signature: qqSignValidation(secret, eventTs, plainToken) },
+      body: {
+        plain_token: plainToken,
+        signature: qqSignValidation(secret, eventTs, plainToken),
+      },
     }
   }
   if (!qqVerifyCallback(secret, headers.timestamp, headers.signature, rawBody))
@@ -56,7 +59,9 @@ export async function handleQqWebhook(
       .set({
         state: sql`${channelLinks.state} || ${JSON.stringify({ rejected: event.type === "reject" })}::jsonb`,
       })
-      .where(and(eq(channelLinks.channel, "qq"), eq(channelLinks.externalId, event.openid)))
+      .where(
+        and(eq(channelLinks.channel, "qq"), eq(channelLinks.externalId, event.openid))
+      )
   }
   // Acknowledge (op 12) so the platform does not redeliver
   return { status: 200, body: { op: 12 } }
@@ -74,12 +79,19 @@ export type OaQuery = {
 
 export async function handleOaVerify(query: OaQuery): Promise<WebhookResponse> {
   const token = await getSetting("wechatOa.token")
-  if (!token || !query.echostr || !oaVerifySignature(token, query.signature, query.timestamp, query.nonce))
+  if (
+    !token ||
+    !query.echostr ||
+    !oaVerifySignature(token, query.signature, query.timestamp, query.nonce)
+  )
     return { status: 403, body: "forbidden", contentType: "text/plain" }
   return { status: 200, body: query.echostr, contentType: "text/plain" }
 }
 
-export async function handleOaMessage(rawBody: string, query: OaQuery): Promise<WebhookResponse> {
+export async function handleOaMessage(
+  rawBody: string,
+  query: OaQuery
+): Promise<WebhookResponse> {
   const [token, aesKey, appId] = await Promise.all([
     getSetting("wechatOa.token"),
     getSetting("wechatOa.aesKey"),
@@ -88,18 +100,29 @@ export async function handleOaMessage(rawBody: string, query: OaQuery): Promise<
   const forbidden = { status: 403, body: "forbidden", contentType: "text/plain" }
   if (!token) return forbidden
   let xml = rawBody
-  const encrypted = /<Encrypt>(?:<!\[CDATA\[([\s\S]*?)\]\]>|([^<]*))<\/Encrypt>/.exec(rawBody)
+  const encrypted = /<Encrypt>(?:<!\[CDATA\[([\s\S]*?)\]\]>|([^<]*))<\/Encrypt>/.exec(
+    rawBody
+  )
   if (encrypted) {
     const cipherText = encrypted[1] ?? encrypted[2]
     if (!aesKey || !appId) return forbidden
-    if (!oaVerifySignature(token, query.msg_signature ?? null, query.timestamp, query.nonce, cipherText))
+    if (
+      !oaVerifySignature(
+        token,
+        query.msg_signature ?? null,
+        query.timestamp,
+        query.nonce,
+        cipherText
+      )
+    )
       return forbidden
     try {
       xml = oaDecrypt(aesKey, cipherText, appId)
     } catch {
       return forbidden
     }
-  } else if (!oaVerifySignature(token, query.signature, query.timestamp, query.nonce)) return forbidden
+  } else if (!oaVerifySignature(token, query.signature, query.timestamp, query.nonce))
+    return forbidden
 
   const message = parseOaMessage(xml)
   if (message?.text)

@@ -16,12 +16,24 @@ test("relay refuses to start with a weak key", () => {
 })
 
 test("relay forwards only allowed hosts, with the key, and passes webhooks to the app", async () => {
-  const seen: { path?: string; host?: string; method?: string; body: string; key?: unknown }[] = []
+  const seen: {
+    path?: string
+    host?: string
+    method?: string
+    body: string
+    key?: unknown
+  }[] = []
   const upstream = createServer((req, res) => {
     let body = ""
     req.on("data", (chunk) => (body += chunk))
     req.on("end", () => {
-      seen.push({ path: req.url, host: req.headers.host, method: req.method, body, key: req.headers["x-relay-key"] })
+      seen.push({
+        path: req.url,
+        host: req.headers.host,
+        method: req.method,
+        body,
+        key: req.headers["x-relay-key"],
+      })
       res.writeHead(200, { "content-type": "application/json" })
       res.end(JSON.stringify({ ok: true }))
     })
@@ -39,7 +51,11 @@ test("relay forwards only allowed hosts, with the key, and passes webhooks to th
   try {
     const ok = await fetch(`${base}/forward/api.bot.qq.com/v2/users/u/messages?x=1`, {
       method: "POST",
-      headers: { "x-relay-key": KEY, "content-type": "application/json", authorization: "QQBot t" },
+      headers: {
+        "x-relay-key": KEY,
+        "content-type": "application/json",
+        authorization: "QQBot t",
+      },
       body: '{"content":"hi"}',
     })
     assert.equal(ok.status, 200)
@@ -52,11 +68,19 @@ test("relay forwards only allowed hosts, with the key, and passes webhooks to th
     })
     assert.equal((await fetch(`${base}/forward/api.bot.qq.com/x`)).status, 401)
     assert.equal(
-      (await fetch(`${base}/forward/api.bot.qq.com/x`, { headers: { "x-relay-key": "x".repeat(24) } })).status,
+      (
+        await fetch(`${base}/forward/api.bot.qq.com/x`, {
+          headers: { "x-relay-key": "x".repeat(24) },
+        })
+      ).status,
       401
     )
     assert.equal(
-      (await fetch(`${base}/forward/evil.example.com/x`, { headers: { "x-relay-key": KEY } })).status,
+      (
+        await fetch(`${base}/forward/evil.example.com/x`, {
+          headers: { "x-relay-key": KEY },
+        })
+      ).status,
       403
     )
     // Webhook pass-through is limited to the channel endpoints
