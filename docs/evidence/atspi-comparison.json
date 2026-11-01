@@ -1,0 +1,420 @@
+{
+  "at": "2026-10-29T19:06:25.210Z",
+  "status": "completed",
+  "model": "openai/gpt-6.1-terra",
+  "workstationImage": "owndesk-workstation:0.6.5",
+  "protocol": "real production Task/DBOS/worker/actions; isolated loopback Responses relay changes observation arm only",
+  "maxRequestsPerTask": 48,
+  "contextWindowTokens": 65536,
+  "repeatsPerScenePerArm": 1,
+  "results": [
+    {
+      "id": "form-vision",
+      "taskId": "44e25a2d-ca6f-4cf0-9707-53624f9429c6",
+      "scenario": "form",
+      "arm": "vision",
+      "passed": true,
+      "taskStatus": "completed",
+      "oracle": {
+        "title": true,
+        "sync": true,
+        "volume": true,
+        "savedExactlyOnce": true,
+        "protectedAndUnrelated": true,
+        "otherSettings": true,
+        "otherXSettingsUnchanged": true
+      },
+      "elapsedMs": 44280,
+      "requests": 8,
+      "summaryCalls": 0,
+      "usage": {
+        "input": 53186,
+        "output": 409,
+        "cached": 17024
+      },
+      "histogram": {
+        "screen_capture": 1,
+        "pointer_click": 3,
+        "key_press": 1,
+        "key_type": 1,
+        "pointer_drag": 1,
+        "complete_task": 1
+      },
+      "nativeActionAttempts": 0,
+      "nativeDispatched": 0,
+      "fallbacks": [],
+      "pointerKeyboardInputs": 6,
+      "statusAfterCleanup": "completed"
+    },
+    {
+      "id": "form-native-first",
+      "taskId": "768a0d0d-1980-4d22-8e3c-32c8d1b7aafd",
+      "scenario": "form",
+      "arm": "native-first",
+      "passed": true,
+      "taskStatus": "completed",
+      "oracle": {
+        "title": true,
+        "sync": true,
+        "volume": true,
+        "savedExactlyOnce": true,
+        "protectedAndUnrelated": true,
+        "otherSettings": true,
+        "otherXSettingsUnchanged": true
+      },
+      "elapsedMs": 37274,
+      "requests": 8,
+      "summaryCalls": 1,
+      "usage": {
+        "input": 93178,
+        "output": 909,
+        "cached": 37888
+      },
+      "histogram": {
+        "desktop_list_windows": 1,
+        "desktop_get_window_state": 1,
+        "desktop_element_action": 4,
+        "complete_task": 1
+      },
+      "nativeActionAttempts": 4,
+      "nativeDispatched": 4,
+      "fallbacks": [],
+      "pointerKeyboardInputs": 0,
+      "statusAfterCleanup": "completed"
+    },
+    {
+      "id": "files-native-first",
+      "taskId": "0623e192-810c-464e-ac37-b7a140532aa0",
+      "scenario": "files",
+      "arm": "native-first",
+      "passed": true,
+      "taskStatus": "completed",
+      "oracle": {
+        "exactFiles": true,
+        "finalWindow": true,
+        "otherSettings": true,
+        "otherXSettingsUnchanged": true
+      },
+      "elapsedMs": 303882,
+      "requests": 48,
+      "summaryCalls": 9,
+      "usage": {
+        "input": 745832,
+        "output": 11477,
+        "cached": 199424
+      },
+      "histogram": {
+        "desktop_list_windows": 1,
+        "desktop_get_window_state": 3,
+        "key_press": 10,
+        "desktop_element_action": 13,
+        "pointer_click": 11,
+        "complete_task": 1
+      },
+      "nativeActionAttempts": 13,
+      "nativeDispatched": 13,
+      "fallbacks": [
+        "FALLBACK: 文件区控件未在辅助树中提供操作，使用 Thunar 快捷键新建文件夹。",
+        "FALLBACK: 文件夹图标没有可用的辅助操作，双击打开收件箱。",
+        "FALLBACK: 文件图标未暴露可用操作，使用鼠标多选及剪切快捷键。",
+        "FALLBACK: 使用剪切快捷键移动已选文件。",
+        "FALLBACK: 文件夹图标未暴露原生操作，双击打开。",
+        "FALLBACK: 使用粘贴快捷键。",
+        "FALLBACK: 文件图标未暴露原生操作，双击收件箱。",
+        "FALLBACK: 文件图标未暴露原生选择操作。",
+        "FALLBACK: 使用文件管理器剪切快捷键。",
+        "FALLBACK: 文件夹图标未暴露原生打开操作。",
+        "FALLBACK: 使用应用粘贴快捷键。",
+        "FALLBACK: 使用重命名快捷键。",
+        "FALLBACK: 文件图标未暴露可操作的无障碍控件，使用双击打开收件箱。",
+        "FALLBACK: 文件图标未暴露选择动作，单击选择预算原件。",
+        "FALLBACK: 使用文件管理器复制快捷键。",
+        "FALLBACK: 文件夹图标没有可用的无障碍打开动作。",
+        "FALLBACK: 使用文件管理器粘贴快捷键。",
+        "FALLBACK: 文件图标未暴露重命名动作，使用 F2。",
+        "FALLBACK: 文件夹图标未在无障碍树中提供可用操作，使用双击打开收件箱。",
+        "FALLBACK: 使用 Thunar 的 Ctrl+H 快捷键检查隐藏文件。",
+        "FALLBACK: 文件夹图标没有暴露可用的无障碍操作，双击打开。"
+      ],
+      "pointerKeyboardInputs": 21,
+      "statusAfterCleanup": "completed"
+    },
+    {
+      "id": "files-vision",
+      "taskId": "aab294cc-f794-437b-839c-f56ab7fbe635",
+      "scenario": "files",
+      "arm": "vision",
+      "passed": false,
+      "taskStatus": "needs_review",
+      "oracle": {
+        "exactFiles": true,
+        "finalWindow": false,
+        "otherSettings": true,
+        "otherXSettingsUnchanged": true
+      },
+      "elapsedMs": 265538,
+      "requests": 48,
+      "summaryCalls": 10,
+      "usage": {
+        "input": 310024,
+        "output": 10236,
+        "cached": 87552
+      },
+      "histogram": {
+        "screen_capture": 1,
+        "key_press": 22,
+        "key_type": 3,
+        "pointer_click": 12
+      },
+      "nativeActionAttempts": 0,
+      "nativeDispatched": 0,
+      "fallbacks": [],
+      "pointerKeyboardInputs": 37,
+      "statusAfterCleanup": "cancelled"
+    },
+    {
+      "id": "font-vision",
+      "taskId": "cdabc35f-64c9-4c3b-b7f3-1f76ab51ee13",
+      "scenario": "font",
+      "arm": "vision",
+      "passed": true,
+      "taskStatus": "completed",
+      "oracle": {
+        "font": true,
+        "finalWindow": true,
+        "fontsPage": true,
+        "otherXSettingsUnchanged": true
+      },
+      "elapsedMs": 44295,
+      "requests": 7,
+      "summaryCalls": 1,
+      "usage": {
+        "input": 37861,
+        "output": 682,
+        "cached": 12032
+      },
+      "histogram": {
+        "screen_capture": 1,
+        "pointer_click": 4,
+        "complete_task": 1
+      },
+      "nativeActionAttempts": 0,
+      "nativeDispatched": 0,
+      "fallbacks": [],
+      "pointerKeyboardInputs": 4,
+      "statusAfterCleanup": "completed"
+    },
+    {
+      "id": "font-native-first",
+      "taskId": "632140d1-be9c-40a2-afe1-290428dd7548",
+      "scenario": "font",
+      "arm": "native-first",
+      "passed": true,
+      "taskStatus": "completed",
+      "oracle": {
+        "font": true,
+        "finalWindow": true,
+        "fontsPage": true,
+        "otherXSettingsUnchanged": true
+      },
+      "elapsedMs": 112673,
+      "requests": 18,
+      "summaryCalls": 3,
+      "usage": {
+        "input": 259137,
+        "output": 3145,
+        "cached": 84992
+      },
+      "histogram": {
+        "desktop_list_windows": 2,
+        "desktop_get_window_state": 3,
+        "pointer_click": 3,
+        "desktop_element_action": 5,
+        "key_press": 1,
+        "complete_task": 1
+      },
+      "nativeActionAttempts": 5,
+      "nativeDispatched": 5,
+      "fallbacks": [
+        "FALLBACK: Fonts 标签未在当前无障碍树中暴露，使用屏幕点击。",
+        "FALLBACK: 字体选择器的无障碍树被截断，无法读取 Select 按钮；使用屏幕上的按钮确认。",
+        "FALLBACK: 字号输入框的数值尚未提交，使用 Tab 使其失去焦点并更新。",
+        "FALLBACK: 对话框按钮未在截断的无障碍树中显示，点击可见的 Select。"
+      ],
+      "pointerKeyboardInputs": 4,
+      "statusAfterCleanup": "completed"
+    }
+  ],
+  "aggregates": {
+    "vision": {
+      "endToEndPassed": 2,
+      "cases": 3,
+      "requests": 63,
+      "summaryRequests": 11,
+      "usage": {
+        "input": 401071,
+        "output": 11327,
+        "cached": 116608
+      },
+      "nativeDispatched": 0,
+      "pointerKeyboardInputs": 47
+    },
+    "native-first": {
+      "endToEndPassed": 3,
+      "cases": 3,
+      "requests": 74,
+      "summaryRequests": 13,
+      "usage": {
+        "input": 1098147,
+        "output": 15531,
+        "cached": 322304
+      },
+      "nativeDispatched": 22,
+      "pointerKeyboardInputs": 25
+    }
+  },
+  "billing": {
+    "requests": 137,
+    "allReceived": true,
+    "unknownOutcomes": 0,
+    "unpricedAttempts": 137,
+    "totalCostMicros": null
+  },
+  "protocolAudit": {
+    "modelRequests": 137,
+    "responses": 137,
+    "allHTTP200": true,
+    "allStateless": true,
+    "maxImages": 2,
+    "allCallPairsMatched": true,
+    "visionNoNativeToolsOrData": true,
+    "initialNativeReadGatingChecked": true,
+    "protectedAndHiddenValuesAbsent": true
+  },
+  "knownGaps": {
+    "observationProjection": {
+      "matchedExample": {
+        "cell": "files-native-first",
+        "request": 48,
+        "observationId": "77a647c0-dc7b-4a20-b4d6-929c826eac45",
+        "rawElements": 51,
+        "modelElements": 17,
+        "omitted": 34,
+        "dropped": [
+          {
+            "role": "status bar",
+            "name": "3 files: 114 bytes | Free space: 84.4 GiB",
+            "text": null
+          }
+        ]
+      },
+      "nativeFontLabelExample": {
+        "cell": "font-native-first",
+        "request": 3,
+        "observationId": "06c87a79-06d8-41fd-a928-f46311f1d471",
+        "rawElements": 16,
+        "modelElements": 7,
+        "omitted": 9,
+        "dropped": [
+          {
+            "role": "page tab",
+            "name": "Fonts",
+            "text": null
+          }
+        ]
+      }
+    },
+    "dualInterfaceNumericSetter": [
+      {
+        "actionNo": 7,
+        "kind": "desktop_element_action",
+        "operation": "set_value",
+        "key": null,
+        "effect": "dispatched",
+        "spinValues": [
+          {
+            "text": "11",
+            "value": 10
+          }
+        ]
+      },
+      {
+        "actionNo": 11,
+        "kind": "desktop_element_action",
+        "operation": "set_value",
+        "key": null,
+        "effect": "dispatched",
+        "spinValues": [
+          {
+            "text": "11",
+            "value": 10
+          }
+        ]
+      },
+      {
+        "actionNo": 13,
+        "kind": "key_press",
+        "operation": null,
+        "key": "tab",
+        "effect": null,
+        "spinValues": [
+          {
+            "text": "11",
+            "value": 11
+          }
+        ]
+      }
+    ],
+    "fixedInProduction": false
+  },
+  "independentFileByteAudit": [
+    {
+      "exactBytes": true,
+      "directories": ["交付", "归档", "收件箱"],
+      "symlinks": [],
+      "fileCount": 8,
+      "changedPaths": [],
+      "cell": "files-native-first"
+    },
+    {
+      "exactBytes": true,
+      "directories": ["交付", "归档", "收件箱"],
+      "symlinks": [],
+      "fileCount": 8,
+      "changedPaths": [],
+      "cell": "files-vision"
+    }
+  ],
+  "mainBefore": {
+    "tasks": 12,
+    "attempts": 65,
+    "actions": 58,
+    "artifacts": 7,
+    "active": 0
+  },
+  "mainAfter": {
+    "tasks": 12,
+    "attempts": 65,
+    "actions": 58,
+    "artifacts": 7,
+    "active": 0
+  },
+  "mainUnchanged": true,
+  "cleanup": {
+    "experimentRunning": false,
+    "removedStoppedContainers": 6,
+    "removedDisplayVolumes": 6,
+    "preservedHomeVolumes": 6,
+    "databaseBytes": 26459159
+  },
+  "limitations": [
+    "One pair per scene; no statistical or competitor-superiority claim.",
+    "The relay strips controls after production context estimation; internal raw native history/schemas can overestimate the visual arm and influence compaction/admission.",
+    "Files are exact in both arms; visual failure is final-location/completion budget exhaustion, not file corruption.",
+    "Native action preference is prompted; only the initial explicit successful native read is tool-list gated.",
+    "Dispatch alone does not prove semantic commit; font edit text 11 versus numeric value 10 was retained.",
+    "Daily preview/default instructions were unchanged. Raw requests/database remain private on the original device."
+  ],
+  "privateEvidenceDirectory": "data/experiments/atspi-ab-1793299851785/",
+  "noPaidRerun": true
+}
