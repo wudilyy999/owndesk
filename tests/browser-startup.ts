@@ -5,7 +5,7 @@ import path from "node:path"
 import { setTimeout as delay } from "node:timers/promises"
 import { docker, dockerRaw } from "@/lib/docker"
 
-const image = process.env.PA_BROWSER_TEST_IMAGE ?? "owndesk-workstation:0.6.5"
+const image = process.env.PA_BROWSER_TEST_IMAGE ?? "owndesk-workstation:0.6.6"
 const name = `pa-browser-startup-${randomUUID().slice(0, 8)}`
 const directory = path.resolve("data/experiments", name)
 await mkdir(directory, { recursive: true })

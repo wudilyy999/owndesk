@@ -4,7 +4,12 @@ import { z } from "zod"
 import { db, pool } from "@/db"
 import { eq } from "drizzle-orm"
 import { tasks, budgetChangesSchema, type Task, type SegmentSnapshot } from "@/db/schema"
-import { toolsForCoordinateMode, isAgentTool, desktopToolNames } from "@/lib/agent/tools"
+import {
+  toolsForCoordinateMode,
+  toolsForTask,
+  isAgentTool,
+  desktopToolNames,
+} from "@/lib/agent/tools"
 import { buildInstructions } from "@/lib/agent/instructions"
 import { requestCancellation, requestTakeover } from "@/lib/task-control"
 import { appendEvent, appendEventInTransaction } from "@/lib/task-events"
@@ -35,6 +40,7 @@ import { createTaskRequest } from "./requests"
 import { revokeDesktop } from "./desktop-gateway"
 import { trackActivity } from "./activity"
 import { executeMemoryTool } from "./memory"
+import { executeLifeTool, lifePathAllowed, LIFE_DIR } from "./life"
 import { executeAgentZeroTool } from "./agent-zero"
 import { listVault } from "@/lib/vault"
 import { vaultOriginSchema } from "@/lib/vault-schema"
@@ -226,7 +232,10 @@ async function controlState(task: Pick<Task, "id" | "agentId" | "activeSegment">
     health.bootId !== workspace.bootId ||
     health.epoch !== workspace.epoch
   )
-    workspace = await acquireWorkspace(task)
+    workspace = await acquireWorkspace(
+      task,
+      state.configSnapshot.lifeSession ? "life" : "errand"
+    )
   return { requestId: null, epoch: workspace.epoch, budget: state.budget, handbacks }
 }
 
@@ -501,6 +510,25 @@ async function runTool(
   ).safeParse(raw)
   if (!parsed.success) return { ok: false, output: { error: parsed.error.message } }
   const input = parsed.data as Record<string, unknown>
+  if (task.configSnapshot.lifeSession) {
+    // toolsForTask already limits the model; this is the server-side check of what it called
+    if (!Object.hasOwn(toolsForTask(task.configSnapshot), toolName))
+      return {
+        ok: false,
+        output: { error: "This tool is not available in your own time." },
+      }
+    if (toolName.startsWith("fs_") && !lifePathAllowed(String(input.path ?? ".")))
+      return {
+        ok: false,
+        output: { error: `In your own time you may only use files under ${LIFE_DIR}.` },
+      }
+    if (
+      toolName === "life_log" ||
+      toolName === "life_share" ||
+      toolName === "coview_reply"
+    )
+      return executeLifeTool(task.id, segmentNo, actionNo, toolName, input, epoch)
+  }
   if (toolName === "load_manual") {
     const result = loadManual(task.configSnapshot.manuals ?? [], String(input.id))
     if (result.ok)
@@ -860,6 +888,21 @@ export async function runAgent(taskId: string, segmentNo: number) {
         control.budget.maxCostMicros !== undefined &&
         (Number(usageRows[0].spent) >= control.budget.maxCostMicros ||
           usageRows[0].unknown > 0)
+      if (
+        task.configSnapshot.lifeSession &&
+        (usageRows[0].decisions >= control.budget.maxSteps || overCost)
+      ) {
+        // The daily life budget ends the session; it never waits for the person
+        const done = await DBOS.runStep(
+          () =>
+            finishTask(task, segmentNo, {
+              summary: "今天自己的时间用完了（达到步数或花费上限）。",
+              files: [],
+            }),
+          { name: "life-budget-finish" }
+        )
+        return done.output
+      }
       if (
         !task.configSnapshot.workflowExecution &&
         (usageRows[0].decisions >= control.budget.maxSteps || overCost)

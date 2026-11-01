@@ -8,9 +8,7 @@
     {
       "mode": "current-default",
       "storeField": "omitted",
-      "itemReferences": [
-        "rs_0d3378625d8bc172016adeafac535887d0ab5f174b7fd96f8c"
-      ],
+      "itemReferences": ["rs_0d3378625d8bc172016adeafac535887d0ab5f174b7fd96f8c"],
       "reasoningItems": 0,
       "encryptedReasoningIncluded": false,
       "toolCalls": [
@@ -44,9 +42,7 @@
           "callId": "call_ZLjM2DYMyJGBx2tQVqPvQfU1"
         }
       ],
-      "requestedInclude": [
-        "reasoning.encrypted_content"
-      ],
+      "requestedInclude": ["reasoning.encrypted_content"],
       "networkRequests": 0
     }
   ],

@@ -13,6 +13,7 @@ type Connection = {
   agentId: string
   mode: "watch" | "control"
   epoch: number
+  until: Date | null
   sessionId: string
   headers: Headers
   closed: boolean
@@ -70,6 +71,8 @@ async function validateConnection(connection: Connection) {
   const canControl =
     !workspace.desiredMode &&
     (workspace.mode === "human" || (workspace.mode === "idle" && !workspace.activeTaskId))
+  if (connection.until && Date.now() >= connection.until.getTime())
+    throw new HttpError(410, "Peek time is over")
   if (
     workspace.epoch !== connection.epoch ||
     workspace.mode === "quarantined" ||
@@ -103,13 +106,17 @@ export function attachDesktopGateway(server: Server) {
       if (!token) throw new HttpError(401, "Desktop ticket required")
       const {
         rows: [ticket],
-      } = await pool.query<{ mode: "watch" | "control"; epoch: number }>(
+      } = await pool.query<{
+        mode: "watch" | "control"
+        epoch: number
+        watch_until: Date | null
+      }>(
         `
         UPDATE desktop_tickets t SET used_at=now() FROM workstation_control w
         WHERE t.token=$1 AND t.owner_id=$2 AND t.session_id=$3 AND t.agent_id=$4
           AND t.used_at IS NULL AND t.expires_at>now() AND w.agent_id=t.agent_id AND w.epoch=t.epoch
           AND w.mode <> 'quarantined' AND (t.mode='watch' OR (w.desired_mode IS NULL AND (w.mode='human' OR (w.mode='idle' AND w.active_task_id IS NULL))))
-        RETURNING t.mode,t.epoch`,
+        RETURNING t.mode,t.epoch,t.watch_until`,
         [token, owner.userId, owner.sessionId, match[1]]
       )
       if (!ticket)
@@ -120,6 +127,7 @@ export function attachDesktopGateway(server: Server) {
           agentId: match[1],
           mode: ticket.mode,
           epoch: ticket.epoch,
+          until: ticket.watch_until,
           sessionId: owner.sessionId,
           headers,
           closed: false,
@@ -140,9 +148,21 @@ export function attachDesktopGateway(server: Server) {
               checking = false
             })
         }, 2000)
+        // A timed peek ends with a clean close so the viewer can tell it from a failure
+        const peekEnd = ticket.watch_until
+          ? setTimeout(
+              () => {
+                connection.closed = true
+                client.close(4000, "Peek time is over")
+                setTimeout(() => client.terminate(), 1000).unref()
+              },
+              Math.max(0, ticket.watch_until.getTime() - Date.now())
+            )
+          : undefined
         client.on("close", () => {
           connection.closed = true
           clearInterval(sessionCheck)
+          clearTimeout(peekEnd)
           connection.upstream?.destroy()
           connections.delete(connection)
         })

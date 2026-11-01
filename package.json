@@ -6,7 +6,7 @@
   "private": true,
   "type": "module",
   "engines": {
-    "node": ">=20.9.0"
+    "node": ">=24.20.0"
   },
   "scripts": {
     "dev": "next dev --hostname 127.0.0.1 --port 6797",
@@ -15,9 +15,10 @@
     "worker": "tsx worker/main.ts",
     "db:migrate": "tsx scripts/migrate.ts",
     "typecheck": "tsc --noEmit",
-    "test": "tsx --test tests/*.test.ts",
+    "lint": "eslint .",
+    "test": "tsx --import ./tests/setup-env.mjs --test tests/*.test.ts",
     "test:g01": "tsx tests/g01.ts",
-    "workstation:build": "docker build -t owndesk-workstation:0.6.5 workstation",
+    "workstation:build": "docker build -t owndesk-workstation:0.6.6 workstation",
     "format:check": "prettier --check .",
     "owner:create": "tsx scripts/owner.ts",
     "db:generate": "drizzle-kit generate",
@@ -57,6 +58,7 @@
     "test:runtime:handoff": "tsx tests/runtime.ts handoff",
     "test:runtime:routine-handoff": "tsx tests/runtime.ts routinehandoff",
     "test:runtime:chat": "tsx tests/runtime.ts chat",
+    "test:companion": "tsx tests/companion.ts",
     "test:telegram": "tsx tests/telegram.ts",
     "test:telegram:handoff": "tsx tests/telegram.ts handoff",
     "test:runtime:usage": "tsx tests/runtime.ts usage",

@@ -11,7 +11,9 @@ export async function issueDesktopTicket(
   owner: { userId: string; sessionId: string },
   agentId: string,
   mode: "watch" | "control",
-  requestOrigin?: string | null
+  requestOrigin?: string | null,
+  // A timed peek: the gateway closes the watch connection when this many seconds are up
+  limitSeconds?: number
 ) {
   const [workspace] = await db
     .select()
@@ -25,7 +27,11 @@ export async function issueDesktopTicket(
     (workspace.mode === "human" || (workspace.mode === "idle" && !workspace.activeTaskId))
   if (mode === "control" && !canControl)
     throw new HttpError(409, "Human control is not ready")
+  if (limitSeconds !== undefined && mode !== "watch")
+    throw new HttpError(400, "Only a watch connection can be time-limited")
   const token = randomBytes(32).toString("base64url")
+  const watchUntil =
+    limitSeconds === undefined ? null : new Date(Date.now() + limitSeconds * 1000)
   await db.insert(desktopTickets).values({
     token,
     ownerId: owner.userId,
@@ -34,6 +40,7 @@ export async function issueDesktopTicket(
     mode,
     epoch: workspace.epoch,
     expiresAt: new Date(Date.now() + 30000),
+    watchUntil,
   })
   let base = env.DESKTOP_GATEWAY_URL
   if (!base) {
@@ -54,5 +61,6 @@ export async function issueDesktopTicket(
     password,
     mode,
     epoch: workspace.epoch,
+    until: watchUntil?.toISOString() ?? null,
   }
 }

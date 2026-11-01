@@ -447,6 +447,12 @@ export function Workspace({
       </div>
       <div className="shrink-0 space-y-1 border-t border-hairline px-3 py-4">
         <Link
+          href="/companion"
+          className="block rounded-lg px-3 py-2 text-sm text-foreground/85 transition-colors hover:bg-surface hover:text-foreground"
+        >
+          陪伴聊天
+        </Link>
+        <Link
           href="/settings"
           className="block rounded-lg px-3 py-2 text-sm text-foreground/85 transition-colors hover:bg-surface hover:text-foreground"
         >

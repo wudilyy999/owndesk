@@ -10,9 +10,7 @@
   "webRoot": "data/experiments/agent_manual_0fea1db958b34a7ea0656dce99c67b72/web-source",
   "model": "openai/gpt-6.1-sol",
   "compilationId": "1a625a44-08c9-40c0-9f22-6eef67cc1247",
-  "previousReuseIds": [
-    "314bf137-390d-453f-bcc0-c653eb72e4fe"
-  ],
+  "previousReuseIds": ["314bf137-390d-453f-bcc0-c653eb72e4fe"],
   "targetDirectory": "/tmp",
   "reuseId": "9b37feb6-b20f-4553-a3ba-9c8d1015cecb",
   "result": {

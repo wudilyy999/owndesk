@@ -78,7 +78,7 @@ Object.assign(process.env, {
   APP_URL: "http://127.0.0.1:17457",
   WORKER_HOST: "127.0.0.1",
   WORKER_PORT: "17458",
-  WORKSTATION_IMAGE: "owndesk-workstation:0.6.5",
+  WORKSTATION_IMAGE: "owndesk-workstation:0.6.6",
   WORKSTATION_MEMORY_MB: "2048",
   WORKSTATION_IDLE_MINUTES: "0",
   ARTIFACT_DIR: path.join(directory, "artifacts"),

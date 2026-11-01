@@ -23,3 +23,7 @@
 - 实际浏览器确认：首页选择器仅显示 OwnDesk Assistant；设置页无 Recovery Lab；新对话显示空白“交办任务”和“交给 Agent”。
 - 仅重启网页服务；worker、历史任务、成果与费用记录保留。无新增任务、模型请求或桌面操作。
 - 更新后的测试脚本已保存，本次未重跑历史恢复/报表任务。
+
+## 单元测试环境
+
+`npm test` 只运行 `tests/*.test.ts` 单元测试，不需要 Docker、PostgreSQL 或模型密钥。`lib/env.ts` 在导入时校验环境变量，所以 `tests/setup-env.mjs` 会为 `DATABASE_URL`、`APP_URL`、`BETTER_AUTH_SECRET`、`MASTER_KEY`、`INSTALL_ID` 提供占位值（环境里已有同名变量时保持原值）。其余 `test:*` 验收脚本需要真实数据库、Docker 和（部分）模型，仍按各自说明手动运行，不在 CI 中执行。

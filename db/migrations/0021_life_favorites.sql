@@ -1,0 +1,1 @@
+ALTER TABLE "life_activities" ADD COLUMN "starred" boolean DEFAULT false NOT NULL;

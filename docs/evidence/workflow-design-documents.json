@@ -10,25 +10,9 @@
   "localLinksChecked": 81,
   "jsonBlocksParsed": 2,
   "entryPointsChecked": 5,
-  "plannedFlows": [
-    "F15",
-    "F16",
-    "F17"
-  ],
-  "plannedAcceptanceIds": [
-    "T19",
-    "T20",
-    "T21",
-    "T22"
-  ],
-  "plannedStages": [
-    "C0",
-    "C1",
-    "C2",
-    "C3",
-    "C4",
-    "C5"
-  ],
+  "plannedFlows": ["F15", "F16", "F17"],
+  "plannedAcceptanceIds": ["T19", "T20", "T21", "T22"],
+  "plannedStages": ["C0", "C1", "C2", "C3", "C4", "C5"],
   "errors": [],
   "formatting": {
     "newDocuments": 2,

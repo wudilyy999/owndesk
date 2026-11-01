@@ -16,48 +16,51 @@ const csv =
 
 export async function runFixture(taskId: string, segmentNo: number) {
   const task = await DBOS.runStep(
-    () => trackActivity(taskId, async () => {
-      const [task] = await db.select().from(tasks).where(eq(tasks.id, taskId))
-      if (task.configSnapshot.runtime !== "fixture")
-        throw new Error("Fixture runtime is restricted to fixture tasks")
-      await journal(taskId, "prepare")
-      await db
-        .update(tasks)
-        .set({ status: "running", updatedAt: new Date() })
-        .where(eq(tasks.id, taskId))
-      await appendEvent(taskId, "fixture-prepared", "progress", {
-        step: "prepare",
-        message: "Controlled input prepared; no model was called",
-      })
-      return task
-    }),
+    () =>
+      trackActivity(taskId, async () => {
+        const [task] = await db.select().from(tasks).where(eq(tasks.id, taskId))
+        if (task.configSnapshot.runtime !== "fixture")
+          throw new Error("Fixture runtime is restricted to fixture tasks")
+        await journal(taskId, "prepare")
+        await db
+          .update(tasks)
+          .set({ status: "running", updatedAt: new Date() })
+          .where(eq(tasks.id, taskId))
+        await appendEvent(taskId, "fixture-prepared", "progress", {
+          step: "prepare",
+          message: "Controlled input prepared; no model was called",
+        })
+        return task
+      }),
     { name: "fixture-prepare" }
   )
 
   await DBOS.sleep(5000)
   const file = await DBOS.runStep(
-    () => trackActivity(taskId, async () => {
-      await journal(taskId, "materialize")
-      const relative = `${taskId}/report.csv`
-      const target = path.join(artifactDir, relative)
-      await mkdir(path.dirname(target), { recursive: true })
-      await writeFile(`${target}.partial`, csv, { flag: "w" })
-      await rename(`${target}.partial`, target)
-      await appendEvent(taskId, "fixture-materialized", "progress", {
-        step: "materialize",
-        message: "Report file written atomically",
-      })
-      return relative
-    }),
+    () =>
+      trackActivity(taskId, async () => {
+        await journal(taskId, "materialize")
+        const relative = `${taskId}/report.csv`
+        const target = path.join(artifactDir, relative)
+        await mkdir(path.dirname(target), { recursive: true })
+        await writeFile(`${target}.partial`, csv, { flag: "w" })
+        await rename(`${target}.partial`, target)
+        await appendEvent(taskId, "fixture-materialized", "progress", {
+          step: "materialize",
+          message: "Report file written atomically",
+        })
+        return relative
+      }),
     { name: "fixture-materialize" }
   )
 
   await DBOS.sleep(5000)
   return DBOS.runStep(
-    () => trackActivity(taskId, async () => {
-      await journal(taskId, "verify")
-      return verifyAndComplete(task, segmentNo, file)
-    }),
+    () =>
+      trackActivity(taskId, async () => {
+        await journal(taskId, "verify")
+        return verifyAndComplete(task, segmentNo, file)
+      }),
     { name: "fixture-verify" }
   )
 }
@@ -88,7 +91,10 @@ async function verifyAndComplete(task: Task, segmentNo: number, relative: string
   const client = await pool.connect()
   try {
     await client.query("BEGIN")
-    const completed = await client.query("UPDATE tasks SET status='completed',updated_at=now() WHERE id=$1 AND cancel_requested_at IS NULL RETURNING id", [task.id])
+    const completed = await client.query(
+      "UPDATE tasks SET status='completed',updated_at=now() WHERE id=$1 AND cancel_requested_at IS NULL RETURNING id",
+      [task.id]
+    )
     if (!completed.rowCount) throw new TaskCancelled()
     await client.query(
       `INSERT INTO artifacts(id,task_id,name,storage_path,media_type,size,verification,created_at)

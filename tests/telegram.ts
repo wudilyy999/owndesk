@@ -8,6 +8,7 @@ import { once } from "node:events"
 import { spawn, type ChildProcess } from "node:child_process"
 import { setTimeout as delay } from "node:timers/promises"
 import pg from "pg"
+import { workstationImage } from "./workstation-image"
 
 const focus = process.argv[2] ?? "core"
 assert(process.argv.length <= 3 && ["core", "handoff"].includes(focus))
@@ -29,7 +30,7 @@ Object.assign(process.env, {
   WORKSTATION_MEMORY_MB: "2048",
   OWNER_EMAIL: "telegram@fixture.test",
   OWNER_PASSWORD: randomUUID(),
-  WORKSTATION_IMAGE: "owndesk-workstation:0.6.1",
+  WORKSTATION_IMAGE: workstationImage,
 })
 const token = `123456:${randomUUID().replaceAll("-", "")}`
 const userId = 99900001,
@@ -739,6 +740,8 @@ try {
         await page.getByLabel("邮箱").fill(process.env.OWNER_EMAIL!)
         await page.getByLabel("密码").fill(process.env.OWNER_PASSWORD!)
         await page.getByRole("button", { name: "登录", exact: true }).click()
+        // At 390px the navigation lives in a drawer
+        await page.getByRole("button", { name: "会话", exact: true }).click()
         await page.getByRole("link", { name: "模型与 Agent 设置", exact: true }).click()
         await page.getByLabel("Telegram 远程入口", { exact: true }).waitFor()
         await page.getByText("已配对 Fixture Owner", { exact: false }).waitFor()

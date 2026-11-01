@@ -43,12 +43,8 @@
     "contract": {
       "directoryTree": {
         "root": "/home/xiryn/Flow-C0-1792950841215",
-        "absent": [
-          "Draft"
-        ],
-        "directories": [
-          "Ready"
-        ]
+        "absent": ["Draft"],
+        "directories": ["Ready"]
       },
       "requireHumanReview": false
     },

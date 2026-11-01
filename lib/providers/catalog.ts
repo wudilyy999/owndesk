@@ -61,7 +61,7 @@ export const providers: ProviderMeta[] = [
     defaultBaseUrl: "https://generativelanguage.googleapis.com/v1beta",
     requiresKey: true,
     keysUrl: "https://aistudio.google.com/apikey",
-    suggested: [],
+    suggested: ["gemini-3.8-flash", "gemini-3.1-pro-preview", "gemini-2.5-flash"],
   },
   {
     id: "xai",
@@ -71,7 +71,7 @@ export const providers: ProviderMeta[] = [
     defaultBaseUrl: "https://api.x.ai/v1",
     requiresKey: true,
     keysUrl: "https://console.x.ai",
-    suggested: [],
+    suggested: ["grok-4.7", "grok-4.3"],
   },
   {
     id: "groq",
@@ -81,7 +81,7 @@ export const providers: ProviderMeta[] = [
     defaultBaseUrl: "https://api.groq.com/openai/v1",
     requiresKey: true,
     keysUrl: "https://console.groq.com/keys",
-    suggested: [],
+    suggested: ["openai/gpt-oss-120b", "openai/gpt-oss-20b"],
   },
   {
     id: "mistral",
@@ -91,7 +91,7 @@ export const providers: ProviderMeta[] = [
     defaultBaseUrl: "https://api.mistral.ai/v1",
     requiresKey: true,
     keysUrl: "https://console.mistral.ai/api-keys",
-    suggested: [],
+    suggested: ["mistral-large-latest", "mistral-medium-latest", "mistral-small-latest"],
   },
   {
     id: "deepseek",
@@ -101,7 +101,7 @@ export const providers: ProviderMeta[] = [
     defaultBaseUrl: "https://api.deepseek.com/v1",
     requiresKey: true,
     keysUrl: "https://platform.deepseek.com/api_keys",
-    suggested: [],
+    suggested: ["deepseek-flash", "deepseek-v4-pro"],
   },
   {
     id: "openrouter",
@@ -111,7 +111,11 @@ export const providers: ProviderMeta[] = [
     defaultBaseUrl: "https://openrouter.ai/api/v1",
     requiresKey: true,
     keysUrl: "https://openrouter.ai/keys",
-    suggested: [],
+    suggested: [
+      "google/gemini-3.8-flash",
+      "anthropic/claude-sonnet-5.5",
+      "openai/gpt-5.5",
+    ],
   },
   {
     id: "ollama",

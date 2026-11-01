@@ -8,6 +8,7 @@ import { spawn, spawnSync, type ChildProcess } from "node:child_process"
 import { once } from "node:events"
 import { setTimeout as delay } from "node:timers/promises"
 import pg from "pg"
+import { workstationImage } from "./workstation-image"
 
 const focus = process.argv[2] ?? "core"
 const paymentRecoveryOnly =
@@ -42,7 +43,7 @@ assert(
 )
 process.loadEnvFile(".env")
 // Every runtime case exercises the current controller protocol; the main .env may intentionally pin an older deployment.
-process.env.WORKSTATION_IMAGE = "owndesk-workstation:0.6.1"
+process.env.WORKSTATION_IMAGE = workstationImage
 const database = `agent_runtime_${randomUUID().replaceAll("-", "")}`
 const directory = path.resolve("data/experiments", database)
 await mkdir(directory, { recursive: true })

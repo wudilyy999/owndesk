@@ -1,4 +1,4 @@
-import { desc, eq } from "drizzle-orm"
+import { and, desc, eq } from "drizzle-orm"
 import { db } from "@/db"
 import { memories, owners, type Agent, type Task } from "@/db/schema"
 import {
@@ -39,7 +39,7 @@ export async function agentSnapshot(
       ? await db
           .select()
           .from(memories)
-          .where(eq(memories.agentId, agent.id))
+          .where(and(eq(memories.agentId, agent.id), eq(memories.status, "active")))
           .orderBy(desc(memories.createdAt), desc(memories.id))
           .limit(30)
       : []

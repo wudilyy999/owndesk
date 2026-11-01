@@ -39,7 +39,7 @@ const receipts: any[] = []
 let passed = false
 let created = false
 let started = false
-const image = process.env.ATSPI_TEST_IMAGE ?? "owndesk-workstation:0.6.5"
+const image = process.env.ATSPI_TEST_IMAGE ?? "owndesk-workstation:0.6.6"
 async function request(route: string, body: unknown) {
   const r = await docker(
     ["exec", "-i", container, "node", "/opt/owndesk-controller/request.mjs", route],

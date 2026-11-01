@@ -3,6 +3,7 @@ import { eq } from "drizzle-orm"
 import { db, pool } from "@/db"
 import { routineRuns } from "@/db/schema"
 import { HttpError } from "@/lib/errors"
+import { companionTick } from "@/lib/companion/tick"
 import { stageDueRoutines } from "@/lib/routines"
 import { submitTask } from "@/lib/tasks"
 
@@ -43,6 +44,7 @@ export const routineDispatcher = DBOS.registerWorkflow(
     // Work is idempotent in business tables, including a crash after submitTask
     // committed but before the routine run received its task ID.
     await DBOS.runStep(dispatchRoutines, { name: "dispatch-due-routines" })
+    await DBOS.runStep(() => companionTick(), { name: "companion-tick" })
   },
   { name: "routine-dispatcher-v1" }
 )

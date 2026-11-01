@@ -46,10 +46,7 @@
           },
           "label": "按键 n",
           "evidence": [],
-          "modifiers": [
-            "ctrl",
-            "shift"
-          ],
+          "modifiers": ["ctrl", "shift"],
           "operation": "key_press"
         },
         {
@@ -100,9 +97,7 @@
           },
           "label": "按键 l",
           "evidence": [],
-          "modifiers": [
-            "ctrl"
-          ],
+          "modifiers": ["ctrl"],
           "operation": "key_press"
         },
         {
@@ -159,10 +154,7 @@
           },
           "label": "按键 n",
           "evidence": [],
-          "modifiers": [
-            "ctrl",
-            "shift"
-          ],
+          "modifiers": ["ctrl", "shift"],
           "operation": "key_press"
         },
         {
@@ -342,24 +334,7 @@
       "sourceTaskId": "2935de0d-e34e-467a-bbdf-0f1135f5428b",
       "schemaVersion": 1,
       "sourceSegment": 1,
-      "sourceActionNumbers": [
-        1,
-        2,
-        3,
-        4,
-        5,
-        6,
-        7,
-        8,
-        9,
-        10,
-        11,
-        12,
-        13,
-        14,
-        15,
-        16
-      ]
+      "sourceActionNumbers": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]
     },
     "environment": {
       "locale": "C.UTF-8",
@@ -453,11 +428,7 @@
     "maxSteps": 80,
     "maxActions": 120,
     "maxDurationSeconds": 300,
-    "arms": [
-      "baseline",
-      "checked",
-      "repair"
-    ],
+    "arms": ["baseline", "checked", "repair"],
     "uncheckedReplay": "unimplemented",
     "population": "ten-new-matched-repetitions-after-exploration"
   },
@@ -561,12 +532,8 @@
       "contract": {
         "directoryTree": {
           "root": "/home/xiryn/PA-C4-1792957206396-1",
-          "absent": [
-            "Draft-A"
-          ],
-          "directories": [
-            "Ready-A"
-          ]
+          "absent": ["Draft-A"],
+          "directories": ["Ready-A"]
         },
         "requireHumanReview": false
       },
@@ -594,10 +561,7 @@
             },
             "label": "按键 n",
             "evidence": [],
-            "modifiers": [
-              "ctrl",
-              "shift"
-            ],
+            "modifiers": ["ctrl", "shift"],
             "operation": "key_press"
           },
           {
@@ -648,9 +612,7 @@
             },
             "label": "按键 l",
             "evidence": [],
-            "modifiers": [
-              "ctrl"
-            ],
+            "modifiers": ["ctrl"],
             "operation": "key_press"
           },
           {
@@ -707,10 +669,7 @@
             },
             "label": "按键 n",
             "evidence": [],
-            "modifiers": [
-              "ctrl",
-              "shift"
-            ],
+            "modifiers": ["ctrl", "shift"],
             "operation": "key_press"
           },
           {
@@ -890,24 +849,7 @@
         "sourceTaskId": "2935de0d-e34e-467a-bbdf-0f1135f5428b",
         "schemaVersion": 1,
         "sourceSegment": 1,
-        "sourceActionNumbers": [
-          1,
-          2,
-          3,
-          4,
-          5,
-          6,
-          7,
-          8,
-          9,
-          10,
-          11,
-          12,
-          13,
-          14,
-          15,
-          16
-        ]
+        "sourceActionNumbers": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]
       },
       "parameters": {
         "draftName": "Draft-A",
@@ -1128,12 +1070,8 @@
       "contract": {
         "directoryTree": {
           "root": "/home/xiryn/PA-C4-1792957206396-2",
-          "absent": [
-            "Draft with spaces"
-          ],
-          "directories": [
-            "Ready with spaces"
-          ]
+          "absent": ["Draft with spaces"],
+          "directories": ["Ready with spaces"]
         },
         "requireHumanReview": false
       },
@@ -1161,10 +1099,7 @@
             },
             "label": "按键 n",
             "evidence": [],
-            "modifiers": [
-              "ctrl",
-              "shift"
-            ],
+            "modifiers": ["ctrl", "shift"],
             "operation": "key_press"
           },
           {
@@ -1215,9 +1150,7 @@
             },
             "label": "按键 l",
             "evidence": [],
-            "modifiers": [
-              "ctrl"
-            ],
+            "modifiers": ["ctrl"],
             "operation": "key_press"
           },
           {
@@ -1274,10 +1207,7 @@
             },
             "label": "按键 n",
             "evidence": [],
-            "modifiers": [
-              "ctrl",
-              "shift"
-            ],
+            "modifiers": ["ctrl", "shift"],
             "operation": "key_press"
           },
           {
@@ -1457,24 +1387,7 @@
         "sourceTaskId": "2935de0d-e34e-467a-bbdf-0f1135f5428b",
         "schemaVersion": 1,
         "sourceSegment": 1,
-        "sourceActionNumbers": [
-          1,
-          2,
-          3,
-          4,
-          5,
-          6,
-          7,
-          8,
-          9,
-          10,
-          11,
-          12,
-          13,
-          14,
-          15,
-          16
-        ]
+        "sourceActionNumbers": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]
       },
       "parameters": {
         "draftName": "Draft with spaces",
@@ -1695,12 +1608,8 @@
       "contract": {
         "directoryTree": {
           "root": "/home/xiryn/PA-C4-1792957206396-3",
-          "absent": [
-            "待处理"
-          ],
-          "directories": [
-            "已完成"
-          ]
+          "absent": ["待处理"],
+          "directories": ["已完成"]
         },
         "requireHumanReview": false
       },
@@ -1728,10 +1637,7 @@
             },
             "label": "按键 n",
             "evidence": [],
-            "modifiers": [
-              "ctrl",
-              "shift"
-            ],
+            "modifiers": ["ctrl", "shift"],
             "operation": "key_press"
           },
           {
@@ -1782,9 +1688,7 @@
             },
             "label": "按键 l",
             "evidence": [],
-            "modifiers": [
-              "ctrl"
-            ],
+            "modifiers": ["ctrl"],
             "operation": "key_press"
           },
           {
@@ -1841,10 +1745,7 @@
             },
             "label": "按键 n",
             "evidence": [],
-            "modifiers": [
-              "ctrl",
-              "shift"
-            ],
+            "modifiers": ["ctrl", "shift"],
             "operation": "key_press"
           },
           {
@@ -2024,24 +1925,7 @@
         "sourceTaskId": "2935de0d-e34e-467a-bbdf-0f1135f5428b",
         "schemaVersion": 1,
         "sourceSegment": 1,
-        "sourceActionNumbers": [
-          1,
-          2,
-          3,
-          4,
-          5,
-          6,
-          7,
-          8,
-          9,
-          10,
-          11,
-          12,
-          13,
-          14,
-          15,
-          16
-        ]
+        "sourceActionNumbers": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]
       },
       "parameters": {
         "draftName": "待处理",
@@ -2262,12 +2146,8 @@
       "contract": {
         "directoryTree": {
           "root": "/home/xiryn/PA-C4-1792957206396-4",
-          "absent": [
-            "Draft_04"
-          ],
-          "directories": [
-            "Ready_04"
-          ]
+          "absent": ["Draft_04"],
+          "directories": ["Ready_04"]
         },
         "requireHumanReview": false
       },
@@ -2295,10 +2175,7 @@
             },
             "label": "按键 n",
             "evidence": [],
-            "modifiers": [
-              "ctrl",
-              "shift"
-            ],
+            "modifiers": ["ctrl", "shift"],
             "operation": "key_press"
           },
           {
@@ -2349,9 +2226,7 @@
             },
             "label": "按键 l",
             "evidence": [],
-            "modifiers": [
-              "ctrl"
-            ],
+            "modifiers": ["ctrl"],
             "operation": "key_press"
           },
           {
@@ -2408,10 +2283,7 @@
             },
             "label": "按键 n",
             "evidence": [],
-            "modifiers": [
-              "ctrl",
-              "shift"
-            ],
+            "modifiers": ["ctrl", "shift"],
             "operation": "key_press"
           },
           {
@@ -2591,24 +2463,7 @@
         "sourceTaskId": "2935de0d-e34e-467a-bbdf-0f1135f5428b",
         "schemaVersion": 1,
         "sourceSegment": 1,
-        "sourceActionNumbers": [
-          1,
-          2,
-          3,
-          4,
-          5,
-          6,
-          7,
-          8,
-          9,
-          10,
-          11,
-          12,
-          13,
-          14,
-          15,
-          16
-        ]
+        "sourceActionNumbers": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]
       },
       "parameters": {
         "draftName": "Draft_04",
@@ -2829,12 +2684,8 @@
       "contract": {
         "directoryTree": {
           "root": "/home/xiryn/PA-C4-1792957206396-5",
-          "absent": [
-            "Input-5"
-          ],
-          "directories": [
-            "Output-5"
-          ]
+          "absent": ["Input-5"],
+          "directories": ["Output-5"]
         },
         "requireHumanReview": false
       },
@@ -2862,10 +2713,7 @@
             },
             "label": "按键 n",
             "evidence": [],
-            "modifiers": [
-              "ctrl",
-              "shift"
-            ],
+            "modifiers": ["ctrl", "shift"],
             "operation": "key_press"
           },
           {
@@ -2916,9 +2764,7 @@
             },
             "label": "按键 l",
             "evidence": [],
-            "modifiers": [
-              "ctrl"
-            ],
+            "modifiers": ["ctrl"],
             "operation": "key_press"
           },
           {
@@ -2975,10 +2821,7 @@
             },
             "label": "按键 n",
             "evidence": [],
-            "modifiers": [
-              "ctrl",
-              "shift"
-            ],
+            "modifiers": ["ctrl", "shift"],
             "operation": "key_press"
           },
           {
@@ -3158,24 +3001,7 @@
         "sourceTaskId": "2935de0d-e34e-467a-bbdf-0f1135f5428b",
         "schemaVersion": 1,
         "sourceSegment": 1,
-        "sourceActionNumbers": [
-          1,
-          2,
-          3,
-          4,
-          5,
-          6,
-          7,
-          8,
-          9,
-          10,
-          11,
-          12,
-          13,
-          14,
-          15,
-          16
-        ]
+        "sourceActionNumbers": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]
       },
       "parameters": {
         "draftName": "Input-5",
@@ -3396,12 +3222,8 @@
       "contract": {
         "directoryTree": {
           "root": "/home/xiryn/PA-C4-1792957206396-6",
-          "absent": [
-            "原始材料"
-          ],
-          "directories": [
-            "归档结果"
-          ]
+          "absent": ["原始材料"],
+          "directories": ["归档结果"]
         },
         "requireHumanReview": false
       },
@@ -3429,10 +3251,7 @@
             },
             "label": "按键 n",
             "evidence": [],
-            "modifiers": [
-              "ctrl",
-              "shift"
-            ],
+            "modifiers": ["ctrl", "shift"],
             "operation": "key_press"
           },
           {
@@ -3483,9 +3302,7 @@
             },
             "label": "按键 l",
             "evidence": [],
-            "modifiers": [
-              "ctrl"
-            ],
+            "modifiers": ["ctrl"],
             "operation": "key_press"
           },
           {
@@ -3542,10 +3359,7 @@
             },
             "label": "按键 n",
             "evidence": [],
-            "modifiers": [
-              "ctrl",
-              "shift"
-            ],
+            "modifiers": ["ctrl", "shift"],
             "operation": "key_press"
           },
           {
@@ -3725,24 +3539,7 @@
         "sourceTaskId": "2935de0d-e34e-467a-bbdf-0f1135f5428b",
         "schemaVersion": 1,
         "sourceSegment": 1,
-        "sourceActionNumbers": [
-          1,
-          2,
-          3,
-          4,
-          5,
-          6,
-          7,
-          8,
-          9,
-          10,
-          11,
-          12,
-          13,
-          14,
-          15,
-          16
-        ]
+        "sourceActionNumbers": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]
       },
       "parameters": {
         "draftName": "原始材料",
@@ -3963,12 +3760,8 @@
       "contract": {
         "directoryTree": {
           "root": "/home/xiryn/PA-C4-1792957206396-7",
-          "absent": [
-            "Work in progress"
-          ],
-          "directories": [
-            "Work complete"
-          ]
+          "absent": ["Work in progress"],
+          "directories": ["Work complete"]
         },
         "requireHumanReview": false
       },
@@ -3996,10 +3789,7 @@
             },
             "label": "按键 n",
             "evidence": [],
-            "modifiers": [
-              "ctrl",
-              "shift"
-            ],
+            "modifiers": ["ctrl", "shift"],
             "operation": "key_press"
           },
           {
@@ -4050,9 +3840,7 @@
             },
             "label": "按键 l",
             "evidence": [],
-            "modifiers": [
-              "ctrl"
-            ],
+            "modifiers": ["ctrl"],
             "operation": "key_press"
           },
           {
@@ -4109,10 +3897,7 @@
             },
             "label": "按键 n",
             "evidence": [],
-            "modifiers": [
-              "ctrl",
-              "shift"
-            ],
+            "modifiers": ["ctrl", "shift"],
             "operation": "key_press"
           },
           {
@@ -4292,24 +4077,7 @@
         "sourceTaskId": "2935de0d-e34e-467a-bbdf-0f1135f5428b",
         "schemaVersion": 1,
         "sourceSegment": 1,
-        "sourceActionNumbers": [
-          1,
-          2,
-          3,
-          4,
-          5,
-          6,
-          7,
-          8,
-          9,
-          10,
-          11,
-          12,
-          13,
-          14,
-          15,
-          16
-        ]
+        "sourceActionNumbers": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]
       },
       "parameters": {
         "draftName": "Work in progress",
@@ -4530,12 +4298,8 @@
       "contract": {
         "directoryTree": {
           "root": "/home/xiryn/PA-C4-1792957206396-8",
-          "absent": [
-            "Batch-08"
-          ],
-          "directories": [
-            "Batch-08-ready"
-          ]
+          "absent": ["Batch-08"],
+          "directories": ["Batch-08-ready"]
         },
         "requireHumanReview": false
       },
@@ -4563,10 +4327,7 @@
             },
             "label": "按键 n",
             "evidence": [],
-            "modifiers": [
-              "ctrl",
-              "shift"
-            ],
+            "modifiers": ["ctrl", "shift"],
             "operation": "key_press"
           },
           {
@@ -4617,9 +4378,7 @@
             },
             "label": "按键 l",
             "evidence": [],
-            "modifiers": [
-              "ctrl"
-            ],
+            "modifiers": ["ctrl"],
             "operation": "key_press"
           },
           {
@@ -4676,10 +4435,7 @@
             },
             "label": "按键 n",
             "evidence": [],
-            "modifiers": [
-              "ctrl",
-              "shift"
-            ],
+            "modifiers": ["ctrl", "shift"],
             "operation": "key_press"
           },
           {
@@ -4859,24 +4615,7 @@
         "sourceTaskId": "2935de0d-e34e-467a-bbdf-0f1135f5428b",
         "schemaVersion": 1,
         "sourceSegment": 1,
-        "sourceActionNumbers": [
-          1,
-          2,
-          3,
-          4,
-          5,
-          6,
-          7,
-          8,
-          9,
-          10,
-          11,
-          12,
-          13,
-          14,
-          15,
-          16
-        ]
+        "sourceActionNumbers": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]
       },
       "parameters": {
         "draftName": "Batch-08",
@@ -5097,12 +4836,8 @@
       "contract": {
         "directoryTree": {
           "root": "/home/xiryn/PA-C4-1792957206396-9",
-          "absent": [
-            "DRAFT-nine"
-          ],
-          "directories": [
-            "READY-nine"
-          ]
+          "absent": ["DRAFT-nine"],
+          "directories": ["READY-nine"]
         },
         "requireHumanReview": false
       },
@@ -5130,10 +4865,7 @@
             },
             "label": "按键 n",
             "evidence": [],
-            "modifiers": [
-              "ctrl",
-              "shift"
-            ],
+            "modifiers": ["ctrl", "shift"],
             "operation": "key_press"
           },
           {
@@ -5184,9 +4916,7 @@
             },
             "label": "按键 l",
             "evidence": [],
-            "modifiers": [
-              "ctrl"
-            ],
+            "modifiers": ["ctrl"],
             "operation": "key_press"
           },
           {
@@ -5243,10 +4973,7 @@
             },
             "label": "按键 n",
             "evidence": [],
-            "modifiers": [
-              "ctrl",
-              "shift"
-            ],
+            "modifiers": ["ctrl", "shift"],
             "operation": "key_press"
           },
           {
@@ -5426,24 +5153,7 @@
         "sourceTaskId": "2935de0d-e34e-467a-bbdf-0f1135f5428b",
         "schemaVersion": 1,
         "sourceSegment": 1,
-        "sourceActionNumbers": [
-          1,
-          2,
-          3,
-          4,
-          5,
-          6,
-          7,
-          8,
-          9,
-          10,
-          11,
-          12,
-          13,
-          14,
-          15,
-          16
-        ]
+        "sourceActionNumbers": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]
       },
       "parameters": {
         "draftName": "DRAFT-nine",
@@ -5664,12 +5374,8 @@
       "contract": {
         "directoryTree": {
           "root": "/home/xiryn/PA-C4-1792957206396-10",
-          "absent": [
-            "Input final"
-          ],
-          "directories": [
-            "Output final"
-          ]
+          "absent": ["Input final"],
+          "directories": ["Output final"]
         },
         "requireHumanReview": false
       },
@@ -5697,10 +5403,7 @@
             },
             "label": "按键 n",
             "evidence": [],
-            "modifiers": [
-              "ctrl",
-              "shift"
-            ],
+            "modifiers": ["ctrl", "shift"],
             "operation": "key_press"
           },
           {
@@ -5751,9 +5454,7 @@
             },
             "label": "按键 l",
             "evidence": [],
-            "modifiers": [
-              "ctrl"
-            ],
+            "modifiers": ["ctrl"],
             "operation": "key_press"
           },
           {
@@ -5810,10 +5511,7 @@
             },
             "label": "按键 n",
             "evidence": [],
-            "modifiers": [
-              "ctrl",
-              "shift"
-            ],
+            "modifiers": ["ctrl", "shift"],
             "operation": "key_press"
           },
           {
@@ -5993,24 +5691,7 @@
         "sourceTaskId": "2935de0d-e34e-467a-bbdf-0f1135f5428b",
         "schemaVersion": 1,
         "sourceSegment": 1,
-        "sourceActionNumbers": [
-          1,
-          2,
-          3,
-          4,
-          5,
-          6,
-          7,
-          8,
-          9,
-          10,
-          11,
-          12,
-          13,
-          14,
-          15,
-          16
-        ]
+        "sourceActionNumbers": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]
       },
       "parameters": {
         "draftName": "Input final",

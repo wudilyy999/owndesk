@@ -33,7 +33,7 @@ const config = {
   INSTALL_ID: id,
   PA_WEB_IMAGE: "owndesk-web:0.17.0-dev",
   PA_WORKER_IMAGE: "owndesk-worker:0.17.0-dev",
-  PA_WORKSTATION_IMAGE: "owndesk-workstation:0.6.5",
+  PA_WORKSTATION_IMAGE: "owndesk-workstation:0.6.6",
   APP_URL: url.origin,
   APP_HOSTNAME: url.hostname,
   PA_BIND_IP: "127.0.0.1",

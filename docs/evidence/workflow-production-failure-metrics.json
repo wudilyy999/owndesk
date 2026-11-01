@@ -14,12 +14,8 @@
       "contract": {
         "directoryTree": {
           "root": "/home/xiryn/PA-Production-0-1792959731946",
-          "absent": [
-            "Incoming-1"
-          ],
-          "directories": [
-            "Final-1"
-          ]
+          "absent": ["Incoming-1"],
+          "directories": ["Final-1"]
         },
         "requireHumanReview": false
       },
@@ -47,10 +43,7 @@
             },
             "label": "步骤 2：key_press",
             "evidence": [],
-            "modifiers": [
-              "ctrl",
-              "shift"
-            ],
+            "modifiers": ["ctrl", "shift"],
             "operation": "key_press"
           },
           {
@@ -101,9 +94,7 @@
             },
             "label": "步骤 5：key_press",
             "evidence": [],
-            "modifiers": [
-              "ctrl"
-            ],
+            "modifiers": ["ctrl"],
             "operation": "key_press"
           },
           {
@@ -160,10 +151,7 @@
             },
             "label": "步骤 8：key_press",
             "evidence": [],
-            "modifiers": [
-              "ctrl",
-              "shift"
-            ],
+            "modifiers": ["ctrl", "shift"],
             "operation": "key_press"
           },
           {
@@ -564,12 +552,8 @@
       "contract": {
         "directoryTree": {
           "root": "/home/xiryn/PA-Production-1-1792959770197",
-          "absent": [
-            "Draft with spaces"
-          ],
-          "directories": [
-            "Ready with spaces"
-          ]
+          "absent": ["Draft with spaces"],
+          "directories": ["Ready with spaces"]
         },
         "requireHumanReview": false
       },
@@ -597,10 +581,7 @@
             },
             "label": "步骤 2：key_press",
             "evidence": [],
-            "modifiers": [
-              "ctrl",
-              "shift"
-            ],
+            "modifiers": ["ctrl", "shift"],
             "operation": "key_press"
           },
           {
@@ -651,9 +632,7 @@
             },
             "label": "步骤 5：key_press",
             "evidence": [],
-            "modifiers": [
-              "ctrl"
-            ],
+            "modifiers": ["ctrl"],
             "operation": "key_press"
           },
           {
@@ -710,10 +689,7 @@
             },
             "label": "步骤 8：key_press",
             "evidence": [],
-            "modifiers": [
-              "ctrl",
-              "shift"
-            ],
+            "modifiers": ["ctrl", "shift"],
             "operation": "key_press"
           },
           {
@@ -1114,12 +1090,8 @@
       "contract": {
         "directoryTree": {
           "root": "/home/xiryn/PA-Production-2-1792959806229",
-          "absent": [
-            "待处理"
-          ],
-          "directories": [
-            "已完成"
-          ]
+          "absent": ["待处理"],
+          "directories": ["已完成"]
         },
         "requireHumanReview": false
       },
@@ -1147,10 +1119,7 @@
             },
             "label": "步骤 2：key_press",
             "evidence": [],
-            "modifiers": [
-              "ctrl",
-              "shift"
-            ],
+            "modifiers": ["ctrl", "shift"],
             "operation": "key_press"
           },
           {
@@ -1201,9 +1170,7 @@
             },
             "label": "步骤 5：key_press",
             "evidence": [],
-            "modifiers": [
-              "ctrl"
-            ],
+            "modifiers": ["ctrl"],
             "operation": "key_press"
           },
           {
@@ -1260,10 +1227,7 @@
             },
             "label": "步骤 8：key_press",
             "evidence": [],
-            "modifiers": [
-              "ctrl",
-              "shift"
-            ],
+            "modifiers": ["ctrl", "shift"],
             "operation": "key_press"
           },
           {

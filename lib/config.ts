@@ -14,6 +14,15 @@ type SettingDef = {
 }
 const integrationSettings = {
   "model.default": { env: "OWNDESK_DEFAULT_MODEL" },
+  // Light companion chat; empty means the agent's own model or "model.default"
+  "model.chat": { env: "OWNDESK_CHAT_MODEL", internal: true },
+  // Sent as reasoning_effort to OpenAI-compatible endpoints; reasoning-heavy models
+  // need it low to answer chat messages in a few seconds
+  "chat.reasoningEffort": {
+    env: "OWNDESK_CHAT_REASONING_EFFORT",
+    fallback: "low",
+    internal: true,
+  },
   "agent.maxSteps": { env: "OWNDESK_MAX_STEPS", fallback: "40" },
   "usage.monthlyBudget": { env: "OWNDESK_MONTHLY_BUDGET" },
   "pricing.custom": { env: null, internal: true },

@@ -299,7 +299,84 @@ export const vaultTools = {
   }),
 }
 
+// Only a companion's daily-life session can call these (see toolsForTask)
+export const lifeTools = {
+  life_log: tool({
+    description:
+      "Record one thing you really did in this session (read an article, watched a video, wrote a diary entry, saved something). The title, summary and URL must come from pages you actually opened; an unreachable URL is rejected. Returns the activity id.",
+    inputSchema: z.object({
+      kind: z.enum(["read", "watch", "diary", "save", "other"]),
+      title: z.string().trim().min(1).max(200),
+      summary: z
+        .string()
+        .trim()
+        .min(1)
+        .max(600)
+        .describe(
+          "One or two sentences in your own words: what it was and what you thought"
+        ),
+      url: z
+        .url()
+        .refine((url) => ["http:", "https:"].includes(new URL(url).protocol))
+        .optional(),
+      body: z
+        .string()
+        .trim()
+        .min(1)
+        .max(4000)
+        .optional()
+        .describe("For a diary entry: the diary text itself, in your own words"),
+      screenshotPageId: z
+        .uuid()
+        .optional()
+        .describe(
+          "The pageId of an open page whose screenshot should be kept with this record. Use it for a page worth showing; never for pages with personal or sign-in content"
+        ),
+    }),
+  }),
+  coview_reply: tool({
+    description:
+      "Only in a session where the person sent you a link: after you have really opened and read it, send them your honest reaction, written the way you would text a friend. Say what you actually saw on the page. Call it once.",
+    inputSchema: z.object({
+      title: z.string().trim().min(1).max(200).describe("The page title you saw"),
+      text: z.string().trim().min(1).max(600),
+      screenshotPageId: z.uuid().optional(),
+    }),
+  }),
+  life_share: tool({
+    description:
+      "Queue a short message to the person about one logged activity, written the way you would text a friend. It is delivered later, within their daily limit and quiet hours; it may be dropped. Share only what you really found, with its real link.",
+    inputSchema: z.object({
+      activityId: z.string().min(1).max(100),
+      text: z.string().trim().min(1).max(500),
+    }),
+  }),
+}
+// A session that opens one link for the person keeps only reading tools and coview_reply
+const coviewToolNames = new Set([
+  "browser_open",
+  "browser_pages",
+  "browser_observe",
+  "browser_click",
+  "browser_screenshot",
+  "complete_task",
+  "coview_reply",
+])
+const lifeToolNames = new Set([
+  "browser_open",
+  "browser_pages",
+  "browser_observe",
+  "browser_click",
+  "browser_screenshot",
+  "fs_read",
+  "fs_write",
+  "fs_list",
+  "screen_capture",
+  "complete_task",
+  ...Object.keys(lifeTools).filter((name) => name !== "coview_reply"),
+])
 export const tools = {
+  ...lifeTools,
   agent_zero_call: tool({
     description:
       "Call an enabled Agent Zero Python plugin tool in this task's Linux desktop. Select plugin and tool from the frozen plugin list; pass original tool arguments in args. Results use the existing task/action ledger. Plugin break_loop never marks the overall task complete; use complete_task after checking results.",
@@ -385,7 +462,16 @@ export function toolsForTask(config: {
   workflowCompilation?: unknown
   workflowExecution?: { allowRepair?: boolean }
   workstationChannel?: "desktop"
+  lifeSession?: { prompt?: string; coview?: unknown }
 }) {
+  if (config.lifeSession) {
+    const allowed = config.lifeSession.coview ? coviewToolNames : lifeToolNames
+    return Object.fromEntries(
+      Object.entries(toolsForCoordinateMode("pixels")).filter(([name]) =>
+        allowed.has(name)
+      )
+    )
+  }
   const available = config.manualCompilation
     ? manualCompilationTools
     : config.workflowCompilation
@@ -411,7 +497,9 @@ export function toolsForTask(config: {
             )
   return Object.fromEntries(
     Object.entries(available).filter(
-      ([name]) => name !== "load_manual" || !!config.manuals?.length
+      ([name]) =>
+        !Object.hasOwn(lifeTools, name) &&
+        (name !== "load_manual" || !!config.manuals?.length)
     )
   )
 }
