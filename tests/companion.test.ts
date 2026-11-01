@@ -6,6 +6,12 @@ import {
   companionSettingsSchema,
   defaultPersona,
 } from "@/lib/companion/persona"
+import {
+  extractLink,
+  isPrivateAddress,
+  isPublicUrl,
+  linkIsOpenable,
+} from "@/lib/companion/coview"
 import { selectNotes } from "@/lib/companion/memory"
 import { splitBubbles, historyMessages } from "@/lib/companion/chat"
 import { resolveModeChange } from "@/lib/companion/store"
@@ -14,10 +20,11 @@ import {
   dueLifeSlots,
   inQuietHours,
   lifeBudgetForSession,
+  rhythmAt,
 } from "@/lib/companion/rules"
 import { linkResolves, lifePathAllowed } from "@/worker/life"
 import { toolsForTask } from "@/lib/agent/tools"
-import type { CompanionMessage } from "@/db/schema"
+import { defaultRhythm, type CompanionMessage } from "@/db/schema"
 
 const context = {
   name: "小满",
@@ -25,6 +32,8 @@ const context = {
   mode: "friend" as const,
   now: "2026-11-01T05:00:00Z",
   timeZone: "Asia/Taipei",
+  rhythm: { state: "online" as const, label: null },
+  link: null,
   memories: [{ id: "n1", content: "生日是12月15日" }],
   recentLife: [
     {
@@ -162,6 +171,7 @@ test("share gate: pause, daily limit, quiet hours, spacing, expiry", () => {
     quietStart: "23:00",
     quietEnd: "08:00",
     timeZone: "Asia/Taipei",
+    rhythm: defaultRhythm,
   }
   const now = new Date("2026-11-01T04:00:00Z") // 12:00 Taipei
   const base = {
@@ -275,6 +285,158 @@ test("settings reject an unknown time zone and out-of-range life budget", () => 
   )
   assert.equal(
     companionSettingsSchema.safeParse({ adultConfirmed: false }).success,
+    false
+  )
+})
+
+test("rhythm: sleep beats nap beats away; wraps midnight; follows the companion's zone", () => {
+  const rhythm = {
+    sleep: { start: "23:30", end: "07:30" },
+    nap: { start: "13:00", end: "14:00" },
+    away: [{ start: "08:30", end: "09:30", label: "通勤" }],
+  }
+  const at = (iso: string) => rhythmAt(new Date(iso), "Asia/Taipei", rhythm)
+  assert.equal(at("2026-11-01T16:00:00Z").state, "asleep") // 00:00
+  assert.equal(at("2026-11-01T22:00:00Z").state, "asleep") // 06:00
+  assert.deepEqual(at("2026-11-02T00:40:00Z"), { state: "away", label: "通勤" }) // 08:40
+  assert.equal(at("2026-11-01T05:30:00Z").state, "nap") // 13:30
+  assert.equal(at("2026-11-01T03:00:00Z").state, "online") // 11:00
+  assert.equal(
+    rhythmAt(new Date("2026-11-01T16:00:00Z"), "America/New_York", rhythm).state,
+    "online"
+  )
+  assert.equal(
+    rhythmAt(new Date("2026-11-01T02:00:00Z"), "UTC", defaultRhythm).state,
+    "asleep"
+  )
+})
+
+test("no share while she sleeps, naps or is away; the prompt tells her state", () => {
+  const companion = {
+    sharesPaused: false,
+    maxSharesPerDay: 2,
+    quietStart: "00:00",
+    quietEnd: "00:00",
+    timeZone: "Asia/Taipei",
+    rhythm: {
+      sleep: { start: "23:30", end: "07:30" },
+      nap: null,
+      away: [{ start: "12:00", end: "13:00" }],
+    },
+  }
+  const base = {
+    companion,
+    createdAt: new Date("2026-11-01T03:00:00Z"),
+    sentToday: 0,
+    lastSentAt: null,
+  }
+  const gate = (iso: string) => decideShare({ ...base, now: new Date(iso) })
+  assert.deepEqual(gate("2026-11-01T03:00:00Z"), { send: true }) // 11:00 online
+  assert.deepEqual(gate("2026-11-01T04:30:00Z"), { send: false }) // 12:30 away
+  assert.deepEqual(gate("2026-11-01T16:30:00Z"), { send: false }) // 00:30 asleep
+  assert.match(
+    buildCompanionPrompt({ ...context, rhythm: { state: "asleep", label: null } }),
+    /在睡觉/
+  )
+  assert.match(
+    buildCompanionPrompt({ ...context, rhythm: { state: "away", label: "通勤" } }),
+    /通勤/
+  )
+  assert.match(buildCompanionPrompt(context), /醒着/)
+})
+
+test("co-view: finds the link in a message and never trails punctuation", () => {
+  assert.equal(
+    extractLink("看这个 https://example.com/a?b=1。好看吗"),
+    "https://example.com/a?b=1"
+  )
+  assert.equal(extractLink("(https://example.com/x)"), "https://example.com/x")
+  assert.equal(extractLink("没有链接"), null)
+})
+
+test("co-view: only public web addresses are opened", async () => {
+  for (const url of [
+    "http://localhost:6797/api",
+    "http://127.0.0.1/",
+    "http://10.1.2.3/",
+    "http://192.168.0.5/",
+    "http://172.20.0.1/",
+    "http://169.254.169.254/latest/meta-data",
+    "http://[::1]/",
+    "http://[fd00::1]/",
+    "http://printer.local/",
+    "http://intranet/",
+    "ftp://example.com/file",
+    "https://user:pw@example.com/",
+  ])
+    assert.equal(isPublicUrl(url), false, url)
+  assert.equal(isPublicUrl("https://example.com/a"), true)
+  assert.equal(isPublicUrl("http://8.8.8.8/"), true)
+  assert.equal(isPrivateAddress("::ffff:10.0.0.1"), true)
+  // a public-looking name that resolves to a private address is refused
+  const resolver = (async () => [{ address: "10.0.0.7", family: 4 }]) as never
+  assert.equal(await linkIsOpenable("https://sneaky.example.com/", resolver), false)
+  const open = (async () => [{ address: "93.184.216.34", family: 4 }]) as never
+  assert.equal(await linkIsOpenable("https://example.com/", open), true)
+  const gone = (async () => {
+    throw new Error("ENOTFOUND")
+  }) as never
+  assert.equal(await linkIsOpenable("https://nowhere.example/", gone), false)
+})
+
+test("a co-view session may only read and reply; coview_reply exists nowhere else", () => {
+  const coview = Object.keys(
+    toolsForTask({
+      lifeSession: { prompt: "x", coview: { requestId: "r", url: "https://a.test" } },
+    })
+  ).sort()
+  assert.deepEqual(coview, [
+    "browser_click",
+    "browser_observe",
+    "browser_open",
+    "browser_pages",
+    "browser_screenshot",
+    "complete_task",
+    "coview_reply",
+  ])
+  assert.equal(
+    Object.hasOwn(toolsForTask({ lifeSession: { prompt: "x" } }), "coview_reply"),
+    false
+  )
+  assert.equal(Object.hasOwn(toolsForTask({}), "coview_reply"), false)
+})
+
+test("the prompt tells her about a fresh link without letting her invent its content", () => {
+  const queued = buildCompanionPrompt({
+    ...context,
+    link: { url: "https://a.test/x", queued: true },
+  })
+  assert.match(queued, /https:\/\/a\.test\/x/)
+  assert.match(queued, /还没有点开/)
+  const refused = buildCompanionPrompt({
+    ...context,
+    link: { url: "http://10.0.0.1", queued: false },
+  })
+  assert.match(refused, /没法打开/)
+  assert.doesNotMatch(buildCompanionPrompt(context), /对方刚发来的链接/)
+})
+
+test("rhythm settings reject malformed times and too many away blocks", () => {
+  const base = { sleep: { start: "23:00", end: "07:00" }, nap: null, away: [] }
+  assert.ok(companionSettingsSchema.safeParse({ rhythm: base }).success)
+  assert.equal(
+    companionSettingsSchema.safeParse({
+      rhythm: { ...base, sleep: { start: "24:00", end: "07:00" } },
+    }).success,
+    false
+  )
+  assert.equal(
+    companionSettingsSchema.safeParse({
+      rhythm: {
+        ...base,
+        away: Array.from({ length: 7 }, () => ({ start: "09:00", end: "10:00" })),
+      },
+    }).success,
     false
   )
 })

@@ -275,6 +275,10 @@ try {
       url: "https://example.com/coffee",
     })
     .returning()
+  await pool.query(
+    "UPDATE life_activities SET image_path='life/coffee.jpg' WHERE id=$1",
+    [activity.id]
+  )
   await db
     .insert(lifeShares)
     .values({ agentId, activityId: activity.id, text: "看到这篇，想起你喜欢咖啡" })
@@ -290,6 +294,209 @@ try {
     .from(companionMessages)
     .where(eq(companionMessages.kind, "share"))
   assert.match(share.content, /example\.com\/coffee/)
+  assert.equal((share.metadata as { hasImage: boolean }).hasImage, true)
+
+  // 9. Memory candidates: unsure notes wait for the person; only accepted notes reach the prompt
+  const { reviewCandidate } = await import("@/lib/companion/memory")
+  const promptSpy = () => {
+    const seen = { prompt: "" }
+    const model = scripted([text("好")])
+    const original = model.doStream.bind(model)
+    model.doStream = async (options) => {
+      seen.prompt = String(options.prompt[0].content)
+      return original(options)
+    }
+    return { model, seen }
+  }
+  const unsure = await companionChat(
+    { ownerId, agentId, text: "我最近好像在看心理医生" },
+    {
+      model: scripted([
+        [call("remember", { note: "在看心理医生", certainty: "unsure" })],
+        text("嗯，我听着"),
+      ]),
+      price,
+    }
+  )
+  const memoryCard = unsure.replies.find((m) => m.kind === "memory_candidate")!
+  const candidateId = (memoryCard.metadata as { memoryId: string }).memoryId
+  assert.equal((memoryCard.metadata as { status: string }).status, "pending")
+  assert.deepEqual(await listNotes(agentId, "active"), [])
+  assert.equal((await listNotes(agentId, "candidate")).length, 1)
+  const before = promptSpy()
+  await companionChat(
+    { ownerId, agentId, text: "晚上吃什么" },
+    { model: before.model, price }
+  )
+  assert.doesNotMatch(before.seen.prompt, /心理医生/)
+  await assert.rejects(reviewCandidate(randomUUID(), candidateId, "accept"), /not found/)
+  await reviewCandidate(agentId, candidateId, "accept")
+  await assert.rejects(reviewCandidate(agentId, candidateId, "accept"), /not found/)
+  const after = promptSpy()
+  await companionChat(
+    { ownerId, agentId, text: "晚上吃什么" },
+    { model: after.model, price }
+  )
+  assert.match(after.seen.prompt, /心理医生/)
+  const [settled] = await db
+    .select()
+    .from(companionMessages)
+    .where(eq(companionMessages.id, memoryCard.id))
+  assert.equal((settled.metadata as { status: string }).status, "accepted")
+  const second2 = await companionChat(
+    { ownerId, agentId, text: "我可能喜欢上同事了" },
+    {
+      model: scripted([
+        [call("remember", { note: "喜欢上同事", certainty: "unsure" })],
+        text("哦？"),
+      ]),
+      price,
+    }
+  )
+  const card3 = second2.replies.find((m) => m.kind === "memory_candidate")!
+  await reviewCandidate(
+    agentId,
+    (card3.metadata as { memoryId: string }).memoryId,
+    "dismiss"
+  )
+  assert.equal(
+    (await listNotes(agentId)).some((n) => n.content === "喜欢上同事"),
+    false
+  )
+  const [dismissed] = await db
+    .select()
+    .from(companionMessages)
+    .where(eq(companionMessages.id, card3.id))
+  assert.equal((dismissed.metadata as { status: string }).status, "dismissed")
+  // A sure note is active at once
+  await companionChat(
+    { ownerId, agentId, text: "我叫阿明" },
+    {
+      model: scripted([
+        [call("remember", { note: "叫阿明", certainty: "sure" })],
+        text("好"),
+      ]),
+      price,
+    }
+  )
+  assert.equal((await listNotes(agentId, "candidate")).length, 0)
+
+  // 10. Rhythm: asleep means no life session and no share, but chat still answers, in her state
+  await updateCompanion(ownerId, agentId, {
+    rhythm: { sleep: { start: "10:00", end: "12:00" }, nap: null, away: [] },
+  })
+  const nextDay = new Date("2026-11-02T03:00:00Z") // 11:00 in Taipei, inside her sleep
+  assert.deepEqual(
+    (await startLifeSessions(nextDay)).skipped.map((s) => s.reason),
+    ["rhythm: asleep"]
+  )
+  const sleepy = promptSpy()
+  const sleepReply = await companionChat(
+    { ownerId, agentId, text: "睡了吗" },
+    { model: sleepy.model, price, now: nextDay }
+  )
+  assert.match(sleepy.seen.prompt, /在睡觉/)
+  assert.equal(sleepReply.replies[0].content, "好")
+  await db
+    .insert(lifeShares)
+    .values({ agentId, activityId: activity.id, text: "睡着时攒下的分享" })
+  assert.deepEqual(await deliverShares(nextDay), [], "no share while asleep")
+  await pool.query("DELETE FROM life_shares WHERE status='pending'")
+
+  // 11. Link co-viewing: queued from chat, waits while she sleeps, starts one session when online
+  const { startCoviews, syncCoviews } = await import("@/lib/companion/coview")
+  const open = async () => true
+  const linked = promptSpy()
+  await companionChat(
+    { ownerId, agentId, text: "你看这个 https://example.com/post/1" },
+    { model: linked.model, price, now: nextDay, linkCheck: open }
+  )
+  assert.match(linked.seen.prompt, /还没有点开/)
+  const pendingRows = await pool.query("SELECT id,url,status FROM coview_requests")
+  assert.deepEqual(
+    pendingRows.rows.map((r) => [r.url, r.status]),
+    [["https://example.com/post/1", "pending"]]
+  )
+  const refusedPrompt = promptSpy()
+  await companionChat(
+    { ownerId, agentId, text: "http://192.168.0.2/admin" },
+    { model: refusedPrompt.model, price, now: nextDay }
+  )
+  assert.match(refusedPrompt.seen.prompt, /没法打开/)
+  assert.equal((await pool.query("SELECT 1 FROM coview_requests")).rowCount, 1)
+  await pool.query("UPDATE tasks SET status='completed' WHERE agent_id=$1", [agentId])
+  assert.deepEqual(await startCoviews(nextDay), [], "asleep: it waits")
+  await updateCompanion(ownerId, agentId, {
+    rhythm: { sleep: { start: "23:30", end: "07:30" }, nap: null, away: [] },
+  })
+  const [coviewTask] = await startCoviews(nextDay)
+  assert.ok(coviewTask)
+  assert.deepEqual(await startCoviews(nextDay), [], "one session per request")
+  const config = await pool.query(
+    "SELECT config_snapshot->'lifeSession'->'coview' AS coview, config_snapshot->'lifeSession'->>'prompt' AS prompt FROM tasks WHERE id=$1",
+    [coviewTask]
+  )
+  assert.equal(config.rows[0].coview.url, "https://example.com/post/1")
+  assert.match(config.rows[0].prompt, /example\.com\/post\/1/)
+  // A session that ends without a reply says so once; one cut short by an errand is retried
+  await pool.query("UPDATE tasks SET status='failed' WHERE id=$1", [coviewTask])
+  await syncCoviews(nextDay)
+  await syncCoviews(nextDay)
+  const failures = await pool.query(
+    "SELECT 1 FROM companion_messages WHERE kind='coview' AND metadata->>'failed'='true'"
+  )
+  assert.equal(failures.rowCount, 1)
+  await pool.query("UPDATE coview_requests SET status='pending',task_id=NULL")
+  const [retryTask] = await startCoviews(nextDay)
+  await pool.query("UPDATE tasks SET status='cancelled' WHERE id=$1", [retryTask])
+  await syncCoviews(nextDay)
+  assert.equal(
+    (await pool.query("SELECT status FROM coview_requests")).rows[0].status,
+    "pending"
+  )
+  await syncCoviews(new Date(nextDay.getTime() + 25 * 3600_000))
+  assert.equal(
+    (await pool.query("SELECT status FROM coview_requests")).rows[0].status,
+    "skipped"
+  )
+
+  // 12. Peek: live only while she is on her computer; a timed ticket carries its deadline
+  const { peekState } = await import("@/lib/companion/peek")
+  const { issueDesktopTicket } = await import("@/lib/desktop")
+  const { encryptSecret } = await import("@/lib/secrets")
+  await pool.query("UPDATE tasks SET status='completed' WHERE agent_id=$1", [agentId])
+  await updateCompanion(ownerId, agentId, {
+    rhythm: { sleep: { start: "10:00", end: "12:00" }, nap: null, away: [] },
+  })
+  const view = await (
+    await import("@/lib/companion/store")
+  ).ensureCompanion(ownerId, agentId)
+  assert.deepEqual(await peekState(view, nextDay), {
+    live: false,
+    caption: "她在睡觉，电脑没开着。",
+  })
+  await pool.query("UPDATE tasks SET status='running' WHERE id=$1", [coviewTask])
+  assert.deepEqual(await peekState(view, nextDay), {
+    live: true,
+    caption: "她正在看你发的链接。",
+  })
+  await pool.query("UPDATE tasks SET status='completed' WHERE id=$1", [coviewTask])
+  await pool.query(
+    "INSERT INTO workstation_control(agent_id,container_name,connection_secret,mode,epoch,updated_at) VALUES($1,'c1',$2,'idle',3,now())",
+    [agentId, encryptSecret(JSON.stringify({ password: "p" }))]
+  )
+  const owner = { userId: ownerId, sessionId: "s1" }
+  const timed = await issueDesktopTicket(owner, agentId, "watch", null, 60)
+  assert.ok(timed.until && Date.parse(timed.until) - Date.now() <= 60_000)
+  const row = await pool.query("SELECT watch_until FROM desktop_tickets WHERE token=$1", [
+    timed.token,
+  ])
+  assert.equal(row.rows[0].watch_until.toISOString(), timed.until)
+  assert.equal((await issueDesktopTicket(owner, agentId, "watch", null)).until, null)
+  await assert.rejects(
+    issueDesktopTicket(owner, agentId, "control", null, 60),
+    /Only a watch/
+  )
 
   await closeDurableClient()
   await pool.end()
