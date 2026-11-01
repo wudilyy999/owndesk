@@ -1,0 +1,67 @@
+// Memory notes are plain rows the person can read, edit and delete. The model edits them
+// through remember / update_memory / forget (Letta-style self-editing memory; mem0's
+// add / update / delete operations are the reference for the operation set).
+import { and, desc, eq } from "drizzle-orm"
+import { db } from "@/db"
+import { memories } from "@/db/schema"
+import { HttpError } from "@/lib/errors"
+
+const NOTE_LIMIT = 60
+const NOTE_CHARS = 12000
+
+export async function listNotes(agentId: string) {
+  return db
+    .select()
+    .from(memories)
+    .where(eq(memories.agentId, agentId))
+    .orderBy(desc(memories.updatedAt), desc(memories.id))
+}
+
+// The notes that go into the prompt: newest first, capped by count and size
+export function selectNotes(notes: { id: string; content: string }[]) {
+  const selected: { id: string; content: string }[] = []
+  let chars = 0
+  for (const note of notes.slice(0, NOTE_LIMIT)) {
+    const size = note.content.length + note.id.length + 6
+    if (chars + size > NOTE_CHARS) break
+    selected.push({ id: note.id, content: note.content })
+    chars += size
+  }
+  return selected
+}
+
+export async function addNote(
+  agentId: string,
+  content: string,
+  source: "user" | "agent"
+) {
+  const [existing] = await db
+    .select()
+    .from(memories)
+    .where(and(eq(memories.agentId, agentId), eq(memories.content, content)))
+  if (existing) return existing
+  const [note] = await db
+    .insert(memories)
+    .values({ agentId, content, source })
+    .returning()
+  return note
+}
+
+export async function updateNote(agentId: string, id: string, content: string) {
+  const [note] = await db
+    .update(memories)
+    .set({ content, updatedAt: new Date() })
+    .where(and(eq(memories.agentId, agentId), eq(memories.id, id)))
+    .returning()
+  if (!note) throw new HttpError(404, "Note not found for this agent")
+  return note
+}
+
+export async function deleteNote(agentId: string, id: string) {
+  const [removed] = await db
+    .delete(memories)
+    .where(and(eq(memories.agentId, agentId), eq(memories.id, id)))
+    .returning({ id: memories.id })
+  if (!removed) throw new HttpError(404, "Note not found for this agent")
+  return removed
+}

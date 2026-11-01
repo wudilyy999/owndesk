@@ -89,6 +89,14 @@ export async function monthlyUsage(
     FROM task_model_attempts a JOIN tasks t ON t.id=a.task_id WHERE t.owner_id=$1 AND a.started_at >= $2 AND a.started_at < $3`,
     [ownerId, period.startsAt, period.endsAt]
   )
+  // Light chat replies are not tasks; they count against the same monthly budget
+  const {
+    rows: [chat],
+  } = await query.query(
+    `SELECT COALESCE(sum(u.cost_micros),0)::text AS cost,count(*) FILTER(WHERE u.cost_micros IS NULL)::int AS unknown,count(*)::int AS attempts
+    FROM companion_usage u JOIN companions c ON c.agent_id=u.agent_id WHERE c.owner_id=$1 AND u.created_at >= $2 AND u.created_at < $3`,
+    [ownerId, period.startsAt, period.endsAt]
+  )
   const settings = await query.query(
     "SELECT value FROM settings WHERE key='usage.monthlyBudget'"
   )
@@ -98,6 +106,9 @@ export async function monthlyUsage(
   return {
     ...period,
     ...row,
+    knownCostMicros: (BigInt(row.knownCostMicros) + BigInt(chat.cost)).toString(),
+    unknown: row.unknown + chat.unknown,
+    attempts: row.attempts + chat.attempts,
     budgetMicros: budget === "" ? null : Math.round(Number(budget) * 1000000),
   }
 }
