@@ -37,11 +37,11 @@ const frame = {
   observationId: z
     .uuid()
     .describe(
-      "The observationId from the latest desktop screenshot in the current control session. Each frame permits one desktop input; use the new ID returned after the action."
+      "The latest desktop observationId in the current control session, consumed by one input. Pointer tools require screenshot_status=ok; if the latest observation omitted its image, call screen_capture first and use its new ID."
     ),
 }
 const AFTER =
-  "Declare coordinateMode explicitly for pointer input. Returns the resulting screenshot, available read-only AT-SPI elements, and a new observationId for the next input."
+  "Pointer input must declare coordinateMode and use the latest observationId with screenshot_status=ok. Keyboard input may use a current native observation. Returns the resulting screenshot, AT-SPI elements and a new observationId for the next input."
 export const agentTools = {
   load_manual: tool({
     description:
@@ -88,7 +88,7 @@ export const agentTools = {
   }),
   screen_capture: tool({
     description:
-      "Observe the current desktop: original screenshot, dimensions, active native window, fresh observationId, and available read-only AT-SPI elements (role/name/text/value/states/bounds in screenshot pixels). Check accessibility.status and truncation; missing elements do not prove a control is absent. Desktop inputs require this ID. Actions already return the next observation; capture again after a window changes or an observation expires.",
+      "Always capture a fresh original desktop screenshot, dimensions, active native window, new observationId and available AT-SPI controls. Call whenever uncertain, confused, controls do not explain the state, or visual layout/image verification is needed. Call before coordinate input when the latest native observation has screenshot_status=omitted; use this new ID. Missing or partial controls do not prove absence. Capture is observational and does not repeat any prior action.",
     inputSchema: z.object({}),
   }),
   screen_share: tool({

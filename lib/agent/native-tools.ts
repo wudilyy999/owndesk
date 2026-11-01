@@ -10,17 +10,17 @@ export const nativeTools = {
   desktop_get_window_state: tool({
     inputSchema: nativeSchemas.desktop_get_window_state,
     description:
-      "Observe a native window by window_id/PID (current active window if omitted). Returns its bounded AT-SPI hierarchy, read-only properties, fresh observationId and original desktop screenshot. Element indices/paths belong to this observation only; increase max_depth/max_nodes within their limits when omitted controls are needed. A scoped tree may describe a background window; foreground-focus it and use the fresh screenshot before coordinate fallback.",
+      "Observe a native window by window_id/PID (current active window if omitted). Returns compact AT-SPI controls with element_index/path, role/name, text/value, states, action names, bounds and fresh observationId. Complete controls normally omit the screenshot; incomplete/unavailable controls or conflicting numeric text/value add one automatically. Use screen_capture whenever uncertain or visual verification is needed. Indices/paths belong to this observation only; increase max_depth/max_nodes when omitted controls are needed. Scoped controls may describe a background window; foreground-focus it and obtain a fresh screenshot before coordinate fallback.",
   }),
   desktop_ax_snapshot: tool({
     inputSchema: nativeSchemas.desktop_ax_snapshot,
     description:
-      "Read an AT-SPI snapshot scoped to window_id/PID, or the desktop tree if neither is supplied. Returns an original screenshot and fresh observationId. Prefer a specific window to avoid unrelated applications consuming the node budget.",
+      "Read compact AT-SPI controls scoped to window_id/PID, or across the desktop if neither is supplied. Complete controls normally omit the screenshot and return a fresh observationId; incomplete/unavailable or conflicting state includes a screenshot. Use screen_capture if uncertain or needing visual evidence. Prefer a specific window to avoid unrelated applications consuming the node budget.",
   }),
   desktop_element_action: tool({
     inputSchema: nativeSchemas.desktop_element_action,
     description:
-      "Operate a fresh native AT-SPI element by element_index, path or unique semantic target. Supports press/focus/set_value; background is default, auto permits an explicit foreground fallback, foreground may change focus. Use foreground focus for windows. A dispatch is an attempt; inspect returned fresh screenshot/tree and explicit effect/verification status. Protected fields use the existing secret/takeover flow. Unknown effects must never be repeated.",
+      "Operate a fresh native AT-SPI element by element_index, path or unique semantic target. Supports press/focus/set_value; background is default, auto permits an explicit foreground fallback, foreground may change focus. Use foreground focus for windows. Returns fresh controls and observationId; complete background results normally omit screenshots, while foreground dispatch, native fallback or incomplete/conflicting state includes one. Dispatch is an attempt: verify the returned state. Call screen_capture whenever uncertain or needing visual verification. Protected fields use the existing secret/takeover flow. Unknown effects must never be repeated.",
   }),
   desktop_ax_action: tool({
     inputSchema: nativeSchemas.desktop_ax_action,
@@ -30,7 +30,7 @@ export const nativeTools = {
   desktop_type: tool({
     inputSchema: nativeSchemas.desktop_type,
     description:
-      "Type through the existing X11 keyboard path only after verifying the exact observed native window is active and focused. Requires latest observationId and window_id; optional submit presses Enter. Returns a fresh screenshot/tree. Password/protected fields are refused.",
+      "Type through the existing X11 keyboard path only after verifying the exact observed native window is active and focused. Requires latest observationId and window_id; optional submit presses Enter. Returns fresh controls and observationId, with a screenshot only when state is incomplete/conflicting. Call screen_capture whenever uncertain or needing visual verification. Password/protected fields are refused.",
   }),
   desktop_tag_context: tool({
     inputSchema: nativeSchemas.desktop_tag_context,

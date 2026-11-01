@@ -24,6 +24,14 @@ test("normal and desktop tasks use screenshots and coordinates without annotatio
       /Every pointer\/key tool requires the latest observationId/
     )
     assert.match(instructions, /At most two recent images/)
+    assert.match(instructions, /prefer native AT-SPI controls/)
+    assert.match(instructions, /When uncertain, confused/)
+    assert.match(instructions, /Pointer input additionally requires screenshot_status=ok/)
+    assert.match(tools.screen_capture.description!, /uncertain, confused/)
+    assert.match(
+      tools.key_press.description!,
+      /Keyboard input may use a current native observation/
+    )
   }
   const schema = browserTools.browser_observe.inputSchema as z.ZodObject
   assert.deepEqual(Object.keys(schema.shape), ["pageId"])

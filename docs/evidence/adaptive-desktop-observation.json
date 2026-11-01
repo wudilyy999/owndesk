@@ -1,0 +1,83 @@
+{
+  "date": "2026-10-31",
+  "status": "development_verified_not_deployed",
+  "implementation": {
+    "nativeObservation": "fresh AT-SPI state; omit screenshot work when complete and consistent",
+    "automaticScreenshotReasons": [
+      "native_unavailable",
+      "controls_missing",
+      "partial_controls",
+      "control_value_conflict",
+      "native_fallback",
+      "foreground_dispatch"
+    ],
+    "explicitScreenshot": "screen_capture always returns a new image and observationId; available whenever the model is uncertain or needs visual verification",
+    "pointerAuthorization": "latest observation must have screenshot_status=ok; native-only and stale IDs reject before input",
+    "rawNativeReceipts": "retain complete available control data; omitted screenshots are not generated or stored",
+    "imageHistoryLimit": 2,
+    "unchanged": [
+      "Task/DBOS/action journal",
+      "unknown-effect review",
+      "control epoch/boot fencing",
+      "DOM tools",
+      "independent live desktop viewer"
+    ]
+  },
+  "offlineVerification": {
+    "distinctChecksPassed": 17,
+    "controllerPolicyChecks": 5,
+    "nativeSchemasContextAndResponsesChecks": 6,
+    "toolAndInstructionChecks": 2,
+    "contextRegressionChecks": 4,
+    "strictScopedTypecheck": "passed",
+    "syntaxAndFormatting": "passed",
+    "realCloudRequests": 0,
+    "initialSdkFixtureFailure": "The new fixture initially selected an OpenAI-compatible chat adapter while preparing OpenAI Responses history. It was corrected to use the actual Responses adapter; both native-only and explicit-image requests pass via a local fetch capture."
+  },
+  "isolatedDesktopVerification": {
+    "report": "data/experiments/atspi-native-adaptive-observation-1793412630871/result.json",
+    "receipts": "data/experiments/atspi-native-adaptive-observation-1793412630871/receipts.json",
+    "runtime": "existing owndesk-workstation:0.6.5 with current desktop.mjs copied into the isolated stopped container before startup; no new production image build",
+    "passed": true,
+    "checks": [
+      "real GTK checked state changes through native input without a screenshot in either receipt",
+      "native-only ID rejects coordinates before input; explicit capture enables one pointer action and its old ID expires",
+      "real incomplete tree and absent native Action automatically return a screenshot without coordinate fallback input",
+      "foreground focus returns visual evidence; verified-window typing returns fresh native state without an image",
+      "independent noVNC viewer remains available"
+    ],
+    "receiptCount": 14,
+    "succeeded": 12,
+    "rejectedBeforeInput": 2,
+    "nativeOnlyReceipts": 5,
+    "imageReceipts": 5,
+    "realCloudRequests": 0,
+    "businessTasksCreated": 0,
+    "fixtureState": {
+      "syncAfterNativeAction": false,
+      "typedTitleContains": "Adaptive input"
+    },
+    "viewerCheck": "noVNC vnc.html reachable; no claim of interactive video-frame validation",
+    "initialSetupFailures": [
+      {
+        "report": "data/experiments/atspi-native-adaptive-observation-1793412558093/result.json",
+        "cause": "unshared bind source; cleanup initially masked create failure with no-such-container"
+      },
+      {
+        "report": "data/experiments/atspi-native-adaptive-observation-1793412609386/result.json",
+        "cause": "unshared bind source, now reported directly"
+      }
+    ],
+    "setupCorrection": "docker create + copy current source + docker start; no changes to global VM mounts",
+    "temporaryContainerAndVolumesRemoved": true,
+    "resourceCountsBeforeAndAfter": {
+      "containers": 6,
+      "volumes": 104
+    }
+  },
+  "limits": [
+    "No new paid-model task or model-quality comparison",
+    "No production preview restart, new deployment or SQL migration",
+    "Numeric setter dispatch remains unchanged; screenshot does not repair a text/value conflict"
+  ]
+}

@@ -26,6 +26,8 @@ const CONTROL_KEYS = [
   "width",
   "height",
   "window",
+  "screenshot_status",
+  "screenshot_reason",
   "accessibility",
   "window_id",
   "node_count",
@@ -136,66 +138,123 @@ function fileDescription(part: Exclude<ContentPart, { type: "text" }>) {
   return descriptor
 }
 
-// Preserve whole element records in both text-only DOM reads and image-bearing observations.
+// Keep actionable native fields once; raw receipts retain the full tree/identity.
+// DOM observations keep their existing complete element records.
 function projectObservation(binding: Record<string, any>, limit: number) {
   const { elements, tree, textRefs, text: pageText, ...metadata } = binding
+  const native = metadata.accessibility?.source === "atspi2"
   // Native dispatch/focus/identity fields are control data. Sharing a generic
   // per-field budget with the full window subtree can drop them after compaction.
-  const projected =
-    metadata.accessibility?.source === "atspi2"
-      ? Object.fromEntries([
+  const projected = native
+    ? Object.fromEntries([
+        ...[
+          "ok",
+          "effect",
+          "error",
+          "code",
+          "rejectedBeforeEffect",
+          "observationError",
+          "observationId",
+          "epoch",
+          "bootId",
+          "width",
+          "height",
+          "window",
+          "window_id",
+          "node_count",
+          "coordinateSpace",
+          "mapping",
+          "acceptedCoordinateModes",
+          "mediaType",
+          "screenshotCapturedAt",
+          "operation",
+          "focus_verified",
+          "requested_dispatch",
+          "actual_dispatch",
+          "background_unavailable",
+          "reason",
+          "foreground_fallback_used",
+          "submitted",
+          "input_scope",
+          "targetToken",
+          "replace_supported",
+          "profile_override",
+          "app_name",
+          "window_title",
+          "screenshot_status",
+          "screenshot_reason",
+          "replaced",
+          "verification",
+          "characters",
+        ]
+          .filter((key) => Object.hasOwn(metadata, key))
+          .map((key) => [key, metadata[key]]),
+        [
+          "accessibility",
+          Object.fromEntries(
+            Object.entries(metadata.accessibility).filter(([key]) =>
+              [
+                "source",
+                "status",
+                "scope",
+                "truncated",
+                "windowsTruncated",
+                "reason",
+                "error",
+                "warnings",
+              ].includes(key)
+            )
+          ),
+        ],
+        ...["query", "focused_text", "tag_text"]
+          .filter((key) => typeof metadata[key] === "string")
+          .map((key) => [key, clipText(metadata[key], key === "query" ? 2048 : 800)]),
+      ])
+    : projectJson(metadata, 2000)
+  const controls = native
+    ? elements.map((element: Record<string, any>) =>
+        Object.fromEntries([
           ...[
-            "ok",
-            "effect",
-            "error",
-            "code",
-            "rejectedBeforeEffect",
-            "observationError",
-            "observationId",
-            "epoch",
-            "bootId",
-            "width",
-            "height",
-            "window",
-            "window_id",
-            "node_count",
-            "coordinateSpace",
-            "mapping",
-            "acceptedCoordinateModes",
-            "mediaType",
-            "screenshotCapturedAt",
-            "operation",
-            "focus_verified",
-            "requested_dispatch",
-            "actual_dispatch",
-            "background_unavailable",
-            "reason",
-            "foreground_fallback_used",
-            "submitted",
-            "input_scope",
-            "targetToken",
-            "replace_supported",
-            "profile_override",
-            "app_name",
-            "window_title",
-            "screenshot_status",
-            "replaced",
-            "verification",
-            "characters",
+            "element_index",
+            "path",
+            "role",
+            "name",
+            "description",
+            "text",
+            "value",
+            "states",
+            "bounds",
+            "redacted",
           ]
-            .filter((key) => Object.hasOwn(metadata, key))
-            .map((key) => [key, metadata[key]]),
-          [
-            "accessibility",
-            Object.fromEntries(
-              Object.entries(metadata.accessibility).filter(([key]) => key !== "window")
-            ),
-          ],
-          ...["query", "focused_text", "tag_text"]
-            .filter((key) => typeof metadata[key] === "string")
-            .map((key) => [key, clipText(metadata[key], key === "query" ? 2048 : 800)]),
+            .filter((key) => Object.hasOwn(element, key))
+            .map((key) => [key, element[key]]),
+          ...(element.actions
+            ? [
+                [
+                  "actions",
+                  element.actions.map((action: { name: string }) => action.name),
+                ],
+              ]
+            : []),
         ])
-      : projectJson(metadata, 2000)
+      )
+    : elements
+  if (native) {
+    // Preserve decision/state evidence and buttons before bulk lists fill the budget.
+    const priority = (element: Record<string, any>) =>
+      Object.hasOwn(element, "value") ||
+      ["status bar", "alert"].includes(element.role) ||
+      (element.states ?? []).some((state: string) =>
+        ["focused", "selected", "checked", "editable"].includes(state)
+      )
+        ? 0
+        : ["button", "push button", "toggle button", "page tab"].includes(element.role)
+          ? 1
+          : 2
+    controls.sort(
+      (a: Record<string, any>, b: Record<string, any>) => priority(a) - priority(b)
+    )
+  }
   projected.elements = []
   projected.omittedElements = elements.length + (binding.omittedElements ?? 0)
   function keepTree(node: Record<string, any>, paths: Set<string>): any {
@@ -211,20 +270,23 @@ function projectObservation(binding: Record<string, any>, limit: number) {
       ...(children.length ? { children } : {}),
     }
   }
-  for (const element of elements) {
+  for (const element of controls) {
     const next = {
       ...projected,
       elements: [...projected.elements, element],
       omittedElements: projected.omittedElements - 1,
     }
-    if (tree)
+    if (tree && !native)
       next.tree = keepTree(
         tree,
         new Set(
           next.elements.map((node: Record<string, any>) => JSON.stringify(node.path))
         )
       )
-    if (JSON.stringify(next).length > limit - 1500) break
+    if (JSON.stringify(next).length > limit - 1500) {
+      if (native) continue
+      break
+    }
     Object.assign(projected, next)
   }
   if (Array.isArray(textRefs)) {
