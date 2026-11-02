@@ -48,18 +48,16 @@ xfwm4 --compositor=off >"$state/xfwm4.log" 2>&1 &
 xfdesktop >"$state/xfdesktop.log" 2>&1 &
 xfce4-panel >"$state/panel.log" 2>&1 &
 xsetroot -solid "#0b0e14"
-# xfdesktop draws the wallpaper and the icons; set the wallpaper once it has registered its monitors
+# xfdesktop draws the wallpaper and the icons: "monitorscreen" is Xvfb's output name
 (
   wallpaper=$(cat "$HOME/.local/share/owndesk/wallpaper" 2>/dev/null || echo /usr/share/owndesk/wallpaper.png)
-  for _ in $(seq 40); do
-    props=$(xfconf-query -c xfce4-desktop -l 2>/dev/null | grep '/last-image$' || true)
-    [ -n "$props" ] && break
-    sleep 0.5
+  for _ in $(seq 40); do xfconf-query -c xfce4-desktop -l >/dev/null 2>&1 && break; sleep 0.5; done
+  for monitor in monitorscreen monitor0; do
+    base=/backdrop/screen0/$monitor/workspace0
+    xfconf-query -c xfce4-desktop -p $base/last-image -n -t string -s "$wallpaper"
+    xfconf-query -c xfce4-desktop -p $base/image-style -n -t int -s 5
   done
-  for prop in $props; do
-    xfconf-query -c xfce4-desktop -p "$prop" -s "$wallpaper" 2>/dev/null || true
-  done
-) >/dev/null 2>&1 &
+) >"$state/wallpaper.log" 2>&1 &
 
 x11vnc -display "$DISPLAY" -rfbauth "$state/vncpass" -rfbport 5901 -localhost \
   -forever -shared -noremote -clear_all -noxdamage -quiet >"$state/x11vnc.log" 2>&1 &

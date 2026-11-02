@@ -4,7 +4,7 @@
 
 本目录提供 Compose、HTTPS 入口和工作站出站网络策略。应用仍属开发版；真实云厂商、公开域名 ACME、完整备份恢复和产品对照分别验收。先使用专用测试主机及非敏感账号。
 
-源码配对为 Web/worker `0.17.0-dev`、工作站 `0.6.6 / guest6`、业务迁移止于 `0018`。原生控件迁移的正式开发镜像已完成隔离验收；最新上下文连续性修复仍需从当前源码重新构建Web/worker。历史流程导入/验证/复用报告对应当时固定镜像，结果以workflow-production系列报告为准；完整生产部署门槛继续单列。已通过的0.15.1生产容器检查保留其原版本。团队扩展继续暂缓，范围与检查见 [基础交付](../docs/BASE-DELIVERY.md)。
+源码配对为 Web/worker `0.17.0-dev`、工作站 `0.7.0 / guest6`、业务迁移止于 `0018`。原生控件迁移的正式开发镜像已完成隔离验收；最新上下文连续性修复仍需从当前源码重新构建Web/worker。历史流程导入/验证/复用报告对应当时固定镜像，结果以workflow-production系列报告为准；完整生产部署门槛继续单列。已通过的0.15.1生产容器检查保留其原版本。团队扩展继续暂缓，范围与检查见 [基础交付](../docs/BASE-DELIVERY.md)。
 
 后文 F12、完整网络与资源报告保留原固定版本，不自动成为新候选的完整部署证据。基础生产容器定向检查与普通公网/实际云部署分别记录。旧guest需排空后显式重建并保留home；本机主服务为0.17.0-dev/SQL0018/工作站0.6.3/guest6，此文档不授权直接升级它。
 
@@ -46,7 +46,7 @@ node scripts/deploy-env.mjs https://localhost:19443 owner@example.com deploy
 
 ```sh
 docker compose --file deploy/compose.yaml --env-file deploy/.env build web worker
-docker build --tag owndesk-workstation:0.6.6 workstation
+docker build --tag owndesk-workstation:0.7.0 workstation
 ```
 
 Web 使用非 root 用户、只读根文件系统及只读成果卷；worker 使用同一 npm 工程，附带 Docker CLI 和网络管理工具。构建上下文采用允许列表，排除 `.env`、`owner.env`、`data`。构建阶段只有公开占位配置，运行阶段必须供应本安装的真实配置。
@@ -86,7 +86,7 @@ docker compose --file deploy/compose.yaml --env-file deploy/.env run --rm \
 docker compose --file deploy/compose.yaml --env-file deploy/.env up -d --wait
 ```
 
-拥有者初始化仅成功一次，重复命令明确报错。全新安装会应用 `0000`—`0018` 共 19 条业务迁移、认证与 DBOS 表；当前桌面镜像 `0.6.6`、协议6。C0增加逐帧绑定；0016存流程版本，0017存流程运行/独立验证环境，0018保存真实导入来源与请求去重。0.6.2增加thunar-keyboard-v1，旧协议6镜像可供原桌面动作使用，执行编译流程须显式配对支持能力的镜像；0.6.5另增加原生控件读写。旧安装先按 [备份与恢复](BACKUP.md) 保存一致快照和独立密钥、排空任务，再显式升级；已有拥有者跳过 `owner:create`，勿对当前主库直接执行本节。
+拥有者初始化仅成功一次，重复命令明确报错。全新安装会应用 `0000`—`0018` 共 19 条业务迁移、认证与 DBOS 表；当前桌面镜像 `0.7.0`、协议6。C0增加逐帧绑定；0016存流程版本，0017存流程运行/独立验证环境，0018保存真实导入来源与请求去重。0.6.2增加thunar-keyboard-v1，旧协议6镜像可供原桌面动作使用，执行编译流程须显式配对支持能力的镜像；0.6.5另增加原生控件读写。旧安装先按 [备份与恢复](BACKUP.md) 保存一致快照和独立密钥、排空任务，再显式升级；已有拥有者跳过 `owner:create`，勿对当前主库直接执行本节。
 
 `localhost` 使用 Caddy 本地 CA。先把本安装的**公开根证书**安全取到自己的电脑并信任，勿复制 CA 私钥。部署检查通过 CA 验证 HTTPS/WSS；浏览器自动化为临时测试上下文单独忽略证书错误，未修改系统信任库。
 

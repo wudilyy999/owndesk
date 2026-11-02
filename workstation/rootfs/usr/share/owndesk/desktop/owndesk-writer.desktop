@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=文字文档
+Name[en]=Documents
+Comment=LibreOffice Writer
+Exec=libreoffice --writer
+Icon=libreoffice-writer
+Terminal=false
+Categories=Office;

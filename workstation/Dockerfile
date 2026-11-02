@@ -21,6 +21,10 @@ ENV DEBIAN_FRONTEND=noninteractive \
     OWNDESK_SCREEN=1280x800 \
     PIP_BREAK_SYSTEM_PACKAGES=1
 
+# The slim base drops every translation; keep the Chinese ones so GTK/XFCE apps speak Chinese
+RUN printf 'path-include /usr/share/locale/zh/*\npath-include /usr/share/locale/zh_CN/*\n' \
+      > /etc/dpkg/dpkg.cfg.d/zz-owndesk-locale
+
 RUN apt-get update \
  && apt-get install -y --no-install-recommends \
       xvfb x11vnc novnc websockify xdotool scrot x11-utils x11-xserver-utils dbus-x11 \
@@ -45,7 +49,7 @@ RUN if [ -n "$APT_MIRROR" ]; then \
       locales fonts-noto-cjk fonts-crosextra-carlito fonts-crosextra-caladea \
       fcitx5 fcitx5-pinyin fcitx5-frontend-gtk3 \
       xfdesktop4 xfce4-screenshooter xfce4-taskmanager xfce4-notifyd \
-      mousepad ristretto evince galculator xdg-utils desktop-file-utils shared-mime-info \
+      librsvg2-common mousepad ristretto evince galculator xdg-utils desktop-file-utils shared-mime-info \
       libreoffice-writer libreoffice-calc libreoffice-impress libreoffice-gtk3 libreoffice-l10n-zh-cn \
  && sed -i -e 's/^# *\(zh_CN.UTF-8 UTF-8\)/\1/' -e 's/^# *\(en_US.UTF-8 UTF-8\)/\1/' /etc/locale.gen \
  && locale-gen \
