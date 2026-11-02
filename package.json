@@ -36,6 +36,7 @@
     "test:manuals": "tsx tests/manuals-runtime.ts",
     "test:atspi:native": "tsx tests/atspi-native.ts",
     "test:atspi": "tsx tests/atspi-observation.ts",
+    "test:workstation:stage-a": "tsx tests/workstation-stage-a.ts",
     "test:c0:desktop": "tsx tests/desktop-observation.ts",
     "test:c0:baseline": "tsx tests/flow-baseline.ts",
     "test:c1:compile": "tsx tests/workflow-compilation.ts",

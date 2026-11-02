@@ -69,6 +69,22 @@ export function workspaceConnection(workspace: Workspace): Connection {
   return JSON.parse(decryptSecret(workspace.connectionSecret))
 }
 
+// The image is Chinese by default; WORKSTATION_LOCALE / WORKSTATION_TZ override it.
+// LANGUAGE is reset with LANG because gettext reads it first.
+export function localeArgs(): string[] {
+  const args: string[] = []
+  if (env.WORKSTATION_LOCALE) {
+    args.push(
+      "--env",
+      `LANG=${env.WORKSTATION_LOCALE}`,
+      "--env",
+      `LANGUAGE=${env.WORKSTATION_LOCALE.replace(/\..*$/, "")}`
+    )
+  }
+  if (env.WORKSTATION_TZ) args.push("--env", `TZ=${env.WORKSTATION_TZ}`)
+  return args
+}
+
 async function inspect(name: string) {
   const result = await dockerRaw(["inspect", "--type", "container", name], {
     timeoutMs: 15000,
@@ -199,6 +215,7 @@ async function prepareWorkstation(agentId: string): Promise<Workspace> {
         "OWNDESK_VNC_PASSWORD",
         "--env",
         "OWNDESK_IDLE_MINUTES=0",
+        ...localeArgs(),
         "--volume",
         `${workstationVolume(agentId)}:/home/agent`,
         "--volume",
