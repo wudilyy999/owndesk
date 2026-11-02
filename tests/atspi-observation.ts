@@ -8,6 +8,7 @@ import { createOpenAI } from "@ai-sdk/openai"
 import { docker } from "@/lib/docker"
 import { prepareModelContext } from "@/lib/agent/context"
 import { agentTools } from "@/lib/agent/tools"
+import { workstationImage } from "./workstation-image"
 
 // Real isolated desktop; SDK requests are captured locally, with zero cloud calls.
 const directory = path.resolve(process.argv[2] ?? `data/experiments/atspi-${Date.now()}`)
@@ -15,7 +16,7 @@ await mkdir(directory, { recursive: true })
 const container = `pa-atspi-${Date.now()}`
 const checks: string[] = []
 let passed = false
-const image = process.env.ATSPI_TEST_IMAGE ?? "owndesk-workstation:0.6.4"
+const image = process.env.ATSPI_TEST_IMAGE ?? workstationImage
 async function request(route: string, body: unknown) {
   const result = await docker(
     ["exec", "-i", container, "node", "/opt/owndesk-controller/request.mjs", route],
@@ -87,7 +88,10 @@ try {
     "ok",
     JSON.stringify(thunar.result.accessibility)
   )
-  assert(thunar.result.elements.some((item: any) => item.name === "File"))
+  // The image defaults to zh_CN, so the menu is "文件(F)"; an English-locale image says "File".
+  assert(
+    thunar.result.elements.some((item: any) => /^(File|文件)(\(F\))?$/.test(item.name))
+  )
   await writeFile(
     path.join(directory, "thunar.json"),
     JSON.stringify(thunar.result, null, 2)
@@ -164,7 +168,8 @@ try {
     })
     const failed = await capture()
     assert.equal(failed.accessibility.status, "unavailable", name)
-    assert.equal(failed.accessibility.reason, reason, name)
+    // The controller prefixes the backend name to the reader failure code.
+    assert.equal(failed.accessibility.reason, `AT-SPI ${reason}`, name)
     assert(failed.image && failed.observationId)
   }
   await docker([
@@ -177,11 +182,11 @@ try {
   )
 
   const source = await readFile("workstation/controller/accessibility.py", "utf8")
+  // screen_capture supplies its limits from desktop.mjs, so cap the reader's own node budget.
+  const budget = 'max_nodes = options.get("max_nodes", 120)'
+  assert(source.includes(budget))
   await docker(["exec", "--user", "root", "-i", container, "tee", readerPath], {
-    input: source.replace(
-      "MAX_NODES, MAX_ELEMENTS, MAX_BYTES = 600, 60, 24000",
-      "MAX_NODES, MAX_ELEMENTS, MAX_BYTES = 3, 60, 24000"
-    ),
+    input: source.replace(budget, "max_nodes = 3"),
   })
   const partial = await capture()
   assert.equal(partial.accessibility.status, "partial")

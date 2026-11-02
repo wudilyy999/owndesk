@@ -65,4 +65,4 @@ npm run test:atspi:native                  # 同一镜像上的原生 AT-SPI（�
 
 网络无法直连 `deb.debian.org` 时，`STAGE_A_APT_MIRROR=http://host:port` 会在测试容器里改 apt 源；构建镜像可用 `docker build --build-arg APT_MIRROR=...`。
 
-`tests/atspi-observation.ts` 与 `npm run test:atspi` 是 0.6.x 早期的观察测试，期望已与当前控制器不符（原因字符串、partial 状态），在 0.6.6 上同样失败，已被 `test:atspi:native` 取代。
+`npm run test:atspi`（`tests/atspi-observation.ts`）已按 0.7.0 更新：镜像取自 `package.json` 的 `workstation:build`；菜单名兼容中文 `文件(F)`；读取器失败原因带 `AT-SPI ` 前缀；partial 截断改为限制读取器自身的节点预算。
