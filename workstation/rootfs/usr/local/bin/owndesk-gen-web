@@ -64,5 +64,8 @@ const policy = {
   HomepageLocation: search.HOME_URL,
   HomepageIsNewTabPage: false,
 }
-writeFileSync(path.join(policyDir, "owndesk-web.json"), JSON.stringify(policy, null, 2) + "\n")
+writeFileSync(
+  path.join(policyDir, "owndesk-web.json"),
+  JSON.stringify(policy, null, 2) + "\n"
+)
 console.log(`owndesk-gen-web: ${sites.length} web apps`)
