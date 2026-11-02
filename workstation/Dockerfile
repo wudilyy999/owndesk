@@ -17,6 +17,10 @@ ENV DEBIAN_FRONTEND=noninteractive \
     LANG=zh_CN.UTF-8 \
     LANGUAGE=zh_CN:zh \
     TZ=Asia/Shanghai \
+    GTK_IM_MODULE=fcitx \
+    QT_IM_MODULE=fcitx \
+    XMODIFIERS=@im=fcitx \
+    SDL_IM_MODULE=fcitx \
     DISPLAY=:1 \
     OWNDESK_SCREEN=1280x800 \
     PIP_BREAK_SYSTEM_PACKAGES=1
