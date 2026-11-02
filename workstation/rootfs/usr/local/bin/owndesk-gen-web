@@ -1,0 +1,68 @@
+#!/usr/bin/env node
+// Build-time generator: web.d/*.conf -> web app launchers and Chromium policy.
+// Usage: owndesk-gen-web [--share DIR] [--apps DIR] [--policy DIR]
+import { readFileSync, readdirSync, writeFileSync, mkdirSync } from "node:fs"
+import path from "node:path"
+
+const arg = (name, fallback) => {
+  const i = process.argv.indexOf(name)
+  return i > -1 ? process.argv[i + 1] : fallback
+}
+const share = arg("--share", "/usr/share/owndesk")
+const apps = arg("--apps", "/usr/share/applications")
+const policyDir = arg("--policy", "/etc/chromium/policies/managed")
+
+function parseConf(text) {
+  const out = {}
+  for (const line of text.split("\n")) {
+    const m = /^([A-Z_]+)=(?:"(.*)"|(\S*))\s*$/.exec(line)
+    if (m) out[m[1]] = m[2] ?? m[3]
+  }
+  return out
+}
+
+const dir = path.join(share, "web.d")
+const search = parseConf(readFileSync(path.join(dir, "search.conf"), "utf8"))
+const sites = readdirSync(dir)
+  .filter((f) => f.endsWith(".conf") && f !== "search.conf")
+  .sort()
+  .map((f) => parseConf(readFileSync(path.join(dir, f), "utf8")))
+const folders = new Map()
+mkdirSync(apps, { recursive: true })
+mkdirSync(policyDir, { recursive: true })
+for (const s of sites) {
+  if (!/^[a-z0-9-]+$/.test(s.ID ?? "") || !/^https?:\/\//.test(s.URL ?? "") || !s.NAME)
+    throw new Error(`Invalid web app: ${JSON.stringify(s)}`)
+  writeFileSync(
+    path.join(apps, `owndesk-web-${s.ID}.desktop`),
+    [
+      "[Desktop Entry]",
+      "Type=Application",
+      `Name=${s.NAME}`,
+      `Comment=${s.NAME}（网页应用）`,
+      `Exec=owndesk-webapp ${s.URL}`,
+      `Icon=owndesk-web-${s.ID}`,
+      "Terminal=false",
+      "Categories=Network;",
+      "",
+    ].join("\n")
+  )
+  const folder = s.BOOKMARK_FOLDER || "常用"
+  if (!folders.has(folder)) folders.set(folder, [])
+  folders.get(folder).push({ name: s.NAME, url: s.URL })
+}
+const policy = {
+  BookmarkBarEnabled: true,
+  ManagedBookmarks: [
+    { toplevel_name: "常用" },
+    ...[...folders].map(([name, children]) => ({ name, children })),
+  ],
+  DefaultSearchProviderEnabled: true,
+  DefaultSearchProviderName: search.SEARCH_NAME,
+  DefaultSearchProviderKeyword: search.SEARCH_KEYWORD,
+  DefaultSearchProviderSearchURL: search.SEARCH_URL,
+  HomepageLocation: search.HOME_URL,
+  HomepageIsNewTabPage: false,
+}
+writeFileSync(path.join(policyDir, "owndesk-web.json"), JSON.stringify(policy, null, 2) + "\n")
+console.log(`owndesk-gen-web: ${sites.length} web apps`)

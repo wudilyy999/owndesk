@@ -1,0 +1,8 @@
+# One desktop id per line: first from /usr/share/owndesk/desktop, then /usr/share/applications.
+# Seeded once into ~/Desktop (what a person deletes stays deleted).
+chromium
+owndesk-life
+libreoffice-writer
+libreoffice-calc
+owndesk-web-bilibili
+owndesk-web-netease-music

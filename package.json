@@ -18,7 +18,7 @@
     "lint": "eslint .",
     "test": "tsx --import ./tests/setup-env.mjs --test tests/*.test.ts",
     "test:g01": "tsx tests/g01.ts",
-    "workstation:build": "docker build -t owndesk-workstation:0.6.6 workstation",
+    "workstation:build": "docker build -t owndesk-workstation:0.7.0 workstation",
     "format:check": "prettier --check .",
     "owner:create": "tsx scripts/owner.ts",
     "db:generate": "drizzle-kit generate",

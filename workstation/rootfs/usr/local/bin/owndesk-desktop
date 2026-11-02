@@ -39,11 +39,27 @@ export NO_AT_BRIDGE=0 GTK_MODULES=atk-bridge
 dbus-send --session --print-reply --dest=org.a11y.Bus /org/a11y/bus \
   org.freedesktop.DBus.Properties.Set string:org.a11y.Status string:IsEnabled variant:boolean:true \
   >"$state/accessibility.log" 2>&1 || exit 1
+# Chinese input: fcitx5 serves GTK, Qt and XIM programs (Chromium included)
+export GTK_IM_MODULE=fcitx QT_IM_MODULE=fcitx XMODIFIERS=@im=fcitx SDL_IM_MODULE=fcitx
+owndesk-session >"$state/session.log" 2>&1
+fcitx5 -d >"$state/fcitx5.log" 2>&1
 xfsettingsd --daemon >/dev/null 2>&1
 xfwm4 --compositor=off >"$state/xfwm4.log" 2>&1 &
+xfdesktop >"$state/xfdesktop.log" 2>&1 &
 xfce4-panel >"$state/panel.log" 2>&1 &
-feh --no-fehbg --bg-fill /usr/share/owndesk/wallpaper.png 2>/dev/null \
-  || xsetroot -solid "#0b0e14"
+xsetroot -solid "#0b0e14"
+# xfdesktop draws the wallpaper and the icons; set the wallpaper once it has registered its monitors
+(
+  wallpaper=$(cat "$HOME/.local/share/owndesk/wallpaper" 2>/dev/null || echo /usr/share/owndesk/wallpaper.png)
+  for _ in $(seq 40); do
+    props=$(xfconf-query -c xfce4-desktop -l 2>/dev/null | grep '/last-image$' || true)
+    [ -n "$props" ] && break
+    sleep 0.5
+  done
+  for prop in $props; do
+    xfconf-query -c xfce4-desktop -p "$prop" -s "$wallpaper" 2>/dev/null || true
+  done
+) >/dev/null 2>&1 &
 
 x11vnc -display "$DISPLAY" -rfbauth "$state/vncpass" -rfbport 5901 -localhost \
   -forever -shared -noremote -clear_all -noxdamage -quiet >"$state/x11vnc.log" 2>&1 &

@@ -1,0 +1,14 @@
+#!/bin/bash
+# owndesk-webapp <url>: opens a site as its own app window (chromium --app).
+# It has a profile of its own, so it never touches the profile the browser
+# controller owns, and logins stay across restarts in the home folder. Debian's
+# `chromium` wrapper would add the controller's debugging port, so start the
+# real binary with the same container flags.
+set -eu
+url="${1:?usage: owndesk-webapp <url>}"
+case "$url" in http://* | https://*) ;; *) echo "owndesk-webapp: only http(s) URLs" >&2; exit 2 ;; esac
+exec /usr/lib/chromium/chromium \
+  --no-sandbox --test-type --disable-dev-shm-usage --no-first-run --no-default-browser-check \
+  --password-store=basic --hide-crash-restore-bubble \
+  --user-data-dir=/home/agent/.config/owndesk-webapps \
+  --app="$url" >/dev/null 2>&1
