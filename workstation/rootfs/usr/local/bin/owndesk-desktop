@@ -45,6 +45,9 @@ owndesk-session >"$state/session.log" 2>&1
 fcitx5 -d >"$state/fcitx5.log" 2>&1
 xfsettingsd --daemon >/dev/null 2>&1
 xfwm4 --compositor=off >"$state/xfwm4.log" 2>&1 &
+# xfdesktop wakes the Thunar service on every start and it quits ten seconds later, which shifts
+# every other application's AT-SPI position under a running agent. Keep one resident instead.
+Thunar --daemon >"$state/thunar.log" 2>&1 &
 xfdesktop >"$state/xfdesktop.log" 2>&1 &
 xfce4-panel >"$state/panel.log" 2>&1 &
 xsetroot -solid "#0b0e14"
