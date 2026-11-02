@@ -933,11 +933,11 @@ print(result.stdout)
     })
     await delay(1000)
     const apps = await success("desktop_list_windows")
-    const appearance = apps.windows.find((w: any) => w.name === "Appearance")
+    const appearance = apps.windows.find((w: any) => /^(Appearance|外观)$/.test(w.name))
     assert(appearance, JSON.stringify(apps.windows))
     const frame = await observe(appearance.window_id)
     const fonts = frame.elements.find(
-      (e: any) => e.role === "page tab" && e.name === "Fonts"
+      (e: any) => e.role === "page tab" && /^(Fonts|字体(\(F\))?)$/.test(e.name)
     )
     assert(fonts, JSON.stringify(frame.elements.map((e: any) => [e.role, e.name])))
     const changed = await success("desktop_element_action", {
@@ -946,7 +946,7 @@ print(result.stdout)
     })
     assert.equal(changed.effect, "none")
     assert.equal(changed.background_unavailable, true)
-    const visibleFonts = node(changed, "Fonts")
+    const visibleFonts = node(changed, fonts.name)
     const selected = await success("pointer_click", {
       observationId: changed.observationId,
       coordinateMode: "pixels",
@@ -955,7 +955,7 @@ print(result.stdout)
     })
     assert(
       selected.elements.some(
-        (e: any) => e.name === "Fonts" && e.states.includes("selected")
+        (e: any) => e.name === fonts.name && e.states.includes("selected")
       )
     )
     checks.push(
