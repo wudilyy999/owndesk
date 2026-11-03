@@ -1,7 +1,7 @@
 // Light chat path: one model call per message, no durable task, no workstation.
 // Errands are only proposed here; the person confirms them in the UI (lib/companion/errands.ts).
 import { streamText, tool, isStepCount, type LanguageModel, type ModelMessage } from "ai"
-import { and, desc, eq, inArray, sql } from "drizzle-orm"
+import { and, desc, eq, inArray, isNull, sql } from "drizzle-orm"
 import { z } from "zod"
 import { db } from "@/db"
 import {
@@ -101,11 +101,14 @@ const REDOABLE_KINDS = new Set(["chat", "memory_candidate", "errand_proposal"])
 
 // The latest turn (her last user message and what she answered) is the only one that can be
 // redone: older turns have already shaped her notes and the timeline.
-export async function latestRound(agentId: string, now = new Date()) {
+export async function latestRound(agentId: string) {
   const rows = await db
     .select()
     .from(companionMessages)
-    .where(and(eq(companionMessages.agentId, agentId), visibleMessage(now)))
+    // Bubbles that are still being "typed" count too, so a redo hides them as well
+    .where(
+      and(eq(companionMessages.agentId, agentId), isNull(companionMessages.supersededAt))
+    )
     .orderBy(desc(companionMessages.createdAt), desc(companionMessages.id))
     .limit(14)
   const at = rows.findIndex((row) => row.role === "user")

@@ -10,6 +10,7 @@ import { Room } from "@/components/companion-room"
 import { Channels } from "@/components/companion-channels"
 import { cn } from "@/lib/utils"
 import type { Companion as CompanionRow, CompanionMessage } from "@/db/schema"
+import type { TypingPace } from "@/lib/companion/pacing"
 
 type View = CompanionRow & { name: string }
 type Note = {
@@ -88,7 +89,7 @@ export function Companion() {
         </nav>
       </header>
       {error && <p className="pb-2 text-sm text-destructive">{error}</p>}
-      {view && tab === "chat" && <Chat zone={view.timeZone} />}
+      {view && tab === "chat" && <Chat zone={view.timeZone} pace={view.typingPace} />}
       {view && tab === "life" && <Room agentId={view.agentId} zone={view.timeZone} />}
       {view && tab === "memory" && <Notes zone={view.timeZone} />}
       {view && tab === "channels" && <Channels />}
@@ -97,16 +98,37 @@ export function Companion() {
   )
 }
 
+// Copy that also works on plain http (clipboard API needs a secure context)
+async function copyText(value: string) {
+  try {
+    await navigator.clipboard.writeText(value)
+    return
+  } catch {
+    const area = document.createElement("textarea")
+    area.value = value
+    area.setAttribute("readonly", "")
+    area.style.position = "fixed"
+    area.style.opacity = "0"
+    document.body.appendChild(area)
+    area.select()
+    const ok = document.execCommand("copy")
+    area.remove()
+    if (!ok) throw new Error("复制失败")
+  }
+}
+
 function Bubble({
   message,
   zone,
   onAnswer,
   onMemory,
+  actions,
 }: {
   message: CompanionMessage
   zone: string
   onAnswer: (id: string, action: "confirm" | "cancel") => void
   onMemory: (memoryId: string, action: "accept" | "dismiss") => void
+  actions?: React.ReactNode
 }) {
   const mine = message.role === "user"
   const meta = (message.metadata ?? {}) as {
@@ -117,7 +139,11 @@ function Bubble({
     hasImage?: boolean
   }
   return (
-    <div className={cn("flex", mine ? "justify-end" : "justify-start")}>
+    <div
+      className={cn("flex flex-col gap-0.5", mine ? "items-end" : "items-start")}
+      data-message-id={message.id}
+      data-role={message.role}
+    >
       <div
         title={when(message.createdAt, zone)}
         className={cn(
@@ -186,16 +212,23 @@ function Bubble({
           </>
         )}
       </div>
+      {actions}
     </div>
   )
 }
 
-function Chat({ zone }: { zone: string }) {
+const actionButton =
+  "rounded px-1.5 py-0.5 text-xs text-faint hover:bg-elevated hover:text-foreground disabled:opacity-50"
+
+function Chat({ zone, pace }: { zone: string; pace: TypingPace }) {
   const [messages, setMessages] = useState<CompanionMessage[]>([])
   const [text, setText] = useState(""),
     [streaming, setStreaming] = useState(""),
+    [typing, setTyping] = useState(false),
     [busy, setBusy] = useState(false),
-    [error, setError] = useState("")
+    [error, setError] = useState(""),
+    [editing, setEditing] = useState<{ id: string; text: string } | null>(null),
+    [copied, setCopied] = useState("")
   const bottom = useRef<HTMLDivElement>(null)
   const refresh = useCallback(async () => {
     try {
@@ -214,19 +247,18 @@ function Chat({ zone }: { zone: string }) {
   }, [refresh])
   useEffect(() => {
     bottom.current?.scrollIntoView({ block: "end" })
-  }, [messages, streaming])
+  }, [messages, streaming, typing])
 
-  async function submit() {
-    const value = text.trim()
-    if (!value || busy) return
+  // One request: a new message, or a redo of the latest turn. Events come as bubbles are "typed".
+  async function run(body: unknown) {
     setBusy(true)
     setError("")
-    setText("")
+    setTyping(true)
     try {
       const response = await fetch("/api/companion/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text: value }),
+        body: JSON.stringify(body),
       })
       if (!response.ok || !response.body)
         throw new Error((await response.json()).error ?? "发送失败")
@@ -242,18 +274,44 @@ function Chat({ zone }: { zone: string }) {
           const name = /^event: (.*)$/m.exec(raw)![1]
           const data = JSON.parse(/^data: (.*)$/m.exec(raw)![1])
           if (name === "user") setMessages((old) => [...old, data.message])
-          else if (name === "delta") setStreaming((old) => old + data.text)
-          else if (name === "messages") {
+          else if (name === "superseded")
+            setMessages((old) => old.filter((row) => !data.ids.includes(row.id)))
+          else if (name === "typing") setTyping(data.on)
+          // With "off" the text streams in as before; otherwise she is "typing" until a bubble lands
+          else if (name === "delta") {
+            if (pace === "off") setStreaming((old) => old + data.text)
+          } else if (name === "messages") {
             setStreaming("")
+            setTyping(false)
             setMessages((old) => [...old, ...data.messages])
           } else if (name === "error") throw new Error(data.error)
         }
       }
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : String(cause))
+      // A failed redo puts the old answer back; the server has already restored it
+      await refresh()
     } finally {
       setStreaming("")
+      setTyping(false)
       setBusy(false)
+    }
+  }
+
+  async function submit() {
+    const value = text.trim()
+    if (!value || busy) return
+    setText("")
+    await run({ text: value })
+  }
+
+  async function copy(message: CompanionMessage) {
+    try {
+      await copyText(message.content)
+      setCopied(message.id)
+      setTimeout(() => setCopied((id) => (id === message.id ? "" : id)), 1500)
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : String(cause))
     }
   }
 
@@ -275,25 +333,141 @@ function Chat({ zone }: { zone: string }) {
     }
   }
 
+  // Same rule as the server: only the latest web turn can be redone
+  const lastUser = messages.findLastIndex((row) => row.role === "user")
+  const round = lastUser === -1 ? [] : messages.slice(lastUser + 1)
+  const userRow = lastUser === -1 ? null : messages[lastUser]
+  const redone = Number((userRow?.metadata as { redo?: number } | null)?.redo ?? 0)
+  const redoable =
+    !busy &&
+    !!userRow &&
+    userRow.kind === "chat" &&
+    userRow.channel === "web" &&
+    round.every(
+      (row) =>
+        row.channel === "web" &&
+        (row.kind === "chat" ||
+          ((row.kind === "memory_candidate" || row.kind === "errand_proposal") &&
+            (row.metadata as { status?: string } | null)?.status === "pending"))
+    )
+  const lastReply = redoable && round.length ? round[round.length - 1] : null
+
   return (
     <section className="flex min-h-0 flex-1 flex-col gap-3">
-      <div className="flex-1 space-y-2 overflow-y-auto rounded-2xl border border-border bg-surface p-4">
+      <div
+        className="flex-1 space-y-2 overflow-y-auto rounded-2xl border border-border bg-surface p-4"
+        data-testid="chat-log"
+      >
         {messages.length === 0 && !busy && (
           <p className="text-center text-sm text-faint">说点什么吧</p>
         )}
-        {messages.map((message) => (
-          <Bubble
-            key={message.id}
-            message={message}
-            zone={zone}
-            onAnswer={answer}
-            onMemory={remember}
-          />
-        ))}
+        {messages.map((message) => {
+          const plain = message.kind === "chat"
+          const mine = message.role === "user"
+          const isEditing = editing?.id === message.id
+          return isEditing ? (
+            <div key={message.id} className="flex flex-col items-end gap-1">
+              <Textarea
+                aria-label="编辑消息"
+                rows={2}
+                value={editing.text}
+                maxLength={4000}
+                onChange={(event) =>
+                  setEditing({ id: message.id, text: event.target.value })
+                }
+                className="max-w-[80%]"
+              />
+              <div className="flex gap-1">
+                <Button
+                  size="sm"
+                  disabled={!editing.text.trim() || busy}
+                  onClick={() => {
+                    const value = editing.text.trim()
+                    setEditing(null)
+                    void run({ redo: "edit", text: value })
+                  }}
+                >
+                  保存并重发
+                </Button>
+                <Button size="sm" variant="ghost" onClick={() => setEditing(null)}>
+                  取消
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <Bubble
+              key={message.id}
+              message={message}
+              zone={zone}
+              onAnswer={answer}
+              onMemory={remember}
+              actions={
+                plain ? (
+                  <div className="flex gap-0.5">
+                    <button
+                      type="button"
+                      className={actionButton}
+                      onClick={() => void copy(message)}
+                    >
+                      {copied === message.id ? "已复制" : "复制"}
+                    </button>
+                    {mine && redoable && message.id === userRow?.id && (
+                      <button
+                        type="button"
+                        className={actionButton}
+                        onClick={() =>
+                          setEditing({ id: message.id, text: message.content })
+                        }
+                      >
+                        编辑
+                      </button>
+                    )}
+                    {!mine && lastReply?.id === message.id && redone < 3 && (
+                      <button
+                        type="button"
+                        className={actionButton}
+                        onClick={() => void run({ redo: "regenerate" })}
+                      >
+                        重说
+                      </button>
+                    )}
+                  </div>
+                ) : lastReply?.id === message.id && redone < 3 ? (
+                  <div className="flex gap-0.5">
+                    <button
+                      type="button"
+                      className={actionButton}
+                      onClick={() => void run({ redo: "regenerate" })}
+                    >
+                      重说
+                    </button>
+                  </div>
+                ) : undefined
+              }
+            />
+          )
+        })}
         {streaming && (
           <div className="flex justify-start">
             <div className="max-w-[80%] rounded-2xl bg-elevated px-3 py-2 text-sm whitespace-pre-wrap">
               {streaming}
+            </div>
+          </div>
+        )}
+        {typing && !streaming && (
+          <div className="flex justify-start" data-testid="typing-indicator">
+            <div
+              role="status"
+              aria-label="正在输入"
+              className="flex items-center gap-1 rounded-2xl bg-elevated px-3 py-3"
+            >
+              {[0, 1, 2].map((dot) => (
+                <span
+                  key={dot}
+                  className="size-1.5 animate-bounce rounded-full bg-faint"
+                  style={{ animationDelay: `${dot * 150}ms` }}
+                />
+              ))}
             </div>
           </div>
         )}
@@ -631,6 +805,7 @@ function SettingsForm({ view, onSaved }: { view: View; onSaved: (view: View) => 
           quietStart: form.quietStart,
           quietEnd: form.quietEnd,
           rhythm: form.rhythm,
+          typingPace: form.typingPace,
           lifeEnabled: form.lifeEnabled,
           lifeTimes,
           lifeDailyBudgetMicros: form.lifeDailyBudgetMicros,
@@ -697,6 +872,19 @@ function SettingsForm({ view, onSaved }: { view: View; onSaved: (view: View) => 
           value={form.timeZone}
           onChange={(event) => set("timeZone", event.target.value)}
         />
+      </label>
+      <label className={field}>
+        打字节奏
+        <select
+          aria-label="打字节奏"
+          value={form.typingPace}
+          onChange={(event) => set("typingPace", event.target.value as TypingPace)}
+          className="h-9 w-full rounded-md border border-border bg-surface px-2 text-sm"
+        >
+          <option value="natural">自然（像真人一样一条一条发）</option>
+          <option value="fast">快（间隔短一些）</option>
+          <option value="off">关闭（一次全部显示）</option>
+        </select>
       </label>
       <RhythmFields rhythm={form.rhythm} onChange={(rhythm) => set("rhythm", rhythm)} />
       <fieldset className="space-y-2 rounded-xl border border-border p-3">
