@@ -64,7 +64,7 @@ services:
       <<: *application
       WORKER_HOST: 0.0.0.0
       WORKER_PORT: 6798
-      WORKSTATION_IMAGE: ${PA_WORKSTATION_IMAGE:-owndesk-workstation:0.6.6}
+      WORKSTATION_IMAGE: ${PA_WORKSTATION_IMAGE:-owndesk-workstation:0.7.0}
       WORKSTATION_NETWORK: ${WORKSTATION_NETWORK:?}
       NETWORK_GUARD_IMAGE: ${PA_WORKER_IMAGE:-owndesk-worker:0.17.0-dev}
       PA_GUEST_SUBNET: ${PA_GUEST_SUBNET:?}

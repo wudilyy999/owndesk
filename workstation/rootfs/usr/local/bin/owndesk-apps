@@ -1,0 +1,104 @@
+#!/bin/bash
+# owndesk-apps: add bigger apps to this machine when they are needed.
+#   owndesk-apps list              packs and whether they are installed
+#   owndesk-apps info <pack>       what a pack contains
+#   owndesk-apps install <pack>... installs packs (needs the network) and adds their desktop icons
+#   owndesk-apps installed         installed packs, one per line
+# A pack is one file in /usr/share/owndesk/apps.d (the idea is Kasm Workspaces'
+# one-script-per-app layout, see THIRD_PARTY.md). Only packs listed there can be
+# installed, and apt is called with a fixed package list from that file.
+
+set -u
+
+dir="${OWNDESK_APPS_DIR:-/usr/share/owndesk/apps.d}"
+state="${OWNDESK_APPS_STATE:-$HOME/.local/share/owndesk/apps}"
+desktop="${OWNDESK_DESKTOP_DIR:-$HOME/Desktop}"
+mkdir -p "$state"
+
+load() {
+  local pack="$1"
+  [[ "$pack" =~ ^[a-z0-9-]+$ ]] && [ -f "$dir/$pack.conf" ] || { echo "没有这个应用包：$pack（owndesk-apps list 可查看）" >&2; return 1; }
+  BUILTIN=0 TITLE="" DESCRIPTION="" PACKAGES="" LAUNCHERS=""
+  # shellcheck disable=SC1090
+  . "$dir/$pack.conf"
+}
+
+is_installed() {
+  load "$1" || return 1
+  [ "$BUILTIN" = 1 ] && return 0
+  [ -f "$state/$1" ]
+}
+
+cmd_list() {
+  local f pack
+  for f in "$dir"/*.conf; do
+    pack=$(basename "$f" .conf)
+    load "$pack" || continue
+    local mark="未安装"
+    is_installed "$pack" && mark="已安装"
+    [ "$BUILTIN" = 1 ] && mark="已内置"
+    printf '%-20s %-8s %s — %s\n' "$pack" "$mark" "$TITLE" "$DESCRIPTION"
+  done
+}
+
+cmd_info() {
+  load "${1:?usage: owndesk-apps info <pack>}" || exit 1
+  echo "$1: $TITLE"
+  echo "$DESCRIPTION"
+  echo "软件包：$PACKAGES"
+}
+
+place_icons() {
+  local id src
+  mkdir -p "$desktop"
+  for id in $LAUNCHERS; do
+    src="/usr/share/applications/$id.desktop"
+    [ -f "$src" ] || continue
+    cp "$src" "$desktop/$id.desktop"
+    chmod +x "$desktop/$id.desktop"
+    gio set -t string "$desktop/$id.desktop" metadata::xfce-exe-checksum \
+      "$(sha256sum "$desktop/$id.desktop" | cut -d' ' -f1)" 2>/dev/null || true
+  done
+}
+
+cmd_install() {
+  [ "$#" -ge 1 ] || { echo "usage: owndesk-apps install <pack>..." >&2; exit 2; }
+  local pack rc=0
+  for pack in "$@"; do load "$pack" || { rc=1; continue; }
+    if [ "$BUILTIN" = 1 ]; then echo "$pack 已内置，无需安装"; continue; fi
+    if [ -f "$state/$pack" ]; then echo "$pack 已安装"; continue; fi
+    echo "正在安装 $pack（$TITLE）…"
+    mkdir -p /tmp/owndesk
+    if ! (
+      flock 9
+      sudo -n env DEBIAN_FRONTEND=noninteractive apt-get update -qq \
+        && sudo -n env DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends $PACKAGES
+    ) 9>/tmp/owndesk/apps.lock; then
+      echo "$pack 安装失败（需要联网；可稍后重试）" >&2
+      rc=1
+      continue
+    fi
+    place_icons
+    : > "$state/$pack"
+    touch /tmp/owndesk/active 2>/dev/null || true
+    echo "$pack 安装完成"
+  done
+  exit "$rc"
+}
+
+cmd_installed() {
+  local f pack
+  for f in "$dir"/*.conf; do
+    pack=$(basename "$f" .conf)
+    is_installed "$pack" && echo "$pack"
+  done
+  return 0
+}
+
+case "${1:-list}" in
+  list) cmd_list ;;
+  info) shift; cmd_info "$@" ;;
+  install) shift; cmd_install "$@" ;;
+  installed) cmd_installed ;;
+  *) echo "usage: owndesk-apps {list|info <pack>|install <pack>...|installed}" >&2; exit 2 ;;
+esac

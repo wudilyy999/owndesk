@@ -14,6 +14,7 @@ const { eq, and } = await import("drizzle-orm")
 const { listAgents } = await import("@/lib/agents")
 const { createPairCode } = await import("@/lib/channels/pairing")
 const { qqSignValidation } = await import("@/lib/channels/qq")
+const { FAILED_TEXT } = await import("@/lib/channels/hub")
 
 const app = process.env.APP_URL ?? "http://127.0.0.1:6797"
 const secret = "smoke-secret-0123456789abcdef"
@@ -90,6 +91,11 @@ try {
     answers.map((a) => `${a.body.msg_seq}:${a.body.content}`).join(" | ")
   )
   assert.ok(answers.every((a) => a.body.msg_id === "smoke-msg-2" && a.body.content))
+  // The channel replies with FAILED_TEXT when the model call fails; that must not count as a pass.
+  assert.ok(
+    answers.every((a) => !String(a.body.content).includes(FAILED_TEXT)),
+    "the model call failed (fallback text was sent); check the relay key and model"
+  )
   console.log("channels smoke passed")
 } finally {
   await db

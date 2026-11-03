@@ -4,6 +4,7 @@ import { mkdir, readFile, writeFile } from "node:fs/promises"
 import path from "node:path"
 import { setTimeout as delay } from "node:timers/promises"
 import { docker, dockerRaw } from "@/lib/docker"
+import { workstationImage } from "./workstation-image"
 
 const phase = process.argv[2] ?? "observe"
 assert(
@@ -39,7 +40,7 @@ const receipts: any[] = []
 let passed = false
 let created = false
 let started = false
-const image = process.env.ATSPI_TEST_IMAGE ?? "owndesk-workstation:0.6.6"
+const image = process.env.ATSPI_TEST_IMAGE ?? workstationImage
 async function request(route: string, body: unknown) {
   const r = await docker(
     ["exec", "-i", container, "node", "/opt/owndesk-controller/request.mjs", route],
@@ -712,8 +713,14 @@ else:
   }
   if (phase === "edges") {
     const ambiguous = await action("desktop_get_window_state", { pid: main.pid })
-    assert.equal(ambiguous.status, "rejected")
-    assert.match(ambiguous.error, /Several native windows/)
+    // Control-first observation: a window that cannot be resolved is no longer an HTTP-style
+    // rejection; the frame reports native controls as unavailable and falls back to a screenshot.
+    assert.equal(ambiguous.status, "succeeded", ambiguous.error)
+    assert.equal(ambiguous.result.accessibility.status, "unavailable")
+    assert.match(JSON.stringify(ambiguous.result.accessibility), /Several native windows/)
+    assert.equal(ambiguous.result.screenshot_status, "ok")
+    assert.equal(ambiguous.result.screenshot_reason, "native_unavailable")
+    assert(ambiguous.result.image)
     const limited = await success("desktop_list_windows", { max_windows: 1 })
     assert.equal(limited.windows.length, 1)
     assert(limited.truncated)
@@ -961,11 +968,11 @@ print(result.stdout)
     })
     await delay(1000)
     const apps = await success("desktop_list_windows")
-    const appearance = apps.windows.find((w: any) => w.name === "Appearance")
+    const appearance = apps.windows.find((w: any) => /^(Appearance|外观)$/.test(w.name))
     assert(appearance, JSON.stringify(apps.windows))
     const frame = await observe(appearance.window_id)
     const fonts = frame.elements.find(
-      (e: any) => e.role === "page tab" && e.name === "Fonts"
+      (e: any) => e.role === "page tab" && /^(Fonts|字体(\(F\))?)$/.test(e.name)
     )
     assert(fonts, JSON.stringify(frame.elements.map((e: any) => [e.role, e.name])))
     const changed = await success("desktop_element_action", {
@@ -974,7 +981,7 @@ print(result.stdout)
     })
     assert.equal(changed.effect, "none")
     assert.equal(changed.background_unavailable, true)
-    const visibleFonts = node(changed, "Fonts")
+    const visibleFonts = node(changed, fonts.name)
     const selected = await success("pointer_click", {
       observationId: changed.observationId,
       coordinateMode: "pixels",
@@ -983,7 +990,7 @@ print(result.stdout)
     })
     assert(
       selected.elements.some(
-        (e: any) => e.name === "Fonts" && e.states.includes("selected")
+        (e: any) => e.name === fonts.name && e.states.includes("selected")
       )
     )
     checks.push(

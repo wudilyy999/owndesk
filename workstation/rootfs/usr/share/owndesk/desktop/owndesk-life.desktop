@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=我的日记
+Name[en]=My Diary
+Comment=日记、收藏和照片
+Exec=thunar /home/agent/Life
+Icon=folder-documents
+Terminal=false
+Categories=Utility;

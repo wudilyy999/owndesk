@@ -18,6 +18,23 @@ feedback links and update/install programs are not enabled in this project.
 Protocol knowledge only, no code copied: tencent-connect/botpy (MIT), Tencent/openclaw-weixin (MIT),
 the official QQ bot and WeChat Official Account documentation. See `docs/channels.md`.
 
+## Workstation Stage A (Chinese environment, preinstalled apps)
+
+Design and structure borrowed from MIT-licensed projects; the files here are original or adapted, no copyleft code was copied.
+
+| Project                                                       | What was borrowed                                                                  | License |
+| ------------------------------------------------------------- | ---------------------------------------------------------------------------------- | ------- |
+| kasmtech/workspaces-images (Copyright 2022 Kasm Technologies) | One install script per application, installed on demand (`owndesk-apps`, `apps.d`) | MIT     |
+| anthropics/claude-quickstarts `computer-use-demo`             | Desktop layout for an agent-driven XFCE machine                                    | MIT     |
+| trycua/cua `libs/xfce`                                        | XFCE desktop, app launchers and wallpaper approach                                 | MIT     |
+
+New workstation packages (Debian, each under its own license; copyright files are kept in `/usr/share/doc/<package>/copyright`):
+LibreOffice (MPL-2.0), fcitx5 and fcitx5-chinese-addons (LGPL-2.1+ / GPL), Noto CJK fonts (SIL OFL 1.1),
+Carlito/Caladea (SIL OFL 1.1), xfdesktop4, xfce4-screenshooter, xfce4-taskmanager, Mousepad, Ristretto,
+Evince, Galculator, librsvg. Optional packs (`media`, `creative`, `games`) install VLC, Rhythmbox, FFmpeg,
+GIMP, Inkscape, GNOME games and SuperTuxKart from Debian on request. Bilibili and NetEase Cloud Music are
+opened as ordinary web pages; no site code or assets are bundled.
+
 ## Private Linux packaging candidate (0.9.0-dev)
 
 | Image/component                      | Role                                                          | Primary license source for release audit                                       |

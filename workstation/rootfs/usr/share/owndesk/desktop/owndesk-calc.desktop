@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=表格
+Name[en]=Spreadsheets
+Comment=LibreOffice Calc
+Exec=libreoffice --calc
+Icon=libreoffice-calc
+Terminal=false
+Categories=Office;

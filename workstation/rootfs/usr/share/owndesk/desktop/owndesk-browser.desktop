@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=浏览器
+Name[en]=Browser
+Comment=上网
+Exec=browser https://www.baidu.com/
+Icon=chromium
+Terminal=false
+Categories=Network;WebBrowser;

@@ -1,0 +1,73 @@
+#!/bin/bash
+# Per-boot setup of the person's home folder: runs from owndesk-desktop. The
+# home folder is a volume that outlives the image, so defaults are written here
+# (only when missing) instead of baked into /home/agent: a machine that already
+# has files keeps them, and what a person deletes stays deleted.
+
+set -u
+share=/usr/share/owndesk
+mark="$HOME/.local/share/owndesk"
+mkdir -p "$mark"
+
+for d in Desktop Documents Downloads Pictures Music Videos Life; do mkdir -p "$HOME/$d"; done
+
+# fcitx5: English keyboard first (so typed commands are never intercepted), pinyin second.
+# Ctrl+Space switches between them.
+if [ ! -f "$HOME/.config/fcitx5/profile" ]; then
+  mkdir -p "$HOME/.config/fcitx5"
+  cat >"$HOME/.config/fcitx5/profile" <<'PROFILE'
+[Groups/0]
+Name=Default
+Default Layout=us
+DefaultIM=keyboard-us
+
+[Groups/0/Items/0]
+Name=keyboard-us
+Layout=
+
+[Groups/0/Items/1]
+Name=pinyin
+Layout=
+
+[GroupOrder]
+0=Default
+PROFILE
+fi
+
+# Desktop icons, once
+if [ ! -f "$mark/desktop-seeded" ]; then
+  while read -r id; do
+    case "$id" in "" | "#"*) continue ;; esac
+    src="$share/desktop/$id.desktop"
+    [ -f "$src" ] || src="/usr/share/applications/$id.desktop"
+    [ -f "$src" ] || continue
+    cp "$src" "$HOME/Desktop/$id.desktop"
+    chmod +x "$HOME/Desktop/$id.desktop"
+    gio set -t string "$HOME/Desktop/$id.desktop" metadata::xfce-exe-checksum \
+      "$(sha256sum "$HOME/Desktop/$id.desktop" | cut -d' ' -f1)" 2>/dev/null || true
+  done <"$share/desktop/seed.list"
+  : >"$mark/desktop-seeded"
+fi
+
+# Wallpaper: ~/Pictures/wallpaper.(png|jpg) when the person (or a persona) has put one there
+wallpaper="$share/wallpaper.png"
+for f in "$HOME/Pictures/wallpaper.png" "$HOME/Pictures/wallpaper.jpg"; do
+  [ -f "$f" ] && wallpaper="$f" && break
+done
+echo "$wallpaper" >"$mark/wallpaper"
+
+# LibreOffice: no tip-of-the-day dialog or "what's new" bar the first time it opens
+lo="$HOME/.config/libreoffice/4/user/registrymodifications.xcu"
+if [ ! -f "$lo" ]; then
+  mkdir -p "$(dirname "$lo")"
+  cat >"$lo" <<'XCU'
+<?xml version="1.0" encoding="UTF-8"?>
+<oor:items xmlns:oor="http://openoffice.org/2001/registry" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+<item oor:path="/org.openoffice.Office.Common/Misc"><prop oor:name="ShowTipOfTheDay" oor:op="fuse"><value>false</value></prop></item>
+<item oor:path="/org.openoffice.Office.Common/Misc"><prop oor:name="FirstRun" oor:op="fuse"><value>false</value></prop></item>
+<item oor:path="/org.openoffice.Setup/Product"><prop oor:name="ooSetupLastVersion" oor:op="fuse"><value>25.2</value></prop></item>
+<item oor:path="/org.openoffice.Office.Common/Misc"><prop oor:name="LastTipOfTheDayID" oor:op="fuse"><value>225</value></prop></item>
+<item oor:path="/org.openoffice.Office.Common/Misc"><prop oor:name="LastTipOfTheDayShown" oor:op="fuse"><value>20261102</value></prop></item>
+</oor:items>
+XCU
+fi
