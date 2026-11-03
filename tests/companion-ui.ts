@@ -199,6 +199,17 @@ try {
   // 6. Mobile layout of the chat
   await page.setViewportSize({ width: 390, height: 844 })
   await snap(page, "09-mobile")
+  // The header stays tidy: the back link is one line, nothing makes the page scroll sideways
+  for (const width of [390, 320]) {
+    await page.setViewportSize({ width, height: 844 })
+    const back = await page.getByRole("link", { name: "返回工作现场" }).boundingBox()
+    assert.ok(back && back.height < 22, `back link wraps at ${width}px`)
+    const overflow = await page.evaluate(
+      () => document.documentElement.scrollWidth - window.innerWidth
+    )
+    assert.ok(overflow <= 0, `page scrolls sideways at ${width}px`)
+  }
+  await page.setViewportSize({ width: 390, height: 844 })
   await page.setViewportSize({ width: 1100, height: 900 })
 
   // 7. PWA: manifest, icons, installability (Chromium's own check), service worker, offline page

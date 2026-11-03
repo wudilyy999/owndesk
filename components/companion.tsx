@@ -68,14 +68,17 @@ export function Companion() {
   }, [load])
   return (
     <main className="mx-auto flex h-dvh max-w-3xl flex-col px-4 py-4">
-      <header className="flex items-center justify-between pb-3">
-        <div>
-          <h1 className="text-lg font-medium">{view?.name ?? "…"}</h1>
-          <Link href="/" className="text-xs text-faint underline underline-offset-4">
+      <header className="flex flex-col gap-2 pb-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-baseline justify-between gap-3 sm:block">
+          <h1 className="text-lg font-medium whitespace-nowrap">{view?.name ?? "…"}</h1>
+          <Link
+            href="/"
+            className="text-xs whitespace-nowrap text-faint underline underline-offset-4"
+          >
             返回工作现场
           </Link>
         </div>
-        <nav className="flex gap-1">
+        <nav className="-mx-1 flex [scrollbar-width:none] gap-1 overflow-x-auto px-1 pb-0.5 [&>button]:shrink-0 [&>button]:whitespace-nowrap">
           {tabs.map(([id, label]) => (
             <Button
               key={id}
@@ -147,7 +150,7 @@ function Bubble({
       <div
         title={when(message.createdAt, zone)}
         className={cn(
-          "max-w-[80%] rounded-2xl px-3 py-2 text-sm whitespace-pre-wrap",
+          "max-w-[80%] rounded-2xl px-3 py-2 text-sm break-words whitespace-pre-wrap",
           mine ? "bg-primary text-primary-foreground" : "bg-elevated"
         )}
       >
@@ -462,7 +465,7 @@ function Chat({ zone, pace }: { zone: string; pace: TypingPace }) {
         })}
         {streaming && (
           <div className="flex justify-start">
-            <div className="max-w-[80%] rounded-2xl bg-elevated px-3 py-2 text-sm whitespace-pre-wrap">
+            <div className="max-w-[80%] rounded-2xl bg-elevated px-3 py-2 text-sm break-words whitespace-pre-wrap">
               {streaming}
             </div>
           </div>
