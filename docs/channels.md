@@ -110,11 +110,18 @@ cloudflared tunnel --url http://127.0.0.1:6797
 所以只适合联调，长期用请用自己的域名 + 上面的 VPS 转发。**风险**：这样会把整个 owndesk 登录页暴露到公网；
 更稳妥的是只暴露 `/api/channels/*`（用上面的 `APP_UPSTREAM` 方案）。**本仓库没有启动任何隧道。**
 
+## 打字节奏与“正在输入”（B1）
+
+后续气泡用 `channel_outbox.notBefore` 错开（设置里“打字节奏”：自然 / 快 / 关闭）。Telegram 发 `sendChatAction`，
+微信 ClawBot 发 `getconfig` + `sendtyping`，QQ 的 `msg_type=6` **默认关闭**（`qq.typingNotify` / `QQ_TYPING_NOTIFY=1`，
+因为官方没写它是否占用被动回复次数，需真机验证），微信服务号只有延迟。详见 `docs/companion-stage-b1.md`。
+
 ## 配置项（也可以只用网页填）
 
 | 环境变量                                                                          | 说明                         |
 | --------------------------------------------------------------------------------- | ---------------------------- |
 | `QQ_BOT_APP_ID` / `QQ_BOT_APP_SECRET` / `QQ_API_BASE` / `QQ_ALLOWED_URL_HOSTS`    | QQ 机器人                    |
+| `QQ_TYPING_NOTIFY`                                                                | QQ “正在输入”，默认关        |
 | `CHANNEL_RELAY_URL` / `CHANNEL_RELAY_KEY`                                         | 固定 IP 中转                 |
 | `WECHAT_ILINK_BASE_URL`                                                           | ClawBot 接口地址（默认官方） |
 | `WECHAT_OA_APP_ID` / `_APP_SECRET` / `_TOKEN` / `_AES_KEY` / `WECHAT_OA_API_BASE` | 公众号                       |

@@ -52,6 +52,9 @@ try {
     [agentId]
   )
 
+  // Typing rhythm has its own test (tests/companion-b1.ts); here replies should land at once
+  await updateCompanion(ownerId, agentId, { typingPace: "off" })
+
   // Scripted model: each call pops the next reply (tool calls or text)
   const scripted = (steps: Array<Array<Record<string, unknown>>>) => {
     let call = 0
