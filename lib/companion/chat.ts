@@ -319,7 +319,10 @@ export async function companionChat(
       }),
       update_memory: tool({
         description: "信息变了时，改写一条已有记忆。",
-        inputSchema: z.object({ id: z.string(), note: z.string().trim().min(1).max(500) }),
+        inputSchema: z.object({
+          id: z.string(),
+          note: z.string().trim().min(1).max(500),
+        }),
         execute: async ({ id, note }) => {
           if (readOnly) return frozen
           const saved = await updateNote(input.agentId, id, note)
