@@ -1,5 +1,47 @@
 # 模型上下文、自动压缩与长期记忆 v2
 
+## 2026-10-31：控件优先、按需截图（开发版已验证）
+
+原生窗口/控件观察与正常后台动作先返回精简 AT-SPI 状态及新 `observationId`。完整且一致的观察返回 `screenshot_status=omitted`，guest 不运行截图程序，模型输入为 JSON；完整可用的原生记录继续留在回执。`desktop_type` 仍核对窗口与焦点，正常结果也可不附图。
+
+以下情况自动取图并返回 `screenshot_status=ok` 和 `screenshot_reason`：
+
+| 情况                             | 原因字段                 |
+| -------------------------------- | ------------------------ |
+| AT-SPI 不可用                    | `native_unavailable`     |
+| 无可用控件                       | `controls_missing`       |
+| 原生读取不完整/截断              | `partial_controls`       |
+| 可解析的数字文本与实际数值不一致 | `control_value_conflict` |
+| 原生动作明确不可执行、需要回退   | `native_fallback`        |
+| 实际前台派发/聚焦                | `foreground_dispatch`    |
+
+模型感到疑惑、无法解释控件结果、需要看布局/图像或完成视觉验收时，可主动调用已有 `screen_capture`；该工具始终取新图，原因是 `requested`。最终视觉验收通过系统提示与工具说明要求模型选择，未新增任务类型分类器或完成硬门禁。截图补充证据，不会修复 `text=11/value=10` 的数值接口问题，也不能以画面文字代替实际数值核对。
+
+每次观察更新 ID，输入仍一次性消费最新观察。`pointer_*` 在派发前额外要求该观察包含真实截图；纯控件 ID 会被明确拒绝，模型必须先 `screen_capture`。键盘可使用当前原生观察；旧图片仅作历史参考，不能配合新控件 ID 猜坐标。接管/epoch/boot、未知效果复核与原动作回执规则保持。最多两张有效历史图、DOM、实时 noVNC 通道均保持，截图/控件仍属于顺序采样。
+
+验证：17 项不同定向离线检查通过，包括 5 项实际 controller 分支、6 项原生 schema/上下文/Responses 序列化、2 项工具/提示和 4 项上下文回归；定向严格类型、语法与格式检查通过。首次新 SDK 夹具误选 Chat 适配器，随后改为实际 Responses 路径，两种输入均通过本地 fetch 捕获，无云请求。
+
+真实隔离 GTK 专项 5 组通过：勾选状态经原生动作改变，前后回执均无图，独立 GTK 状态确认；无图 ID 拒绝坐标、主动截图放行一次输入且旧 ID 失效；截断与无原生 Action 自动补图；前台聚焦有图、核对窗口的键盘输入无图；noVNC 页面可达。共 14 回执（12 成功、2 预期拒绝），其中 5 条纯控件结果、5 条含图结果，0 云请求、0 业务 Task；这属于真实桌面机制验证，没有重新测量模型决策质量。
+
+复用现有 0.6.5 镜像，在隔离容器启动前复制当前 `desktop.mjs`，未构建或部署生产镜像。最初两次环境准备因 Colima 不共享工程 bind 路径而失败，原报告保留；改为 create/copy/start，未修改 VM 全局挂载。临时容器/匿名卷已移除，前后资源仍 6 容器/104 卷；主预览未重启。机器清单：`docs/evidence/adaptive-desktop-observation.json`；原结果：`data/experiments/atspi-native-adaptive-observation-1793412630871/`。
+
+定向复现：`npm run test:desktop:observation-policy`（Node 24 模块 mock），`npx tsx --test tests/atspi-native.test.ts tests/desktop-tools.test.ts`；真实桌面专项 `npx tsx tests/atspi-native.ts adaptive-observation` 仅创建独立夹具容器，结束后移除。成功样本已有证据，后续仅在相关代码变化时运行必要分支。
+
+## 2026-10-31：AT-SPI 模型观察精简（开发版）
+
+只修改 `lib/agent/context.ts` 的模型投影；原始回执、guest 完整树和宿主身份核验继续保留。JSON 与附图结果共用这条投影链路，网页 DOM 沿用原实现。
+
+- 控件保留 `element_index/path`、`role/name/description`、`text/value/states`、像素 `bounds` 和 `redacted`。动作只保留名称，如 `actions: ["click"]`。
+- 去掉重复 `tree`、`title`、`frame`/归一化坐标、每节点 PID、D-Bus `objectId`、`parentPath` 和动作说明/快捷键。观察可用性、警告、截断、操作派发/验证、窗口范围与最新 observationId 继续保留。
+- 同一预算内先保留实际值、状态栏/警报、聚焦/选中/勾选/可编辑控件，再保留按钮和页签；大列表排在后面。单个过大节点跳过后继续选择其他完整节点，`omittedElements` 明确计入被省略部分。
+- 最近返回上限仍为 12,000 字符，最多两张当前有效截图；旧段压缩、调用配对、授权和原生/视觉路由保持。字号 `text=11/value=10` 的矛盾原样交给模型，数值设置接口问题另行处理。
+
+示例：模型读取 `element_index=8, role=button, name=保存, actions=[click]`，即可按当前观察引用操作，无需同时读取该按钮的 D-Bus 地址、第二份坐标和重复子树。
+
+离线验证：5 项原生专项、3 项 DOM/观察/GUI 摘要定向单元、1 项实际 SDK 序列化捕获全部通过；定向严格类型检查通过。新增密集夹具覆盖两种返回形式、末尾状态栏/数值/选中项/页签/确认按钮、过大节点、遗漏计数和原始数据不变。
+
+同预算合成 51 控件对照：旧投影保留 10 个、10,137 字符且丢失尾部状态栏；新投影保留全部 51 个、9,068 字符且包含状态栏。这是合成表示检查，10 月 30 日真实任务及其报告保持原结论。本轮无云模型请求、无桌面重跑、无部署或新增依赖。
+
 ## 2026-10-29：GUI 压缩连续性根因修复（开发版已验证）
 
 用户确认：请求上限属于正常暂停；验收重点是实际卡住、压缩后进度丢失，以及当前状态和目标的持续维护。主预览继续0.17/SQL0018/工作站0.6.3；本节在独立数据库、工作站0.6.5和生产worker源码中验证，未部署主预览。下方10月26日版本描述保留其历史范围。

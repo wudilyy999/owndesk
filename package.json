@@ -35,6 +35,7 @@
     "test:browser-startup": "tsx tests/browser-startup.ts",
     "test:manuals": "tsx tests/manuals-runtime.ts",
     "test:atspi:native": "tsx tests/atspi-native.ts",
+    "test:desktop:observation-policy": "node --experimental-test-module-mocks --test tests/desktop-observation-policy.mjs",
     "test:atspi": "tsx tests/atspi-observation.ts",
     "test:workstation:stage-a": "tsx tests/workstation-stage-a.ts",
     "test:c0:desktop": "tsx tests/desktop-observation.ts",

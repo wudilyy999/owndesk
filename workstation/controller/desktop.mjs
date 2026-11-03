@@ -222,13 +222,18 @@ export async function nativeDesktop(kind, raw, actionId, binding) {
       kind
     )
   ) {
-    const frame = await captureDesktop(actionId, binding, {
-      ...input,
-      action: kind.slice(8),
-      include_tree: true,
-      max_elements: 500,
-    })
-    if (frame.accessibility.status === "unavailable")
+    const frame = await captureDesktop(
+      actionId,
+      binding,
+      {
+        ...input,
+        action: kind.slice(8),
+        include_tree: true,
+        max_elements: 500,
+      },
+      null
+    )
+    if (kind === "desktop_tag_context" && frame.accessibility.status === "unavailable")
       throw Object.assign(
         new Error(frame.accessibility.error ?? frame.accessibility.reason),
         { status: 409 }
@@ -249,7 +254,7 @@ export async function nativeDesktop(kind, raw, actionId, binding) {
         expiresAt: Date.now() + 900000,
       })
       const { _tagTarget, ...publicResult } = output
-      return { ...frame, ...publicResult, targetToken: token, screenshot_status: "ok" }
+      return { ...frame, ...publicResult, targetToken: token }
     }
     return frame
   }
@@ -295,13 +300,22 @@ export async function nativeDesktop(kind, raw, actionId, binding) {
   try {
     return {
       ...result,
-      ...(await captureDesktop(`${actionId}:look`, binding, {
-        ...expected.options,
-        window_id: result.window_id ?? options.window_id ?? expected.window?.window_id,
-        action: "get_window_state",
-        include_tree: true,
-        max_elements: 500,
-      })),
+      ...(await captureDesktop(
+        `${actionId}:look`,
+        binding,
+        {
+          ...expected.options,
+          window_id: result.window_id ?? options.window_id ?? expected.window?.window_id,
+          action: "get_window_state",
+          include_tree: true,
+          max_elements: 500,
+        },
+        result.background_unavailable
+          ? "native_fallback"
+          : result.actual_dispatch === "foreground"
+            ? "foreground_dispatch"
+            : null
+      )),
     }
   } catch (error) {
     return {
@@ -316,19 +330,58 @@ export async function nativeDesktop(kind, raw, actionId, binding) {
 export async function captureDesktop(
   actionId,
   binding,
-  nativeOptions = { max_nodes: 500, max_depth: 12, max_elements: 60, include_tree: false }
+  nativeOptions = {
+    max_nodes: 500,
+    max_depth: 12,
+    max_elements: 60,
+    include_tree: false,
+  },
+  screenshotReason = "requested"
 ) {
   invalidateDesktopObservation(false)
   const before = await desktopState(`${actionId}:before`)
-  const shot = await runProcess("owndesk-shot", [], { actionId, maxOutputBytes: 2000000 })
-  if (shot.exitCode !== 0 || shot.bytes > 2000000)
-    throw new Error("Desktop screenshot failed or exceeded the image limit")
-  const screenshotCapturedAt = new Date().toISOString()
   const {
     _nativeSnapshot,
     effect: _observationEffect,
     ...accessibility
   } = await readAccessibility(actionId, before, nativeOptions)
+  // null selects control-first observation; explicit screen capture always requests an image.
+  let reason = screenshotReason
+  if (reason === null) {
+    if (accessibility.accessibility.status === "unavailable")
+      reason = "native_unavailable"
+    else if (!accessibility.elements.length) reason = "controls_missing"
+    else if (
+      accessibility.accessibility.status !== "ok" ||
+      accessibility.accessibility.truncated
+    )
+      reason = "partial_controls"
+    else if (
+      accessibility.elements.some(
+        (node) =>
+          typeof node.value === "number" &&
+          typeof node.text === "string" &&
+          node.text.trim() !== "" &&
+          Number.isFinite(Number(node.text)) &&
+          Number(node.text) !== node.value
+      )
+    )
+      reason = "control_value_conflict"
+  }
+  let screenshot = {}
+  if (reason) {
+    const shot = await runProcess("owndesk-shot", [], {
+      actionId,
+      maxOutputBytes: 2000000,
+    })
+    if (shot.exitCode !== 0 || shot.bytes > 2000000)
+      throw new Error("Desktop screenshot failed or exceeded the image limit")
+    screenshot = {
+      image: shot.output.trim(),
+      mediaType: "image/jpeg",
+      screenshotCapturedAt: new Date().toISOString(),
+    }
+  }
   const after = await desktopState(`${actionId}:after`)
   if (!isDeepStrictEqual(before, after)) {
     invalidateDesktopObservation()
@@ -340,6 +393,8 @@ export async function captureDesktop(
     observationId: randomUUID(),
     ...binding,
     ...after,
+    screenshot_status: reason ? "ok" : "omitted",
+    ...(reason ? { screenshot_reason: reason } : {}),
     coordinateSpace: "screenshot_pixels",
     acceptedCoordinateModes: ["pixels", "normalized_1000"],
     mapping: { scaleX: 1, scaleY: 1, offsetX: 0, offsetY: 0 },
@@ -347,10 +402,8 @@ export async function captureDesktop(
   nativeObservation = _nativeSnapshot ?? null
   return {
     ...observation,
-    screenshotCapturedAt,
     ...accessibility,
-    image: shot.output.trim(),
-    mediaType: "image/jpeg",
+    ...screenshot,
   }
 }
 
@@ -408,6 +461,13 @@ export async function desktopInput(kind, raw, actionId, binding) {
   )
     throw Object.assign(
       new Error("Stale desktop observation; capture the current screen before acting"),
+      { status: 409 }
+    )
+  if (kind.startsWith("pointer_") && observation.screenshot_status !== "ok")
+    throw Object.assign(
+      new Error(
+        "Coordinate input requires a fresh screenshot; call screen_capture and use its observationId"
+      ),
       { status: 409 }
     )
   const observed = observation

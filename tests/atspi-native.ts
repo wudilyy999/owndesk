@@ -4,6 +4,7 @@ import { mkdir, readFile, writeFile } from "node:fs/promises"
 import path from "node:path"
 import { setTimeout as delay } from "node:timers/promises"
 import { docker, dockerRaw } from "@/lib/docker"
+import { workstationImage } from "./workstation-image"
 
 const phase = process.argv[2] ?? "observe"
 assert(
@@ -28,6 +29,7 @@ assert(
     "hidden-semantic",
     "window-resolution",
     "package",
+    "adaptive-observation",
   ].includes(phase)
 )
 const directory = path.resolve(`data/experiments/atspi-native-${phase}-${Date.now()}`)
@@ -36,7 +38,9 @@ const container = `pa-native-${phase}-${Date.now()}`
 const checks: string[] = []
 const receipts: any[] = []
 let passed = false
-const image = process.env.ATSPI_TEST_IMAGE ?? "owndesk-workstation:0.7.0"
+let created = false
+let started = false
+const image = process.env.ATSPI_TEST_IMAGE ?? workstationImage
 async function request(route: string, body: unknown) {
   const r = await docker(
     ["exec", "-i", container, "node", "/opt/owndesk-controller/request.mjs", route],
@@ -99,8 +103,7 @@ async function native(
 try {
   await docker(
     [
-      "run",
-      "-d",
+      ...(phase === "adaptive-observation" ? ["create"] : ["run", "-d"]),
       "--name",
       container,
       "--label",
@@ -126,6 +129,16 @@ try {
       },
     }
   )
+  created = true
+  if (phase === "adaptive-observation") {
+    await docker([
+      "cp",
+      "workstation/controller/desktop.mjs",
+      `${container}:/opt/owndesk-controller/desktop.mjs`,
+    ])
+    await docker(["start", container])
+  }
+  started = true
   await docker(["exec", container, "owndesk-ready"], { timeoutMs: 45000 })
   await request("/control", { epoch: 1, mode: "agent" })
   await docker([
@@ -193,9 +206,17 @@ try {
       "v24.20.0"
     )
     const frame = await observe()
-    assert(frame.app_name && frame.image && frame.tree && frame.elements.length)
-    await writeFile(path.join(directory, "frame.json"), JSON.stringify(frame, null, 2))
-    await writeFile(path.join(directory, "frame.jpg"), Buffer.from(frame.image, "base64"))
+    assert(frame.app_name && frame.tree && frame.elements.length)
+    await writeFile(
+      path.join(directory, "native-state.json"),
+      JSON.stringify(frame, null, 2)
+    )
+    const visual = await success("screen_capture")
+    await writeFile(path.join(directory, "frame.json"), JSON.stringify(visual, null, 2))
+    await writeFile(
+      path.join(directory, "frame.jpg"),
+      Buffer.from(visual.image, "base64")
+    )
     checks.push(
       "clean image boots with required native dependencies, guest6/capability, Node24 and shipped license notices; packaged native sources byte-match current files; original screenshot and native hierarchy are usable"
     )
@@ -203,7 +224,7 @@ try {
   if (phase === "observe") {
     const frame = await observe()
     assert.notEqual(frame.accessibility.status, "unavailable")
-    assert(frame.tree.children && frame.image && frame.observationId)
+    assert(frame.tree.children && frame.observationId)
     assert.equal(node(frame, "Report title").text, "Quarterly report")
     assert.equal(node(frame, "Volume").value, 37)
     assert(node(frame, "Save report").actions.length)
@@ -217,8 +238,16 @@ try {
         (n: any) => n.objectId.bus && n.objectId.path && Array.isArray(n.path)
       )
     )
-    await writeFile(path.join(directory, "frame.json"), JSON.stringify(frame, null, 2))
-    await writeFile(path.join(directory, "frame.jpg"), Buffer.from(frame.image, "base64"))
+    await writeFile(
+      path.join(directory, "native-state.json"),
+      JSON.stringify(frame, null, 2)
+    )
+    const visual = await success("screen_capture")
+    await writeFile(path.join(directory, "frame.json"), JSON.stringify(visual, null, 2))
+    await writeFile(
+      path.join(directory, "frame.jpg"),
+      Buffer.from(visual.image, "base64")
+    )
     checks.push(
       "window enumeration, scoped hierarchy, object identities, names/actions/text/numeric values/states and protected/hidden/background filtering"
     )
@@ -326,7 +355,7 @@ try {
     assert.equal(second.tag_text, "@a0.editor exact request")
     assert.equal(second.window_title, main.name)
     assert(second.app_name)
-    assert.equal(second.screenshot_status, "ok")
+    assert.equal(second.screenshot_status, second.image ? "ok" : "omitted")
     assert.equal(
       (
         await action("desktop_tag_replace", {
@@ -1066,6 +1095,96 @@ print(result.stdout)
       "offscreen windows require explicit opt-in; same-process same-title X11 activation ambiguity rejects before effects"
     )
   }
+  if (phase === "adaptive-observation") {
+    let frame = await observe()
+    assert.equal(frame.screenshot_status, "omitted", JSON.stringify(frame.accessibility))
+    assert(!frame.image)
+    const originalId = frame.observationId
+    frame = await success("desktop_element_action", {
+      observationId: frame.observationId,
+      element_index: node(frame, "Enable sync").element_index,
+    })
+    assert.equal(frame.effect, "dispatched")
+    assert.equal(frame.screenshot_status, "omitted")
+    assert(!frame.image)
+    assert.notEqual(frame.observationId, originalId)
+    assert(!node(frame, "Enable sync").states.includes("checked"))
+    assert.equal((await truth()).sync, false)
+    checks.push(
+      "real GTK checked state changes through native input without a screenshot in either receipt"
+    )
+
+    const refused = await action("pointer_move", {
+      observationId: frame.observationId,
+      coordinateMode: "pixels",
+      x: 20,
+      y: 30,
+    })
+    assert.equal(refused.status, "rejected")
+    assert.match(refused.error, /call screen_capture/)
+    frame = await success("screen_capture")
+    assert(frame.image && frame.screenshot_status === "ok")
+    assert.equal(frame.screenshot_reason, "requested")
+    const imageId = frame.observationId
+    frame = await success("pointer_move", {
+      observationId: imageId,
+      coordinateMode: "pixels",
+      x: 20,
+      y: 30,
+    })
+    assert(frame.image && frame.screenshot_status === "ok")
+    const stale = await action("pointer_move", {
+      observationId: imageId,
+      coordinateMode: "pixels",
+      x: 20,
+      y: 30,
+    })
+    assert.equal(stale.status, "rejected")
+    checks.push(
+      "native-only ID rejects coordinates before input; explicit capture enables one pointer action and its old ID expires"
+    )
+
+    const partial = await observe(main.window_id, { max_nodes: 3 })
+    assert(partial.image && partial.accessibility.truncated)
+    assert.equal(partial.screenshot_reason, "partial_controls")
+    frame = await observe()
+    const fallback = await success("desktop_element_action", {
+      observationId: frame.observationId,
+      element_index: node(frame, "Canvas region").element_index,
+    })
+    assert.equal(fallback.effect, "none")
+    assert(fallback.background_unavailable && fallback.image)
+    assert.equal(fallback.screenshot_reason, "native_fallback")
+    checks.push(
+      "real incomplete tree and absent native Action automatically return a screenshot without coordinate fallback input"
+    )
+
+    const focused = await native("Report title", {
+      operation: "focus",
+      dispatch: "foreground",
+    })
+    assert(focused.image && focused.focus_verified)
+    assert.equal(focused.screenshot_reason, "foreground_dispatch")
+    const typed = await success("desktop_type", {
+      observationId: focused.observationId,
+      window_id: main.window_id,
+      text: "Adaptive input",
+    })
+    assert.equal(typed.screenshot_status, "omitted")
+    assert.equal((await truth()).title.includes("Adaptive input"), true)
+    checks.push(
+      "foreground focus returns visual evidence; verified-window typing returns fresh native state without an image"
+    )
+    const viewer = await docker([
+      "exec",
+      container,
+      "curl",
+      "-fsS",
+      "http://127.0.0.1:6081/vnc.html",
+    ])
+    assert(viewer.stdout.toString().includes("noVNC"))
+    checks.push("independent noVNC viewer remains available")
+  }
   passed = true
 } finally {
   await writeFile(
@@ -1080,6 +1199,9 @@ print(result.stdout)
       2
     )
   )
-  await docker(["stop", container])
+  if (started) {
+    await docker(["stop", container])
+  }
+  if (phase === "adaptive-observation" && created) await docker(["rm", "-v", container])
 }
 console.log(JSON.stringify({ directory, phase, passed, checks }))
