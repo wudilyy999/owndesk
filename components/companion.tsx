@@ -154,6 +154,7 @@ function Bubble({
     mergedText?: string
     activityId?: string
     hasImage?: boolean
+    imageId?: string
   }
   return (
     <div
@@ -256,6 +257,7 @@ function Bubble({
           </div>
         ) : (
           <>
+            {meta.imageId && <Picture id={meta.imageId} />}
             {message.content}
             {meta.hasImage && meta.activityId && (
               // eslint-disable-next-line @next/next/no-img-element
@@ -291,7 +293,10 @@ function Chat({ zone, pace }: { zone: string; pace: TypingPace }) {
     [busy, setBusy] = useState(false),
     [error, setError] = useState(""),
     [editing, setEditing] = useState<{ id: string; text: string } | null>(null),
-    [copied, setCopied] = useState("")
+    [copied, setCopied] = useState(""),
+    [picture, setPicture] = useState<{ id: string; url: string } | null>(null),
+    [uploading, setUploading] = useState(false)
+  const picker = useRef<HTMLInputElement>(null)
   const bottom = useRef<HTMLDivElement>(null)
   // The poll below must not replace the list while bubbles are being "typed": it would show
   // bubbles ahead of their turn and the stream would add them a second time
@@ -370,9 +375,33 @@ function Chat({ zone, pace }: { zone: string; pace: TypingPace }) {
 
   async function submit() {
     const value = text.trim()
-    if (!value || busy) return
+    if ((!value && !picture) || busy || uploading) return
+    const imageId = picture?.id
     setText("")
-    await run({ text: value })
+    setPicture(null)
+    await run({ text: value, imageId })
+  }
+
+  async function upload(file: File | undefined) {
+    if (!file) return
+    setError("")
+    setUploading(true)
+    try {
+      const form = new FormData()
+      form.set("file", file)
+      const response = await fetch("/api/companion/uploads", {
+        method: "POST",
+        body: form,
+      })
+      const result = await response.json()
+      if (!response.ok) throw new Error(result.error)
+      setPicture({ id: result.id, url: URL.createObjectURL(file) })
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : String(cause))
+    } finally {
+      setUploading(false)
+      if (picker.current) picker.current.value = ""
+    }
   }
 
   async function copy(message: CompanionMessage) {
@@ -426,7 +455,9 @@ function Chat({ zone, pace }: { zone: string; pace: TypingPace }) {
       (row) =>
         row.channel === "web" &&
         (row.kind === "chat" ||
-          ((row.kind === "memory_candidate" || row.kind === "errand_proposal") &&
+          ((row.kind === "memory_candidate" ||
+            row.kind === "memory_merge" ||
+            row.kind === "errand_proposal") &&
             (row.metadata as { status?: string } | null)?.status === "pending"))
     )
   const lastReply = redoable && round.length ? round[round.length - 1] : null
@@ -459,7 +490,7 @@ function Chat({ zone, pace }: { zone: string; pace: TypingPace }) {
               <div className="flex gap-1">
                 <Button
                   size="sm"
-                  disabled={!editing.text.trim() || busy}
+                  disabled={(!editing.text.trim() && !hasPicture(message)) || busy}
                   onClick={() => {
                     const value = editing.text.trim()
                     setEditing(null)
@@ -554,6 +585,19 @@ function Chat({ zone, pace }: { zone: string; pace: TypingPace }) {
         <div ref={bottom} />
       </div>
       {error && <p className="text-sm text-destructive">{error}</p>}
+      {picture && (
+        <div className="flex items-center gap-2" data-testid="picture-preview">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={picture.url}
+            alt="要发送的图片"
+            className="h-14 w-14 rounded-lg border border-border object-cover"
+          />
+          <Button size="sm" variant="ghost" onClick={() => setPicture(null)}>
+            去掉
+          </Button>
+        </div>
+      )}
       <form
         className="flex gap-2"
         onSubmit={(event) => {
@@ -561,6 +605,24 @@ function Chat({ zone, pace }: { zone: string; pace: TypingPace }) {
           void submit()
         }}
       >
+        <input
+          ref={picker}
+          type="file"
+          accept="image/jpeg,image/png,image/webp,image/gif"
+          className="hidden"
+          data-testid="picture-input"
+          onChange={(event) => void upload(event.target.files?.[0])}
+        />
+        <Button
+          type="button"
+          variant="secondary"
+          aria-label="发图片"
+          title="发图片（JPEG、PNG、WebP、GIF，最大 10 MB）"
+          disabled={busy || uploading}
+          onClick={() => picker.current?.click()}
+        >
+          {uploading ? "…" : "＋"}
+        </Button>
         <Input
           value={text}
           onChange={(event) => setText(event.target.value)}
@@ -568,11 +630,31 @@ function Chat({ zone, pace }: { zone: string; pace: TypingPace }) {
           disabled={busy}
           maxLength={4000}
         />
-        <Button type="submit" disabled={busy || !text.trim()}>
+        <Button type="submit" disabled={busy || uploading || (!text.trim() && !picture)}>
           发送
         </Button>
       </form>
     </section>
+  )
+}
+
+// A picture she was sent; the file is deleted after a while, then only a note stays
+const hasPicture = (message: CompanionMessage) =>
+  !!(message.metadata as { imageId?: string } | null)?.imageId
+
+function Picture({ id }: { id: string }) {
+  const [gone, setGone] = useState(false)
+  if (gone) return <span className="block text-xs opacity-70">（图片已过期）</span>
+  return (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      src={`/api/companion/uploads/${id}`}
+      alt="发送的图片"
+      loading="lazy"
+      data-testid="sent-picture"
+      onError={() => setGone(true)}
+      className="mb-1 max-h-60 max-w-full rounded-lg"
+    />
   )
 }
 
