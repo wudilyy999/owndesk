@@ -116,6 +116,13 @@ cloudflared tunnel --url http://127.0.0.1:6797
 微信 ClawBot 发 `getconfig` + `sendtyping`，QQ 的 `msg_type=6` **默认关闭**（`qq.typingNotify` / `QQ_TYPING_NOTIFY=1`，
 因为官方没写它是否占用被动回复次数，需真机验证），微信服务号只有延迟。详见 `docs/companion-stage-b1.md`。
 
+## 收图片（B2a）
+
+Telegram 的 `photo` / `image/*` 文件和 QQ 的 `image/*` 附件会被 worker 下载（不在 webhook 里下载）、
+检查、缩放后交给她，规则和网页上传一样（类型、10 MB、去元数据、30 天私有存储、人脸和证件不进长期记忆）。
+Telegram 和 QQ 只用假服务验证过，**没有真机验证**；微信收图**未实现**，只作为“发来了一张图片，你看不到”的文字提示。
+细节见 `docs/companion-stage-b2a.md`。
+
 ## 配置项（也可以只用网页填）
 
 | 环境变量                                                                          | 说明                         |

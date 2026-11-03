@@ -67,3 +67,10 @@ A light chat path next to the errand agent: persona chat, editable memory notes,
 Typing rhythm with "正在输入", copy / regenerate / edit of the latest web turn, and an
 installable PWA. See `docs/companion-stage-b1.md` (Chinese) for behaviour, the per-channel
 typing table, and why QQ typing stays off by default.
+
+# Companion (Stage B2a)
+
+Sending her pictures (web upload, Telegram photos, QQ attachments; WeChat not done) with
+server-side resize, private storage and a conservative "faces / IDs never go into long-term
+memory" gate, plus similar-note confirm cards in the memory page (never auto-merged).
+See `docs/companion-stage-b2a.md` (Chinese).
