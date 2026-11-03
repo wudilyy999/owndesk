@@ -713,8 +713,14 @@ else:
   }
   if (phase === "edges") {
     const ambiguous = await action("desktop_get_window_state", { pid: main.pid })
-    assert.equal(ambiguous.status, "rejected")
-    assert.match(ambiguous.error, /Several native windows/)
+    // Control-first observation: a window that cannot be resolved is no longer an HTTP-style
+    // rejection; the frame reports native controls as unavailable and falls back to a screenshot.
+    assert.equal(ambiguous.status, "succeeded", ambiguous.error)
+    assert.equal(ambiguous.result.accessibility.status, "unavailable")
+    assert.match(JSON.stringify(ambiguous.result.accessibility), /Several native windows/)
+    assert.equal(ambiguous.result.screenshot_status, "ok")
+    assert.equal(ambiguous.result.screenshot_reason, "native_unavailable")
+    assert(ambiguous.result.image)
     const limited = await success("desktop_list_windows", { max_windows: 1 })
     assert.equal(limited.windows.length, 1)
     assert(limited.truncated)
