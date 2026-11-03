@@ -98,6 +98,8 @@ try {
   // Awake and online all day so the rhythm never changes what these tests look at
   await updateCompanion(ownerId, agentId, {
     rhythm: { sleep: { start: "03:00", end: "03:01" }, nap: null, away: [] },
+    // The sections below look at what is sent, not when; typing rhythm has its own section
+    typingPace: "off",
   } as never)
 
   const price = {
@@ -397,6 +399,7 @@ try {
               },
             ],
           }
+    if (call.path === "/ilink/bot/getconfig") return { ret: 0, typing_ticket: "TICKET-1" }
     return { ret: 0 }
   })
   servers.push(ilink.server)
@@ -580,6 +583,196 @@ try {
   })
   await run(["在呀"])
   assert.equal((await pool.query("SELECT 1 FROM telegram_outbox")).rowCount, 2)
+
+  // ───────────────────────── typing rhythm (B1) ─────────────────────────
+  // Natural pace with an instant clock: the hub must stagger bubbles through notBefore, show
+  // "正在输入" before each wait, and send them in order.
+  const tgApi = await fake(() => ({ ok: true, result: true }))
+  servers.push(tgApi.server)
+  await setSetting("telegram.apiUrl", tgApi.origin)
+  await setSetting("telegram.botToken", "123456:TYPING-TEST")
+  await updateCompanion(ownerId, agentId, { typingPace: "natural" })
+  const waits: number[] = []
+  const paced = (replies: string[]) => ({
+    ...model(replies),
+    sleep: async (ms: number) => void waits.push(ms),
+    random: () => 0.5,
+  })
+  const chat = hub as typeof hub
+  const typingCalls = (api: { calls: Call[] }, match: string) =>
+    api.calls.filter((c) => c.path.includes(match))
+
+  // WeChat: typing before the model runs and before every wait, cancelled at the end
+  await db.insert(schema.channelInbound).values({
+    channel: "wechat",
+    eventKey: "b1-wx-1",
+    externalId: "wx-user@im.wechat",
+    text: "在忙吗",
+    context: { contextToken: "CTX-B1" },
+  })
+  const wxMark = ilink.calls.length
+  await chat.processPendingInbound(paced(["刚到家\n\n你呢\n\n吃饭了没"]))
+  const wxCalls = ilink.calls.slice(wxMark)
+  const wxKinds = wxCalls
+    .map((c) =>
+      c.path === "/ilink/bot/sendtyping"
+        ? `typing${c.body.status}`
+        : c.path === "/ilink/bot/sendmessage"
+          ? `msg:${c.body.msg.item_list[0].text_item.text}`
+          : c.path === "/ilink/bot/getconfig"
+            ? "config"
+            : "other"
+    )
+    .filter((kind) => kind !== "other")
+  assert.deepEqual(wxKinds, [
+    "config",
+    "typing1", // while the model works
+    "config",
+    "typing1",
+    "msg:刚到家", // typing, then the first bubble
+    "config",
+    "typing1",
+    "msg:你呢",
+    "config",
+    "typing1",
+    "msg:吃饭了没",
+    "config",
+    "typing2", // cancelled at the end
+  ])
+  assert.equal(
+    wxCalls.find((c) => c.path === "/ilink/bot/sendtyping")!.body.typing_ticket,
+    "TICKET-1"
+  )
+  assert.equal(waits.length, 3, "one wait per bubble")
+  assert.ok(waits.every((ms) => ms > 0) && waits.reduce((a, b) => a + b, 0) <= 8000)
+  const wxRows = await outbox((await linkOf("wechat"))!.id)
+  const lastThree = wxRows.slice(-3)
+  assert.ok(lastThree.every((row) => row.status === "sent" && row.notBefore))
+  assert.ok(
+    lastThree[0].notBefore! < lastThree[1].notBefore! &&
+      lastThree[1].notBefore! < lastThree[2].notBefore!,
+    "later bubbles are scheduled later"
+  )
+
+  // A tick that finds a bubble not yet due leaves it alone; once due it is sent exactly once
+  await db.insert(schema.channelInbound).values({
+    channel: "wechat",
+    eventKey: "b1-wx-2",
+    externalId: "wx-user@im.wechat",
+    text: "晚点聊",
+    context: { contextToken: "CTX-B1B" },
+  })
+  waits.length = 0
+  const sendCount = () =>
+    ilink.calls.filter((c) => c.path === "/ilink/bot/sendmessage").length
+  const beforeSecond = sendCount()
+  let release!: () => void
+  let waiting = false
+  const gate = new Promise<void>((resolve) => (release = resolve))
+  const slow = {
+    ...model(["好的\n\n回头说"]),
+    sleep: async () => {
+      waiting = true
+      await gate
+    },
+    random: () => 0.5,
+  }
+  const running = chat.processPendingInbound(slow)
+  for (let i = 0; i < 200 && !waiting; i++) await new Promise((r) => setTimeout(r, 20))
+  assert.ok(waiting, "the first bubble waits for its turn")
+  assert.equal(sendCount(), beforeSecond)
+  await chat.deliverOutbox(new Date()) // nothing is due yet
+  assert.equal(sendCount(), beforeSecond)
+  await chat.deliverOutbox(new Date(Date.now() + 10_000)) // a later tick sends both, in order
+  assert.equal(sendCount(), beforeSecond + 2)
+  release()
+  await running // the playback loop finds them already sent
+  assert.equal(sendCount(), beforeSecond + 2, "no bubble is sent twice")
+  assert.deepEqual(
+    ilink.calls
+      .filter((c) => c.path === "/ilink/bot/sendmessage")
+      .slice(-2)
+      .map((c) => c.body.msg.item_list[0].text_item.text),
+    ["好的", "回头说"]
+  )
+
+  // Telegram: sendChatAction before the model and before each wait
+  await db.insert(schema.channelInbound).values({
+    channel: "telegram",
+    eventKey: "g1:b1",
+    externalId: "555",
+    text: "睡了吗",
+    context: { trusted: true, agentId, ownerId },
+  })
+  waits.length = 0
+  await chat.processPendingInbound(paced(["还没呢\n\n你呢"]))
+  const actions = typingCalls(tgApi, "/sendChatAction")
+  assert.equal(actions.length, 3, "once for the model, once per bubble")
+  assert.ok(
+    actions.every(
+      (c) =>
+        c.path.includes("TYPING-TEST") &&
+        c.body.chat_id === "555" &&
+        c.body.action === "typing"
+    )
+  )
+  assert.equal(waits.length, 2)
+
+  // QQ: typing is behind a flag, off by default; one msg_type=6 using one seq when on (the relay
+  // was switched off for the official-account part, so it is set again)
+  await setSetting("channel.relayUrl", relayOrigin)
+  const qqSend = async (key: string, text: string) => {
+    await send(qqEvent(key, text))
+    const mark = qqApi.calls.length
+    waits.length = 0
+    await chat.processPendingInbound(paced(["嗯嗯\n\n我在"]))
+    return qqApi.calls.slice(mark).filter((c) => c.path.includes("/messages"))
+  }
+  let qqCalls = await qqSend("b1a", "在吗")
+  assert.deepEqual(
+    qqCalls.map((c) => [c.body.msg_type, c.body.msg_seq, c.body.content]),
+    [
+      [0, 1, "嗯嗯"],
+      [0, 2, "我在"],
+    ],
+    "no typing call unless the flag is on"
+  )
+  await setSetting("qq.typingNotify", "1")
+  qqCalls = await qqSend("b1b", "还在吗")
+  assert.deepEqual(
+    qqCalls.map((c) => [c.body.msg_type, c.body.msg_seq, c.body.content ?? null]),
+    [
+      [6, 1, null],
+      [0, 2, "嗯嗯"],
+      [0, 3, "我在"],
+    ]
+  )
+  assert.deepEqual(qqCalls[0].body.input_notify, { input_type: 1, input_second: 60 })
+  assert.equal(qqCalls[0].body.msg_id, "msg-b1b")
+  await setSetting("qq.typingNotify", "")
+
+  // Pace "off": nothing is delayed and no typing is shown
+  await updateCompanion(ownerId, agentId, { typingPace: "off" })
+  await db.insert(schema.channelInbound).values({
+    channel: "wechat",
+    eventKey: "b1-wx-3",
+    externalId: "wx-user@im.wechat",
+    text: "最后一个",
+    context: { contextToken: "CTX-B1C" },
+  })
+  waits.length = 0
+  const offMark = ilink.calls.length
+  await chat.processPendingInbound(paced(["一\n\n二"]))
+  assert.equal(waits.length, 0)
+  assert.equal(
+    ilink.calls.slice(offMark).filter((c) => c.path === "/ilink/bot/sendtyping").length,
+    0
+  )
+  assert.equal(
+    ilink.calls.slice(offMark).filter((c) => c.path === "/ilink/bot/sendmessage").length,
+    2
+  )
+  await updateCompanion(ownerId, agentId, { typingPace: "natural" })
 
   // ───────────────────────── management API ─────────────────────────
   await channelAction(ownerId, agentId, {

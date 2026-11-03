@@ -166,6 +166,24 @@ export async function disconnectWechat() {
     await setSetting(key, null)
 }
 
+async function wechatTyping(userId: string, contextToken: unknown, status: 1 | 2) {
+  const session = await wechatSession()
+  if (!session || typeof contextToken !== "string") return
+  const config = await ilinkPost<{ ret?: number; typing_ticket?: string }>(
+    session,
+    "/ilink/bot/getconfig",
+    { ilink_user_id: userId, context_token: contextToken },
+    5000
+  )
+  if (config.ret || !config.typing_ticket) return
+  await ilinkPost(
+    session,
+    "/ilink/bot/sendtyping",
+    { ilink_user_id: userId, typing_ticket: config.typing_ticket, status },
+    5000
+  )
+}
+
 // ───────────────────────── adapter ─────────────────────────
 
 export const wechatAdapter: ChannelAdapter = {
@@ -217,6 +235,22 @@ export const wechatAdapter: ChannelAdapter = {
           { code: result.ret ?? result.errcode, retryable: false }
         )
     }
+  },
+  // Protocol: getconfig (needs the user's latest context_token) returns a typing_ticket,
+  // sendtyping status 1 = typing, 2 = cancel (Tencent openclaw-weixin docs/protocol.md)
+  async typing(link, context) {
+    await wechatTyping(
+      link.externalId,
+      context.contextToken ?? (link.state as WechatState).contextToken,
+      1
+    )
+  },
+  async stopTyping(link, context) {
+    await wechatTyping(
+      link.externalId,
+      context.contextToken ?? (link.state as WechatState).contextToken,
+      2
+    )
   },
   async sendUnlinked(externalId, context, text) {
     const session = await wechatSession()

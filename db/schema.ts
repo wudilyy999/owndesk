@@ -1089,6 +1089,10 @@ export const companions = pgTable("companions", {
   lifeDailyBudgetMicros: integer().notNull().default(100_000),
   lifeSessionMaxSteps: integer().notNull().default(25),
   rhythm: jsonb().notNull().$type<CompanionRhythm>().default(defaultRhythm),
+  // How long she "types" before each bubble (lib/companion/pacing.ts)
+  typingPace: text({ enum: ["natural", "fast", "off"] })
+    .notNull()
+    .default("natural"),
   createdAt: timestamp(),
   updatedAt: timestamp(),
 })
@@ -1120,6 +1124,10 @@ export const companionMessages = pgTable(
     createdAt: pgTimestamp({ withTimezone: true, mode: "date" })
       .notNull()
       .$defaultFn(() => new Date()),
+    // Later bubbles of one reply are saved at once but shown one by one; null = shown immediately
+    revealAt: pgTimestamp({ withTimezone: true, mode: "date" }),
+    // Replaced by "redo" / "edit" of the latest turn: kept for audit, hidden everywhere
+    supersededAt: pgTimestamp({ withTimezone: true, mode: "date" }),
   },
   (t) => [index("companion_messages_agent_idx").on(t.agentId, t.createdAt)]
 )

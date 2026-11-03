@@ -241,6 +241,9 @@ export function sanitizeQqText(text: string, allowedHosts: string[]) {
     .replace(/\n（链接在网页里）/g, " （链接在网页里）")
 }
 
+const isTruthy = (value: string | undefined) =>
+  ["1", "true", "on", "yes"].includes((value ?? "").trim().toLowerCase())
+
 export const qqAdapter: ChannelAdapter = {
   id: "qq",
   label: "QQ",
@@ -297,6 +300,23 @@ export const qqAdapter: ChannelAdapter = {
     const used = wakeupUsed(link)
     used[route.period] = true
     return { wakeupUsed: used, anchorDay: dayKey(link.lastInboundAt!) }
+  },
+  // Official docs (api-v2 "发送单聊消息"): msg_type=6 + input_notify, up to 60 s. It carries
+  // msg_id + msg_seq like a reply, and the docs do not say whether it counts toward the reply
+  // limit, so it is behind `qq.typingNotify` (default off) and uses one seq, once per message.
+  typingBudget: 1,
+  async typing(link, _context, now) {
+    if (!isTruthy(await getSetting("qq.typingNotify"))) return
+    const creds = await qqCredentials()
+    const route = qqRoute(link, now)
+    if (!creds || route.type !== "passive") return
+    await qqRequest(creds, `/v2/users/${link.externalId}/messages`, {
+      msg_type: 6,
+      input_notify: { input_type: 1, input_second: 60 },
+      msg_id: route.msgId,
+      msg_seq: route.seq,
+    })
+    return { seq: route.seq }
   },
   async sendUnlinked(externalId, context, text) {
     const creds = await qqCredentials()

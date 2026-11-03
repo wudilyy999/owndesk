@@ -12,12 +12,14 @@ import {
   channelLinks,
   channelOutbox,
   companionMessages,
+  companions,
   type ChannelInbound,
   type ChannelLink,
   type CompanionMessage,
 } from "@/db/schema"
 import { HttpError } from "@/lib/errors"
 import { companionChat, type ChatDeps } from "@/lib/companion/chat"
+import { realSleep } from "@/lib/companion/pacing"
 import { PAIR_PATTERN, bindChannel, redeemPairCode } from "./pairing"
 import { adapters } from "./registry"
 import { ChannelSendError, type OutboundKind } from "./types"
@@ -44,6 +46,24 @@ export function renderMessage(
       return null
     default:
       return message.content
+  }
+}
+
+// "正在输入" on a channel: best effort, short, and never in the way of her answer
+async function showTyping(
+  link: ChannelLink,
+  context: Record<string, unknown>,
+  now: Date,
+  used: { count: number }
+) {
+  const adapter = adapters[link.channel]
+  if (!adapter.typing || used.count >= (adapter.typingBudget ?? Infinity)) return
+  used.count++
+  try {
+    const patch = await adapter.typing((await getLink(link.id)) ?? link, context, now)
+    if (patch && Object.keys(patch).length) await setLinkState(link.id, patch)
+  } catch (error) {
+    console.error(`${link.channel} typing failed`, (error as Error).message)
   }
 }
 
@@ -112,7 +132,16 @@ export async function routeBackgroundMessages() {
 
 // Sends what is pending; returns how many were sent. A failed item blocks the later items of the
 // same person so her messages stay in order.
-export async function deliverOutbox(now = new Date(), limit = 50) {
+// Paced replies are sent by the process that answered and by the tick; one delivery at a
+// time per process keeps a due bubble from going out twice.
+let deliveryQueue: Promise<unknown> = Promise.resolve()
+export function deliverOutbox(now = new Date(), limit = 50) {
+  const run = deliveryQueue.then(() => deliverDue(now, limit))
+  deliveryQueue = run.catch(() => {})
+  return run
+}
+
+async function deliverDue(now: Date, limit: number) {
   const rows = await db
     .select()
     .from(channelOutbox)
@@ -302,8 +331,16 @@ export async function processInbound(
     .from(channelOutbox)
     .where(and(eq(channelOutbox.linkId, link.id), eq(channelOutbox.status, "held")))
     .orderBy(asc(channelOutbox.createdAt))
+  const [{ pace }] = await db
+    .select({ pace: companions.typingPace })
+    .from(companions)
+    .where(eq(companions.agentId, link.agentId))
+    .then((rows) => (rows.length ? rows : [{ pace: "natural" as const }]))
+  const typingUsed = { count: 0 }
+  // Shown while the model works; the bubbles below are paced by their schedule
+  if (pace !== "off") await showTyping(link, inbound.context, now, typingUsed)
   try {
-    const { replies } = await companionChat(
+    const { replies, schedule } = await companionChat(
       {
         ownerId: link.ownerId,
         agentId: link.agentId,
@@ -324,7 +361,7 @@ export async function processInbound(
             held.map((item) => item.id)
           )
         )
-    for (const message of replies) {
+    for (const [index, message] of replies.entries()) {
       const text = renderMessage(message)
       if (!text) continue
       await db
@@ -335,11 +372,16 @@ export async function processInbound(
           kind: "reply",
           text,
           context: inbound.context,
+          // Bubbles of one reply are 1 ms apart; keeping that order makes delivery order stable
+          createdAt: message.createdAt,
+          // Later bubbles wait for their turn; the tick sends them if this process dies
+          notBefore: schedule[index] ? new Date(now.getTime() + schedule[index]) : null,
         })
         .onConflictDoNothing()
     }
     await finish("done")
     await deliverOutbox(now)
+    await playBubbles(link, inbound.context, now, schedule, typingUsed, deps)
     return "answered" as const
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error)
@@ -356,6 +398,31 @@ export async function processInbound(
     await finish("failed", message)
     return "failed" as const
   }
+}
+
+// Waits for each moment of the reply schedule, shows typing, then sends what is due
+async function playBubbles(
+  link: ChannelLink,
+  context: Record<string, unknown>,
+  now: Date,
+  schedule: number[],
+  typingUsed: { count: number },
+  deps: ChatDeps
+) {
+  const sleep = deps.sleep ?? realSleep
+  const moments = [...new Set(schedule.filter((ms) => ms > 0))].sort((a, b) => a - b)
+  let elapsed = 0
+  for (const at of moments) {
+    await showTyping(link, context, new Date(now.getTime() + elapsed), typingUsed)
+    await sleep(at - elapsed)
+    elapsed = at
+    await deliverOutbox(new Date(now.getTime() + at))
+  }
+  const adapter = adapters[link.channel]
+  if (moments.length && adapter.stopTyping)
+    await adapter
+      .stopTyping((await getLink(link.id)) ?? link, context, now)
+      .catch(() => {})
 }
 
 export async function processPendingInbound(deps: ChatDeps = {}, now = new Date()) {

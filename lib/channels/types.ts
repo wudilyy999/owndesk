@@ -55,6 +55,16 @@ export interface ChannelAdapter {
     context: InboundContext,
     now: Date
   ): Record<string, unknown>
+  // Shows "正在输入" while she is busy answering; best effort, never throws to the caller.
+  // May return a patch for channel_links.state. `typingBudget` = how often per reply it may be used.
+  typing?(
+    link: ChannelLink,
+    context: InboundContext,
+    now: Date
+  ): Promise<Record<string, unknown> | void>
+  typingBudget?: number
+  // Clears the typing state after the last bubble, where the platform needs that
+  stopTyping?(link: ChannelLink, context: InboundContext, now: Date): Promise<void>
   // Answer someone who has not been bound yet
   sendUnlinked(externalId: string, context: InboundContext, text: string): Promise<void>
 }

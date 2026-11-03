@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next"
 import localFont from "next/font/local"
 
 import "./globals.css"
+import { PwaRegister } from "@/components/pwa-register"
 import { ThemeProvider } from "@/components/theme-provider"
 import { Toaster } from "@/components/ui/toast"
 import { TooltipProvider } from "@/components/ui/tooltip"
@@ -34,9 +35,14 @@ export const metadata: Metadata = {
   description:
     "Self-hosted personal computer agent. Development preview for durable tasks, a shared browser and verified artifacts.",
   applicationName: "OwnDesk",
+  // iOS "添加到主屏幕": full screen, own icon (the manifest covers Android and desktop)
+  appleWebApp: { capable: true, title: "OwnDesk", statusBarStyle: "default" },
+  icons: { apple: "/icons/apple-touch-icon.png" },
 }
 
 export const viewport: Viewport = {
+  // Lets the page use the whole screen of a notched phone when installed
+  viewportFit: "cover",
   themeColor: [
     { media: "(prefers-color-scheme: dark)", color: "#1e1915" },
     { media: "(prefers-color-scheme: light)", color: "#f8f5ee" },
@@ -58,6 +64,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <ThemeProvider>
           <TooltipProvider delay={300}>{children}</TooltipProvider>
           <Toaster />
+          <PwaRegister />
         </ThemeProvider>
       </body>
     </html>

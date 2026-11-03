@@ -60,6 +60,8 @@ export const companionSettingsSchema = z.object({
   lifeDailyBudgetMicros: z.number().int().min(0).max(5_000_000).optional(),
   lifeSessionMaxSteps: z.number().int().min(5).max(60).optional(),
   rhythm: rhythmSchema.optional(),
+  // How fast her bubbles appear: natural, fast, or all at once (off)
+  typingPace: z.enum(["natural", "fast", "off"]).optional(),
 })
 export type CompanionSettingsInput = z.infer<typeof companionSettingsSchema>
 
