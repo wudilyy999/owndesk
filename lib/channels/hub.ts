@@ -372,6 +372,8 @@ export async function processInbound(
           kind: "reply",
           text,
           context: inbound.context,
+          // Bubbles of one reply are 1 ms apart; keeping that order makes delivery order stable
+          createdAt: message.createdAt,
           // Later bubbles wait for their turn; the tick sends them if this process dies
           notBefore: schedule[index] ? new Date(now.getTime() + schedule[index]) : null,
         })
