@@ -6,6 +6,7 @@ import { spawn } from "node:child_process"
 import { once } from "node:events"
 import pg from "pg"
 import { MockLanguageModelV3 } from "ai/test"
+import { adds } from "./helpers/memory-model"
 
 process.loadEnvFile(".env")
 const database = `agent_companion_${randomUUID().replaceAll("-", "")}`
@@ -125,7 +126,7 @@ try {
   await companionChat(
     { ownerId, agentId, text: "我对花生过敏" },
     {
-      model: scripted([[call("remember", { note: "对花生过敏" })], text("记住了")]),
+      model: adds(scripted([[call("remember", { note: "对花生过敏" })], text("记住了")])),
       price,
     }
   )
@@ -407,10 +408,9 @@ try {
   await companionChat(
     { ownerId, agentId, text: "我叫阿明" },
     {
-      model: scripted([
-        [call("remember", { note: "叫阿明", certainty: "sure" })],
-        text("好"),
-      ]),
+      model: adds(
+        scripted([[call("remember", { note: "叫阿明", certainty: "sure" })], text("好")])
+      ),
       price,
     }
   )
