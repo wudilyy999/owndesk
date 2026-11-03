@@ -217,6 +217,12 @@ function Bubble({
   )
 }
 
+// Append messages the list does not have yet
+const addNew = (old: CompanionMessage[], added: CompanionMessage[]) => {
+  const known = new Set(old.map((row) => row.id))
+  return [...old, ...added.filter((row) => !known.has(row.id))]
+}
+
 const actionButton =
   "rounded px-1.5 py-0.5 text-xs text-faint hover:bg-elevated hover:text-foreground disabled:opacity-50"
 
@@ -230,9 +236,13 @@ function Chat({ zone, pace }: { zone: string; pace: TypingPace }) {
     [editing, setEditing] = useState<{ id: string; text: string } | null>(null),
     [copied, setCopied] = useState("")
   const bottom = useRef<HTMLDivElement>(null)
+  // The poll below must not replace the list while bubbles are being "typed": it would show
+  // bubbles ahead of their turn and the stream would add them a second time
+  const running = useRef(false)
   const refresh = useCallback(async () => {
     try {
-      setMessages(await api<CompanionMessage[]>("/api/companion/messages"))
+      const rows = await api<CompanionMessage[]>("/api/companion/messages")
+      if (!running.current) setMessages(rows)
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : String(cause))
     }
@@ -241,7 +251,7 @@ function Chat({ zone, pace }: { zone: string; pace: TypingPace }) {
     void refresh()
     // Shares and errand results arrive from the worker while this page is open
     const timer = setInterval(() => {
-      if (!document.hidden) void refresh()
+      if (!document.hidden && !running.current) void refresh()
     }, 15000)
     return () => clearInterval(timer)
   }, [refresh])
@@ -251,6 +261,7 @@ function Chat({ zone, pace }: { zone: string; pace: TypingPace }) {
 
   // One request: a new message, or a redo of the latest turn. Events come as bubbles are "typed".
   async function run(body: unknown) {
+    running.current = true
     setBusy(true)
     setError("")
     setTyping(true)
@@ -273,7 +284,7 @@ function Chat({ zone, pace }: { zone: string; pace: TypingPace }) {
         for (const raw of events) {
           const name = /^event: (.*)$/m.exec(raw)![1]
           const data = JSON.parse(/^data: (.*)$/m.exec(raw)![1])
-          if (name === "user") setMessages((old) => [...old, data.message])
+          if (name === "user") setMessages((old) => addNew(old, [data.message]))
           else if (name === "superseded")
             setMessages((old) => old.filter((row) => !data.ids.includes(row.id)))
           else if (name === "typing") setTyping(data.on)
@@ -283,15 +294,17 @@ function Chat({ zone, pace }: { zone: string; pace: TypingPace }) {
           } else if (name === "messages") {
             setStreaming("")
             setTyping(false)
-            setMessages((old) => [...old, ...data.messages])
+            setMessages((old) => addNew(old, data.messages))
           } else if (name === "error") throw new Error(data.error)
         }
       }
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : String(cause))
       // A failed redo puts the old answer back; the server has already restored it
+      running.current = false
       await refresh()
     } finally {
+      running.current = false
       setStreaming("")
       setTyping(false)
       setBusy(false)
