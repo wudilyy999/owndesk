@@ -176,6 +176,13 @@
       "when": 1793687820867,
       "tag": "0024_companion_images_memory_suggestions",
       "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1793696744193,
+      "tag": "0025_companion_memory_changes",
+      "breakpoints": true
     }
   ]
 }
