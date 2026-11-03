@@ -95,14 +95,19 @@ GI interface dispatch, protected fields, object-identity binding, explicit error
 and partial-effect handling are locally adapted. Whole upstream framework,
 Wayland Portal/PipeWire runtime and UI are not vendored.
 
-## Companion Stage B2a: pictures and similar-note cards (2026-11-03, development)
+## Companion Stage B2a: pictures and model-decided memory updates (2026-11-03, development)
 
 - `sharp` 0.35.x (Apache-2.0) is a new runtime dependency for server-side picture
   resizing and metadata stripping. It links the libvips prebuilt binaries
   (`@img/sharp-libvips-*`, LGPL-3.0-or-later; dynamically linked, unmodified).
   Their licenses ship inside the npm packages.
-- The similar-note check (`lib/companion/similar.ts`) and the confirm-card flow are written
-  from scratch. The idea of looking up near-duplicates before writing a memory comes from
-  mem0 (`mem0ai/mem0`, Apache-2.0) and Letta / MemGPT (`letta-ai/letta`, Apache-2.0).
-  No code from either project is included; unlike them, nothing is merged without the
-  person's confirmation.
+- The memory-update call (`lib/companion/memory-update.ts`) is adapted from mem0
+  (`mem0ai/mem0`, Apache-2.0, Copyright mem0ai): the update-memory prompt
+  `DEFAULT_UPDATE_MEMORY_PROMPT` in `mem0/configs/prompts.py` (the ADD / UPDATE / DELETE / NONE
+  operations and their rules) is rewritten in Chinese with short note numbers, JSON output and
+  guards against instructions hidden in notes. Changed from the original. The surrounding code
+  (note selection, parsing, change log, undo) is written from scratch. The self-editing memory
+  tools (remember / update_memory / forget) follow the idea of Letta / MemGPT
+  (`letta-ai/letta`, Apache-2.0); no code from it is included.
+- The character-pair similarity in `lib/companion/similar.ts` is written from scratch; it only
+  picks which notes the update call sees when there are too many to show all of them.

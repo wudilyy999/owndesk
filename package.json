@@ -62,6 +62,7 @@
     "test:companion": "tsx tests/companion.ts && tsx tests/companion-b1.ts && tsx tests/companion-b2a.ts",
     "test:companion:b1": "tsx tests/companion-b1.ts",
     "test:companion:ui": "tsx tests/companion-ui.ts",
+    "test:companion:memory-live": "tsx tests/memory-live.ts",
     "pwa:icons": "node scripts/generate-pwa-icons.mjs",
     "test:channels": "tsx tests/channels.ts",
     "smoke:channels": "tsx tests/channels-smoke.ts",

@@ -1,8 +1,7 @@
 // Finding notes that say nearly the same thing ("喜欢吃辣" / "爱吃辣的"). Pure text matching on
-// Chinese character pairs, no vector store and no model call. The idea of checking a new memory
-// against the closest existing ones before saving it comes from mem0 (Apache-2.0) and Letta
-// (Apache-2.0); this file is written from scratch for Chinese notes. Nothing here changes a note:
-// callers only produce confirm cards and the person decides.
+// Chinese character pairs, no vector store and no model call. It is only the fallback that picks
+// which notes the memory-update model gets to see when there are too many to show all of them
+// (lib/companion/memory-update.ts); it never changes a note itself.
 
 // Words that carry no meaning of their own in a short note
 const FILLERS = /[的了呢啊吧嘛哦呀啦哈很非常特别比较真超挺蛮还也都就]/g
@@ -59,16 +58,4 @@ export function findSimilar<T extends { content: string }>(
     .filter((hit) => hit.score >= threshold)
     .sort((a, b) => b.score - a.score)
     .slice(0, limit)
-}
-
-// What the merged note would say: the longer one when one contains the other, otherwise the
-// newer wording (people's facts change; the old one is shown on the card so nothing is lost).
-export function proposeMerge(older: string, newer: string) {
-  const a = older.trim()
-  const b = newer.trim()
-  const na = normalize(a)
-  const nb = normalize(b)
-  if (na.includes(nb)) return a
-  if (nb.includes(na)) return b
-  return b
 }

@@ -153,6 +153,41 @@ export const memories = pgTable(
   (t) => [index("memories_agent_idx").on(t.agentId, t.createdAt)]
 )
 
+// Everything that changed her notes, one row per change, so the person can see it and undo it.
+// `before` / `after` are snapshots ({content, status, createdAt}); memoryId has no foreign key
+// because a deleted note must stay undoable.
+export const memoryChanges = pgTable(
+  "memory_changes",
+  {
+    id: id(),
+    agentId: text()
+      .notNull()
+      .references(() => agents.id, { onDelete: "cascade" }),
+    memoryId: text().notNull(),
+    op: text({ enum: ["add", "update", "delete"] }).notNull(),
+    // model: decided by the memory update call; user: the person edited or deleted a note
+    actor: text({ enum: ["model", "user"] }).notNull(),
+    // Where it came from: chat, life, share, memory page
+    origin: text().notNull().default("chat"),
+    before: jsonb().$type<MemorySnapshot | null>(),
+    after: jsonb().$type<MemorySnapshot | null>(),
+    reason: text(),
+    // The message that led to it
+    messageId: text(),
+    sourceText: text(),
+    createdAt: timestamp(),
+    undoneAt: pgTimestamp({ withTimezone: true, mode: "date" }),
+  },
+  (t) => [index("memory_changes_agent_idx").on(t.agentId, t.createdAt)]
+)
+
+export type MemorySnapshot = {
+  content: string
+  status: "active" | "candidate"
+  source: "user" | "agent"
+  createdAt: string
+}
+
 // Two notes that say nearly the same thing. Nothing is merged until the person decides:
 // merge (the older note takes the merged wording, the newer one goes), keep both, or drop the
 // newer one. A decision is kept so the same pair is not offered again.
@@ -1260,6 +1295,7 @@ export type Companion = typeof companions.$inferSelect
 export type CompanionMessage = typeof companionMessages.$inferSelect
 export type CompanionImage = typeof companionImages.$inferSelect
 export type MemorySuggestion = typeof memorySuggestions.$inferSelect
+export type MemoryChange = typeof memoryChanges.$inferSelect
 export type LifeActivity = typeof lifeActivities.$inferSelect
 export type LifeShare = typeof lifeShares.$inferSelect
 

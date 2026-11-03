@@ -1,7 +1,7 @@
 // Stage B1 in a real browser (Chromium via Playwright) against the dev server and the real model:
 // typing indicator, staggered bubbles, copy, regenerate, edit, the pace setting, and PWA
-// installability (manifest, icons, service worker, offline page). Stage B2a adds sending a picture and the similar-note
-// cards. Screenshots go to B1_SHOTS.
+// installability (manifest, icons, service worker, offline page). Stage B2a adds sending a picture and the memory change log
+// with undo. Screenshots go to B1_SHOTS.
 import assert from "node:assert/strict"
 import { mkdir, readFile } from "node:fs/promises"
 import path from "node:path"
@@ -204,7 +204,7 @@ try {
   await snap(page, "08-pace-off")
   await setPace("natural")
 
-  // 5b. B2a: send a picture (real model looks at it), bad files are refused, similar notes ask first
+  // 5b. B2a: send a picture (real model looks at it), bad files are refused, the memory change log with undo
   await setPace("off")
   const scene = await sharp(
     Buffer.from(
@@ -263,8 +263,6 @@ try {
   await snap(page, "15-picture-refused")
   assert.equal(await page.getByTestId("picture-preview").count(), 0)
 
-  // Similar notes: she asks before merging, nothing is merged by itself
-  const noteTexts = ["我每天早上都会喝一杯冰美式咖啡", "我每天早上都喝一杯冰美式"]
   const memoryApi = (suffix = "", init?: RequestInit) =>
     page.evaluate(
       ([path, body]) =>
@@ -274,36 +272,78 @@ try {
         }).then((r) => r.json()),
       [suffix, init ?? {}] as const
     )
-  for (const note of (await memoryApi()) as { id: string; content: string }[])
-    if (note.content.includes("冰美式"))
-      await memoryApi(`/${note.id}`, { method: "DELETE" })
+  // Memory changes: what she changed on her own is listed with a one-click undo. The changes are
+  // made through the same code the chat uses (the real model's decisions are in the e2e run).
+  const { db, pool } = await import("@/db")
+  const { companions } = await import("@/db/schema")
+  const memory = await import("@/lib/companion/memory")
+  const [{ agentId }] = await db.select({ agentId: companions.agentId }).from(companions)
+  const info = {
+    actor: "model",
+    origin: "chat",
+    sourceText: "我最近戒咖啡了",
+    reason: "偏好变了，以前爱喝冰美式",
+  } as const
+  await pool.query("DELETE FROM memories WHERE content LIKE '%界面测试%'")
+  await pool.query(
+    "DELETE FROM memory_changes WHERE before->>'content' LIKE '%界面测试%' OR after->>'content' LIKE '%界面测试%'"
+  )
+  const before = await memory.addNote(agentId, "喜欢喝冰美式（界面测试）", "user")
+  await memory.updateNote(agentId, before.id, "最近戒咖啡了（界面测试）", info)
+  const gone = await memory.addNote(
+    agentId,
+    "住在上海（界面测试）",
+    "agent",
+    "active",
+    info
+  )
+  await memory.deleteNote(agentId, gone.id, { ...info, reason: "对方说搬家了" })
   await page.getByRole("button", { name: "记忆", exact: true }).click()
-  for (const note of noteTexts) {
-    await page.getByPlaceholder("让她记住一件事").fill(note)
-    await page.getByRole("button", { name: "添加", exact: true }).click()
-    await page.getByText(note, { exact: true }).first().waitFor()
-  }
-  const card = page.getByTestId("suggestion-card")
-  await card.first().waitFor()
+  await page.getByText("最近戒咖啡了（界面测试）", { exact: true }).first().waitFor()
+  const log = page.getByTestId("change-log")
+  await log.waitFor()
+  assert.equal(await page.getByTestId("suggestion-card").count(), 0, "no merge cards")
+  assert.equal(await page.getByRole("button", { name: "找相似的笔记" }).count(), 0)
+  const rows = log.getByTestId("change-row")
+  assert.ok((await rows.count()) >= 3)
+  await log.getByText("原因：对方说搬家了").first().waitFor()
+  await snap(page, "16-change-log")
+  // Undo the update: the old wording comes back; undo the delete: the note comes back
+  await log
+    .locator('[data-op="update"]')
+    .first()
+    .getByRole("button", { name: "撤销" })
+    .click()
+  await page.getByText("喜欢喝冰美式（界面测试）", { exact: true }).first().waitFor()
   assert.equal(
-    ((await memoryApi()) as { content: string }[]).filter((n) =>
-      n.content.includes("冰美式")
-    ).length,
-    2,
-    "both notes are still there until you decide"
+    await page.getByText("最近戒咖啡了（界面测试）", { exact: true }).count(),
+    1
   )
-  await snap(page, "16-similar-card")
-  await card.first().getByRole("button", { name: "合并", exact: true }).click()
+  // The entry stays, marked as undone
+  await log.getByText("已撤销").first().waitFor()
+  await log
+    .locator('[data-op="delete"]')
+    .first()
+    .getByRole("button", { name: "撤销" })
+    .click()
   await page.waitForFunction(
-    () => !document.querySelector('[data-testid="suggestion-card"]')
+    () => document.querySelectorAll('[data-testid="change-row"] span').length >= 2
   )
-  const merged = ((await memoryApi()) as { content: string }[]).filter((n) =>
-    n.content.includes("冰美式")
+  assert.ok(
+    ((await memoryApi()) as { content: string }[]).some((n) =>
+      n.content.includes("住在上海（界面测试）")
+    ),
+    "the deleted note is back"
   )
-  assert.equal(merged.length, 1, "merged into one note")
-  await snap(page, "17-merged")
-  for (const note of merged as unknown as { id: string }[])
-    await memoryApi(`/${note.id}`, { method: "DELETE" })
+  await snap(page, "17-after-undo")
+  // Clean up the test notes
+  for (const note of (await memoryApi()) as { id: string; content: string }[])
+    if (note.content.includes("界面测试"))
+      await memoryApi(`/${note.id}`, { method: "DELETE" })
+  await pool.query(
+    "DELETE FROM memory_changes WHERE (before->>'content' LIKE '%界面测试%' OR after->>'content' LIKE '%界面测试%')"
+  )
+  await pool.end()
   await page.getByRole("button", { name: "聊天", exact: true }).click()
   await page.getByPlaceholder("发消息").waitFor()
   await setPace("natural")

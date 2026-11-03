@@ -1,6 +1,6 @@
 import assert from "node:assert/strict"
 import { test } from "node:test"
-import { findSimilar, proposeMerge, similarity } from "@/lib/companion/similar"
+import { findSimilar, similarity } from "@/lib/companion/similar"
 
 test("same fact in different words is similar", () => {
   assert.ok(similarity("喜欢吃辣", "爱吃辣的") >= 0.6)
@@ -29,16 +29,4 @@ test("findSimilar returns the closest notes first and respects the limit", () =>
   )
   assert.equal(findSimilar("爱吃辣的", notes, 1).length, 1)
   assert.deepEqual(findSimilar("今天下雨", notes), [])
-})
-
-test("proposeMerge keeps the fuller note, else the newer wording", () => {
-  assert.equal(
-    proposeMerge("喜欢吃辣", "阿远喜欢吃辣，尤其是火锅"),
-    "阿远喜欢吃辣，尤其是火锅"
-  )
-  assert.equal(
-    proposeMerge("阿远喜欢吃辣，尤其是火锅", "喜欢吃辣"),
-    "阿远喜欢吃辣，尤其是火锅"
-  )
-  assert.equal(proposeMerge("住在上海", "搬到杭州了"), "搬到杭州了")
 })

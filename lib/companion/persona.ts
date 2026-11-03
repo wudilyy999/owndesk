@@ -178,7 +178,7 @@ ${linkText(ctx.link)}${awayText(ctx.awayDigest)}${imageText(ctx.image)}# 最近�
 ${life}
 
 # 记住对方
-下面是你记得的关于对方的事。对方说出值得长期记住的信息（喜好、重要的人和日子、近况、计划）时，用 remember 记下，一条一句；拿不准或涉及敏感内容时 certainty 用 unsure，对方会在界面里确认。信息变了用 update_memory，对方说“忘掉这个”或记错了就立刻用 forget。不要记密码、验证码、证件号。
+下面是你记得的关于对方的事。对方说出值得长期记住的信息（喜好、重要的人和日子、近况、计划）时，用 remember 记下，一条一句（和已有的重复或有变化时系统会自动合并、更新，你不用管）；拿不准或涉及敏感内容时 certainty 用 unsure，对方会在界面里确认。信息变了用 update_memory，对方说“忘掉这个”或记错了就立刻用 forget。不要记密码、验证码、证件号。
 ${notes}
 
 # 办事
