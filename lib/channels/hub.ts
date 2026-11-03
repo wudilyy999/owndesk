@@ -18,6 +18,7 @@ import {
   type CompanionMessage,
 } from "@/db/schema"
 import { HttpError } from "@/lib/errors"
+import { receiveImage } from "./media"
 import { companionChat, type ChatDeps } from "@/lib/companion/chat"
 import { realSleep } from "@/lib/companion/pacing"
 import { PAIR_PATTERN, bindChannel, redeemPairCode } from "./pairing"
@@ -341,11 +342,18 @@ export async function processInbound(
   // Shown while the model works; the bubbles below are paced by their schedule
   if (pace !== "off") await showTyping(link, inbound.context, now, typingUsed)
   try {
+    // A picture that came with the message (Telegram photo, QQ image)
+    const picture = await receiveImage(link.agentId, inbound.context)
     const { replies, schedule } = await companionChat(
       {
         ownerId: link.ownerId,
         agentId: link.agentId,
-        text: inbound.text,
+        imageId: picture.imageId,
+        text: picture.failed
+          ? [inbound.text, "（发来了一张图片，但没能收下来，你看不到）"]
+              .filter(Boolean)
+              .join("\n")
+          : inbound.text,
         channel: link.channel,
         awayDigest: held.slice(-FOLDED_LIMIT).map((item) => item.text),
       },

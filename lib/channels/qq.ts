@@ -332,6 +332,22 @@ export const qqAdapter: ChannelAdapter = {
 
 // ───────────────────────── webhook ─────────────────────────
 
+// QQ attachment links are plain URLs on Tencent's CDNs. Anything else is refused (no SSRF).
+const QQ_HOSTS = /(?:^|\.)(?:qpic\.cn|qq\.com|myqcloud\.com|qlogo\.cn)$/i
+
+export function qqImageUrl(value: unknown) {
+  if (typeof value !== "string" || !value) return null
+  try {
+    const url = new URL(value.startsWith("//") ? `https:${value}` : value)
+    if (!/^https?:$/.test(url.protocol) || url.username || url.password) return null
+    if (!QQ_HOSTS.test(url.hostname)) return null
+    url.protocol = "https:"
+    return url.toString()
+  } catch {
+    return null
+  }
+}
+
 export type WebhookResult = { status: number; body: unknown }
 export type QqEvent =
   | {
@@ -358,13 +374,22 @@ export function parseQqPayload(payload: {
     const openid = author?.user_openid ?? author?.id
     const text = typeof d.content === "string" ? d.content.trim() : ""
     if (!openid || typeof d.id !== "string") return null
-    const attachments = Array.isArray(d.attachments) ? d.attachments.length : 0
+    const attachments = Array.isArray(d.attachments) ? d.attachments : []
+    // The first picture (best effort: QQ's attachment link format is not verified live)
+    const imageUrl = attachments
+      .map((item: { content_type?: string; url?: string }) =>
+        typeof item?.content_type === "string" && item.content_type.startsWith("image/")
+          ? qqImageUrl(item.url)
+          : null
+      )
+      .find(Boolean)
     return {
       type: "message",
       eventKey: payload.id ?? d.id,
       openid,
-      text: text || (attachments ? "[发来了一张图片或文件，你看不到内容]" : ""),
-      context: { msgId: d.id },
+      text:
+        text || (attachments.length && !imageUrl ? "[发来了一个文件，你看不到内容]" : ""),
+      context: imageUrl ? { msgId: d.id, imageUrl } : { msgId: d.id },
     }
   }
   const openid = typeof d.openid === "string" ? d.openid : undefined

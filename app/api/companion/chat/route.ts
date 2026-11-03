@@ -7,7 +7,8 @@ import { companionChat } from "@/lib/companion/chat"
 // A new message, or a redo of the latest turn: regenerate her answer, or edit your message
 const bodySchema = z.union([
   z.object({
-    text: z.string().trim().min(1).max(4000),
+    text: z.string().trim().max(4000),
+    imageId: z.uuid().optional(),
     redo: z.literal("edit").optional(),
   }),
   z.object({ redo: z.literal("regenerate") }),
@@ -33,6 +34,7 @@ export async function POST(request: Request) {
               ownerId,
               agentId: agent.id,
               text: "text" in body ? body.text : "",
+              imageId: "imageId" in body ? body.imageId : undefined,
               redo: body.redo,
             },
             { playback: true },

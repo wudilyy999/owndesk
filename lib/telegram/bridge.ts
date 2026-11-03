@@ -44,6 +44,8 @@ type Command =
   | { type: "new" }
   | { type: "cancel"; taskId: string }
   | { type: "task"; input: TaskInput }
+  // A picture sent to a chat that is linked to her: the channel hub downloads and answers it
+  | { type: "photo"; agentId: string; fileId: string; caption: string }
   | {
       type: "respond"
       context: RequestContext
@@ -51,6 +53,8 @@ type Command =
       response: Record<string, unknown>
       callbackId?: string
     }
+
+const MAX_PHOTO_BYTES = 10 * 1024 * 1024
 
 const HELP =
   "直接发送任务。/agents 查看 Agent；/use ID 切换；/new 新对话；/stop 停止当前任务；/status 查看状态。需要回答时直接回复对应通知。桌面登录和追加预算请打开网页。不要通过消息发送密码或验证码。"
@@ -96,6 +100,29 @@ async function makeCommand(
         query.data
       )
     : null
+  // A picture goes to her when this chat is linked to a companion; otherwise tasks are text only
+  const picture =
+    message.photo
+      ?.filter((size) => (size.file_size ?? 0) <= MAX_PHOTO_BYTES)
+      .sort((a, b) => b.width * b.height - a.width * a.height)[0]?.file_id ??
+    (message.document?.mime_type &&
+    /^image\/(?:jpeg|png|webp|gif)$/.test(message.document.mime_type) &&
+    (message.document.file_size ?? 0) <= MAX_PHOTO_BYTES
+      ? message.document.file_id
+      : undefined)
+  if (
+    !query &&
+    picture &&
+    !text &&
+    state.agent_id &&
+    (await companionLinked(state, state.agent_id))
+  )
+    return {
+      type: "photo",
+      agentId: state.agent_id,
+      fileId: picture,
+      caption: (message.caption ?? "").trim().slice(0, 1000),
+    }
   const explicitReply = /^\/reply\s+([a-f0-9-]{36})\s+([\s\S]+)$/.exec(text)
   if (query || explicitReply || (message.reply_to_message && !text.startsWith("/"))) {
     if (query && (!callback || String(message.from?.id) !== state.bot_id))
@@ -192,7 +219,13 @@ async function makeCommand(
     }
     return { type: "notice", text: HELP }
   }
-  if (!text) return { type: "notice", text: "当前支持文字任务；语音和附件请在网页处理。" }
+  if (!text)
+    return {
+      type: "notice",
+      text: message.photo
+        ? "图片只能发给已经关联了陪伴 Agent 的聊天；任务请用文字。"
+        : "当前支持文字任务；语音和附件请在网页处理。",
+    }
   if (!state.agent_id)
     return {
       type: "notice",
@@ -302,6 +335,21 @@ export async function processTelegramUpdate(generation: string, update: TgUpdate
                 ownerId: current.owner_id,
               },
             })
+          } else if (command.type === "photo") {
+            if (await companionLinked(current, command.agentId))
+              await enqueueInbound({
+                channel: "telegram",
+                eventKey: `${generation}:${update.update_id}`,
+                externalId: current.chat_id!,
+                text: command.caption,
+                context: {
+                  trusted: true,
+                  agentId: command.agentId,
+                  ownerId: current.owner_id,
+                  telegramFileId: command.fileId,
+                },
+              })
+            else text = "这个聊天没有关联陪伴 Agent，图片先收不了。"
           } else if (command.type === "task") {
             const task = await submitTask(current.owner_id, "telegram", command.input)
             await client.query(

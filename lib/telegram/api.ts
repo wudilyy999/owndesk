@@ -19,6 +19,26 @@ const message = z.object({
   chat,
   date: z.number().int(),
   text: z.string().optional(),
+  caption: z.string().max(4096).optional(),
+  // Pictures: Telegram sends several sizes; documents are pictures sent "as a file"
+  photo: z
+    .array(
+      z.object({
+        file_id: z.string().min(1).max(512),
+        width: z.number().int().nonnegative(),
+        height: z.number().int().nonnegative(),
+        file_size: z.number().int().nonnegative().optional(),
+      })
+    )
+    .max(20)
+    .optional(),
+  document: z
+    .object({
+      file_id: z.string().min(1).max(512),
+      mime_type: z.string().max(128).optional(),
+      file_size: z.number().int().nonnegative().optional(),
+    })
+    .optional(),
   reply_to_message: z
     .object({ message_id: z.number().int().positive(), from: user.optional() })
     .optional(),
@@ -53,12 +73,7 @@ export class TelegramError extends Error {
   }
 }
 
-export async function callTelegram<T>(
-  token: string,
-  method: string,
-  params: Record<string, unknown> = {},
-  options: { signal?: AbortSignal; timeoutMs?: number } = {}
-): Promise<T> {
+async function apiBase() {
   const configuredBase = z
     .url()
     .refine((value) => {
@@ -77,7 +92,16 @@ export async function callTelegram<T>(
       "Telegram API URL is invalid; configure an HTTP(S) endpoint without credentials or query parameters",
       false
     )
-  const base = configuredBase.data.replace(/\/+$/, "")
+  return configuredBase.data.replace(/\/+$/, "")
+}
+
+export async function callTelegram<T>(
+  token: string,
+  method: string,
+  params: Record<string, unknown> = {},
+  options: { signal?: AbortSignal; timeoutMs?: number } = {}
+): Promise<T> {
+  const base = await apiBase()
   let response: Response, value: unknown
   try {
     response = await fetch(`${base}/bot${token}/${method}`, {
@@ -128,4 +152,50 @@ export async function callTelegram<T>(
     )
   }
   return result.data.result as T
+}
+
+// Downloads a picture the person sent: getFile, then the file itself, with a hard size limit.
+// Errors never carry the token-bearing URL.
+export async function downloadTelegramFile(
+  token: string,
+  fileId: string,
+  maxBytes: number,
+  options: { timeoutMs?: number } = {}
+) {
+  const timeoutMs = options.timeoutMs ?? 30000
+  const info = await callTelegram<{ file_path?: string; file_size?: number }>(
+    token,
+    "getFile",
+    { file_id: fileId },
+    { timeoutMs }
+  )
+  if (
+    !info.file_path ||
+    !/^[\w\-./]+$/.test(info.file_path) ||
+    info.file_path.includes("..")
+  )
+    throw new TelegramError("Telegram getFile: no usable file path", false)
+  if ((info.file_size ?? 0) > maxBytes)
+    throw new TelegramError("Telegram file is too large", false)
+  const base = await apiBase()
+  try {
+    const response = await fetch(`${base}/file/bot${token}/${info.file_path}`, {
+      signal: AbortSignal.timeout(timeoutMs),
+      cache: "no-store",
+      redirect: "error",
+    })
+    if (!response.ok || !response.body)
+      throw new TelegramError(`Telegram file download: HTTP ${response.status}`, false)
+    const chunks: Uint8Array[] = []
+    let size = 0
+    for await (const chunk of response.body as unknown as AsyncIterable<Uint8Array>) {
+      size += chunk.length
+      if (size > maxBytes) throw new TelegramError("Telegram file is too large", false)
+      chunks.push(chunk)
+    }
+    return Buffer.concat(chunks)
+  } catch (error) {
+    if (error instanceof TelegramError) throw error
+    throw new TelegramError("Telegram file download: transport interrupted", true)
+  }
 }
