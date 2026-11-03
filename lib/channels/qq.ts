@@ -338,7 +338,9 @@ const QQ_HOSTS = /(?:^|\.)(?:qpic\.cn|qq\.com|myqcloud\.com|qlogo\.cn)$/i
 export function qqImageUrl(value: unknown) {
   if (typeof value !== "string" || !value) return null
   try {
-    const url = new URL(value.startsWith("//") ? `https:${value}` : value)
+    const url = new URL(
+      /^[a-z][a-z0-9+.-]*:/i.test(value) ? value : `https://${value.replace(/^\/\//, "")}`
+    )
     if (!/^https?:$/.test(url.protocol) || url.username || url.password) return null
     if (!QQ_HOSTS.test(url.hostname)) return null
     url.protocol = "https:"
