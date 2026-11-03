@@ -72,5 +72,5 @@ typing table, and why QQ typing stays off by default.
 
 Sending her pictures (web upload, Telegram photos, QQ attachments; WeChat not done) with
 server-side resize, private storage and a conservative "faces / IDs never go into long-term
-memory" gate, plus similar-note confirm cards in the memory page (never auto-merged).
+memory" gate, and memory updates decided by the model (add / update / delete / none, mem0 style) with a change log and one-click undo in the memory page.
 See `docs/companion-stage-b2a.md` (Chinese).
