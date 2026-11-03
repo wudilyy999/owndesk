@@ -40,6 +40,9 @@ const integrationSettings = {
     fallback: "https://api.bot.qq.com",
     internal: true,
   },
+  // "正在输入" on QQ is sent as a msg_type=6 message that carries a msg_seq of the passive-reply
+  // sequence, so it may use up one of the few replies per message. Off until tried on a real bot.
+  "qq.typingNotify": { env: "QQ_TYPING_NOTIFY", internal: true },
   // Comma-separated hosts registered under "消息URL配置"; other links are not sent to QQ
   "qq.allowedUrlHosts": { env: "QQ_ALLOWED_URL_HOSTS", internal: true },
   // Optional fixed-IP egress relay for platforms that whitelist the caller's IP
