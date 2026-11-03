@@ -23,7 +23,7 @@ import { parseModelSpec } from "@/lib/providers/catalog"
 import { getSetting } from "@/lib/config"
 import { getCustomPrices, monthlyBlock, monthlyUsage } from "@/lib/spend"
 import { crisisReply, detectCrisis } from "./crisis"
-import { addNote, deleteNote, listNotes, selectNotes, updateNote } from "./memory"
+import { deleteNote, listNotes, rememberChecked, selectNotes, updateNote } from "./memory"
 import { buildCompanionPrompt } from "./persona"
 import { queueCoview } from "./coview"
 import { playbackSchedule, realSleep, visibleMessage } from "./pacing"
@@ -74,7 +74,9 @@ export function historyMessages(rows: CompanionMessage[]): ModelMessage[] {
     content:
       row.kind === "errand_proposal"
         ? `（我提出了一个任务，等你确认：${(row.metadata as { goal?: string }).goal}）`
-        : row.content,
+        : row.kind === "memory_merge"
+          ? `（我想记「${row.content}」，但和已有的记忆很像，等你决定合并还是都留）`
+          : row.content,
   }))
 }
 
@@ -97,7 +99,12 @@ async function insertMessages(agentId: string, rows: NewMessage[], start = new D
     .returning()
 }
 
-const REDOABLE_KINDS = new Set(["chat", "memory_candidate", "errand_proposal"])
+const REDOABLE_KINDS = new Set([
+  "chat",
+  "memory_candidate",
+  "memory_merge",
+  "errand_proposal",
+])
 
 // The latest turn (her last user message and what she answered) is the only one that can be
 // redone: older turns have already shaped her notes and the timeline.
@@ -293,6 +300,15 @@ export async function companionChat(
 
     const proposals: string[] = []
     const candidates: { memoryId: string; note: string }[] = []
+    // Notes that look like an older one: she asks whether to merge them
+    const merges: {
+      memoryId: string
+      note: string
+      suggestionId: string
+      otherId: string
+      otherNote: string
+      mergedText: string
+    }[] = []
     // Redoing a message must not record the same thing twice: notes are read-only then
     const readOnly = redo === "regenerate"
     const frozen = { status: "这次是重说一遍，先不改记忆，下次再记" }
@@ -306,12 +322,26 @@ export async function companionChat(
         }),
         execute: async ({ note, certainty }) => {
           if (readOnly) return frozen
-          const saved = await addNote(
+          const { note: saved, similar } = await rememberChecked(
             input.agentId,
             note,
-            "agent",
             certainty === "sure" ? "active" : "candidate"
           )
+          if (similar) {
+            merges.push({
+              memoryId: saved.id,
+              note: saved.content,
+              suggestionId: similar.suggestion.id,
+              otherId: similar.other.id,
+              otherNote: similar.other.content,
+              mergedText: similar.suggestion.mergedText,
+            })
+            return {
+              id: saved.id,
+              status: "candidate",
+              hint: `和已有的记忆「${similar.other.content}」很像，没有直接记。已问对方是合并还是都留，等对方决定；这一轮别再重复记这件事。`,
+            }
+          }
           if (certainty === "unsure" && saved.status === "candidate")
             candidates.push({ memoryId: saved.id, note: saved.content })
           return { id: saved.id, saved: saved.content, status: saved.status }
@@ -415,6 +445,14 @@ export async function companionChat(
         channel,
         metadata: { memoryId: candidate.memoryId, status: "pending" },
       })
+    for (const merge of merges)
+      rows.push({
+        role: "assistant",
+        kind: "memory_merge",
+        content: merge.note,
+        channel,
+        metadata: { ...merge, status: "pending" },
+      })
     // Bubbles appear one by one; cards come with the last bubble
     const pace = companion.typingPace
     const offsets = playbackSchedule(bubbles, pace, random)
@@ -452,7 +490,7 @@ export async function companionChat(
 // Candidate notes she proposed in a turn that was redone no longer apply
 async function dropCandidates(agentId: string, replaced: CompanionMessage[]) {
   for (const card of replaced) {
-    if (card.kind !== "memory_candidate") continue
+    if (card.kind !== "memory_candidate" && card.kind !== "memory_merge") continue
     const memoryId = (card.metadata as { memoryId?: string } | null)?.memoryId
     if (memoryId)
       await db

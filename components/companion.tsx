@@ -13,6 +13,15 @@ import type { Companion as CompanionRow, CompanionMessage } from "@/db/schema"
 import type { TypingPace } from "@/lib/companion/pacing"
 
 type View = CompanionRow & { name: string }
+type SuggestionAction = "merge" | "keep" | "drop"
+type Suggestion = {
+  id: string
+  score: number
+  mergedText: string
+  memory: { id: string; content: string }
+  other: { id: string; content: string }
+}
+
 type Note = {
   id: string
   content: string
@@ -125,12 +134,14 @@ function Bubble({
   zone,
   onAnswer,
   onMemory,
+  onSuggestion,
   actions,
 }: {
   message: CompanionMessage
   zone: string
   onAnswer: (id: string, action: "confirm" | "cancel") => void
   onMemory: (memoryId: string, action: "accept" | "dismiss") => void
+  onSuggestion: (suggestionId: string, action: SuggestionAction) => void
   actions?: React.ReactNode
 }) {
   const mine = message.role === "user"
@@ -138,6 +149,9 @@ function Bubble({
     goal?: string
     status?: string
     memoryId?: string
+    suggestionId?: string
+    otherNote?: string
+    mergedText?: string
     activityId?: string
     hasImage?: boolean
   }
@@ -174,6 +188,46 @@ function Bubble({
             ) : (
               <p className="text-xs text-faint">
                 {meta.status === "cancelled" ? "已取消" : "已确认"}
+              </p>
+            )}
+          </div>
+        ) : message.kind === "memory_merge" ? (
+          <div className="space-y-2" data-testid="merge-card">
+            <p className="text-xs text-faint">
+              这件事和我之前记的很像，是合并成一条，还是都留着？
+            </p>
+            <p>新的：{message.content}</p>
+            <p>之前的：{meta.otherNote}</p>
+            {meta.status === "pending" ? (
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  size="sm"
+                  onClick={() => onSuggestion(meta.suggestionId!, "merge")}
+                >
+                  合并
+                </Button>
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  onClick={() => onSuggestion(meta.suggestionId!, "keep")}
+                >
+                  都留着
+                </Button>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => onSuggestion(meta.suggestionId!, "drop")}
+                >
+                  不用记新的
+                </Button>
+              </div>
+            ) : (
+              <p className="text-xs text-faint">
+                {meta.status === "merged"
+                  ? "已合并"
+                  : meta.status === "kept"
+                    ? "都留着了"
+                    : "没有记新的"}
               </p>
             )}
           </div>
@@ -340,6 +394,15 @@ function Chat({ zone, pace }: { zone: string; pace: TypingPace }) {
     }
   }
 
+  async function suggestion(id: string, action: SuggestionAction) {
+    try {
+      await api(`/api/companion/memories/suggestions/${id}`, send("POST", { action }))
+      await refresh()
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : String(cause))
+    }
+  }
+
   async function answer(id: string, action: "confirm" | "cancel") {
     try {
       await api(`/api/companion/errands/${id}`, send("POST", { action }))
@@ -417,6 +480,7 @@ function Chat({ zone, pace }: { zone: string; pace: TypingPace }) {
               zone={zone}
               onAnswer={answer}
               onMemory={remember}
+              onSuggestion={suggestion}
               actions={
                 plain ? (
                   <div className="flex gap-0.5">
@@ -512,8 +576,57 @@ function Chat({ zone, pace }: { zone: string; pace: TypingPace }) {
   )
 }
 
+function SuggestionCard({
+  pair,
+  onAnswer,
+}: {
+  pair: Suggestion
+  onAnswer: (id: string, action: SuggestionAction, mergedText?: string) => void
+}) {
+  const [merged, setMerged] = useState(pair.mergedText)
+  return (
+    <article
+      className="space-y-2 rounded-xl border border-dashed border-border bg-surface p-3 text-sm"
+      data-testid="suggestion-card"
+    >
+      <p>之前的：{pair.other.content}</p>
+      <p>
+        新的：{pair.memory.content}
+        {pair.memory.id && (
+          <span className="text-xs text-faint">（相似度 {pair.score}%）</span>
+        )}
+      </p>
+      <label className="block space-y-1">
+        <span className="text-xs text-faint">合并后的样子（可以改）</span>
+        <Input
+          value={merged}
+          onChange={(event) => setMerged(event.target.value)}
+          maxLength={500}
+        />
+      </label>
+      <div className="flex flex-wrap gap-2">
+        <Button
+          size="sm"
+          disabled={!merged.trim()}
+          onClick={() => onAnswer(pair.id, "merge", merged)}
+        >
+          合并
+        </Button>
+        <Button size="sm" variant="secondary" onClick={() => onAnswer(pair.id, "keep")}>
+          都留着
+        </Button>
+        <Button size="sm" variant="ghost" onClick={() => onAnswer(pair.id, "drop")}>
+          不要新的
+        </Button>
+      </div>
+    </article>
+  )
+}
+
 function Notes({ zone }: { zone: string }) {
   const [notes, setNotes] = useState<Note[] | null>(null)
+  const [pairs, setPairs] = useState<Suggestion[]>([])
+  const [scanned, setScanned] = useState<number | null>(null)
   const [draft, setDraft] = useState(""),
     [editing, setEditing] = useState<{ id: string; content: string } | null>(null),
     [error, setError] = useState("")
@@ -526,9 +639,21 @@ function Notes({ zone }: { zone: string }) {
     }
   }
   const load = useCallback(
-    () => run(async () => setNotes(await api<Note[]>("/api/companion/memories"))),
+    () =>
+      run(async () => {
+        setNotes(await api<Note[]>("/api/companion/memories"))
+        setPairs(await api<Suggestion[]>("/api/companion/memories/suggestions"))
+      }),
     []
   )
+  const answerPair = (id: string, action: SuggestionAction, mergedText?: string) =>
+    run(async () => {
+      await api(
+        `/api/companion/memories/suggestions/${id}`,
+        send("POST", { action, mergedText })
+      )
+      await load()
+    })
   useEffect(() => {
     void load()
   }, [load])
@@ -559,14 +684,52 @@ function Notes({ zone }: { zone: string }) {
           添加
         </Button>
       </form>
+      <div className="flex items-center gap-2">
+        <Button
+          size="sm"
+          variant="ghost"
+          onClick={() =>
+            void run(async () => {
+              const result = await api<{ created: number; suggestions: Suggestion[] }>(
+                "/api/companion/memories/suggestions",
+                send("POST", {})
+              )
+              setPairs(result.suggestions)
+              setScanned(result.created)
+            })
+          }
+        >
+          找相似的笔记
+        </Button>
+        {scanned !== null && (
+          <span className="text-xs text-faint">
+            {scanned ? `找到 ${scanned} 组相似的` : "没有发现相似的"}
+          </span>
+        )}
+      </div>
       {error && <p className="text-sm text-destructive">{error}</p>}
-      {notes?.some((note) => note.status === "candidate") && (
+      {pairs.length > 0 && (
+        <h2 className="pt-1 text-xs font-medium text-faint">
+          这些很像，要合并吗？（不会自动合并）
+        </h2>
+      )}
+      {pairs.map((pair) => (
+        <SuggestionCard key={pair.id} pair={pair} onAnswer={answerPair} />
+      ))}
+      {notes?.some(
+        (note) =>
+          note.status === "candidate" && !pairs.some((pair) => pair.memory.id === note.id)
+      ) && (
         <h2 className="pt-1 text-xs font-medium text-faint">
           等你确认（确认前她不会用）
         </h2>
       )}
       {notes
-        ?.filter((note) => note.status === "candidate")
+        ?.filter(
+          (note) =>
+            note.status === "candidate" &&
+            !pairs.some((pair) => pair.memory.id === note.id)
+        )
         .map((note) => (
           <article
             key={note.id}

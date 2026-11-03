@@ -43,6 +43,7 @@ export function renderMessage(
       return `要我去电脑上办「${goal}」的话，在网页聊天页点一下确认就开始。`
     }
     case "memory_candidate":
+    case "memory_merge":
       return null
     default:
       return message.content
