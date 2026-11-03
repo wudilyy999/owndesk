@@ -21,6 +21,7 @@ WORKDIR /app
 ENV NODE_ENV=production NEXT_TELEMETRY_DISABLED=1 ARTIFACT_DIR=/app/data/artifacts
 COPY --from=build /app/node_modules ./node_modules
 COPY --from=build /app/.next ./.next
+COPY --from=build /app/public ./public
 COPY --from=build /app/package.json /app/package-lock.json /app/next.config.ts /app/tsconfig.json ./
 COPY --from=build /app/lib ./lib
 COPY --from=build /app/db ./db
