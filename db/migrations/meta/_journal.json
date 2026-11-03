@@ -169,6 +169,13 @@
       "when": 1793681288881,
       "tag": "0023_companion_typing_redo",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1793687820867,
+      "tag": "0024_companion_images_memory_suggestions",
+      "breakpoints": true
     }
   ]
 }

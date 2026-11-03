@@ -44,7 +44,7 @@ export async function handleQqWebhook(
 
   const event = parseQqPayload(payload)
   if (event?.type === "message") {
-    if (event.text)
+    if (event.text || event.context.imageUrl)
       await enqueueInbound({
         channel: "qq",
         eventKey: event.eventKey,

@@ -13,6 +13,15 @@ import type { Companion as CompanionRow, CompanionMessage } from "@/db/schema"
 import type { TypingPace } from "@/lib/companion/pacing"
 
 type View = CompanionRow & { name: string }
+type SuggestionAction = "merge" | "keep" | "drop"
+type Suggestion = {
+  id: string
+  score: number
+  mergedText: string
+  memory: { id: string; content: string }
+  other: { id: string; content: string }
+}
+
 type Note = {
   id: string
   content: string
@@ -125,12 +134,14 @@ function Bubble({
   zone,
   onAnswer,
   onMemory,
+  onSuggestion,
   actions,
 }: {
   message: CompanionMessage
   zone: string
   onAnswer: (id: string, action: "confirm" | "cancel") => void
   onMemory: (memoryId: string, action: "accept" | "dismiss") => void
+  onSuggestion: (suggestionId: string, action: SuggestionAction) => void
   actions?: React.ReactNode
 }) {
   const mine = message.role === "user"
@@ -138,8 +149,12 @@ function Bubble({
     goal?: string
     status?: string
     memoryId?: string
+    suggestionId?: string
+    otherNote?: string
+    mergedText?: string
     activityId?: string
     hasImage?: boolean
+    imageId?: string
   }
   return (
     <div
@@ -177,6 +192,46 @@ function Bubble({
               </p>
             )}
           </div>
+        ) : message.kind === "memory_merge" ? (
+          <div className="space-y-2" data-testid="merge-card">
+            <p className="text-xs text-faint">
+              这件事和我之前记的很像，是合并成一条，还是都留着？
+            </p>
+            <p>新的：{message.content}</p>
+            <p>之前的：{meta.otherNote}</p>
+            {meta.status === "pending" ? (
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  size="sm"
+                  onClick={() => onSuggestion(meta.suggestionId!, "merge")}
+                >
+                  合并
+                </Button>
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  onClick={() => onSuggestion(meta.suggestionId!, "keep")}
+                >
+                  都留着
+                </Button>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => onSuggestion(meta.suggestionId!, "drop")}
+                >
+                  不用记新的
+                </Button>
+              </div>
+            ) : (
+              <p className="text-xs text-faint">
+                {meta.status === "merged"
+                  ? "已合并"
+                  : meta.status === "kept"
+                    ? "都留着了"
+                    : "没有记新的"}
+              </p>
+            )}
+          </div>
         ) : message.kind === "memory_candidate" ? (
           <div className="space-y-2">
             <p className="text-xs text-faint">我想把这件事记下来，可以吗？</p>
@@ -202,6 +257,7 @@ function Bubble({
           </div>
         ) : (
           <>
+            {meta.imageId && <Picture id={meta.imageId} />}
             {message.content}
             {meta.hasImage && meta.activityId && (
               // eslint-disable-next-line @next/next/no-img-element
@@ -237,7 +293,10 @@ function Chat({ zone, pace }: { zone: string; pace: TypingPace }) {
     [busy, setBusy] = useState(false),
     [error, setError] = useState(""),
     [editing, setEditing] = useState<{ id: string; text: string } | null>(null),
-    [copied, setCopied] = useState("")
+    [copied, setCopied] = useState(""),
+    [picture, setPicture] = useState<{ id: string; url: string } | null>(null),
+    [uploading, setUploading] = useState(false)
+  const picker = useRef<HTMLInputElement>(null)
   const bottom = useRef<HTMLDivElement>(null)
   // The poll below must not replace the list while bubbles are being "typed": it would show
   // bubbles ahead of their turn and the stream would add them a second time
@@ -316,9 +375,33 @@ function Chat({ zone, pace }: { zone: string; pace: TypingPace }) {
 
   async function submit() {
     const value = text.trim()
-    if (!value || busy) return
+    if ((!value && !picture) || busy || uploading) return
+    const imageId = picture?.id
     setText("")
-    await run({ text: value })
+    setPicture(null)
+    await run({ text: value, imageId })
+  }
+
+  async function upload(file: File | undefined) {
+    if (!file) return
+    setError("")
+    setUploading(true)
+    try {
+      const form = new FormData()
+      form.set("file", file)
+      const response = await fetch("/api/companion/uploads", {
+        method: "POST",
+        body: form,
+      })
+      const result = await response.json()
+      if (!response.ok) throw new Error(result.error)
+      setPicture({ id: result.id, url: URL.createObjectURL(file) })
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : String(cause))
+    } finally {
+      setUploading(false)
+      if (picker.current) picker.current.value = ""
+    }
   }
 
   async function copy(message: CompanionMessage) {
@@ -334,6 +417,15 @@ function Chat({ zone, pace }: { zone: string; pace: TypingPace }) {
   async function remember(memoryId: string, action: "accept" | "dismiss") {
     try {
       await api(`/api/companion/memories/${memoryId}/review`, send("POST", { action }))
+      await refresh()
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : String(cause))
+    }
+  }
+
+  async function suggestion(id: string, action: SuggestionAction) {
+    try {
+      await api(`/api/companion/memories/suggestions/${id}`, send("POST", { action }))
       await refresh()
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : String(cause))
@@ -363,7 +455,9 @@ function Chat({ zone, pace }: { zone: string; pace: TypingPace }) {
       (row) =>
         row.channel === "web" &&
         (row.kind === "chat" ||
-          ((row.kind === "memory_candidate" || row.kind === "errand_proposal") &&
+          ((row.kind === "memory_candidate" ||
+            row.kind === "memory_merge" ||
+            row.kind === "errand_proposal") &&
             (row.metadata as { status?: string } | null)?.status === "pending"))
     )
   const lastReply = redoable && round.length ? round[round.length - 1] : null
@@ -396,7 +490,7 @@ function Chat({ zone, pace }: { zone: string; pace: TypingPace }) {
               <div className="flex gap-1">
                 <Button
                   size="sm"
-                  disabled={!editing.text.trim() || busy}
+                  disabled={(!editing.text.trim() && !hasPicture(message)) || busy}
                   onClick={() => {
                     const value = editing.text.trim()
                     setEditing(null)
@@ -417,6 +511,7 @@ function Chat({ zone, pace }: { zone: string; pace: TypingPace }) {
               zone={zone}
               onAnswer={answer}
               onMemory={remember}
+              onSuggestion={suggestion}
               actions={
                 plain ? (
                   <div className="flex gap-0.5">
@@ -490,6 +585,19 @@ function Chat({ zone, pace }: { zone: string; pace: TypingPace }) {
         <div ref={bottom} />
       </div>
       {error && <p className="text-sm text-destructive">{error}</p>}
+      {picture && (
+        <div className="flex items-center gap-2" data-testid="picture-preview">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={picture.url}
+            alt="要发送的图片"
+            className="h-14 w-14 rounded-lg border border-border object-cover"
+          />
+          <Button size="sm" variant="ghost" onClick={() => setPicture(null)}>
+            去掉
+          </Button>
+        </div>
+      )}
       <form
         className="flex gap-2"
         onSubmit={(event) => {
@@ -497,6 +605,24 @@ function Chat({ zone, pace }: { zone: string; pace: TypingPace }) {
           void submit()
         }}
       >
+        <input
+          ref={picker}
+          type="file"
+          accept="image/jpeg,image/png,image/webp,image/gif"
+          className="hidden"
+          data-testid="picture-input"
+          onChange={(event) => void upload(event.target.files?.[0])}
+        />
+        <Button
+          type="button"
+          variant="secondary"
+          aria-label="发图片"
+          title="发图片（JPEG、PNG、WebP、GIF，最大 10 MB）"
+          disabled={busy || uploading}
+          onClick={() => picker.current?.click()}
+        >
+          {uploading ? "…" : "＋"}
+        </Button>
         <Input
           value={text}
           onChange={(event) => setText(event.target.value)}
@@ -504,7 +630,7 @@ function Chat({ zone, pace }: { zone: string; pace: TypingPace }) {
           disabled={busy}
           maxLength={4000}
         />
-        <Button type="submit" disabled={busy || !text.trim()}>
+        <Button type="submit" disabled={busy || uploading || (!text.trim() && !picture)}>
           发送
         </Button>
       </form>
@@ -512,8 +638,77 @@ function Chat({ zone, pace }: { zone: string; pace: TypingPace }) {
   )
 }
 
+// A picture she was sent; the file is deleted after a while, then only a note stays
+const hasPicture = (message: CompanionMessage) =>
+  !!(message.metadata as { imageId?: string } | null)?.imageId
+
+function Picture({ id }: { id: string }) {
+  const [gone, setGone] = useState(false)
+  if (gone) return <span className="block text-xs opacity-70">（图片已过期）</span>
+  return (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      src={`/api/companion/uploads/${id}`}
+      alt="发送的图片"
+      loading="lazy"
+      data-testid="sent-picture"
+      onError={() => setGone(true)}
+      className="mb-1 max-h-60 max-w-full rounded-lg"
+    />
+  )
+}
+
+function SuggestionCard({
+  pair,
+  onAnswer,
+}: {
+  pair: Suggestion
+  onAnswer: (id: string, action: SuggestionAction, mergedText?: string) => void
+}) {
+  const [merged, setMerged] = useState(pair.mergedText)
+  return (
+    <article
+      className="space-y-2 rounded-xl border border-dashed border-border bg-surface p-3 text-sm"
+      data-testid="suggestion-card"
+    >
+      <p>之前的：{pair.other.content}</p>
+      <p>
+        新的：{pair.memory.content}
+        {pair.memory.id && (
+          <span className="text-xs text-faint">（相似度 {pair.score}%）</span>
+        )}
+      </p>
+      <label className="block space-y-1">
+        <span className="text-xs text-faint">合并后的样子（可以改）</span>
+        <Input
+          value={merged}
+          onChange={(event) => setMerged(event.target.value)}
+          maxLength={500}
+        />
+      </label>
+      <div className="flex flex-wrap gap-2">
+        <Button
+          size="sm"
+          disabled={!merged.trim()}
+          onClick={() => onAnswer(pair.id, "merge", merged)}
+        >
+          合并
+        </Button>
+        <Button size="sm" variant="secondary" onClick={() => onAnswer(pair.id, "keep")}>
+          都留着
+        </Button>
+        <Button size="sm" variant="ghost" onClick={() => onAnswer(pair.id, "drop")}>
+          不要新的
+        </Button>
+      </div>
+    </article>
+  )
+}
+
 function Notes({ zone }: { zone: string }) {
   const [notes, setNotes] = useState<Note[] | null>(null)
+  const [pairs, setPairs] = useState<Suggestion[]>([])
+  const [scanned, setScanned] = useState<number | null>(null)
   const [draft, setDraft] = useState(""),
     [editing, setEditing] = useState<{ id: string; content: string } | null>(null),
     [error, setError] = useState("")
@@ -526,9 +721,21 @@ function Notes({ zone }: { zone: string }) {
     }
   }
   const load = useCallback(
-    () => run(async () => setNotes(await api<Note[]>("/api/companion/memories"))),
+    () =>
+      run(async () => {
+        setNotes(await api<Note[]>("/api/companion/memories"))
+        setPairs(await api<Suggestion[]>("/api/companion/memories/suggestions"))
+      }),
     []
   )
+  const answerPair = (id: string, action: SuggestionAction, mergedText?: string) =>
+    run(async () => {
+      await api(
+        `/api/companion/memories/suggestions/${id}`,
+        send("POST", { action, mergedText })
+      )
+      await load()
+    })
   useEffect(() => {
     void load()
   }, [load])
@@ -559,14 +766,52 @@ function Notes({ zone }: { zone: string }) {
           添加
         </Button>
       </form>
+      <div className="flex items-center gap-2">
+        <Button
+          size="sm"
+          variant="ghost"
+          onClick={() =>
+            void run(async () => {
+              const result = await api<{ created: number; suggestions: Suggestion[] }>(
+                "/api/companion/memories/suggestions",
+                send("POST", {})
+              )
+              setPairs(result.suggestions)
+              setScanned(result.created)
+            })
+          }
+        >
+          找相似的笔记
+        </Button>
+        {scanned !== null && (
+          <span className="text-xs text-faint">
+            {scanned ? `找到 ${scanned} 组相似的` : "没有发现相似的"}
+          </span>
+        )}
+      </div>
       {error && <p className="text-sm text-destructive">{error}</p>}
-      {notes?.some((note) => note.status === "candidate") && (
+      {pairs.length > 0 && (
+        <h2 className="pt-1 text-xs font-medium text-faint">
+          这些很像，要合并吗？（不会自动合并）
+        </h2>
+      )}
+      {pairs.map((pair) => (
+        <SuggestionCard key={pair.id} pair={pair} onAnswer={answerPair} />
+      ))}
+      {notes?.some(
+        (note) =>
+          note.status === "candidate" && !pairs.some((pair) => pair.memory.id === note.id)
+      ) && (
         <h2 className="pt-1 text-xs font-medium text-faint">
           等你确认（确认前她不会用）
         </h2>
       )}
       {notes
-        ?.filter((note) => note.status === "candidate")
+        ?.filter(
+          (note) =>
+            note.status === "candidate" &&
+            !pairs.some((pair) => pair.memory.id === note.id)
+        )
         .map((note) => (
           <article
             key={note.id}

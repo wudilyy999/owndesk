@@ -7,9 +7,11 @@ import { db } from "@/db"
 import {
   agents,
   companionMessages,
+  companionImages,
   companionUsage,
   lifeActivities,
   memories,
+  type CompanionImage,
   type CompanionMessage,
 } from "@/db/schema"
 import { HttpError } from "@/lib/errors"
@@ -23,7 +25,8 @@ import { parseModelSpec } from "@/lib/providers/catalog"
 import { getSetting } from "@/lib/config"
 import { getCustomPrices, monthlyBlock, monthlyUsage } from "@/lib/spend"
 import { crisisReply, detectCrisis } from "./crisis"
-import { addNote, deleteNote, listNotes, selectNotes, updateNote } from "./memory"
+import { deleteNote, listNotes, rememberChecked, selectNotes, updateNote } from "./memory"
+import { getImage, readImage, seeImage } from "./images"
 import { buildCompanionPrompt } from "./persona"
 import { queueCoview } from "./coview"
 import { playbackSchedule, realSleep, visibleMessage } from "./pacing"
@@ -68,14 +71,47 @@ export function splitBubbles(text: string) {
   return [...parts.slice(0, MAX_BUBBLES - 1), parts.slice(MAX_BUBBLES - 1).join("\n\n")]
 }
 
-export function historyMessages(rows: CompanionMessage[]): ModelMessage[] {
-  return rows.map((row) => ({
-    role: row.role,
-    content:
-      row.kind === "errand_proposal"
-        ? `（我提出了一个任务，等你确认：${(row.metadata as { goal?: string }).goal}）`
-        : row.content,
-  }))
+// Pictures only reach the model in the turn they were sent; later turns keep her one-line
+// description of them (`pictures`: image id → description)
+export function historyMessages(
+  rows: CompanionMessage[],
+  pictures: Map<string, string | null> = new Map(),
+  current?: { id: string; image: Buffer | null }
+): ModelMessage[] {
+  return rows.map((row): ModelMessage => {
+    const imageId = (row.metadata as { imageId?: string } | null)?.imageId
+    if (row.role === "user" && imageId) {
+      if (current?.id === row.id && current.image)
+        return {
+          role: "user",
+          content: [
+            { type: "text", text: row.content || "（发来一张图片）" },
+            {
+              type: "image",
+              image: new Uint8Array(current.image),
+              mediaType: "image/jpeg",
+            },
+          ],
+        }
+      const description = pictures.get(imageId)
+      const note =
+        current?.id === row.id
+          ? "（发来一张图片，但你这次看不到内容）"
+          : description
+            ? `（发来一张图片：${description}）`
+            : "（发来一张图片，内容没看清）"
+      return { role: "user", content: [row.content, note].filter(Boolean).join("\n") }
+    }
+    return {
+      role: row.role,
+      content:
+        row.kind === "errand_proposal"
+          ? `（我提出了一个任务，等你确认：${(row.metadata as { goal?: string }).goal}）`
+          : row.kind === "memory_merge"
+            ? `（我想记「${row.content}」，但和已有的记忆很像，等你决定合并还是都留）`
+            : row.content,
+    }
+  })
 }
 
 type NewMessage = Pick<
@@ -97,7 +133,12 @@ async function insertMessages(agentId: string, rows: NewMessage[], start = new D
     .returning()
 }
 
-const REDOABLE_KINDS = new Set(["chat", "memory_candidate", "errand_proposal"])
+const REDOABLE_KINDS = new Set([
+  "chat",
+  "memory_candidate",
+  "memory_merge",
+  "errand_proposal",
+])
 
 // The latest turn (her last user message and what she answered) is the only one that can be
 // redone: older turns have already shaped her notes and the timeline.
@@ -137,6 +178,35 @@ async function setSuperseded(ids: string[], at: Date | null) {
       .where(inArray(companionMessages.id, ids))
 }
 
+type Usage = Awaited<ReturnType<typeof streamText>["totalUsage"]>
+
+async function recordUsage(
+  agentId: string,
+  spec: string,
+  price: Price | null,
+  usage: Usage,
+  durationMs: number
+) {
+  const missing = usage.inputTokens === undefined || usage.outputTokens === undefined
+  const cost =
+    missing && price?.kind !== "local"
+      ? null
+      : callCost(price, {
+          input: usage.inputTokens ?? 0,
+          output: usage.outputTokens ?? 0,
+          cached: usage.inputTokenDetails.cacheReadTokens ?? 0,
+        })
+  await db.insert(companionUsage).values({
+    agentId,
+    model: spec,
+    inputTokens: usage.inputTokens ?? 0,
+    outputTokens: usage.outputTokens ?? 0,
+    cachedTokens: usage.inputTokenDetails.cacheReadTokens ?? 0,
+    costMicros: cost === null ? null : toMicros(cost),
+    durationMs,
+  })
+}
+
 export async function companionChat(
   input: {
     ownerId: string
@@ -149,6 +219,8 @@ export async function companionChat(
     // Web only: answer the latest message again ("regenerate", text is ignored) or replace it
     // ("edit"). Notes are not written during a regenerate, so redoing never records twice.
     redo?: "regenerate" | "edit"
+    // A picture the person sent with this message (lib/companion/images.ts)
+    imageId?: string
   },
   deps: ChatDeps = {},
   emit: (event: ChatEvent) => void = () => {}
@@ -165,12 +237,30 @@ export async function companionChat(
   const round = redo ? await latestRound(input.agentId) : null
   if (round && redo === "regenerate" && round.redone >= MAX_REDO)
     throw new HttpError(409, `这一轮已经重说 ${MAX_REDO} 次了`)
+  // A redo keeps the picture of the message it answers
+  const roundImage = (round?.user.metadata as { imageId?: string } | null)?.imageId
+  const imageId = redo === "regenerate" ? roundImage : (input.imageId ?? roundImage)
+  let image: CompanionImage | null = null
+  if (imageId) {
+    image = await getImage(input.agentId, imageId)
+    if (!image) throw new HttpError(404, "找不到这张图片")
+  }
+  if (redo !== "regenerate" && !input.text.trim() && !image)
+    throw new HttpError(400, "说点什么，或者发张图片")
   let user: CompanionMessage
   if (round && redo === "regenerate") user = round.user
   else {
     ;[user] = await insertMessages(
       input.agentId,
-      [{ role: "user", kind: "chat", content: input.text, channel, metadata: null }],
+      [
+        {
+          role: "user",
+          kind: "chat",
+          content: input.text,
+          channel,
+          metadata: image ? { imageId: image.id } : null,
+        },
+      ],
       now
     )
     emit({ type: "user", message: user })
@@ -242,6 +332,52 @@ export async function companionChat(
       model = await createModel(spec, await getProviderCredentials(parsed.provider))
     }
 
+    const provider = parseModelSpec(spec)?.provider
+    const effort = await getSetting("chat.reasoningEffort")
+    const providerOptions =
+      provider === "custom" || provider === "openrouter"
+        ? { [provider]: { reasoningEffort: effort ?? "low" } }
+        : undefined
+
+    // What she can see of the picture: a short vision call first (what is it, is there a face or an
+    // ID?). If she cannot look at it, she says so instead of guessing.
+    let sight: "none" | "seen" | "unseen" = "none"
+    let picture: Buffer | null = null
+    if (image) {
+      const data = await readImage(image, now)
+      sight = "unseen"
+      if (data) {
+        try {
+          if (image.description === null) {
+            const lookedAt = Date.now()
+            const looked = await seeImage(model, data, { providerOptions })
+            await recordUsage(
+              input.agentId,
+              spec,
+              price,
+              looked.usage,
+              Date.now() - lookedAt
+            )
+            const [updated] = await db
+              .update(companionImages)
+              .set({ description: looked.description, sensitive: looked.sensitive })
+              .where(eq(companionImages.id, image.id))
+              .returning()
+            image = updated
+          }
+          sight = "seen"
+          picture = data
+        } catch (error) {
+          console.error(
+            "Companion could not look at the picture",
+            (error as Error).message
+          )
+        }
+      }
+    }
+    // A face or an ID (or not knowing) keeps the picture out of her notes
+    const guarded = !!image && (sight !== "seen" || image.sensitive)
+
     const link =
       redo === "regenerate"
         ? null
@@ -275,6 +411,14 @@ export async function companionChat(
       rhythm: rhythmAt(now, companion.timeZone, companion.rhythm),
       link,
       awayDigest: input.awayDigest ?? [],
+      image:
+        sight === "none"
+          ? undefined
+          : sight === "unseen"
+            ? "unseen"
+            : guarded
+              ? "sensitive"
+              : "seen",
       memories: selectNotes(notes),
       recentLife: activities.reverse().map((a) => ({
         kind: a.kind,
@@ -293,6 +437,15 @@ export async function companionChat(
 
     const proposals: string[] = []
     const candidates: { memoryId: string; note: string }[] = []
+    // Notes that look like an older one: she asks whether to merge them
+    const merges: {
+      memoryId: string
+      note: string
+      suggestionId: string
+      otherId: string
+      otherNote: string
+      mergedText: string
+    }[] = []
     // Redoing a message must not record the same thing twice: notes are read-only then
     const readOnly = redo === "regenerate"
     const frozen = { status: "这次是重说一遍，先不改记忆，下次再记" }
@@ -306,13 +459,28 @@ export async function companionChat(
         }),
         execute: async ({ note, certainty }) => {
           if (readOnly) return frozen
-          const saved = await addNote(
+          const { note: saved, similar } = await rememberChecked(
             input.agentId,
             note,
-            "agent",
-            certainty === "sure" ? "active" : "candidate"
+            // With a face or an ID in the picture nothing is kept without the person's say-so
+            certainty === "sure" && !guarded ? "active" : "candidate"
           )
-          if (certainty === "unsure" && saved.status === "candidate")
+          if (similar) {
+            merges.push({
+              memoryId: saved.id,
+              note: saved.content,
+              suggestionId: similar.suggestion.id,
+              otherId: similar.other.id,
+              otherNote: similar.other.content,
+              mergedText: similar.suggestion.mergedText,
+            })
+            return {
+              id: saved.id,
+              status: "candidate",
+              hint: `和已有的记忆「${similar.other.content}」很像，没有直接记。已问对方是合并还是都留，等对方决定；这一轮别再重复记这件事。`,
+            }
+          }
+          if (saved.status === "candidate" && !similar)
             candidates.push({ memoryId: saved.id, note: saved.content })
           return { id: saved.id, saved: saved.content, status: saved.status }
         },
@@ -325,6 +493,7 @@ export async function companionChat(
         }),
         execute: async ({ id, note }) => {
           if (readOnly) return frozen
+          if (guarded) return { status: "这一轮的图片有人脸或证件等私密内容，先不改记忆" }
           const saved = await updateNote(input.agentId, id, note)
           return { id: saved.id, saved: saved.content }
         },
@@ -346,17 +515,31 @@ export async function companionChat(
       }),
     }
 
-    const provider = parseModelSpec(spec)?.provider
-    const effort = await getSetting("chat.reasoningEffort")
     const started = Date.now()
+    const pictureIds = recent.flatMap((row) => {
+      const found = (row.metadata as { imageId?: string } | null)?.imageId
+      return found ? [found] : []
+    })
+    const pictures = new Map<string, string | null>()
+    if (pictureIds.length)
+      for (const row of await db
+        .select({ id: companionImages.id, description: companionImages.description })
+        .from(companionImages)
+        .where(
+          and(
+            eq(companionImages.agentId, input.agentId),
+            inArray(companionImages.id, pictureIds)
+          )
+        ))
+        pictures.set(row.id, row.description)
     const result = streamText({
       model,
-      providerOptions:
-        provider === "custom" || provider === "openrouter"
-          ? { [provider]: { reasoningEffort: effort ?? "low" } }
-          : undefined,
+      providerOptions,
       system,
-      messages: historyMessages(recent.reverse()),
+      messages: historyMessages(recent.reverse(), pictures, {
+        id: user.id,
+        image: picture,
+      }),
       tools,
       stopWhen: isStepCount(4),
       maxOutputTokens: 1200,
@@ -371,25 +554,13 @@ export async function companionChat(
       text += delta
       emit({ type: "delta", text: delta })
     }
-    const usage = await result.totalUsage
-    const missing = usage.inputTokens === undefined || usage.outputTokens === undefined
-    const cost =
-      missing && price?.kind !== "local"
-        ? null
-        : callCost(price, {
-            input: usage.inputTokens ?? 0,
-            output: usage.outputTokens ?? 0,
-            cached: usage.inputTokenDetails.cacheReadTokens ?? 0,
-          })
-    await db.insert(companionUsage).values({
-      agentId: input.agentId,
-      model: spec,
-      inputTokens: usage.inputTokens ?? 0,
-      outputTokens: usage.outputTokens ?? 0,
-      cachedTokens: usage.inputTokenDetails.cacheReadTokens ?? 0,
-      costMicros: cost === null ? null : toMicros(cost),
-      durationMs: Date.now() - started,
-    })
+    await recordUsage(
+      input.agentId,
+      spec,
+      price,
+      await result.totalUsage,
+      Date.now() - started
+    )
 
     const bubbles = splitBubbles(text)
     const rows: NewMessage[] = bubbles.map((content) => ({
@@ -414,6 +585,14 @@ export async function companionChat(
         content: candidate.note,
         channel,
         metadata: { memoryId: candidate.memoryId, status: "pending" },
+      })
+    for (const merge of merges)
+      rows.push({
+        role: "assistant",
+        kind: "memory_merge",
+        content: merge.note,
+        channel,
+        metadata: { ...merge, status: "pending" },
       })
     // Bubbles appear one by one; cards come with the last bubble
     const pace = companion.typingPace
@@ -452,7 +631,7 @@ export async function companionChat(
 // Candidate notes she proposed in a turn that was redone no longer apply
 async function dropCandidates(agentId: string, replaced: CompanionMessage[]) {
   for (const card of replaced) {
-    if (card.kind !== "memory_candidate") continue
+    if (card.kind !== "memory_candidate" && card.kind !== "memory_merge") continue
     const memoryId = (card.metadata as { memoryId?: string } | null)?.memoryId
     if (memoryId)
       await db

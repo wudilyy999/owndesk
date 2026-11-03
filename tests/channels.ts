@@ -9,6 +9,7 @@ import { once } from "node:events"
 import { createServer, type IncomingMessage, type Server } from "node:http"
 import type { AddressInfo } from "node:net"
 import pg from "pg"
+import sharp from "sharp"
 import { MockLanguageModelV3 } from "ai/test"
 // @ts-expect-error plain JS module that ships to the VPS
 import { createRelay } from "../deploy/channel-relay/relay.mjs"
@@ -821,6 +822,224 @@ try {
   assert.equal(await linkOf("qq"), undefined)
   await channelAction(ownerId, agentId, { action: "wechat-disconnect" })
   assert.equal(await linkOf("wechat"), undefined)
+
+  // ───────────────────────── pictures (B2a) ─────────────────────────
+  // Telegram photos go through the bridge, are downloaded by the hub on the worker, shrunk and
+  // shown to her; QQ's attachment parsing is checked against the documented payload shape only.
+  const photoBytes = await sharp({
+    create: { width: 1600, height: 1200, channels: 3, background: "#3366cc" },
+  })
+    .png()
+    .toBuffer()
+  const fileServer = createServer((req, res) => {
+    let raw = ""
+    req.on("data", (chunk) => (raw += chunk))
+    req.on("end", () => {
+      if (req.method === "GET" && req.url!.startsWith("/file/bot")) {
+        res.writeHead(200)
+        res.end(req.url!.endsWith("note.jpg") ? Buffer.from("just text") : photoBytes)
+        return
+      }
+      const id = JSON.parse(raw || "{}").file_id as string | undefined
+      res.writeHead(200, { "content-type": "application/json" })
+      if (req.url!.endsWith("/getFile"))
+        res.end(
+          JSON.stringify({
+            ok: true,
+            result:
+              id === "huge"
+                ? { file_path: "photos/huge.jpg", file_size: 99_000_000 }
+                : id === "evil"
+                  ? { file_path: "../../etc/passwd", file_size: 10 }
+                  : id === "text"
+                    ? { file_path: "photos/note.jpg", file_size: 9 }
+                    : { file_path: `photos/${id}.jpg`, file_size: photoBytes.length },
+          })
+        )
+      else res.end(JSON.stringify({ ok: true, result: true }))
+    })
+  })
+  await new Promise<void>((resolve) => fileServer.listen(0, "127.0.0.1", resolve))
+  servers.push(fileServer)
+  await setSetting(
+    "telegram.apiUrl",
+    `http://127.0.0.1:${(fileServer.address() as AddressInfo).port}`
+  )
+  await setSetting("telegram.botToken", "123456:PHOTO-TEST")
+  await updateCompanion(ownerId, agentId, { typingPace: "off" })
+  const looked: string[] = []
+  const chatted: string[] = []
+  const eyes = (reply: string, look: string) => {
+    const base = model([reply])
+    const stream = base.model.doStream.bind(base.model)
+    base.model.doStream = async (options) => {
+      chatted.push(JSON.stringify(options.prompt))
+      return stream(options)
+    }
+    base.model.doGenerate = async (options) => {
+      looked.push(JSON.stringify(options.prompt))
+      return {
+        content: [{ type: "text", text: look }],
+        finishReason: { unified: "stop", raw: undefined },
+        usage: {
+          inputTokens: { total: 50, noCache: 50, cacheRead: 0, cacheWrite: 0 },
+          outputTokens: { total: 10, text: 10, reasoning: 0 },
+        },
+        warnings: [],
+      }
+    }
+    return base
+  }
+  const { processTelegramUpdate } = await import("@/lib/telegram/bridge")
+  const sentAt = Math.floor(Date.now() / 1000) + 10
+  let updateId = 9000
+  const tgUpdate = (extra: Record<string, unknown>) => ({
+    update_id: ++updateId,
+    message: {
+      message_id: updateId,
+      from: { id: 555, is_bot: false, first_name: "Me" },
+      chat: { id: 555, type: "private" as const },
+      date: sentAt,
+      ...extra,
+    },
+  })
+  const inboundFor = (id: number) =>
+    pool
+      .query("SELECT * FROM channel_inbound WHERE event_key=$1", [`g1:${id}`])
+      .then((r) => r.rows[0])
+  const photo = tgUpdate({
+    caption: "晚霞！",
+    photo: [
+      { file_id: "small", width: 90, height: 60, file_size: 900 },
+      { file_id: "large", width: 1280, height: 960, file_size: 90_000 },
+      { file_id: "mid", width: 320, height: 240, file_size: 9_000 },
+    ],
+  })
+  await processTelegramUpdate("g1", photo as never)
+  const queued = await inboundFor(photo.update_id)
+  assert.equal(queued.text, "晚霞！")
+  assert.equal(queued.context.telegramFileId, "large", "the largest size is used")
+  assert.equal(queued.context.trusted, true)
+  const outBefore = (await pool.query("SELECT 1 FROM telegram_outbox")).rowCount
+  await chat.processPendingInbound(
+    eyes("好漂亮，在哪拍的", '{"description":"天边橙红色的晚霞","sensitive":false}')
+  )
+  const shown = (
+    await db
+      .select()
+      .from(schema.companionMessages)
+      .where(eq(schema.companionMessages.channel, "telegram"))
+      .orderBy(desc(schema.companionMessages.createdAt))
+  ).filter((m) => m.role === "user" && m.content === "晚霞！")[0]
+  const picId = (shown.metadata as { imageId: string }).imageId
+  const [row] = await db
+    .select()
+    .from(schema.companionImages)
+    .where(eq(schema.companionImages.id, picId))
+  assert.equal(row.source, "telegram")
+  assert.equal(row.description, "天边橙红色的晚霞")
+  assert.ok(row.width <= 1280 && row.height <= 1280, "resized on the server")
+  assert.equal(looked.length, 1)
+  assert.ok(chatted[0].includes('"type":"file"') && chatted[0].includes("image/jpeg"))
+  assert.equal(
+    (await pool.query("SELECT 1 FROM telegram_outbox")).rowCount,
+    outBefore! + 1,
+    "her answer went out"
+  )
+  assert.equal((await inboundFor(photo.update_id)).status, "done")
+
+  // A picture without words, and a picture sent as a file
+  const bare = tgUpdate({ photo: [{ file_id: "p2", width: 800, height: 600 }] })
+  await processTelegramUpdate("g1", bare as never)
+  assert.equal((await inboundFor(bare.update_id)).text, "")
+  const asFile = tgUpdate({
+    document: { file_id: "d1", mime_type: "image/png", file_size: 1000 },
+  })
+  await processTelegramUpdate("g1", asFile as never)
+  assert.equal((await inboundFor(asFile.update_id)).context.telegramFileId, "d1")
+  await chat.processPendingInbound(
+    eyes("这是什么呀", '{"description":"一张蓝色的图","sensitive":false}')
+  )
+  assert.equal(
+    (await pool.query("SELECT 1 FROM companion_images WHERE source='telegram'")).rowCount,
+    3
+  )
+  // Other files are not pictures
+  const pdf = tgUpdate({
+    document: { file_id: "x", mime_type: "application/pdf", file_size: 10 },
+  })
+  await processTelegramUpdate("g1", pdf as never)
+  assert.equal(await inboundFor(pdf.update_id), undefined)
+  const bigOne = tgUpdate({
+    photo: [{ file_id: "b", width: 9000, height: 9000, file_size: 20_000_000 }],
+  })
+  await processTelegramUpdate("g1", bigOne as never)
+  assert.equal(
+    await inboundFor(bigOne.update_id),
+    undefined,
+    "over 10 MB is refused up front"
+  )
+
+  // Downloads that cannot be used: she is told, answers, and nothing is stored
+  const storedBefore = (await pool.query("SELECT 1 FROM companion_images")).rowCount
+  for (const [fileId, why] of [
+    ["huge", "too large by getFile"],
+    ["evil", "path outside the file area"],
+    ["text", "bytes are not a picture"],
+  ] as const) {
+    const bad = tgUpdate({ photo: [{ file_id: fileId, width: 800, height: 600 }] })
+    await processTelegramUpdate("g1", bad as never)
+    chatted.length = 0
+    await chat.processPendingInbound(eyes("我这边没收到图", "{}"))
+    assert.ok(chatted[0]?.includes("没能收下来"), why)
+    assert.ok(!chatted[0].includes("PHOTO-TEST"), "the token never reaches the model")
+    assert.equal((await inboundFor(bad.update_id)).status, "done", why)
+  }
+  assert.equal(
+    (await pool.query("SELECT 1 FROM companion_images")).rowCount,
+    storedBefore
+  )
+  const lastErrors = await pool.query(
+    "SELECT last_error FROM channel_inbound WHERE last_error IS NOT NULL"
+  )
+  assert.ok(lastErrors.rows.every((r) => !String(r.last_error).includes("PHOTO-TEST")))
+
+  // QQ: image attachments are picked out of the payload; hosts outside Tencent's are ignored
+  const qqPhoto = qq.parseQqPayload({
+    id: "ev-pic",
+    op: 0,
+    t: "C2C_MESSAGE_CREATE",
+    d: {
+      id: "m-pic",
+      content: "",
+      author: { user_openid: "OPENID1" },
+      attachments: [{ content_type: "image/png", url: "gchat.qpic.cn/qmeetpic/1/abc/0" }],
+    },
+  })
+  assert.equal(qqPhoto?.type, "message")
+  if (qqPhoto?.type === "message") {
+    assert.equal(qqPhoto.text, "")
+    assert.equal(qqPhoto.context.imageUrl, "https://gchat.qpic.cn/qmeetpic/1/abc/0")
+  }
+  const qqEvil = qq.parseQqPayload({
+    id: "ev-evil",
+    op: 0,
+    t: "C2C_MESSAGE_CREATE",
+    d: {
+      id: "m-evil",
+      content: "",
+      author: { user_openid: "OPENID1" },
+      attachments: [{ content_type: "image/png", url: "http://169.254.169.254/latest" }],
+    },
+  })
+  if (qqEvil?.type === "message") {
+    assert.equal(qqEvil.context.imageUrl, undefined)
+    assert.match(qqEvil.text, /文件/)
+  }
+  assert.equal(qq.qqImageUrl("https://evil.example.com/a.png"), null)
+  assert.equal(qq.qqImageUrl("https://qq.com.evil.example/a.png"), null)
+  assert.equal(qq.qqImageUrl("https://user:pw@gchat.qpic.cn/a"), null)
+  await setSetting("telegram.apiUrl", tgApi.origin)
 
   // One person, one memory: every channel wrote into the same history
   const channelsSeen = new Set(

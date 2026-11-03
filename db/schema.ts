@@ -153,6 +153,38 @@ export const memories = pgTable(
   (t) => [index("memories_agent_idx").on(t.agentId, t.createdAt)]
 )
 
+// Two notes that say nearly the same thing. Nothing is merged until the person decides:
+// merge (the older note takes the merged wording, the newer one goes), keep both, or drop the
+// newer one. A decision is kept so the same pair is not offered again.
+export const memorySuggestions = pgTable(
+  "memory_suggestions",
+  {
+    id: id(),
+    agentId: text()
+      .notNull()
+      .references(() => agents.id, { onDelete: "cascade" }),
+    // The newer note (may still be a candidate) and the older one it resembles
+    memoryId: text()
+      .notNull()
+      .references(() => memories.id, { onDelete: "cascade" }),
+    otherId: text()
+      .notNull()
+      .references(() => memories.id, { onDelete: "cascade" }),
+    // What the older note would say after a merge
+    mergedText: text().notNull(),
+    // 0-100
+    score: integer().notNull(),
+    status: text({ enum: ["pending", "merged", "kept", "dropped"] })
+      .notNull()
+      .default("pending"),
+    createdAt: timestamp(),
+  },
+  (t) => [
+    uniqueIndex("memory_suggestions_pair_idx").on(t.memoryId, t.otherId),
+    index("memory_suggestions_agent_idx").on(t.agentId, t.status),
+  ]
+)
+
 /* ───────────────────────────── ledger ───────────────────────────── */
 
 // One row per agent turn: what it ran on, what it consumed, how it ended
@@ -1113,6 +1145,7 @@ export const companionMessages = pgTable(
         "errand_update",
         "crisis",
         "memory_candidate",
+        "memory_merge",
         "coview",
       ],
     })
@@ -1130,6 +1163,35 @@ export const companionMessages = pgTable(
     supersededAt: pgTimestamp({ withTimezone: true, mode: "date" }),
   },
   (t) => [index("companion_messages_agent_idx").on(t.agentId, t.createdAt)]
+)
+
+// A picture the person sent her. The file lives under the artifact directory, is readable only by
+// the owner and is deleted when `expiresAt` passes; the row keeps her one-line description.
+export const companionImages = pgTable(
+  "companion_images",
+  {
+    id: id(),
+    agentId: text()
+      .notNull()
+      .references(() => agents.id, { onDelete: "cascade" }),
+    // Relative to the artifact directory; null once the file has been deleted
+    path: text(),
+    bytes: integer().notNull(),
+    width: integer().notNull(),
+    height: integer().notNull(),
+    source: text().notNull().default("web"),
+    // What she saw, in one sentence: the only trace of the picture in later turns
+    description: text(),
+    // A face or an ID document was seen, or we could not tell: never kept in long-term memory
+    // unless the person asks for it
+    sensitive: boolean().notNull().default(true),
+    createdAt: timestamp(),
+    expiresAt: pgTimestamp({ withTimezone: true, mode: "date" }).notNull(),
+  },
+  (t) => [
+    index("companion_images_agent_idx").on(t.agentId, t.createdAt),
+    index("companion_images_expiry_idx").on(t.expiresAt),
+  ]
 )
 
 // Spend of the light chat path; tasks are in task_model_attempts
@@ -1196,6 +1258,8 @@ export const lifeShares = pgTable(
 
 export type Companion = typeof companions.$inferSelect
 export type CompanionMessage = typeof companionMessages.$inferSelect
+export type CompanionImage = typeof companionImages.$inferSelect
+export type MemorySuggestion = typeof memorySuggestions.$inferSelect
 export type LifeActivity = typeof lifeActivities.$inferSelect
 export type LifeShare = typeof lifeShares.$inferSelect
 

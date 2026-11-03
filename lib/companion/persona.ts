@@ -76,6 +76,9 @@ export type PromptContext = {
   link: { url: string; queued: boolean } | null
   // Real things she wanted to share while the person was away but could not send
   awayDigest?: string[]
+  // A picture came with the person's last message: she saw it, saw it with a face or an ID in it,
+  // or cannot see it
+  image?: "seen" | "sensitive" | "unseen"
   memories: { id: string; content: string }[]
   recentLife: {
     kind: string
@@ -119,6 +122,23 @@ function linkText(link: PromptContext["link"]) {
 `
 }
 
+function imageText(image: PromptContext["image"]) {
+  if (!image) return ""
+  if (image === "unseen")
+    return `# 对方刚发来的图片
+对方发来了一张图，但这次你看不到内容（图片过期或暂时看不了）。自然地说你现在看不到，请对方用文字说说是什么。不要编造图里有什么。
+
+`
+  return `# 对方刚发来的图片
+对方发来了一张图（见最后一条消息）。像朋友一样自然地回应图里的内容和对方发图的用意，不要用“图片中……”这种报告腔，不要猜图中人物是谁。${
+    image === "sensitive"
+      ? "\n这张图里有人脸或证件等私密内容：可以自然地回应，但不要把图里的人脸、证件信息记进长期记忆（不要用 remember 或 update_memory 记录它们）。"
+      : ""
+  }
+
+`
+}
+
 const RELATION = {
   friend: "你们是很熟的朋友：关心、不见外，会吐槽也会认真听。",
   partner:
@@ -154,7 +174,7 @@ ${RELATION[ctx.mode]}
 # 现在的状态
 ${stateText(ctx.rhythm)}
 
-${linkText(ctx.link)}${awayText(ctx.awayDigest)}# 最近的生活
+${linkText(ctx.link)}${awayText(ctx.awayDigest)}${imageText(ctx.image)}# 最近的生活
 ${life}
 
 # 记住对方

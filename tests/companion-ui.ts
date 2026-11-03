@@ -1,10 +1,12 @@
 // Stage B1 in a real browser (Chromium via Playwright) against the dev server and the real model:
 // typing indicator, staggered bubbles, copy, regenerate, edit, the pace setting, and PWA
-// installability (manifest, icons, service worker, offline page). Screenshots go to B1_SHOTS.
+// installability (manifest, icons, service worker, offline page). Stage B2a adds sending a picture and the similar-note
+// cards. Screenshots go to B1_SHOTS.
 import assert from "node:assert/strict"
 import { mkdir, readFile } from "node:fs/promises"
 import path from "node:path"
 import { chromium, type Page } from "playwright"
+import sharp from "sharp"
 import { env } from "@/lib/env"
 
 const credentials = JSON.parse(await readFile("data/dev-owner.json", "utf8"))
@@ -140,11 +142,17 @@ try {
 
   // 3. Regenerate the last reply: new bubbles, the old ones are gone and hidden on reload
   const oldIds = await roundIds(page)
-  await assistant(page).last().getByRole("button", { name: "重说" }).click()
-  await typing(page).waitFor({ state: "visible", timeout: 30_000 })
-  await snap(page, "04-regenerate-typing")
-  await idle(page)
-  const newIds = await roundIds(page)
+  let newIds: string[] = []
+  // A provider hiccup puts the old answer back (by design); ask again before judging
+  for (let attempt = 0; attempt < 3; attempt++) {
+    await assistant(page).last().getByRole("button", { name: "重说" }).click()
+    await typing(page).waitFor({ state: "visible", timeout: 30_000 })
+    if (attempt === 0) await snap(page, "04-regenerate-typing")
+    await idle(page)
+    newIds = await roundIds(page)
+    if (newIds.length >= 1 && newIds.every((id) => !oldIds.includes(id))) break
+    console.log("regenerate restored the old answer, trying again")
+  }
   assert.ok(newIds.length >= 1)
   assert.ok(
     newIds.every((id) => !oldIds.includes(id)),
@@ -194,6 +202,110 @@ try {
       "with the pace off the bubbles land together"
     )
   await snap(page, "08-pace-off")
+  await setPace("natural")
+
+  // 5b. B2a: send a picture (real model looks at it), bad files are refused, similar notes ask first
+  await setPace("off")
+  const scene = await sharp(
+    Buffer.from(
+      `<svg xmlns="http://www.w3.org/2000/svg" width="900" height="600">
+        <rect width="900" height="600" fill="#5cb8ff"/>
+        <rect y="400" width="900" height="200" fill="#3fa34d"/>
+        <circle cx="720" cy="120" r="70" fill="#ffd400"/>
+        <ellipse cx="200" cy="110" rx="110" ry="40" fill="#ffffff"/>
+        <ellipse cx="270" cy="95" rx="80" ry="35" fill="#ffffff"/>
+      </svg>`
+    )
+  )
+    .png()
+    .toBuffer()
+  const picker = page.getByTestId("picture-input")
+  await picker.setInputFiles({ name: "scene.png", mimeType: "image/png", buffer: scene })
+  await page.getByTestId("picture-preview").waitFor()
+  await snap(page, "12-picture-ready")
+  const beforePicture = await idsOf(page)
+  await page.getByPlaceholder("发消息").fill("你看这张图里都有什么？用一句话说")
+  await page.getByRole("button", { name: "发送" }).click()
+  await newBubble(page, beforePicture)
+  await idle(page)
+  const sent = page.getByTestId("sent-picture").last()
+  await sent.waitFor()
+  assert.ok(
+    await sent.evaluate((img: HTMLImageElement) => img.naturalWidth > 0),
+    "the picture is shown in the conversation"
+  )
+  const answer = (await assistant(page).last().innerText()).trim()
+  console.log("picture answer:", answer)
+  assert.match(
+    answer,
+    /太阳|阳光|草|天空|蓝天|白云|云|绿|黄|风景|画|插画|简笔|天/,
+    "her answer is about the picture"
+  )
+  await snap(page, "13-picture-answer")
+  // Still there after a reload
+  await page.reload()
+  await page.getByPlaceholder("发消息").waitFor()
+  await page.getByTestId("sent-picture").last().waitFor()
+  await snap(page, "14-picture-after-reload")
+  // Bad files: not a picture, too big
+  await picker.setInputFiles({
+    name: "fake.jpg",
+    mimeType: "image/jpeg",
+    buffer: Buffer.from("this is not a picture"),
+  })
+  await page.getByText(/打不开|只支持/).waitFor()
+  await picker.setInputFiles({
+    name: "huge.jpg",
+    mimeType: "image/jpeg",
+    buffer: Buffer.alloc(11 * 1024 * 1024, 1),
+  })
+  await page.getByText(/图片太大/).waitFor({ timeout: 30_000 })
+  await snap(page, "15-picture-refused")
+  assert.equal(await page.getByTestId("picture-preview").count(), 0)
+
+  // Similar notes: she asks before merging, nothing is merged by itself
+  const noteTexts = ["我每天早上都会喝一杯冰美式咖啡", "我每天早上都喝一杯冰美式"]
+  const memoryApi = (suffix = "", init?: RequestInit) =>
+    page.evaluate(
+      ([path, body]) =>
+        fetch(`/api/companion/memories${path}`, {
+          ...(body as object),
+          headers: { "Content-Type": "application/json" },
+        }).then((r) => r.json()),
+      [suffix, init ?? {}] as const
+    )
+  for (const note of (await memoryApi()) as { id: string; content: string }[])
+    if (note.content.includes("冰美式"))
+      await memoryApi(`/${note.id}`, { method: "DELETE" })
+  await page.getByRole("button", { name: "记忆", exact: true }).click()
+  for (const note of noteTexts) {
+    await page.getByPlaceholder("让她记住一件事").fill(note)
+    await page.getByRole("button", { name: "添加", exact: true }).click()
+    await page.getByText(note, { exact: true }).first().waitFor()
+  }
+  const card = page.getByTestId("suggestion-card")
+  await card.first().waitFor()
+  assert.equal(
+    ((await memoryApi()) as { content: string }[]).filter((n) =>
+      n.content.includes("冰美式")
+    ).length,
+    2,
+    "both notes are still there until you decide"
+  )
+  await snap(page, "16-similar-card")
+  await card.first().getByRole("button", { name: "合并", exact: true }).click()
+  await page.waitForFunction(
+    () => !document.querySelector('[data-testid="suggestion-card"]')
+  )
+  const merged = ((await memoryApi()) as { content: string }[]).filter((n) =>
+    n.content.includes("冰美式")
+  )
+  assert.equal(merged.length, 1, "merged into one note")
+  await snap(page, "17-merged")
+  for (const note of merged as unknown as { id: string }[])
+    await memoryApi(`/${note.id}`, { method: "DELETE" })
+  await page.getByRole("button", { name: "聊天", exact: true }).click()
+  await page.getByPlaceholder("发消息").waitFor()
   await setPace("natural")
 
   // 6. Mobile layout of the chat
