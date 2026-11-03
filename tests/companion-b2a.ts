@@ -308,7 +308,7 @@ try {
 
   // 7. A failing or unreadable model call: the fact becomes a candidate, nothing is deleted
   await clean()
-  const keep = await memory.addNote(agentId, "喜欢吃辣", "user")
+  await memory.addNote(agentId, "喜欢吃辣", "user")
   for (const broken of [new Error("model is down"), "我不会输出 JSON", '{"ops":"x"}']) {
     const failed = await run(decides(remember("不吃辣了"), broken), "我现在不吃辣了")
     assert.equal(failed.replies.filter((m) => m.kind === "memory_candidate").length, 1)
