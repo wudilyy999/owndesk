@@ -1,17 +1,19 @@
-// Memory notes are plain rows the person can read, edit and delete. The model edits them
-// through remember / update_memory / forget (Letta-style self-editing memory; mem0's
-// add / update / delete operations are the reference for the operation set).
-import { and, desc, eq, inArray, or, sql } from "drizzle-orm"
+// Memory notes are plain rows the person can read, edit and delete. When she wants to remember
+// something, a model call decides what happens to the notes (./memory-update.ts, the mem0 way:
+// add / update / delete / nothing). Every change the model makes is written to `memory_changes`,
+// shown on the memory page, and can be undone with one click.
+import { and, desc, eq, isNull, sql } from "drizzle-orm"
 import { db } from "@/db"
 import {
   companionMessages,
   memories,
-  memorySuggestions,
+  memoryChanges,
   type Memory,
-  type MemorySuggestion,
+  type MemoryChange,
+  type MemorySnapshot,
 } from "@/db/schema"
 import { HttpError } from "@/lib/errors"
-import { findSimilar, proposeMerge } from "./similar"
+import { relatedNotes, type MemoryOp, type NoteRef, type Retrieve } from "./memory-update"
 
 const NOTE_LIMIT = 60
 const NOTE_CHARS = 12000
@@ -41,8 +43,7 @@ export function selectNotes(notes: { id: string; content: string }[]) {
   return selected
 }
 
-// The chat card for a candidate follows the note: accepted or dismissed. A merge card whose
-// newer note disappears is closed the same way.
+// The chat card for a candidate follows the note: accepted or dismissed
 async function settleCard(memoryId: string, status: "accepted" | "dismissed") {
   await db
     .update(companionMessages)
@@ -55,28 +56,56 @@ async function settleCard(memoryId: string, status: "accepted" | "dismissed") {
         sql`${companionMessages.metadata}->>'memoryId' = ${memoryId}`
       )
     )
-  await db
-    .update(companionMessages)
-    .set({
-      metadata: sql`${companionMessages.metadata} || ${JSON.stringify({ status: "dropped" })}::jsonb`,
-    })
-    .where(
-      and(
-        eq(companionMessages.kind, "memory_merge"),
-        sql`${companionMessages.metadata}->>'status' = 'pending'`,
-        or(
-          sql`${companionMessages.metadata}->>'memoryId' = ${memoryId}`,
-          sql`${companionMessages.metadata}->>'otherId' = ${memoryId}`
-        )
-      )
-    )
 }
 
+export type ChangeInfo = {
+  actor: "model" | "user"
+  origin: string
+  reason?: string | null
+  messageId?: string | null
+  sourceText?: string | null
+}
+
+const snapshot = (note: Memory): MemorySnapshot => ({
+  content: note.content,
+  status: note.status,
+  source: note.source,
+  createdAt: note.createdAt.toISOString(),
+})
+
+async function logChange(
+  agentId: string,
+  memoryId: string,
+  op: "add" | "update" | "delete",
+  before: Memory | null,
+  after: Memory | null,
+  info: ChangeInfo
+) {
+  const [row] = await db
+    .insert(memoryChanges)
+    .values({
+      agentId,
+      memoryId,
+      op,
+      actor: info.actor,
+      origin: info.origin,
+      before: before ? snapshot(before) : null,
+      after: after ? snapshot(after) : null,
+      reason: info.reason ?? null,
+      messageId: info.messageId ?? null,
+      sourceText: info.sourceText?.slice(0, 300) ?? null,
+    })
+    .returning()
+  return row
+}
+
+// `info` makes the change appear in the change log (and be undoable); without it nothing is logged
 export async function addNote(
   agentId: string,
   content: string,
   source: "user" | "agent",
-  status: "active" | "candidate" = "active"
+  status: "active" | "candidate" = "active",
+  info?: ChangeInfo
 ) {
   const [existing] = await db
     .select()
@@ -87,27 +116,40 @@ export async function addNote(
     .insert(memories)
     .values({ agentId, content, source, status })
     .returning()
+  if (info) await logChange(agentId, note.id, "add", null, note, info)
   return note
 }
 
-export async function updateNote(agentId: string, id: string, content: string) {
+export async function updateNote(
+  agentId: string,
+  id: string,
+  content: string,
+  info?: ChangeInfo
+) {
+  const [before] = await db
+    .select()
+    .from(memories)
+    .where(and(eq(memories.agentId, agentId), eq(memories.id, id)))
   const [note] = await db
     .update(memories)
     .set({ content, updatedAt: new Date() })
     .where(and(eq(memories.agentId, agentId), eq(memories.id, id)))
     .returning()
   if (!note) throw new HttpError(404, "Note not found for this agent")
+  if (info && before.content !== note.content)
+    await logChange(agentId, id, "update", before, note, info)
   return note
 }
 
-export async function deleteNote(agentId: string, id: string) {
+export async function deleteNote(agentId: string, id: string, info?: ChangeInfo) {
   const [removed] = await db
     .delete(memories)
     .where(and(eq(memories.agentId, agentId), eq(memories.id, id)))
-    .returning({ id: memories.id })
+    .returning()
   if (!removed) throw new HttpError(404, "Note not found for this agent")
   await settleCard(id, "dismissed")
-  return removed
+  if (info) await logChange(agentId, id, "delete", removed, null, info)
+  return { id: removed.id }
 }
 
 // The person confirms or rejects something the companion was unsure about. Only
@@ -131,199 +173,195 @@ export async function reviewCandidate(
     .returning()
   if (!note) throw new HttpError(404, "Candidate not found for this agent")
   await settleCard(id, "accepted")
-  // Taking a candidate that looked like an older note as it is means "keep both"
-  await closeSuggestions(agentId, "memoryId", id, "kept")
   return note
 }
 
-// ───────────────── similar notes: confirm cards, never automatic merging ─────────────────
-// Reference for the idea: mem0 and Letta check a new memory against the closest existing ones
-// before saving it (both Apache-2.0). Here the check is plain text matching (./similar.ts) and
-// the outcome is a card the person answers.
+// ───────────────── she wants to remember something ─────────────────
 
-export type SuggestionView = MemorySuggestion & {
-  memory: Pick<Memory, "id" | "content" | "status">
-  other: Pick<Memory, "id" | "content" | "status">
+export type AppliedChange = {
+  op: "add" | "update" | "delete"
+  id: string
+  before: string | null
+  after: string | null
+  reason: string | null
 }
 
-async function closeSuggestions(
+export type Remembered = {
+  // What happened to the notes (active ones only; a candidate is reported separately)
+  changes: AppliedChange[]
+  // A note waiting for the person's yes (uncertain, sensitive picture, or the update call failed)
+  candidate: Memory | null
+  // The fact was already known and nothing changed
+  known: boolean
+  // The update call failed or could not be read, so the fact became a candidate
+  fellBack: boolean
+}
+
+export type DecideFn = (
+  fact: string,
+  related: NoteRef[]
+) => Promise<{ ops: MemoryOp[] | null }>
+
+export type RememberOptions = {
+  certainty: "sure" | "unsure"
+  // A face or an ID is in the picture: nothing may be written without the person's yes
+  guarded: boolean
+  origin: string
+  messageId?: string | null
+  sourceText?: string | null
+  decide: DecideFn
+  // Hook for plugging in embeddings when there are many notes
+  retrieve?: Retrieve
+}
+
+// The model decides; the rules below make sure it can only do what is safe:
+// - uncertain facts, and anything while a sensitive picture is in play, never change a note: at
+//   most they become a candidate for the person to confirm
+// - UPDATE / DELETE only reach notes that were shown to the model (ids are checked on parsing)
+// - a failed call or unreadable answer saves the fact as a candidate and deletes nothing
+export async function rememberDecided(
   agentId: string,
-  column: "memoryId" | "otherId",
-  id: string,
-  status: "kept" | "dropped"
-) {
-  const closed = await db
-    .update(memorySuggestions)
-    .set({ status })
-    .where(
-      and(
-        eq(memorySuggestions.agentId, agentId),
-        eq(memorySuggestions[column], id),
-        eq(memorySuggestions.status, "pending")
-      )
-    )
-    .returning()
-  for (const row of closed) await settleMergeCard(row.id, status)
-}
-
-async function settleMergeCard(suggestionId: string, status: string) {
-  await db
-    .update(companionMessages)
-    .set({
-      metadata: sql`${companionMessages.metadata} || ${JSON.stringify({ status })}::jsonb`,
-    })
-    .where(
-      and(
-        eq(companionMessages.kind, "memory_merge"),
-        sql`${companionMessages.metadata}->>'suggestionId' = ${suggestionId}`
-      )
-    )
-}
-
-// Is there already a decision (pending or made) about these two notes?
-async function pairKnown(a: string, b: string) {
-  const [row] = await db
-    .select({ id: memorySuggestions.id })
-    .from(memorySuggestions)
-    .where(
-      or(
-        and(eq(memorySuggestions.memoryId, a), eq(memorySuggestions.otherId, b)),
-        and(eq(memorySuggestions.memoryId, b), eq(memorySuggestions.otherId, a))
-      )
-    )
-  return !!row
-}
-
-// Looks for the closest active note that is not the same note, and records a pending
-// suggestion for the pair. Returns null when nothing is close or the pair was already decided.
-export async function suggestMerge(
-  agentId: string,
-  note: Pick<Memory, "id" | "content">
-) {
-  const others = (await listNotes(agentId, "active")).filter((row) => row.id !== note.id)
-  for (const hit of findSimilar(note.content, others, 3)) {
-    if (await pairKnown(note.id, hit.note.id)) continue
-    const [row] = await db
-      .insert(memorySuggestions)
-      .values({
-        agentId,
-        memoryId: note.id,
-        otherId: hit.note.id,
-        mergedText: proposeMerge(hit.note.content, note.content),
-        score: Math.round(hit.score * 100),
-      })
-      .onConflictDoNothing()
-      .returning()
-    if (row) return { suggestion: row, other: hit.note }
-  }
-  return null
-}
-
-// A note the companion wants to write down. If it resembles an active note it is held back as a
-// candidate and a merge suggestion is made instead of a second, near-identical note.
-export async function rememberChecked(
-  agentId: string,
-  content: string,
-  status: "active" | "candidate"
-) {
-  const [exact] = await db
-    .select()
-    .from(memories)
-    .where(and(eq(memories.agentId, agentId), eq(memories.content, content)))
-  if (exact) return { note: exact, similar: null }
-  const hits = findSimilar(content, await listNotes(agentId, "active"), 1)
-  if (!hits.length)
-    return { note: await addNote(agentId, content, "agent", status), similar: null }
-  const note = await addNote(agentId, content, "agent", "candidate")
-  const made = await suggestMerge(agentId, note)
-  return { note, similar: made }
-}
-
-export async function listSuggestions(agentId: string): Promise<SuggestionView[]> {
-  const rows = await db
-    .select()
-    .from(memorySuggestions)
-    .where(
-      and(eq(memorySuggestions.agentId, agentId), eq(memorySuggestions.status, "pending"))
-    )
-    .orderBy(desc(memorySuggestions.createdAt))
-  if (!rows.length) return []
-  const notes = await db
-    .select({ id: memories.id, content: memories.content, status: memories.status })
-    .from(memories)
-    .where(
-      inArray(memories.id, [...new Set(rows.flatMap((r) => [r.memoryId, r.otherId]))])
-    )
-  const byId = new Map(notes.map((note) => [note.id, note]))
-  return rows.flatMap((row) => {
-    const memory = byId.get(row.memoryId)
-    const other = byId.get(row.otherId)
-    return memory && other ? [{ ...row, memory, other }] : []
+  fact: string,
+  options: RememberOptions
+): Promise<Remembered> {
+  const done: Remembered = { changes: [], candidate: null, known: false, fellBack: false }
+  const info = (reason?: string | null): ChangeInfo => ({
+    actor: "model",
+    origin: options.origin,
+    reason: reason ?? null,
+    messageId: options.messageId,
+    sourceText: options.sourceText,
   })
-}
-
-// Looks through the active notes for pairs that resemble each other (the memory page button).
-// Only creates suggestions; the older note of a pair is the one that stays on a merge.
-export async function scanSimilar(agentId: string) {
-  const notes = (await listNotes(agentId, "active")).sort(
-    (a, b) => a.createdAt.getTime() - b.createdAt.getTime()
+  const asCandidate = async () => {
+    const note = await addNote(agentId, fact, "agent", "candidate", info("待确认"))
+    if (note.status === "candidate") done.candidate = note
+    else done.known = true
+  }
+  if (options.guarded) {
+    await asCandidate()
+    return done
+  }
+  const active = await listNotes(agentId, "active")
+  // The exact same note: nothing to decide
+  if (active.some((note) => note.content === fact)) return { ...done, known: true }
+  const related = relatedNotes(
+    fact,
+    active.map((note) => ({ id: note.id, content: note.content })),
+    { retrieve: options.retrieve }
   )
-  let created = 0
-  for (const [index, note] of notes.entries()) {
-    const older = notes.slice(0, index)
-    for (const hit of findSimilar(note.content, older, 1)) {
-      if (await pairKnown(note.id, hit.note.id)) continue
-      await db.insert(memorySuggestions).values({
-        agentId,
-        memoryId: note.id,
-        otherId: hit.note.id,
-        mergedText: proposeMerge(hit.note.content, note.content),
-        score: Math.round(hit.score * 100),
-      })
-      created++
+  const { ops } = await options.decide(fact, related)
+  if (!ops) {
+    done.fellBack = true
+    await asCandidate()
+    return done
+  }
+  const real = ops.filter((op) => op.op !== "NONE")
+  if (!real.length) return { ...done, known: true }
+  if (options.certainty === "unsure") {
+    await asCandidate()
+    return done
+  }
+  const shown = new Set(related.map((note) => note.id))
+  for (const op of real) {
+    try {
+      if (op.op === "ADD") {
+        const before = done.changes.length
+        const note = await addNote(agentId, op.text, "agent", "active", info())
+        if (note.content === op.text && note.status === "active")
+          done.changes.push({
+            op: "add",
+            id: note.id,
+            before: null,
+            after: note.content,
+            reason: null,
+          })
+        else if (before === done.changes.length) done.known = true
+      } else if (op.op === "UPDATE" && shown.has(op.id)) {
+        const old = active.find((note) => note.id === op.id)
+        const note = await updateNote(agentId, op.id, op.text, info(op.reason))
+        if (old && old.content !== note.content)
+          done.changes.push({
+            op: "update",
+            id: note.id,
+            before: old.content,
+            after: note.content,
+            reason: op.reason,
+          })
+      } else if (op.op === "DELETE" && shown.has(op.id)) {
+        const old = active.find((note) => note.id === op.id)
+        await deleteNote(agentId, op.id, info(op.reason))
+        done.changes.push({
+          op: "delete",
+          id: op.id,
+          before: old?.content ?? null,
+          after: null,
+          reason: op.reason,
+        })
+      }
+    } catch (error) {
+      // A note that vanished meanwhile: skip it, never make up for it with another change
+      if (!(error instanceof HttpError)) throw error
     }
   }
-  return created
+  if (!done.changes.length) done.known = true
+  return done
 }
 
-// The person's answer. merge: the older note takes the merged wording and the newer one is
-// removed; keep: both stay (a candidate becomes a note); drop: the newer one is removed.
-export async function resolveSuggestion(
-  agentId: string,
-  id: string,
-  action: "merge" | "keep" | "drop",
-  mergedText?: string
-) {
-  const [row] = await db
+// ───────────────── change log and undo ─────────────────
+
+export async function listChanges(agentId: string, limit = 40): Promise<MemoryChange[]> {
+  return db
     .select()
-    .from(memorySuggestions)
-    .where(
-      and(
-        eq(memorySuggestions.id, id),
-        eq(memorySuggestions.agentId, agentId),
-        eq(memorySuggestions.status, "pending")
-      )
-    )
-  if (!row) throw new HttpError(404, "Suggestion not found for this agent")
-  if (action === "keep") {
-    await db
-      .update(memories)
-      .set({ status: "active", updatedAt: new Date() })
-      .where(and(eq(memories.agentId, agentId), eq(memories.id, row.memoryId)))
-    await db
-      .update(memorySuggestions)
-      .set({ status: "kept" })
-      .where(eq(memorySuggestions.id, id))
-    await settleMergeCard(id, "kept")
-    return { action }
+    .from(memoryChanges)
+    .where(eq(memoryChanges.agentId, agentId))
+    .orderBy(desc(memoryChanges.createdAt), desc(memoryChanges.id))
+    .limit(limit)
+}
+
+// Puts the notes back as they were before this change. A change can be undone once.
+export async function undoChange(agentId: string, id: string) {
+  const [change] = await db
+    .select()
+    .from(memoryChanges)
+    .where(and(eq(memoryChanges.id, id), eq(memoryChanges.agentId, agentId)))
+  if (!change) throw new HttpError(404, "Change not found for this agent")
+  if (change.undoneAt) throw new HttpError(409, "这条改动已经撤销过了")
+  const [claimed] = await db
+    .update(memoryChanges)
+    .set({ undoneAt: new Date() })
+    .where(and(eq(memoryChanges.id, id), isNull(memoryChanges.undoneAt)))
+    .returning({ id: memoryChanges.id })
+  if (!claimed) throw new HttpError(409, "这条改动已经撤销过了")
+  try {
+    if (change.op === "add") {
+      await db
+        .delete(memories)
+        .where(and(eq(memories.agentId, agentId), eq(memories.id, change.memoryId)))
+      await settleCard(change.memoryId, "dismissed")
+    } else if (change.before) {
+      const before = change.before
+      const [existing] = await db
+        .select({ id: memories.id })
+        .from(memories)
+        .where(and(eq(memories.agentId, agentId), eq(memories.id, change.memoryId)))
+      if (existing)
+        await db
+          .update(memories)
+          .set({ content: before.content, status: before.status, updatedAt: new Date() })
+          .where(eq(memories.id, change.memoryId))
+      else
+        await db.insert(memories).values({
+          id: change.memoryId,
+          agentId,
+          content: before.content,
+          status: before.status,
+          source: before.source,
+          createdAt: new Date(before.createdAt),
+        })
+    }
+  } catch (error) {
+    await db.update(memoryChanges).set({ undoneAt: null }).where(eq(memoryChanges.id, id))
+    throw error
   }
-  if (action === "merge") {
-    await updateNote(agentId, row.otherId, (mergedText ?? row.mergedText).trim())
-  }
-  // The suggestion row goes with the newer note (cascade); the card keeps the outcome
-  await settleMergeCard(id, action === "merge" ? "merged" : "dropped")
-  await db
-    .delete(memories)
-    .where(and(eq(memories.agentId, agentId), eq(memories.id, row.memoryId)))
-  return { action }
+  return { id, op: change.op }
 }

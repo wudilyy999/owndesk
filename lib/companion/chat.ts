@@ -25,7 +25,8 @@ import { parseModelSpec } from "@/lib/providers/catalog"
 import { getSetting } from "@/lib/config"
 import { getCustomPrices, monthlyBlock, monthlyUsage } from "@/lib/spend"
 import { crisisReply, detectCrisis } from "./crisis"
-import { deleteNote, listNotes, rememberChecked, selectNotes, updateNote } from "./memory"
+import { deleteNote, listNotes, rememberDecided, selectNotes, updateNote } from "./memory"
+import { decideMemoryOps } from "./memory-update"
 import { getImage, readImage, seeImage } from "./images"
 import { buildCompanionPrompt } from "./persona"
 import { queueCoview } from "./coview"
@@ -107,9 +108,7 @@ export function historyMessages(
       content:
         row.kind === "errand_proposal"
           ? `（我提出了一个任务，等你确认：${(row.metadata as { goal?: string }).goal}）`
-          : row.kind === "memory_merge"
-            ? `（我想记「${row.content}」，但和已有的记忆很像，等你决定合并还是都留）`
-            : row.content,
+          : row.content,
     }
   })
 }
@@ -435,17 +434,19 @@ export async function companionChat(
       })),
     })
 
+    // The same low effort for the memory call, whatever the chat setting says
+    const memoryOptions =
+      provider === "custom" || provider === "openrouter"
+        ? { [provider]: { reasoningEffort: "low" } }
+        : undefined
+    const MODEL_CHANGE = {
+      actor: "model",
+      origin: "chat",
+      messageId: user.id,
+      sourceText: user.content,
+    } as const
     const proposals: string[] = []
     const candidates: { memoryId: string; note: string }[] = []
-    // Notes that look like an older one: she asks whether to merge them
-    const merges: {
-      memoryId: string
-      note: string
-      suggestionId: string
-      otherId: string
-      otherNote: string
-      mergedText: string
-    }[] = []
     // Redoing a message must not record the same thing twice: notes are read-only then
     const readOnly = redo === "regenerate"
     const frozen = { status: "这次是重说一遍，先不改记忆，下次再记" }
@@ -459,30 +460,48 @@ export async function companionChat(
         }),
         execute: async ({ note, certainty }) => {
           if (readOnly) return frozen
-          const { note: saved, similar } = await rememberChecked(
-            input.agentId,
-            note,
+          const done = await rememberDecided(input.agentId, note, {
+            certainty,
             // With a face or an ID in the picture nothing is kept without the person's say-so
-            certainty === "sure" && !guarded ? "active" : "candidate"
-          )
-          if (similar) {
-            merges.push({
-              memoryId: saved.id,
-              note: saved.content,
-              suggestionId: similar.suggestion.id,
-              otherId: similar.other.id,
-              otherNote: similar.other.content,
-              mergedText: similar.suggestion.mergedText,
-            })
+            guarded,
+            origin: "chat",
+            messageId: user.id,
+            sourceText: user.content,
+            decide: async (fact, related) => {
+              const started = Date.now()
+              const decision = await decideMemoryOps(model, fact, related, {
+                context: user.content,
+                providerOptions: memoryOptions,
+              })
+              if (decision.usage)
+                await recordUsage(
+                  input.agentId,
+                  spec,
+                  price,
+                  decision.usage,
+                  Date.now() - started
+                )
+              return decision
+            },
+          })
+          if (done.candidate) {
+            candidates.push({ memoryId: done.candidate.id, note: done.candidate.content })
             return {
-              id: saved.id,
+              id: done.candidate.id,
               status: "candidate",
-              hint: `和已有的记忆「${similar.other.content}」很像，没有直接记。已问对方是合并还是都留，等对方决定；这一轮别再重复记这件事。`,
+              hint: "这条先放在待确认里，等对方点头才算数。",
             }
           }
-          if (saved.status === "candidate" && !similar)
-            candidates.push({ memoryId: saved.id, note: saved.content })
-          return { id: saved.id, saved: saved.content, status: saved.status }
+          if (done.changes.length)
+            return {
+              status: "已记下",
+              changes: done.changes.map((change) => ({
+                op: change.op,
+                before: change.before,
+                after: change.after,
+              })),
+            }
+          return { status: "这件事已经记着了，不用重复记" }
         },
       }),
       update_memory: tool({
@@ -494,7 +513,7 @@ export async function companionChat(
         execute: async ({ id, note }) => {
           if (readOnly) return frozen
           if (guarded) return { status: "这一轮的图片有人脸或证件等私密内容，先不改记忆" }
-          const saved = await updateNote(input.agentId, id, note)
+          const saved = await updateNote(input.agentId, id, note, MODEL_CHANGE)
           return { id: saved.id, saved: saved.content }
         },
       }),
@@ -502,7 +521,9 @@ export async function companionChat(
         description: "对方要求忘掉某件事，或记错了，立即删除这条记忆。",
         inputSchema: z.object({ id: z.string() }),
         execute: async ({ id }) =>
-          readOnly ? frozen : { forgotten: (await deleteNote(input.agentId, id)).id },
+          readOnly
+            ? frozen
+            : { forgotten: (await deleteNote(input.agentId, id, MODEL_CHANGE)).id },
       }),
       propose_errand: tool({
         description:
@@ -585,14 +606,6 @@ export async function companionChat(
         content: candidate.note,
         channel,
         metadata: { memoryId: candidate.memoryId, status: "pending" },
-      })
-    for (const merge of merges)
-      rows.push({
-        role: "assistant",
-        kind: "memory_merge",
-        content: merge.note,
-        channel,
-        metadata: { ...merge, status: "pending" },
       })
     // Bubbles appear one by one; cards come with the last bubble
     const pace = companion.typingPace
