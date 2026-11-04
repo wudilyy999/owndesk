@@ -25,7 +25,7 @@ import { parseModelSpec } from "@/lib/providers/catalog"
 import { getSetting } from "@/lib/config"
 import { getCustomPrices, monthlyBlock, monthlyUsage } from "@/lib/spend"
 import { crisisReply, detectCrisis } from "./crisis"
-import { deleteNote, listNotes, rememberDecided, selectNotes, updateNote } from "./memory"
+import { memoryView, recallNotes, rememberDecided } from "./memory"
 import { decideMemoryOps } from "./memory-update"
 import { getImage, readImage, seeImage } from "./images"
 import { buildCompanionPrompt } from "./persona"
@@ -179,7 +179,7 @@ async function setSuperseded(ids: string[], at: Date | null) {
 
 type Usage = Awaited<ReturnType<typeof streamText>["totalUsage"]>
 
-async function recordUsage(
+export async function recordUsage(
   agentId: string,
   spec: string,
   price: Price | null,
@@ -384,8 +384,8 @@ export async function companionChat(
     await hide()
     hiddenNow = true
     emit({ type: "typing", on: true })
-    const [notes, activities, recent] = await Promise.all([
-      listNotes(input.agentId, "active"),
+    const [memory, activities, recent] = await Promise.all([
+      memoryView(input.agentId),
       db
         .select()
         .from(lifeActivities)
@@ -418,7 +418,9 @@ export async function companionChat(
             : guarded
               ? "sensitive"
               : "seen",
-      memories: selectNotes(notes),
+      summaries: memory.summaries,
+      // Notes she has not sorted into a topic yet; the sorted ones she can read with recall_memory
+      memories: memory.notes.filter((note) => !note.summaryId),
       recentLife: activities.reverse().map((a) => ({
         kind: a.kind,
         title: a.title,
@@ -439,12 +441,6 @@ export async function companionChat(
       provider === "custom" || provider === "openrouter"
         ? { [provider]: { reasoningEffort: "low" } }
         : undefined
-    const MODEL_CHANGE = {
-      actor: "model",
-      origin: "chat",
-      messageId: user.id,
-      sourceText: user.content,
-    } as const
     const proposals: string[] = []
     const candidates: { memoryId: string; note: string }[] = []
     // Redoing a message must not record the same thing twice: notes are read-only then
@@ -453,23 +449,19 @@ export async function companionChat(
     const tools = {
       remember: tool({
         description:
-          "记下一条关于对方的长期信息，一句话。对方明确说出的事实用 sure；你只是推测、对方顺口一提、或涉及健康、感情、钱、家人等敏感内容时用 unsure，会先让对方确认才算数。",
-        inputSchema: z.object({
-          note: z.string().trim().min(1).max(500),
-          certainty: z.enum(["sure", "unsure"]).default("sure"),
-        }),
-        execute: async ({ note, certainty }) => {
+          "把关于对方的事记进长期记忆：对方说出新的事实、信息变了、记错了、或者让你忘掉某件事，都用这个。note 用一句话写清楚发生了什么（例如“最近戒咖啡了”“让我忘掉养猫的事”），记忆管理员会对照你所有的记忆，决定是新增、改写、合并、删除，还是先问对方。",
+        inputSchema: z.object({ note: z.string().trim().min(1).max(500) }),
+        execute: async ({ note }) => {
           if (readOnly) return frozen
           const done = await rememberDecided(input.agentId, note, {
-            certainty,
             // With a face or an ID in the picture nothing is kept without the person's say-so
             guarded,
             origin: "chat",
             messageId: user.id,
             sourceText: user.content,
-            decide: async (fact, related) => {
+            decide: async (fact, view) => {
               const started = Date.now()
-              const decision = await decideMemoryOps(model, fact, related, {
+              const decision = await decideMemoryOps(model, fact, view, {
                 context: user.content,
                 providerOptions: memoryOptions,
               })
@@ -504,26 +496,14 @@ export async function companionChat(
           return { status: "这件事已经记着了，不用重复记" }
         },
       }),
-      update_memory: tool({
-        description: "信息变了时，改写一条已有记忆。",
+      recall_memory: tool({
+        description:
+          "翻看你记得的细节。上面只给了各个主题的总结；想知道某个主题的具体细节时，传 topic（总结里的主题名）；不传 topic 就按页翻全部笔记（page 从 1 开始）。需要时才翻，聊天用不到就不用。",
         inputSchema: z.object({
-          id: z.string(),
-          note: z.string().trim().min(1).max(500),
+          topic: z.string().trim().max(40).optional(),
+          page: z.number().int().min(1).optional(),
         }),
-        execute: async ({ id, note }) => {
-          if (readOnly) return frozen
-          if (guarded) return { status: "这一轮的图片有人脸或证件等私密内容，先不改记忆" }
-          const saved = await updateNote(input.agentId, id, note, MODEL_CHANGE)
-          return { id: saved.id, saved: saved.content }
-        },
-      }),
-      forget: tool({
-        description: "对方要求忘掉某件事，或记错了，立即删除这条记忆。",
-        inputSchema: z.object({ id: z.string() }),
-        execute: async ({ id }) =>
-          readOnly
-            ? frozen
-            : { forgotten: (await deleteNote(input.agentId, id, MODEL_CHANGE)).id },
+        execute: async ({ topic, page }) => recallNotes(input.agentId, { topic, page }),
       }),
       propose_errand: tool({
         description:

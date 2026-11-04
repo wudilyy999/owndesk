@@ -15,7 +15,7 @@ import { resolveModelSpec } from "@/lib/providers/registry"
 import { getCustomPrices } from "@/lib/spend"
 import { requestCancellation } from "@/lib/task-control"
 import { submitTask } from "@/lib/tasks"
-import { listNotes, selectNotes } from "./memory"
+import { memoryView } from "./memory"
 import { decideShare, dueLifeSlots, lifeBudgetForSession, rhythmAt } from "./rules"
 
 export async function lifeSpentToday(agentId: string, timeZone: string, now: Date) {
@@ -39,7 +39,11 @@ export async function lifePrompt(companion: Companion, name: string, now: Date) 
     .where(eq(lifeActivities.agentId, companion.agentId))
     .orderBy(desc(lifeActivities.createdAt))
     .limit(12)
-  const notes = selectNotes(await listNotes(companion.agentId)).slice(0, 15)
+  const memory = await memoryView(companion.agentId)
+  const notes = [
+    ...memory.summaries.map((s) => ({ content: `${s.topic}：${s.content}` })),
+    ...memory.notes.filter((n) => !n.summaryId),
+  ]
   return `你是${name}。${companion.persona.background}
 性格：${companion.persona.personality}；兴趣：${companion.persona.interests}。
 现在是你自己的时间（${now.toISOString()}），没人在等你回复。像平时一样用自己的电脑：随便逛逛感兴趣的网站，读一两篇文章或看看新闻，也可以把想法写几句日记，存到 /home/agent/Life/diary/ 下（文件名用日期）。

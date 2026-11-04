@@ -12,7 +12,6 @@ import {
   isPublicUrl,
   linkIsOpenable,
 } from "@/lib/companion/coview"
-import { selectNotes } from "@/lib/companion/memory"
 import { splitBubbles, historyMessages } from "@/lib/companion/chat"
 import { resolveModeChange } from "@/lib/companion/store"
 import {
@@ -67,10 +66,10 @@ test("crisis reply names hotlines for the person's region and no persona text", 
   assert.equal(regionOf("Asia/Hong_Kong"), "OTHER")
 })
 
-test("persona prompt: real-person tone, one honesty rule, no AI repetition, memory ids and life log", () => {
+test("persona prompt: real-person tone, one honesty rule, no AI repetition, memory notes and life log", () => {
   const prompt = buildCompanionPrompt(context)
   assert.match(prompt, /你是小满/)
-  assert.match(prompt, /\[n1\] 生日是12月15日/)
+  assert.match(prompt, /- 生日是12月15日/)
   assert.match(prompt, /https:\/\/example\.com\/coffee/)
   assert.match(prompt, /如实回答，不撒谎/)
   assert.match(prompt, /propose_errand/)
@@ -123,15 +122,19 @@ test("replies split into at most four bubbles; errand cards reach the model as t
   assert.match(String(historyMessages(rows)[0].content), /查票价/)
 })
 
-test("prompt notes are capped by count and size", () => {
-  const many = Array.from({ length: 200 }, (_, i) => ({
+test("the prompt carries the topic summaries and every unsorted note, nothing cut", () => {
+  const many = Array.from({ length: 300 }, (_, i) => ({
     id: `id${i}`,
-    content: "x".repeat(300),
+    content: `第${i}条零散记忆${"x".repeat(100)}`,
   }))
-  const picked = selectNotes(many)
-  assert.ok(picked.length <= 60)
-  assert.ok(picked.reduce((n, note) => n + note.content.length, 0) <= 12000)
-  assert.equal(picked[0].id, "id0")
+  const prompt = buildCompanionPrompt({
+    ...context,
+    summaries: [{ topic: "饮食习惯", content: "爱喝冰美式" }],
+    memories: many,
+  })
+  assert.match(prompt, /饮食习惯：爱喝冰美式/)
+  for (const note of many) assert.ok(prompt.includes(note.content))
+  assert.match(prompt, /recall_memory/)
 })
 
 test("life slots fire within two hours after their time, in the companion's zone", () => {

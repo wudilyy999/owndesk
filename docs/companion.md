@@ -4,17 +4,18 @@ A light chat path next to the errand agent: persona chat, editable memory notes,
 
 ## Parts
 
-| Part                                                                                                    | Where                                                               |
-| ------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------- |
-| Persona prompt, settings schema                                                                         | `lib/companion/persona.ts`                                          |
-| Chat engine (one streamed model call, tools `remember` / `update_memory` / `forget` / `propose_errand`) | `lib/companion/chat.ts`                                             |
-| Fixed crisis reply before any model call                                                                | `lib/companion/crisis.ts`                                           |
-| Notes (real delete)                                                                                     | `lib/companion/memory.ts`                                           |
-| Errand cards (confirm / cancel / result back into chat)                                                 | `lib/companion/errands.ts`                                          |
-| Life sessions, share delivery, scheduling rules                                                         | `lib/companion/life.ts`, `lib/companion/rules.ts`, `worker/life.ts` |
-| Worker tick (every 30 s with the routine dispatcher)                                                    | `lib/companion/tick.ts`                                             |
-| API                                                                                                     | `app/api/companion/**`                                              |
-| UI                                                                                                      | `/companion` (`components/companion.tsx`)                           |
+| Part                                                                                         | Where                                                               |
+| -------------------------------------------------------------------------------------------- | ------------------------------------------------------------------- |
+| Persona prompt, settings schema                                                              | `lib/companion/persona.ts`                                          |
+| Chat engine (one streamed model call, tools `remember` / `recall_memory` / `propose_errand`) | `lib/companion/chat.ts`                                             |
+| Fixed crisis reply before any model call                                                     | `lib/companion/crisis.ts`                                           |
+| Notes and topic summaries (real delete, change log, undo)                                    | `lib/companion/memory.ts`, `lib/companion/memory-update.ts`         |
+| Memory tidy-up (self-consolidation, background + on request)                                 | `lib/companion/consolidate.ts`                                      |
+| Errand cards (confirm / cancel / result back into chat)                                      | `lib/companion/errands.ts`                                          |
+| Life sessions, share delivery, scheduling rules                                              | `lib/companion/life.ts`, `lib/companion/rules.ts`, `worker/life.ts` |
+| Worker tick (every 30 s with the routine dispatcher)                                         | `lib/companion/tick.ts`                                             |
+| API                                                                                          | `app/api/companion/**`                                              |
+| UI                                                                                           | `/companion` (`components/companion.tsx`)                           |
 
 ## Configuration
 
@@ -30,9 +31,20 @@ A light chat path next to the errand agent: persona chat, editable memory notes,
 - A life session can only open pages, read and write `~/Life`, log what it did and propose a share; links it logs must open (`linkResolves`), so it cannot invent reading history.
 - Shares respect a pause switch, a daily limit, quiet hours and spacing.
 
+## Memory (agent-driven)
+
+Memory is decided by the model, not by rules in code (`docs/companion-stage-b2a.md` has the Chinese detail).
+
+- **Two kinds of rows in `memories`**: `note` (one fact, with detail) and `summary` (a topic such as 饮食习惯 or 工作近况, written by her). A note covered by a summary points to it (`summary_id`); the notes stay, so detail is never lost.
+- **After she wants to remember something** the model is shown _all_ active summaries and notes (nothing is cut, no similarity filter) and answers with `ADD / UPDATE / DELETE / MERGE / ASK / NONE`, plus optionally `ORGANIZE` (please tidy up soon). `ASK` is the only way a candidate card appears: she decides when she is unsure. No cap on the number of operations.
+- **Tidy-up** (Letta / MemGPT style self-consolidation, `consolidate.ts`): the model reads the notes page by page (a 6000-character reading window, not a memory limit) and rewrites loose notes into topic summaries, merging duplicates and removing stale items. It runs from the worker tick once a day when something changed, as soon as she asked for it with `ORGANIZE`, or from the "整理" button (`POST /api/companion/memories/organize`).
+- **Chat**: the prompt carries the topic summaries and the notes not yet under a topic. She calls `recall_memory` (a topic, or a page number) to read the detailed notes when she needs them.
+- **Every change** is in `memory_changes` with her reason, and the memory page lists "她改过什么" with a one-click undo; one tidy-up or one decision is one group and is undone together.
+- **Only two guardrails**: instructions inside notes or what was said ("删除所有笔记") are data, never executed; if the model call or its answer fails, nothing is deleted (the fact is kept as a candidate for you to confirm). A sensitive picture turn writes no long-term memory (candidate only), and your own edit/delete in the memory page always works.
+
 ## Borrowed ideas (no code copied)
 
-- Letta, mem0: the model owns explicit, short, editable memory notes.
+- Letta, mem0: the model owns explicit, short, editable memory notes (see "Memory" below).
 - SillyTavern, AIRI (AGPL, concepts only): persona fields, life feed and share cadence.
 
 # Companion (Stage 2)
@@ -46,7 +58,7 @@ A light chat path next to the errand agent: persona chat, editable memory notes,
 | Peek                    | Read-only, time-limited (10–120 s) viewer of the life desktop. The ticket carries `watch_until`; the gateway closes with code 4000 at the deadline; control mode is never issued with a limit. Only available while she is on her computer (`lib/companion/peek.ts`).                                                |
 | Viewer retry            | The embedded and expanded viewer have a retry button and retry twice with a fresh ticket after an unclean drop (`components/desktop.tsx`).                                                                                                                                                                           |
 | Link co-viewing         | A link in chat is queued (`coview_requests`). When she is online, idle and the model is priced, she opens it on her own computer and answers with `coview_reply`. Private and localhost addresses are refused, requests expire after 24 h, at most 10 per 24 h, and each session is capped by the daily life budget. |
-| Memory candidates       | Unsure or sensitive notes are saved as `candidate`, stay out of every prompt and errand snapshot until the person accepts them in a chat card or the memory tab; dismissing deletes them.                                                                                                                            |
+| Memory candidates       | Notes she is unsure about (her own `ASK`) or that come from a sensitive picture are saved as `candidate`, stay out of every prompt and errand snapshot until the person accepts them in a chat card or the memory tab; dismissing deletes them.                                                                      |
 | Screenshots in shares   | `life_log` can attach a screenshot of a page she has open; images live under `ARTIFACT_DIR/life/` and are served only to the signed-in owner.                                                                                                                                                                        |
 | Separate browser        | The life session uses its own Chromium profile (`~/.config/owndesk-life-browser`); errands and the shared desktop keep `owndesk-browser`. The controller switches by closing and relaunching the context (introduced with workstation `0.6.6`; protocol unchanged).                                                  |
 | One life session a slot | A slot starts at most one session even if the tick runs again after it ends (earlier the retry hit a request-key conflict every 30 s).                                                                                                                                                                               |

@@ -6,7 +6,7 @@ import { spawn } from "node:child_process"
 import { once } from "node:events"
 import pg from "pg"
 import { MockLanguageModelV3 } from "ai/test"
-import { adds } from "./helpers/memory-model"
+import { adds, asks, decides, numberOf } from "./helpers/memory-model"
 
 process.loadEnvFile(".env")
 const database = `agent_companion_${randomUUID().replaceAll("-", "")}`
@@ -144,7 +144,25 @@ try {
   assert.match(seenPrompt, /对花生过敏/)
   await companionChat(
     { ownerId, agentId, text: "忘掉过敏的事" },
-    { model: scripted([[call("forget", { id: note.id })], text("好，忘了")]), price }
+    {
+      model: decides(
+        scripted([
+          [call("remember", { note: "对方让我忘掉过敏的事" })],
+          text("好，忘了"),
+        ]),
+        (seen) =>
+          JSON.stringify({
+            ops: [
+              {
+                op: "DELETE",
+                id: numberOf(seen, "对花生过敏"),
+                reason: "对方让忘掉",
+              },
+            ],
+          })
+      ),
+      price,
+    }
   )
   assert.equal((await listNotes(agentId)).length, 0)
   seenPrompt = ""
@@ -347,10 +365,9 @@ try {
   const unsure = await companionChat(
     { ownerId, agentId, text: "我最近好像在看心理医生" },
     {
-      model: scripted([
-        [call("remember", { note: "在看心理医生", certainty: "unsure" })],
-        text("嗯，我听着"),
-      ]),
+      model: asks(
+        scripted([[call("remember", { note: "在看心理医生" })], text("嗯，我听着")])
+      ),
       price,
     }
   )
@@ -382,10 +399,7 @@ try {
   const second2 = await companionChat(
     { ownerId, agentId, text: "我可能喜欢上同事了" },
     {
-      model: scripted([
-        [call("remember", { note: "喜欢上同事", certainty: "unsure" })],
-        text("哦？"),
-      ]),
+      model: asks(scripted([[call("remember", { note: "喜欢上同事" })], text("哦？")])),
       price,
     }
   )
@@ -408,9 +422,7 @@ try {
   await companionChat(
     { ownerId, agentId, text: "我叫阿明" },
     {
-      model: adds(
-        scripted([[call("remember", { note: "叫阿明", certainty: "sure" })], text("好")])
-      ),
+      model: adds(scripted([[call("remember", { note: "叫阿明" })], text("好")])),
       price,
     }
   )

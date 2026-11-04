@@ -183,6 +183,13 @@
       "when": 1793696744193,
       "tag": "0025_companion_memory_changes",
       "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "7",
+      "when": 1793769615209,
+      "tag": "0026_companion_memory_agent",
+      "breakpoints": true
     }
   ]
 }

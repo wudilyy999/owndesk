@@ -39,7 +39,13 @@ export async function agentSnapshot(
       ? await db
           .select()
           .from(memories)
-          .where(and(eq(memories.agentId, agent.id), eq(memories.status, "active")))
+          .where(
+            and(
+              eq(memories.agentId, agent.id),
+              eq(memories.status, "active"),
+              eq(memories.kind, "note")
+            )
+          )
           .orderBy(desc(memories.createdAt), desc(memories.id))
           .limit(30)
       : []

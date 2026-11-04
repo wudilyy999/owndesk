@@ -147,6 +147,15 @@ export const memories = pgTable(
     status: text({ enum: ["active", "candidate"] })
       .notNull()
       .default("active"),
+    // A note is one detailed fact. A summary is a topic block ("饮食习惯") she wrote herself while
+    // organizing her notes; the notes it covers point at it through `summaryId`.
+    kind: text({ enum: ["note", "summary"] })
+      .notNull()
+      .default("note"),
+    topic: text(),
+    summaryId: text().references((): AnyPgColumn => memories.id, {
+      onDelete: "set null",
+    }),
     createdAt: timestamp(),
     updatedAt: pgTimestamp({ withTimezone: true, mode: "date" }).notNull().defaultNow(),
   },
@@ -165,6 +174,8 @@ export const memoryChanges = pgTable(
       .references(() => agents.id, { onDelete: "cascade" }),
     memoryId: text().notNull(),
     op: text({ enum: ["add", "update", "delete"] }).notNull(),
+    // Changes made together (one merge, one organizing run) share a group and are undone together
+    groupId: text(),
     // model: decided by the memory update call; user: the person edited or deleted a note
     actor: text({ enum: ["model", "user"] }).notNull(),
     // Where it came from: chat, life, share, memory page
@@ -186,6 +197,11 @@ export type MemorySnapshot = {
   status: "active" | "candidate"
   source: "user" | "agent"
   createdAt: string
+  kind?: "note" | "summary"
+  topic?: string | null
+  // A summary also remembers which notes it covered
+  covers?: string[]
+  summaryId?: string | null
 }
 
 // Two notes that say nearly the same thing. Nothing is merged until the person decides:
@@ -1160,6 +1176,10 @@ export const companions = pgTable("companions", {
   typingPace: text({ enum: ["natural", "fast", "off"] })
     .notNull()
     .default("natural"),
+  // When she last organized her notes into topic summaries, and whether she asked for another pass
+  // (lib/companion/consolidate.ts)
+  memoryOrganizedAt: pgTimestamp({ withTimezone: true, mode: "date" }),
+  memoryOrganizeRequested: boolean().notNull().default(false),
   createdAt: timestamp(),
   updatedAt: timestamp(),
 })

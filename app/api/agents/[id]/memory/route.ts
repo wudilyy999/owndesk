@@ -14,7 +14,13 @@ export async function GET(request: Request, context: Context) {
       await db
         .select()
         .from(memories)
-        .where(and(eq(memories.agentId, id), eq(memories.status, "active")))
+        .where(
+          and(
+            eq(memories.agentId, id),
+            eq(memories.status, "active"),
+            eq(memories.kind, "note")
+          )
+        )
         .orderBy(desc(memories.createdAt), desc(memories.id)),
       { headers: { "Cache-Control": "no-store" } }
     )

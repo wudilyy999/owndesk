@@ -13,10 +13,17 @@ import type { Companion as CompanionRow, CompanionMessage } from "@/db/schema"
 import type { TypingPace } from "@/lib/companion/pacing"
 
 type View = CompanionRow & { name: string }
-type Snapshot = { content: string; status: "active" | "candidate" }
+type Snapshot = {
+  content: string
+  status: "active" | "candidate"
+  kind?: "note" | "summary"
+  topic?: string | null
+}
 type Change = {
   id: string
   op: "add" | "update" | "delete"
+  groupId: string | null
+  origin: string
   actor: "model" | "user"
   before: Snapshot | null
   after: Snapshot | null
@@ -31,6 +38,9 @@ type Note = {
   content: string
   source: string
   status: "active" | "candidate"
+  kind: "note" | "summary"
+  topic: string | null
+  summaryId: string | null
   createdAt: string
 }
 const tabs = [
@@ -612,7 +622,9 @@ function Notes({ zone }: { zone: string }) {
   const [changes, setChanges] = useState<Change[]>([])
   const [draft, setDraft] = useState(""),
     [editing, setEditing] = useState<{ id: string; content: string } | null>(null),
-    [error, setError] = useState("")
+    [error, setError] = useState(""),
+    [organizing, setOrganizing] = useState(false),
+    [organized, setOrganized] = useState("")
   const run = async <T,>(task: () => Promise<T>) => {
     setError("")
     try {
@@ -659,7 +671,109 @@ function Notes({ zone }: { zone: string }) {
           添加
         </Button>
       </form>
+      <div className="flex items-center justify-between gap-2">
+        <p className="text-xs text-faint">
+          她会自己定期把零碎的记忆整理成“关于你”的主题，你也可以现在让她整理。
+        </p>
+        <Button
+          size="sm"
+          variant="secondary"
+          data-testid="organize"
+          disabled={organizing}
+          onClick={() => {
+            setOrganizing(true)
+            setOrganized("")
+            void run(async () => {
+              const result = await api<{ changes: number; failedPages: number }>(
+                "/api/companion/memories/organize",
+                send("POST", {})
+              )
+              setOrganized(
+                result.changes
+                  ? `整理好了，动了 ${result.changes} 处，可以在下面“她改过什么”里撤销。`
+                  : result.failedPages
+                    ? "这次没整理成，什么都没动，稍后再试。"
+                    : "现在这样挺清楚的，没有要动的。"
+              )
+              await load()
+            }).finally(() => setOrganizing(false))
+          }}
+        >
+          {organizing ? "整理中…" : "整理一下"}
+        </Button>
+      </div>
+      {organized && <p className="text-xs text-faint">{organized}</p>}
       {error && <p className="text-sm text-destructive">{error}</p>}
+      {notes?.some((note) => note.kind === "summary") && (
+        <h2 className="pt-1 text-xs font-medium text-faint">关于你</h2>
+      )}
+      {notes
+        ?.filter((note) => note.kind === "summary")
+        .map((note) => (
+          <article
+            key={note.id}
+            data-testid="summary"
+            className="flex items-start justify-between gap-2 rounded-xl border border-border bg-surface p-3 text-sm"
+          >
+            {editing?.id === note.id ? (
+              <Input
+                value={editing.content}
+                onChange={(event) =>
+                  setEditing({ id: note.id, content: event.target.value })
+                }
+                maxLength={1500}
+              />
+            ) : (
+              <div>
+                <p className="font-medium">{note.topic}</p>
+                <p>{note.content}</p>
+                <p className="text-xs text-faint">
+                  {notes.filter((item) => item.summaryId === note.id).length} 条细节 ·{" "}
+                  {when(note.createdAt, zone)}
+                </p>
+              </div>
+            )}
+            <div className="flex shrink-0 gap-1">
+              {editing?.id === note.id ? (
+                <Button
+                  size="sm"
+                  onClick={() =>
+                    void run(async () => {
+                      await api(
+                        `/api/companion/memories/${note.id}`,
+                        send("PATCH", { content: editing.content })
+                      )
+                      setEditing(null)
+                      await load()
+                    })
+                  }
+                >
+                  保存
+                </Button>
+              ) : (
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => setEditing({ id: note.id, content: note.content })}
+                >
+                  编辑
+                </Button>
+              )}
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() =>
+                  void run(async () => {
+                    await api(`/api/companion/memories/${note.id}`, { method: "DELETE" })
+                    await load()
+                  })
+                }
+              >
+                删除
+              </Button>
+            </div>
+          </article>
+        ))}
       {notes?.some((note) => note.status === "candidate") && (
         <h2 className="pt-1 text-xs font-medium text-faint">
           等你确认（确认前她不会用）
@@ -695,8 +809,11 @@ function Notes({ zone }: { zone: string }) {
             </div>
           </article>
         ))}
+      {notes?.some((note) => note.kind === "note" && note.status === "active") && (
+        <h2 className="pt-1 text-xs font-medium text-faint">细节</h2>
+      )}
       {notes
-        ?.filter((note) => note.status === "active")
+        ?.filter((note) => note.kind === "note" && note.status === "active")
         .map((note) => (
           <article
             key={note.id}
@@ -716,6 +833,8 @@ function Notes({ zone }: { zone: string }) {
                 <p className="text-xs text-faint">
                   {note.source === "agent" ? "她记的" : "你加的"} ·{" "}
                   {when(note.createdAt, zone)}
+                  {note.summaryId &&
+                    ` · 归在“${notes.find((item) => item.id === note.summaryId)?.topic ?? ""}”`}
                 </p>
               </div>
             )}
@@ -776,6 +895,25 @@ function Notes({ zone }: { zone: string }) {
 }
 
 const OPS = { add: "新记", update: "改", delete: "删" } as const
+const SUMMARY_OPS = { add: "写了总结", update: "改了总结", delete: "删了总结" } as const
+
+const isSummary = (change: Change) => (change.after ?? change.before)?.kind === "summary"
+
+// Changes made together (one merge, one tidy-up) show as one card
+function groupChanges(changes: Change[]) {
+  const groups: Change[][] = []
+  const byId = new Map<string, Change[]>()
+  for (const change of changes) {
+    const known = change.groupId ? byId.get(change.groupId) : undefined
+    if (known) known.push(change)
+    else {
+      const group = [change]
+      groups.push(group)
+      if (change.groupId) byId.set(change.groupId, group)
+    }
+  }
+  return groups
+}
 
 function ChangeLog({
   changes,
@@ -791,55 +929,80 @@ function ChangeLog({
     <div className="space-y-2 pt-2" data-testid="change-log">
       <h2 className="text-xs font-medium text-faint">她改过什么</h2>
       <p className="text-xs text-faint">
-        她自己记、改、删的笔记都会留在这里，点“撤销”就能恢复成改之前的样子。
+        她自己记、改、删、整理的笔记都会留在这里，点“撤销”就能恢复成改之前的样子。一次整理或合并的改动会一起撤销。
       </p>
-      {changes.map((change) => (
-        <article
-          key={change.id}
-          data-testid="change-row"
-          data-op={change.op}
-          data-actor={change.actor}
-          className={cn(
-            "space-y-1 rounded-xl border border-border bg-surface p-3 text-sm",
-            change.undoneAt && "opacity-60"
-          )}
-        >
-          <div className="flex items-start justify-between gap-2">
-            <div className="space-y-1">
-              <p className="text-xs text-faint">
-                {change.actor === "model" ? "她" : "你"}
-                {OPS[change.op]} · {when(change.createdAt, zone)}
-              </p>
-              {change.before && (
-                <p className={change.op === "update" ? "line-through opacity-70" : ""}>
-                  {change.before.content}
+      {groupChanges(changes).map((group) => {
+        const change = group[0]
+        const undone = group.every((item) => item.undoneAt)
+        return (
+          <article
+            key={change.id}
+            data-testid="change-row"
+            data-op={change.op}
+            data-actor={change.actor}
+            data-size={group.length}
+            data-origin={change.origin}
+            className={cn(
+              "space-y-1 rounded-xl border border-border bg-surface p-3 text-sm",
+              undone && "opacity-60"
+            )}
+          >
+            <div className="flex items-start justify-between gap-2">
+              <div className="space-y-2">
+                <p className="text-xs text-faint">
+                  {change.actor === "model" ? "她" : "你"}
+                  {change.origin === "organize"
+                    ? `整理了记忆（${group.length} 处）`
+                    : group.length > 1
+                      ? `一次改了 ${group.length} 处`
+                      : (isSummary(change) ? SUMMARY_OPS : OPS)[change.op]}{" "}
+                  · {when(change.createdAt, zone)}
                 </p>
-              )}
-              {change.after && (
-                <p>
-                  {change.op === "update" ? "→ " : ""}
-                  {change.after.content}
-                </p>
-              )}
-              {change.reason && (
-                <p className="text-xs text-faint">原因：{change.reason}</p>
+                {group.map((item) => (
+                  <div key={item.id} className="space-y-1">
+                    {group.length > 1 && (
+                      <p className="text-xs text-faint">
+                        {(isSummary(item) ? SUMMARY_OPS : OPS)[item.op]}
+                        {isSummary(item) && (item.after ?? item.before)?.topic
+                          ? `：${(item.after ?? item.before)?.topic}`
+                          : ""}
+                      </p>
+                    )}
+                    {item.before && (
+                      <p
+                        className={item.op === "update" ? "line-through opacity-70" : ""}
+                      >
+                        {item.before.content}
+                      </p>
+                    )}
+                    {item.after && (
+                      <p>
+                        {item.op === "update" ? "→ " : ""}
+                        {item.after.content}
+                      </p>
+                    )}
+                    {item.reason && (
+                      <p className="text-xs text-faint">原因：{item.reason}</p>
+                    )}
+                  </div>
+                ))}
+              </div>
+              {undone ? (
+                <span className="shrink-0 text-xs text-faint">已撤销</span>
+              ) : (
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  className="shrink-0"
+                  onClick={() => onUndo(change.id)}
+                >
+                  撤销
+                </Button>
               )}
             </div>
-            {change.undoneAt ? (
-              <span className="shrink-0 text-xs text-faint">已撤销</span>
-            ) : (
-              <Button
-                size="sm"
-                variant="secondary"
-                className="shrink-0"
-                onClick={() => onUndo(change.id)}
-              >
-                撤销
-              </Button>
-            )}
-          </div>
-        </article>
-      ))}
+          </article>
+        )
+      })}
     </div>
   )
 }
