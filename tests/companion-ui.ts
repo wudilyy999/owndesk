@@ -253,7 +253,8 @@ try {
     mimeType: "image/jpeg",
     buffer: Buffer.from("this is not a picture"),
   })
-  await page.getByText(/打不开|只支持/).waitFor()
+  // the error line under the picker, not any earlier chat message that happens to say 打不开
+  await page.locator("p.text-destructive", { hasText: /打不开|只支持/ }).waitFor()
   await picker.setInputFiles({
     name: "huge.jpg",
     mimeType: "image/jpeg",
@@ -326,15 +327,14 @@ try {
     .first()
     .getByRole("button", { name: "撤销" })
     .click()
-  await page.waitForFunction(
-    () => document.querySelectorAll('[data-testid="change-row"] span').length >= 2
-  )
-  assert.ok(
+  // The undo is a request the page sends; read the API until the note is back
+  const noteBack = async () =>
     ((await memoryApi()) as { content: string }[]).some((n) =>
       n.content.includes("住在上海（界面测试）")
-    ),
-    "the deleted note is back"
-  )
+    )
+  for (let i = 0; i < 30 && !(await noteBack()); i++)
+    await new Promise((resolve) => setTimeout(resolve, 500))
+  assert.ok(await noteBack(), "the deleted note is back")
   await snap(page, "17-after-undo")
   // Clean up the test notes
   for (const note of (await memoryApi()) as { id: string; content: string }[])

@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Room } from "@/components/companion-room"
 import { Channels } from "@/components/companion-channels"
+import { PushSettings, usePresence } from "@/components/companion-push"
 import { cn } from "@/lib/utils"
 import type { Companion as CompanionRow, CompanionMessage } from "@/db/schema"
 import type { TypingPace } from "@/lib/companion/pacing"
@@ -89,6 +90,8 @@ export function Companion() {
   useEffect(() => {
     void load()
   }, [load])
+  // Tells the server this page is being looked at, so notifications stay quiet meanwhile
+  usePresence()
   return (
     <main className="mx-auto flex h-dvh max-w-3xl flex-col px-4 py-4">
       <header className="flex flex-col gap-2 pb-3 sm:flex-row sm:items-center sm:justify-between">
@@ -286,7 +289,15 @@ function Chat({ zone, pace }: { zone: string; pace: TypingPace }) {
     const timer = setInterval(() => {
       if (!document.hidden && !running.current) void refresh()
     }, 15000)
-    return () => clearInterval(timer)
+    // Coming back from a notification: show what she wrote right away
+    const shown = () => {
+      if (!document.hidden && !running.current) void refresh()
+    }
+    document.addEventListener("visibilitychange", shown)
+    return () => {
+      clearInterval(timer)
+      document.removeEventListener("visibilitychange", shown)
+    }
   }, [refresh])
   useEffect(() => {
     bottom.current?.scrollIntoView({ block: "end" })
@@ -1176,6 +1187,20 @@ function SettingsForm({ view, onSaved }: { view: View; onSaved: (view: View) => 
       setError(cause instanceof Error ? cause.message : String(cause))
     }
   }
+  // The notification preview switch saves at once: it is not part of the long form below
+  async function savePreview(value: boolean) {
+    set("pushPreview", value)
+    try {
+      const saved = await api<CompanionRow>(
+        "/api/companion",
+        send("PATCH", { pushPreview: value })
+      )
+      onSaved({ ...view, ...saved, name: form.name })
+    } catch (cause) {
+      set("pushPreview", !value)
+      setError(cause instanceof Error ? cause.message : String(cause))
+    }
+  }
   return (
     <section className="min-h-0 flex-1 space-y-4 overflow-y-auto pb-6">
       <label className={field}>
@@ -1323,6 +1348,10 @@ function SettingsForm({ view, onSaved }: { view: View; onSaved: (view: View) => 
           </label>
         </div>
       </fieldset>
+      <PushSettings
+        preview={form.pushPreview}
+        onPreview={(value) => void savePreview(value)}
+      />
       {error && <p className="text-sm text-destructive">{error}</p>}
       {message && <p className="text-sm text-ok">{message}</p>}
       <Button onClick={() => void save()}>保存</Button>

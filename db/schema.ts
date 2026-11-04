@@ -1180,8 +1180,50 @@ export const companions = pgTable("companions", {
   // (lib/companion/consolidate.ts)
   memoryOrganizedAt: pgTimestamp({ withTimezone: true, mode: "date" }),
   memoryOrganizeRequested: boolean().notNull().default(false),
+  // Phone/browser notifications (lib/companion/push.ts): show a line of her message, or only
+  // "she sent you a message"
+  pushPreview: boolean().notNull().default(true),
+  // Last time a visible chat page said it was open; no notification while the person is looking
+  webSeenAt: pgTimestamp({ withTimezone: true, mode: "date" }),
   createdAt: timestamp(),
   updatedAt: timestamp(),
+})
+
+// One row per browser/phone that allowed notifications. The endpoint belongs to the browser's
+// push service (FCM, Mozilla autopush, Apple); p256dh/auth encrypt the payload for that browser only.
+export const pushSubscriptions = pgTable(
+  "push_subscriptions",
+  {
+    id: id(),
+    agentId: text()
+      .notNull()
+      .references(() => agents.id, { onDelete: "cascade" }),
+    endpoint: text().notNull(),
+    p256dh: text().notNull(),
+    auth: text().notNull(),
+    userAgent: text(),
+    createdAt: timestamp(),
+    lastSentAt: pgTimestamp({ withTimezone: true, mode: "date" }),
+    failures: integer().notNull().default(0),
+  },
+  (t) => [
+    uniqueIndex("push_subscriptions_endpoint_idx").on(t.endpoint),
+    index("push_subscriptions_agent_idx").on(t.agentId),
+  ]
+)
+
+// What happened to each of her messages that could have become a notification (sent, or why not)
+export const pushDeliveries = pgTable("push_deliveries", {
+  messageId: text()
+    .primaryKey()
+    .references(() => companionMessages.id, { onDelete: "cascade" }),
+  agentId: text()
+    .notNull()
+    .references(() => agents.id, { onDelete: "cascade" }),
+  status: text({ enum: ["sent", "skipped", "failed"] }).notNull(),
+  reason: text(),
+  devices: integer().notNull().default(0),
+  createdAt: timestamp(),
 })
 
 export const companionMessages = pgTable(
@@ -1313,6 +1355,7 @@ export const lifeShares = pgTable(
 
 export type Companion = typeof companions.$inferSelect
 export type CompanionMessage = typeof companionMessages.$inferSelect
+export type PushSubscriptionRow = typeof pushSubscriptions.$inferSelect
 export type CompanionImage = typeof companionImages.$inferSelect
 export type MemorySuggestion = typeof memorySuggestions.$inferSelect
 export type MemoryChange = typeof memoryChanges.$inferSelect

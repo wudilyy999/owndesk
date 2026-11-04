@@ -4,6 +4,7 @@ import { and, eq, sql } from "drizzle-orm"
 import { db, pool } from "@/db"
 import { companionMessages, companions } from "@/db/schema"
 import { HttpError } from "@/lib/errors"
+import { requestCancellation } from "@/lib/task-control"
 import { submitTask } from "@/lib/tasks"
 
 async function ownedProposal(ownerId: string, messageId: string) {
@@ -136,5 +137,26 @@ export async function syncErrands() {
       })
     })
   }
+  return rows.length
+}
+
+// An errand stopped for review is left open for its owner (syncErrands tells them once), but it
+// still holds her computer: a request that timed out on the network would otherwise keep every
+// later errand queued behind it. After a while with no answer it is stopped, and she says so.
+export const ERRAND_REVIEW_PATIENCE_MS = 20 * 60_000
+
+export async function stopStalledErrands(
+  now = new Date(),
+  patienceMs = ERRAND_REVIEW_PATIENCE_MS
+) {
+  const { rows } = await pool.query<{ id: string; owner_id: string }>(
+    `SELECT t.id,t.owner_id FROM tasks t
+     JOIN companion_messages m ON m.metadata->>'taskId'=t.id
+     WHERE m.kind='errand_proposal' AND m.metadata->>'status'='confirmed'
+       AND t.status='needs_review' AND t.cancel_requested_at IS NULL
+       AND t.updated_at < $1`,
+    [new Date(now.getTime() - patienceMs)]
+  )
+  for (const row of rows) await requestCancellation(row.owner_id, row.id)
   return rows.length
 }
