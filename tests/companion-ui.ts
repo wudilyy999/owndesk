@@ -343,6 +343,63 @@ try {
   await pool.query(
     "DELETE FROM memory_changes WHERE (before->>'content' LIKE '%界面测试%' OR after->>'content' LIKE '%界面测试%')"
   )
+
+  // 5c. The tidy-up button: the real model rewrites loose notes into topic summaries ("关于你"),
+  //     the change log shows the run as one entry, and one click undoes all of it
+  const tagged = [
+    "喜欢喝冰美式（整理测试）",
+    "平时只喝无糖乌龙茶（整理测试）",
+    "爱吃辣（整理测试）",
+    "不吃香菜（整理测试）",
+    "在一家游戏公司做策划（整理测试）",
+    "这周在赶版本，天天加班（整理测试）",
+    "周末常去徐汇滨江跑步（整理测试）",
+  ]
+  for (const content of tagged) await memory.addNote(agentId, content, "user")
+  await pool.query("UPDATE memories SET summary_id = NULL WHERE agent_id = $1", [agentId])
+  await pool.query("DELETE FROM memories WHERE agent_id = $1 AND kind = 'summary'", [
+    agentId,
+  ])
+  await page.reload()
+  await page.getByRole("button", { name: "记忆", exact: true }).click()
+  await page.getByText(tagged[0], { exact: true }).first().waitFor()
+  await page.getByTestId("organize").click()
+  await page.getByText(/整理好了，动了 \d+ 处/).waitFor({ timeout: 240_000 })
+  await page.getByTestId("summary").first().waitFor()
+  assert.ok(
+    (await page.getByTestId("summary").count()) >= 1,
+    "topic summaries appeared under 关于你"
+  )
+  await page.getByRole("heading", { name: "关于你" }).waitFor()
+  const run = page.getByTestId("change-row").filter({ hasText: "整理了记忆" }).first()
+  await run.waitFor()
+  assert.equal(await run.getAttribute("data-origin"), "organize")
+  assert.ok(
+    Number(await run.getAttribute("data-size")) >= 1,
+    "the run is one entry in the log"
+  )
+  await snap(page, "18-organized-summaries")
+  await page.screenshot({
+    path: path.join(shots, "18b-organized-full-page.png"),
+    fullPage: true,
+  })
+  await run.getByRole("button", { name: "撤销" }).click()
+  await run.getByText("已撤销").waitFor()
+  await page.waitForFunction(
+    () => document.querySelectorAll('[data-testid="summary"]').length === 0
+  )
+  for (const content of tagged)
+    assert.ok(
+      ((await memoryApi()) as { content: string }[]).some((n) => n.content === content),
+      `back after undo: ${content}`
+    )
+  await snap(page, "19-organize-undone")
+  for (const note of (await memoryApi()) as { id: string; content: string }[])
+    if (note.content.includes("整理测试"))
+      await memoryApi(`/${note.id}`, { method: "DELETE" })
+  await pool.query(
+    "DELETE FROM memory_changes WHERE (before->>'content' LIKE '%整理测试%' OR after->>'content' LIKE '%整理测试%')"
+  )
   await pool.end()
   await page.getByRole("button", { name: "聊天", exact: true }).click()
   await page.getByPlaceholder("发消息").waitFor()

@@ -2,6 +2,7 @@ import { startCoviews, syncCoviews } from "./coview"
 import { deliverShares, startLifeSessions, stopStalledSessions } from "./life"
 import { syncErrands } from "./errands"
 import { purgeImages } from "./images"
+import { organizeTick } from "./consolidate"
 
 // Called by the worker's 30-second dispatcher
 export async function companionTick(now = new Date()) {
@@ -15,4 +16,8 @@ export async function companionTick(now = new Date()) {
   for (const skip of skipped) console.info(`life session skipped: ${skip.reason}`)
   await deliverShares(now)
   await purgeImages(now)
+  for (const { agentId, result } of await organizeTick(now))
+    console.info(
+      `memory tidy-up ${agentId}: ${result.changes} changes in ${result.pages} pages`
+    )
 }

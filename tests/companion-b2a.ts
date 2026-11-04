@@ -10,7 +10,7 @@ import path from "node:path"
 import pg from "pg"
 import sharp from "sharp"
 import { MockLanguageModelV3 } from "ai/test"
-import { decides, adds, numberOf, type Seen } from "./helpers/memory-model"
+import { decides, adds, asks, numberOf, type Seen } from "./helpers/memory-model"
 
 process.loadEnvFile(".env")
 const database = `agent_companion_b2a_${randomUUID().replaceAll("-", "")}`
@@ -120,8 +120,7 @@ try {
   // ───── memory decided by the model ─────
   const run = (model: MockLanguageModelV3, textIn: string) =>
     companionChat({ ownerId, agentId, text: textIn }, { model, price })
-  const remember = (note: string, certainty: "sure" | "unsure" = "sure") =>
-    scripted([[call("remember", { note, certainty })], text("好")])
+  const remember = (note: string) => scripted([[call("remember", { note })], text("好")])
   const ops = (...list: unknown[]) => JSON.stringify({ ops: list })
   const changes = () => memory.listChanges(agentId)
   const clean = async () => {
@@ -262,39 +261,33 @@ try {
   )
   assert.ok((await listNotes(agentId)).some((n) => n.content === "在上海开了家店"))
   assert.equal(unseen.replies.filter((m) => m.kind === "memory_candidate").length, 0)
-  //    b. with many notes only the picked ones are shown, and only those can be changed
+  //    b. with many notes the model is shown every one of them (no cut-off, no similarity filter);
+  //       a note that is gone by the time the answer is applied is skipped
   await clean()
   await pool.query(
-    "INSERT INTO memories(id,agent_id,content,source,status,created_at,updated_at) SELECT gen_random_uuid()::text, $1, '笔记 ' || g, 'user', 'active', now(), now() - g * interval '1 second' FROM generate_series(1, 160) g",
+    "INSERT INTO memories(id,agent_id,content,source,status,created_at,updated_at) SELECT gen_random_uuid()::text, $1, '笔记 ' || g, 'user', 'active', now(), now() - g * interval '1 second' FROM generate_series(1, 400) g",
     [agentId]
   )
   const crowd = await listNotes(agentId, "active")
-  const picked = crowd[5]
-  const outside = crowd[100]
-  let handed: string[] = []
+  let handed = 0
   const decided = await memory.rememberDecided(agentId, "新的一件事", {
-    certainty: "sure",
     guarded: false,
     origin: "test",
-    retrieve: (_fact, all) => all.filter((n) => n.id === picked.id),
-    decide: async (_fact, related) => {
-      handed = related.map((n) => n.id)
+    decide: async (_fact, view) => {
+      handed = view.notes.length
       return {
         ops: [
-          { op: "DELETE", id: outside.id, reason: "没给它看过" },
-          { op: "UPDATE", id: picked.id, text: "笔记 6（补充）", reason: "看过" },
+          { op: "DELETE", id: "gone-before-applied", reason: "已经不在了" },
+          { op: "UPDATE", id: crowd[300].id, text: "笔记 301（补充）", reason: "看过" },
         ],
       }
     },
   })
-  assert.deepEqual(handed, [picked.id])
+  assert.equal(handed, 400, "all 400 notes were shown")
   assert.equal(decided.changes.length, 1)
   assert.equal(decided.changes[0].op, "update")
-  assert.ok(
-    (await listNotes(agentId)).some((n) => n.id === outside.id),
-    "unseen note kept"
-  )
-  //    c. at most 4 operations per call
+  assert.equal((await listNotes(agentId)).length, 400, "nothing else changed")
+  //    c. no cap on the number of operations
   await clean()
   await run(
     decides(
@@ -303,8 +296,11 @@ try {
     ),
     "一大堆事"
   )
-  assert.equal((await listNotes(agentId)).length, 4)
-  assert.equal((await changes()).length, 4)
+  assert.equal((await listNotes(agentId)).length, 9)
+  assert.equal((await changes()).length, 9)
+  //    ... and the changes of one decision are one group: one undo puts all 9 back
+  await memory.undoChange(agentId, (await changes())[0].id)
+  assert.equal((await listNotes(agentId)).length, 0)
 
   // 7. A failing or unreadable model call: the fact becomes a candidate, nothing is deleted
   await clean()
@@ -326,13 +322,13 @@ try {
   assert.equal(mute.replies.filter((m) => m.kind === "memory_candidate").length, 1)
   assert.equal((await listNotes(agentId, "active")).length, 1)
 
-  // 8. Uncertain facts stay candidate cards, as before; the model never edits an old note for them
+  // 8. The model itself decides when to ask: ASK makes a candidate card and never edits an old note
   await clean()
   await memory.addNote(agentId, "喜欢吃辣", "user")
   const unsure = await run(
     decides(
-      remember("可能不太吃辣了", "unsure"),
-      ops({ op: "UPDATE", id: "1", text: "不吃辣了", reason: "变了" })
+      remember("可能不太吃辣了"),
+      ops({ op: "ASK", text: "可能不太吃辣了", reason: "对方只是说好像" })
     ),
     "我好像不太吃辣了"
   )
@@ -342,14 +338,22 @@ try {
     ["喜欢吃辣"]
   )
   assert.equal((await listNotes(agentId, "candidate"))[0].content, "可能不太吃辣了")
+  //    ... a fact the model is sure about is simply recorded, however sensitive it sounds
+  await clean()
+  const sure = await run(
+    decides(remember("在看心理医生"), ops({ op: "ADD", text: "在看心理医生" })),
+    "我在看心理医生，已经半年了"
+  )
+  assert.equal(sure.replies.filter((m) => m.kind === "memory_candidate").length, 0)
+  assert.equal((await listNotes(agentId, "active")).length, 1)
   //    ... and if the model says it is already known, no card at all
   await clean()
   await memory.addNote(agentId, "喜欢吃辣", "user")
-  const knownUnsure = await run(
-    decides(remember("好像爱吃辣", "unsure"), ops({ op: "NONE", reason: "已有" })),
+  const knownAsk = await run(
+    decides(remember("好像爱吃辣"), ops({ op: "NONE", reason: "已有" })),
     "我好像爱吃辣"
   )
-  assert.equal(knownUnsure.replies.filter((m) => m.kind === "memory_candidate").length, 0)
+  assert.equal(knownAsk.replies.filter((m) => m.kind === "memory_candidate").length, 0)
   assert.equal((await listNotes(agentId, "candidate")).length, 0)
 
   // 9. The person's own edits are in the log too (actor user) and can be undone
@@ -380,7 +384,7 @@ try {
   // 10. Redoing the turn throws away her candidate card, as before
   await clean()
   await memory.addNote(agentId, "住在上海浦东", "user")
-  await run(remember("住在浦东新区", "unsure"), "再说一遍我住浦东")
+  await run(asks(remember("住在浦东新区")), "再说一遍我住浦东")
   assert.equal((await listNotes(agentId, "candidate")).length, 1)
   await companionChat(
     { ownerId, agentId, text: "", redo: "regenerate" },
@@ -549,10 +553,7 @@ try {
     { ownerId, agentId, text: "今天的晚饭", imageId: dinner.id },
     {
       model: seer(
-        [
-          [call("remember", { note: "今晚吃红烧肉", certainty: "sure" })],
-          text("看着好香\n\n你自己做的吗"),
-        ],
+        [[call("remember", { note: "今晚吃红烧肉" })], text("看着好香\n\n你自己做的吗")],
         food,
         seen1,
         looks1
@@ -616,13 +617,7 @@ try {
     { ownerId, agentId, text: "看我今天的样子，我叫小明", imageId: face.id },
     {
       model: seer(
-        [
-          [
-            call("remember", { note: "叫小明", certainty: "sure" }),
-            call("update_memory", { id: "none", note: "x" }),
-          ],
-          text("好看呀"),
-        ],
+        [[call("remember", { note: "叫小明" })], text("好看呀")],
         selfie,
         seen4
       ),
@@ -634,7 +629,6 @@ try {
   assert.equal((await listNotes(agentId, "active")).length, 0, "not saved")
   assert.equal((await listNotes(agentId, "candidate")).length, 1, "only offered")
   assert.equal(faceTurn.replies.filter((m) => m.kind === "memory_candidate").length, 1)
-  assert.ok(seen4.join().includes("先不改记忆"), "update_memory is refused")
 
   // 8. She cannot look (model without vision, error): she says so, nothing is made up
   await pool.query("DELETE FROM memories")
@@ -645,7 +639,7 @@ try {
     { ownerId, agentId, text: "你看", imageId: blind.id },
     {
       model: seer(
-        [[call("remember", { note: "x", certainty: "sure" })], text("我这会儿看不到图")],
+        [[call("remember", { note: "x" })], text("我这会儿看不到图")],
         new Error("vision not supported"),
         seen5
       ),

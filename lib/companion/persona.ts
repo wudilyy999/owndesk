@@ -1,7 +1,7 @@
 // Persona prompt for the light chat path.
 // Ideas borrowed (concepts only, no code): SillyTavern character cards (personality /
 // speaking style / background fields), Letta self-editing memory blocks (the model owns
-// remember / update / forget tools), mem0 (durable facts as short notes).
+// remember / recall tools and writes its own topic summaries), mem0 (durable facts as short notes).
 import { z } from "zod"
 import { taskInputSchema, type CompanionPersona } from "@/db/schema"
 import type { RhythmState } from "./rules"
@@ -79,6 +79,8 @@ export type PromptContext = {
   // A picture came with the person's last message: she saw it, saw it with a face or an ID in it,
   // or cannot see it
   image?: "seen" | "sensitive" | "unseen"
+  // Her topic summaries ("饮食习惯", "工作近况") and the notes not sorted into one yet
+  summaries?: { topic: string; content: string }[]
   memories: { id: string; content: string }[]
   recentLife: {
     kind: string
@@ -132,7 +134,7 @@ function imageText(image: PromptContext["image"]) {
   return `# 对方刚发来的图片
 对方发来了一张图（见最后一条消息）。像朋友一样自然地回应图里的内容和对方发图的用意，不要用“图片中……”这种报告腔，不要猜图中人物是谁。${
     image === "sensitive"
-      ? "\n这张图里有人脸或证件等私密内容：可以自然地回应，但不要把图里的人脸、证件信息记进长期记忆（不要用 remember 或 update_memory 记录它们）。"
+      ? "\n这张图里有人脸或证件等私密内容：可以自然地回应，但不要把图里的人脸、证件信息记进长期记忆（不要用 remember 记录它们）。"
       : ""
   }
 
@@ -156,9 +158,15 @@ export function buildCompanionPrompt(ctx: PromptContext) {
         .map((a) => `- ${a.at} ${a.title}：${a.summary}${a.url ? `（${a.url}）` : ""}`)
         .join("\n")
     : "（最近还没有记录）"
-  const notes = ctx.memories.length
-    ? ctx.memories.map((m) => `- [${m.id}] ${m.content}`).join("\n")
-    : "（还没有记下什么）"
+  const topics = (ctx.summaries ?? []).map((s) => `- ${s.topic}：${s.content}`).join("\n")
+  const loose = ctx.memories.map((m) => `- ${m.content}`).join("\n")
+  const notes =
+    [
+      topics && `关于对方，按主题：\n${topics}`,
+      loose && `${topics ? "还没归进主题的零散记忆" : "你记得的"}：\n${loose}`,
+    ]
+      .filter(Boolean)
+      .join("\n\n") || "（还没有记下什么）"
   return `你是${ctx.name}。
 ${ctx.persona.background}
 性格：${ctx.persona.personality}
@@ -178,7 +186,7 @@ ${linkText(ctx.link)}${awayText(ctx.awayDigest)}${imageText(ctx.image)}# 最近�
 ${life}
 
 # 记住对方
-下面是你记得的关于对方的事。对方说出值得长期记住的信息（喜好、重要的人和日子、近况、计划）时，用 remember 记下，一条一句（和已有的重复或有变化时系统会自动合并、更新，你不用管）；拿不准或涉及敏感内容时 certainty 用 unsure，对方会在界面里确认。信息变了用 update_memory，对方说“忘掉这个”或记错了就立刻用 forget。不要记密码、验证码、证件号。
+下面是你记得的关于对方的事：按主题写好的总结，加上还没整理的零散记忆。对方说出值得长期记住的信息（喜好、重要的人和日子、近况、计划）、信息变了、或让你忘掉某件事时，用 remember 一句话记下发生了什么；记忆管理员会对照你全部的记忆，自己决定新增、改写、合并、删除，或先请对方确认，你不用管细节。需要某个主题的具体细节时，用 recall_memory 翻（传主题名，或按页翻全部）；用不到就别翻。不要记密码、验证码、证件号。
 ${notes}
 
 # 办事

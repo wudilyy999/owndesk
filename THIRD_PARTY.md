@@ -105,9 +105,10 @@ Wayland Portal/PipeWire runtime and UI are not vendored.
   (`mem0ai/mem0`, Apache-2.0, Copyright mem0ai): the update-memory prompt
   `DEFAULT_UPDATE_MEMORY_PROMPT` in `mem0/configs/prompts.py` (the ADD / UPDATE / DELETE / NONE
   operations and their rules) is rewritten in Chinese with short note numbers, JSON output and
-  guards against instructions hidden in notes. Changed from the original. The surrounding code
-  (note selection, parsing, change log, undo) is written from scratch. The self-editing memory
-  tools (remember / update_memory / forget) follow the idea of Letta / MemGPT
-  (`letta-ai/letta`, Apache-2.0); no code from it is included.
-- The character-pair similarity in `lib/companion/similar.ts` is written from scratch; it only
-  picks which notes the update call sees when there are too many to show all of them.
+  guards against instructions hidden in notes. Changed from the original, with MERGE / ASK /
+  ORGANIZE added. The surrounding code (parsing, change log, undo) is written from scratch.
+- The topic summaries, the background tidy-up that rewrites loose notes into them
+  (`lib/companion/consolidate.ts`) and the `recall_memory` tool follow the ideas of Letta /
+  MemGPT (`letta-ai/letta`, Apache-2.0, Copyright Letta): self-edited memory blocks and
+  background ("sleep-time") consolidation. No code from it is included; the prompts and the
+  code are written from scratch.
