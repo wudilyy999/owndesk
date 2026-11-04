@@ -239,6 +239,8 @@ export const sendWebPush: PushSender = async (subscription, payload, config) => 
 }
 
 const GONE = new Set([404, 410])
+// A device added less than this long ago is not removed for a "gone" answer
+export const NEW_DEVICE_GRACE_MS = 2 * 60_000
 
 async function sendToDevices(
   subscriptions: PushSubscriptionRow[],
@@ -264,7 +266,13 @@ async function sendToDevices(
         .where(eq(pushSubscriptions.id, sub.id))
     } catch (error) {
       const status = (error as { statusCode?: number }).statusCode
-      if (status !== undefined && GONE.has(status)) {
+      // A subscription made a moment ago can be answered "gone" by Google's push service before
+      // it has finished registering (seen in the real e2e, about one run in three). Do not
+      // throw it away for that: count it as a failure so the next try can reach it.
+      const justAdded =
+        sub.createdAt !== null &&
+        now.getTime() - sub.createdAt.getTime() < NEW_DEVICE_GRACE_MS
+      if (status !== undefined && GONE.has(status) && !justAdded) {
         // The browser or phone unsubscribed: forget it
         gone++
         await db.delete(pushSubscriptions).where(eq(pushSubscriptions.id, sub.id))
