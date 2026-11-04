@@ -18,6 +18,14 @@ feedback links and update/install programs are not enabled in this project.
 Protocol knowledge only, no code copied: tencent-connect/botpy (MIT), Tencent/openclaw-weixin (MIT),
 the official QQ bot and WeChat Official Account documentation. See `docs/channels.md`.
 
+## Companion web push
+
+`web-push` 3.6.7 (web-push-libs/web-push, MPL-2.0) is used as an unmodified npm dependency for
+VAPID signing and payload encryption; no file of it is copied or edited here, so MPL-2.0 file-level
+terms stay with the package. The protocol follows RFC 8030, RFC 8291, RFC 8292 and WebKit's
+"Meet Web Push" notes (iOS requires an installed web app and a notification for every push).
+See `docs/push.md`.
+
 ## Workstation Stage A (Chinese environment, preinstalled apps)
 
 Design and structure borrowed from MIT-licensed projects; the files here are original or adapted, no copyleft code was copied.

@@ -62,6 +62,8 @@ export const companionSettingsSchema = z.object({
   rhythm: rhythmSchema.optional(),
   // How fast her bubbles appear: natural, fast, or all at once (off)
   typingPace: z.enum(["natural", "fast", "off"]).optional(),
+  // Notifications show a line of her message (default) or only "she sent you a message"
+  pushPreview: z.boolean().optional(),
 })
 export type CompanionSettingsInput = z.infer<typeof companionSettingsSchema>
 

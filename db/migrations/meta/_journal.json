@@ -190,6 +190,13 @@
       "when": 1793769615209,
       "tag": "0026_companion_memory_agent",
       "breakpoints": true
+    },
+    {
+      "idx": 27,
+      "version": "7",
+      "when": 1793812179938,
+      "tag": "0027_companion_web_push",
+      "breakpoints": true
     }
   ]
 }

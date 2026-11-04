@@ -27,6 +27,8 @@ node scripts/deploy-env.mjs https://localhost:19443 owner@example.com deploy
 
 生成 `deploy/.env` 与 `deploy/owner.env`，权限 600，拒绝覆盖已有文件，也不向终端输出秘密。使用本机编辑器查看初始拥有者密码；勿粘贴到聊天、版本库或普通任务。
 
+`deploy/.env` 里同时生成一对 `VAPID_PUBLIC_KEY` / `VAPID_PRIVATE_KEY`（网页推送，见 [push.md](../docs/push.md)）。升级或重装时保留这两行，换掉后所有已开通知的设备要重新开启。
+
 编辑 `deploy/.env` 时核对：
 
 | 项目                                         | 要求                                                                                     |

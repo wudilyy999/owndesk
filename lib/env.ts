@@ -4,6 +4,10 @@ import { z } from "zod"
 
 if (existsSync(".env")) process.loadEnvFile(".env")
 
+// A blank value (compose passes `VAR: ${VAR:-}`) counts as not set
+const blank = <T extends z.ZodType>(type: T) =>
+  z.preprocess((value) => (value === "" ? undefined : value), type.optional())
+
 const schema = z.object({
   DATABASE_URL: z.url().startsWith("postgresql://"),
   APP_URL: z.url(),
@@ -30,6 +34,11 @@ const schema = z.object({
   WORKSTATION_MEMORY_MB: z.coerce.number().int().min(1024).max(65536).default(4096),
   WORKSTATION_IDLE_MINUTES: z.coerce.number().int().min(0).max(1440).default(15),
   DESKTOP_GATEWAY_URL: z.url().optional(),
+  // Web notifications: `npm run push:keys` writes the pair into .env; without it the setting is hidden
+  VAPID_PUBLIC_KEY: blank(z.string().regex(/^[A-Za-z0-9_-]{80,100}$/)),
+  VAPID_PRIVATE_KEY: blank(z.string().regex(/^[A-Za-z0-9_-]{40,50}$/)),
+  // mailto: or https: contact the push service can use; defaults to APP_URL when that is https
+  VAPID_SUBJECT: blank(z.string()),
   PA_CONTEXT_WINDOW_TOKENS: z.coerce.number().int().min(16384).default(65536),
 })
 

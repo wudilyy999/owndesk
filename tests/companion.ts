@@ -215,6 +215,15 @@ try {
   await pool.query("UPDATE tasks SET status='needs_review' WHERE id=$1", [task.taskId])
   assert.equal(await syncErrands(), 1, "a task stopped for review is reported")
   assert.equal(await syncErrands(), 0, "the review notice is sent once")
+  // Nobody answers: only after the patience runs out is it stopped, once, so it cannot block the next errand
+  const { stopStalledErrands, ERRAND_REVIEW_PATIENCE_MS } =
+    await import("@/lib/companion/errands")
+  await pool.query("UPDATE tasks SET updated_at=now() WHERE id=$1", [task.taskId])
+  assert.equal(await stopStalledErrands(), 0, "a fresh review stop is left for the owner")
+  const later = new Date(Date.now() + ERRAND_REVIEW_PATIENCE_MS + 60_000)
+  assert.equal(await stopStalledErrands(later), 1)
+  assert.equal(await stopStalledErrands(later), 0, "stopped once")
+  await pool.query("UPDATE tasks SET cancel_requested_at=NULL WHERE id=$1", [task.taskId])
   await pool.query("UPDATE tasks SET status='completed',result=$2 WHERE id=$1", [
     task.taskId,
     JSON.stringify({ summary: "最早一班 07:10" }),

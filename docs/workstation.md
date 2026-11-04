@@ -60,7 +60,7 @@ WORKSTATION_TZ=America/New_York
 ```text
 npm test                                   # 含 tests/workstation-stage-a.test.ts（清单、生成器、环境参数）
 npm run test:workstation:stage-a           # 真实容器：语言、字体、拼音输入、LibreOffice、Chromium、安装 games、Agent 控制、英文覆盖
-npm run test:atspi:native                  # 同一镜像上的原生 AT-SPI（用 `tsx tests/atspi-native.ts <阶段>`）
+npm run test:atspi:native                  # 同一镜像上的原生 AT-SPI，依次跑全部 21 个阶段（只跑一个：`npm run test:atspi:native -- <阶段>` 或 `tsx tests/atspi-native.ts <阶段>`）
 ```
 
 网络无法直连 `deb.debian.org` 时，`STAGE_A_APT_MIRROR=http://host:port` 会在测试容器里改 apt 源；构建镜像可用 `docker build --build-arg APT_MIRROR=...`。

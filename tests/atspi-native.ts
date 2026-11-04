@@ -5,33 +5,10 @@ import path from "node:path"
 import { setTimeout as delay } from "node:timers/promises"
 import { docker, dockerRaw } from "@/lib/docker"
 import { workstationImage } from "./workstation-image"
+import { nativePhases } from "./atspi-native-phases"
 
 const phase = process.argv[2] ?? "observe"
-assert(
-  [
-    "observe",
-    "desktop-tree",
-    "actions",
-    "keyboard",
-    "safety",
-    "tag",
-    "edges",
-    "tag-guards",
-    "journal",
-    "applications",
-    "offscreen",
-    "limits",
-    "scope-parity",
-    "tag-parity",
-    "long-type",
-    "action-read-failure",
-    "preflight-tail",
-    "hidden-semantic",
-    "window-resolution",
-    "package",
-    "adaptive-observation",
-  ].includes(phase)
-)
+assert((nativePhases as readonly string[]).includes(phase), `unknown phase ${phase}`)
 const directory = path.resolve(`data/experiments/atspi-native-${phase}-${Date.now()}`)
 await mkdir(directory, { recursive: true })
 const container = `pa-native-${phase}-${Date.now()}`

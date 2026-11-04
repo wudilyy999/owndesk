@@ -2,6 +2,7 @@ import assert from "node:assert/strict"
 import { randomBytes, randomUUID } from "node:crypto"
 import { existsSync, mkdirSync, writeFileSync } from "node:fs"
 import path from "node:path"
+import { generateVapidKeys } from "./vapid-keys.mjs"
 
 const [address, email, directory] = process.argv.slice(2)
 assert(
@@ -27,6 +28,7 @@ assert(
 mkdirSync(directory, { recursive: true, mode: 0o700 })
 const id = randomUUID()
 const databasePassword = randomBytes(24).toString("hex")
+const vapid = generateVapidKeys()
 const gateway = new URL("/desktop", url)
 gateway.protocol = "wss:"
 const config = {
@@ -43,6 +45,9 @@ const config = {
   POSTGRES_PASSWORD: databasePassword,
   BETTER_AUTH_SECRET: randomBytes(32).toString("hex"),
   MASTER_KEY: randomBytes(32).toString("hex"),
+  // Web notifications (docs/push.md): keep these across upgrades or every phone must allow again
+  VAPID_PUBLIC_KEY: vapid.publicKey,
+  VAPID_PRIVATE_KEY: vapid.privateKey,
   DESKTOP_GATEWAY_URL: gateway.toString(),
   WORKSTATION_NETWORK: `pa-${id.slice(0, 8)}-egress`,
   PA_GUEST_SUBNET: "172.30.223.0/24",
