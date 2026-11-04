@@ -75,6 +75,17 @@ const newBubble = (page: Page, old: string[]) =>
     { timeout: 60_000 }
   )
 
+// A co-view she was asked for earlier (the full e2e links a web page) lands in the room whenever
+// it finishes, which can be in the middle of the regenerate step below: let it finish first
+const { pool: waitPool } = await import("@/db")
+for (let i = 0; i < 300; i++) {
+  const { rows } = await waitPool.query(
+    "SELECT 1 FROM coview_requests WHERE status IN ('pending','started') LIMIT 1"
+  )
+  if (!rows.length) break
+  await new Promise((resolve) => setTimeout(resolve, 1000))
+}
+
 try {
   const context = await browser.newContext({
     viewport: { width: 1100, height: 900 },

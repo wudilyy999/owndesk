@@ -157,8 +157,23 @@ try {
   console.log(`subscribed through the real push service (${host})`)
 
   // 2. the test button goes through the same path and arrives
-  await page.getByRole("button", { name: "发一条测试通知" }).click()
-  await page.getByText(/已发出（1 台设备）/).waitFor({ timeout: 60_000 })
+  // Google's push service sometimes answers "gone" for a subscription made seconds ago (about
+  // one run in three here); the server keeps a new device through that, so pressing the button
+  // again, as a person would, reaches it
+  let delivered = false
+  for (let attempt = 1; attempt <= 6 && !delivered; attempt++) {
+    await page.getByRole("button", { name: "发一条测试通知" }).click()
+    const outcome = await page
+      .getByText(/已发出（1 台设备）|没发出去/)
+      .first()
+      .innerText({ timeout: 30_000 })
+    delivered = outcome.includes("已发出")
+    if (!delivered) {
+      console.log(`test notification attempt ${attempt}: not delivered yet, trying again`)
+      await new Promise((resolve) => setTimeout(resolve, 5_000))
+    }
+  }
+  assert.ok(delivered, "the test notification went out within six tries")
   const test = await waitForNotification((n) => n.body === "收到啦，通知是开着的", 30)
   assert.equal(test.title, agentName)
   assert.equal(test.url, "/companion")

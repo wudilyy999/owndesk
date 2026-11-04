@@ -247,6 +247,14 @@ try {
     "410 Gone removes the device"
   )
   assert.equal((await delivery("g1")).status, "skipped")
+  // a device added moments ago is not thrown away for "gone": the push service may not know it yet
+  await push.saveSubscription(agentId, { endpoint: A, keys: key("a") }, null)
+  failWith = { [A]: 410 }
+  await push.sendTestPush(agentId, "小满", true, sender)
+  const fresh = await push.listSubscriptions(agentId)
+  assert.equal(fresh.length, 1, "a new device survives one 'gone' answer")
+  assert.equal(fresh[0].failures, 1)
+  await pool.query("DELETE FROM push_subscriptions WHERE agent_id=$1", [agentId])
   // repeated failures remove a device that never recovers
   await push.saveSubscription(agentId, { endpoint: A, keys: key("a") }, null)
   failWith = { [A]: 500 }
