@@ -74,6 +74,11 @@ QQ 的几条硬规则都写在 `lib/channels/qq.ts` 里并有测试：
 `https://你的域名/api/channels/wechat-oa`（支持明文和安全模式 AES-256-CBC），把出口 IP 加入白名单，再用绑定码绑定。
 48 小时内最多 5 条，超出的会等你下次开口。
 
+## 家用无公网 IP（先看这里）
+
+**入站访问 / 网页回调主推 [Cloudflare Tunnel](cloudflare-tunnel.md)**（`cloudflared`，Apache-2.0）。微信 **ClawBot** 不需要入站回调，只要出站能访问 iLink。  
+若 QQ / 公众号还要求**调用方固定 IP**，再在下面加 channel-relay 跳板。
+
 ## 固定出口 IP（这台机器没有稳定公网 IP）
 
 `deploy/channel-relay/relay.mjs` 是一个零依赖的小转发器，放在**有固定公网 IP 的小 VPS** 上：

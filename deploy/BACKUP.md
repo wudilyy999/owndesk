@@ -1,5 +1,7 @@
 # 一致备份与干净恢复（F12，候选实现）
 
+定时备份示例见仓库根目录 `scripts/backup-cron.example.sh`（先停 Caddy/Web/worker → `snapshot.mjs backup` → 再启动；可选 restic 异地）。恢复演练仍按下文第 5 节做到另一台干净机器。
+
 适用于本仓库的专用 Linux Compose 安装。操作端需要 Node.js 24、Docker CLI 与 Compose；直接运行 `node scripts/snapshot.mjs`，无需为该工具安装 npm 依赖。当前使用 format 2；早期 format 1 实验快照需在原环境重新制作完整快照。
 
 ## 1. 先明确恢复点

@@ -5,7 +5,6 @@ import os from "node:os"
 import path from "node:path"
 import test from "node:test"
 import vm from "node:vm"
-import webpush from "web-push"
 import {
   PUSH_EXPIRY_MS,
   QUIET_EXPIRY_MS,
@@ -148,20 +147,35 @@ test("device labels never contain the push address", () => {
   assert.equal(deviceLabel(null), "浏览器")
 })
 
-test("generated VAPID keys are a valid P-256 pair that web-push accepts, and differ each time", () => {
+test("generated VAPID keys are a valid P-256 pair that pushforge accepts, and differ each time", async () => {
+  const { buildPushHTTPRequest } = await import("@pushforge/builder")
+  const { vapidToPrivateJwk } = await import("@/lib/companion/vapid-jwk")
   const keys = generateVapidKeys()
   assert.equal(Buffer.from(keys.publicKey, "base64url").length, 65)
   assert.equal(Buffer.from(keys.publicKey, "base64url")[0], 4)
   assert.equal(Buffer.from(keys.privateKey, "base64url").length, 32)
-  webpush.setVapidDetails("mailto:test@example.com", keys.publicKey, keys.privateKey)
-  const header = webpush.getVapidHeaders(
-    "https://fcm.googleapis.com",
-    "mailto:test@example.com",
-    keys.publicKey,
-    keys.privateKey,
-    "aes128gcm"
-  )
-  assert.match(header.Authorization, /^vapid t=/)
+  // A second keypair supplies a plausible subscriber public key (65-byte uncompressed).
+  const subscriber = generateVapidKeys()
+  const built = await buildPushHTTPRequest({
+    privateJWK: vapidToPrivateJwk(keys.publicKey, keys.privateKey),
+    subscription: {
+      endpoint: "https://fcm.googleapis.com/fcm/send/test-endpoint",
+      keys: {
+        p256dh: subscriber.publicKey,
+        auth: Buffer.alloc(16, 7).toString("base64url"),
+      },
+    },
+    message: {
+      payload: { title: "t", body: "b" },
+      adminContact: "mailto:test@example.com",
+      options: { ttl: 3600, urgency: "normal" },
+    },
+  })
+  const auth =
+    built.headers instanceof Headers
+      ? built.headers.get("Authorization")
+      : (built.headers as Record<string, string>).Authorization
+  assert.match(auth ?? "", /^vapid t=/)
   assert.notEqual(generateVapidKeys().privateKey, keys.privateKey)
 })
 

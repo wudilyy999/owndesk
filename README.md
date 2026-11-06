@@ -2,6 +2,10 @@
 
 换电脑继续开发：先看[换机开发指南](docs/DEVELOPMENT-TRANSFER.md)。本仓库保留源码、测试、设计与脱敏文字报告；密钥和运行数据留在各自设备。
 
+## 自托管安装
+
+对外安装与升级请先读 **[docs/self-host.md](docs/self-host.md)**（Cloudflare Tunnel、备份、GHCR）。一人一套，严格单主人。
+
 ## 你的 AI，有自己的电脑。
 
 **做过的工作，留下来继续用。**

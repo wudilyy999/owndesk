@@ -1,11 +1,12 @@
 // Web Push: a notification on the person's phone or browser when she writes while the chat page
-// is not open. Standard Web Push with VAPID (RFC 8030 / 8292) through the `web-push` package
-// (MPL-2.0, used unmodified as a dependency). Only background messages notify; her replies to a
-// message the person just sent are already on screen.
+// is not open. Standard Web Push with VAPID (RFC 8030 / 8291 / 8292) through `@pushforge/builder`
+// (MIT, zero dependencies). Only background messages notify; her replies to a message the person
+// just sent are already on screen.
 //
 //   worker tick -> pushTick -> pending background messages -> quiet hours / viewing checks
-//               -> web-push -> browser push service (FCM, Mozilla, Apple, ...) -> sw.js shows it
+//               -> pushforge -> browser push service (FCM, Mozilla, Apple, ...) -> sw.js shows it
 import { createHash } from "node:crypto"
+import { buildPushHTTPRequest } from "@pushforge/builder"
 import {
   and,
   asc,
@@ -19,7 +20,6 @@ import {
   or,
   sql,
 } from "drizzle-orm"
-import webpush from "web-push"
 import { db } from "@/db"
 import {
   agents,
@@ -33,6 +33,7 @@ import {
 } from "@/db/schema"
 import { env } from "@/lib/env"
 import { HttpError } from "@/lib/errors"
+import { vapidToPrivateJwk } from "./vapid-jwk"
 import { inQuietHours, rhythmAt } from "./rules"
 
 // Messages she starts herself or that arrive after the person left (not replies to a message)
@@ -225,17 +226,45 @@ export type PushSender = (
 ) => Promise<{ statusCode: number }>
 
 export const sendWebPush: PushSender = async (subscription, payload, config) => {
-  const response = await webpush.sendNotification(subscription, payload, {
-    vapidDetails: {
-      subject: config.subject,
-      publicKey: config.publicKey,
-      privateKey: config.privateKey,
+  // OwnDesk stores VAPID as uncompressed+scalar; pushforge wants a private JWK.
+  const privateJWK = vapidToPrivateJwk(config.publicKey, config.privateKey)
+  // Caller already JSON.stringifies the notification object; pushforge JSON.stringifies
+  // again only for objects, so parse back to the same shape the service worker expects.
+  const data = (typeof payload === "string" ? JSON.parse(payload) : payload) as {
+    title: string
+    body: string
+    url?: string
+    tag?: string
+  }
+  const built = await buildPushHTTPRequest({
+    privateJWK,
+    subscription,
+    message: {
+      payload: data,
+      adminContact: config.subject as `mailto:${string}` | `https://${string}`,
+      options: { ttl: 3600, urgency: "normal" },
     },
-    TTL: 3600,
-    urgency: "normal",
-    timeout: 15_000,
   })
-  return { statusCode: response.statusCode }
+  const response = await fetch(built.endpoint, {
+    method: "POST",
+    headers: built.headers,
+    body: built.body,
+    signal: AbortSignal.timeout(15_000),
+  })
+  if (!(response.status === 201 || response.status === 200)) {
+    const error = new Error(`Push service answered ${response.status}`) as Error & {
+      statusCode: number
+      body?: string
+    }
+    error.statusCode = response.status
+    try {
+      error.body = await response.text()
+    } catch {
+      /* ignore */
+    }
+    throw error
+  }
+  return { statusCode: response.status }
 }
 
 const GONE = new Set([404, 410])

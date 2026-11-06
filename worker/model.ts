@@ -4,10 +4,11 @@ import { tasks } from "@/db/schema"
 import { eq } from "drizzle-orm"
 import { z } from "zod"
 import {
-  createModel,
   getProviderCredentials,
   modelContextWindow,
 } from "@/lib/providers/registry"
+import { withModelFallback } from "@/lib/providers/fallback"
+import { getSetting } from "@/lib/config"
 import { parseModelSpec } from "@/lib/providers/catalog"
 import { callCost, findPrice, toMicros, type Price } from "@/lib/providers/pricing"
 import { getCustomPrices, monthlyUsage, monthlyBlock } from "@/lib/spend"
@@ -236,9 +237,10 @@ async function requestDecision(
   const [task] = await db.select().from(tasks).where(eq(tasks.id, taskId))
   if (task.activeSegment !== segmentNo) throw new SegmentSuperseded()
   const workspace = await assertAgentControl(taskId, task.agentId)
-  const parsed = parseModelSpec(task.configSnapshot.model)!
+  const primarySpec = task.configSnapshot.model
+  const parsed = parseModelSpec(primarySpec)!
   const credentials = await getProviderCredentials(parsed.provider)
-  const model = await createModel(task.configSnapshot.model, credentials)
+  const fallbackSpec = (await getSetting("model.fallback"))?.trim() || null
   const redact = (value: string) =>
     credentials.apiKey
       ? value
@@ -346,23 +348,29 @@ async function requestDecision(
           typeof value === "string" ? redact(value) : value
         )
       ) as ModelMessage[]
-      const result = await generateText({
-        model,
-        tools: compaction ? {} : toolsForTask(task.configSnapshot),
-        ...(!compaction &&
-        (task.configSnapshot.workflowCompilation || task.configSnapshot.workflowExecution)
-          ? { toolChoice: "required" as const }
-          : {}),
-        ...prepareModelContext(task.configSnapshot.model, safeHistory, {
-          taskId,
-          threadId: task.threadId,
-          segmentNo,
-          epoch: workspace.epoch,
-          bootId: workspace.bootId,
-        }),
-        maxOutputTokens: compaction ? 4096 : DEFAULT_CONTEXT_LIMITS.output,
-        maxRetries: 0,
-        abortSignal: AbortSignal.any([signal, AbortSignal.timeout(180000)]),
+      const { result } = await withModelFallback({
+        primarySpec,
+        fallbackSpec,
+        run: async (model, spec) =>
+          generateText({
+            model,
+            tools: compaction ? {} : toolsForTask(task.configSnapshot),
+            ...(!compaction &&
+            (task.configSnapshot.workflowCompilation ||
+              task.configSnapshot.workflowExecution)
+              ? { toolChoice: "required" as const }
+              : {}),
+            ...prepareModelContext(spec, safeHistory, {
+              taskId,
+              threadId: task.threadId,
+              segmentNo,
+              epoch: workspace.epoch,
+              bootId: workspace.bootId,
+            }),
+            maxOutputTokens: compaction ? 4096 : DEFAULT_CONTEXT_LIMITS.output,
+            maxRetries: 0,
+            abortSignal: AbortSignal.any([signal, AbortSignal.timeout(240000)]),
+          }),
       })
       const usage = z
         .object({
