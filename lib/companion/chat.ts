@@ -22,6 +22,7 @@ import {
   resolveModelSpec,
 } from "@/lib/providers/registry"
 import { parseModelSpec } from "@/lib/providers/catalog"
+import { createModelWithFallback, isRetriableModelError } from "@/lib/providers/fallback"
 import { getSetting } from "@/lib/config"
 import { getCustomPrices, monthlyBlock, monthlyUsage } from "@/lib/spend"
 import { crisisReply, detectCrisis } from "./crisis"
@@ -309,10 +310,12 @@ export async function companionChat(
     return { user, replies, schedule: replies.map(() => 0) }
   }
 
-  const spec = deps.model
+  let spec = deps.model
     ? (deps.spec ?? "mock/test")
     : ((await getSetting("model.chat")) ?? (await resolveModelSpec(agent.model)))
-  const price =
+  const fallbackSpec =
+    deps.model || deps.spec ? null : (await getSetting("model.fallback"))?.trim() || null
+  let price =
     deps.price !== undefined
       ? deps.price
       : spec
@@ -324,19 +327,33 @@ export async function companionChat(
     const block = monthlyBlock(await monthlyUsage(input.ownerId), price)
     if (block) throw new HttpError(402, block)
 
-    let model = deps.model
-    if (!model) {
+    let model: LanguageModel
+    if (deps.model) model = deps.model
+    else {
       const parsed = parseModelSpec(spec)
       if (!parsed) throw new HttpError(409, `不支持的模型：${spec}`)
-      model = await createModel(spec, await getProviderCredentials(parsed.provider))
+      const created = await createModelWithFallback(
+        spec,
+        fallbackSpec && fallbackSpec !== spec ? fallbackSpec : null
+      )
+      model = created.model
+      if (created.usedFallback) {
+        spec = created.spec
+        price = findPrice(spec, { custom: await getCustomPrices() })
+      }
     }
+    // Narrowed for tool closures below (spec was string | null before the throw).
+    let activeSpec: string = spec
+    let activePrice = price
 
-    const provider = parseModelSpec(spec)?.provider
     const effort = await getSetting("chat.reasoningEffort")
-    const providerOptions =
-      provider === "custom" || provider === "openrouter"
-        ? { [provider]: { reasoningEffort: effort ?? "low" } }
+    const optionsFor = (activeSpec: string) => {
+      const id = parseModelSpec(activeSpec)?.provider
+      return id === "custom" || id === "openrouter"
+        ? { [id]: { reasoningEffort: effort ?? "low" } }
         : undefined
+    }
+    let providerOptions = optionsFor(activeSpec)
 
     // What she can see of the picture: a short vision call first (what is it, is there a face or an
     // ID?). If she cannot look at it, she says so instead of guessing.
@@ -352,8 +369,8 @@ export async function companionChat(
             const looked = await seeImage(model, data, { providerOptions })
             await recordUsage(
               input.agentId,
-              spec,
-              price,
+              activeSpec,
+              activePrice,
               looked.usage,
               Date.now() - lookedAt
             )
@@ -437,10 +454,12 @@ export async function companionChat(
     })
 
     // The same low effort for the memory call, whatever the chat setting says
-    const memoryOptions =
-      provider === "custom" || provider === "openrouter"
-        ? { [provider]: { reasoningEffort: "low" } }
+    const memoryOptions = (() => {
+      const id = parseModelSpec(activeSpec)?.provider
+      return id === "custom" || id === "openrouter"
+        ? { [id]: { reasoningEffort: "low" } }
         : undefined
+    })()
     const proposals: string[] = []
     const candidates: { memoryId: string; note: string }[] = []
     // Redoing a message must not record the same thing twice: notes are read-only then
@@ -468,8 +487,8 @@ export async function companionChat(
               if (decision.usage)
                 await recordUsage(
                   input.agentId,
-                  spec,
-                  price,
+                  activeSpec,
+                  activePrice,
                   decision.usage,
                   Date.now() - started
                 )
@@ -533,35 +552,78 @@ export async function companionChat(
           )
         ))
         pictures.set(row.id, row.description)
-    const result = streamText({
-      model,
-      providerOptions,
-      system,
-      messages: historyMessages(recent.reverse(), pictures, {
-        id: user.id,
-        image: picture,
-      }),
-      tools,
-      stopWhen: isStepCount(4),
-      maxOutputTokens: 1200,
-      maxRetries: 1,
-      abortSignal: AbortSignal.timeout(120_000),
-      onError: ({ error }) => {
-        throw error
-      },
+    const history = historyMessages(recent.reverse(), pictures, {
+      id: user.id,
+      image: picture,
     })
-    let text = ""
-    for await (const delta of result.textStream) {
-      text += delta
-      emit({ type: "delta", text: delta })
+    async function runStream(
+      activeModel: LanguageModel,
+      activeSpec: string,
+      activePrice: Price | null
+    ) {
+      const result = streamText({
+        model: activeModel,
+        providerOptions: optionsFor(activeSpec),
+        system,
+        messages: history,
+        tools,
+        stopWhen: isStepCount(4),
+        maxOutputTokens: 1200,
+        maxRetries: 1,
+        abortSignal: AbortSignal.timeout(240_000),
+        onError: ({ error }) => {
+          throw error
+        },
+      })
+      let text = ""
+      let emitted = false
+      try {
+        for await (const delta of result.textStream) {
+          text += delta
+          emitted = true
+          emit({ type: "delta", text: delta })
+        }
+      } catch (error) {
+        ;(error as { __emitted?: boolean }).__emitted = emitted
+        throw error
+      }
+      await recordUsage(
+        input.agentId,
+        activeSpec,
+        activePrice,
+        await result.totalUsage,
+        Date.now() - started
+      )
+      return text
     }
-    await recordUsage(
-      input.agentId,
-      spec,
-      price,
-      await result.totalUsage,
-      Date.now() - started
-    )
+    let text = ""
+    try {
+      text = await runStream(model, activeSpec, activePrice)
+    } catch (error) {
+      const emitted = !!(error as { __emitted?: boolean }).__emitted
+      const canFallback =
+        !deps.model &&
+        !emitted &&
+        fallbackSpec &&
+        fallbackSpec !== activeSpec &&
+        isRetriableModelError(error)
+      if (!canFallback) throw error
+      console.error(
+        `chat on ${activeSpec} failed before any reply (${(error as Error).message}); trying ${fallbackSpec}`
+      )
+      const parsed = parseModelSpec(fallbackSpec)
+      if (!parsed) throw error
+      model = await createModel(
+        fallbackSpec,
+        await getProviderCredentials(parsed.provider)
+      )
+      activeSpec = fallbackSpec
+      spec = fallbackSpec
+      activePrice = findPrice(activeSpec, { custom: await getCustomPrices() })
+      price = activePrice
+      providerOptions = optionsFor(activeSpec)
+      text = await runStream(model, activeSpec, activePrice)
+    }
 
     const bubbles = splitBubbles(text)
     const rows: NewMessage[] = bubbles.map((content) => ({

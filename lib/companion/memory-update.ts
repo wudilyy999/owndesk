@@ -13,6 +13,7 @@
 // these notes; the id handling is our own. Nothing in this file touches the database, and no rule
 // here limits how many notes are shown or how many operations come back.
 import { generateText, type LanguageModel } from "ai"
+import { isRetriableModelError } from "@/lib/providers/fallback"
 import { z } from "zod"
 
 export type NoteRef = { id: string; content: string; summaryId?: string | null }
@@ -222,11 +223,12 @@ async function ask(
       providerOptions: options.providerOptions,
       maxOutputTokens: 4000,
       maxRetries: 1,
-      abortSignal: AbortSignal.timeout(90_000),
+      abortSignal: AbortSignal.timeout(180_000),
     })
     return { ops: parseOps(result.text, toReal, allowed), usage: result.usage }
   } catch (error) {
     console.error("Memory call failed", (error as Error).message)
+    if (isRetriableModelError(error)) throw error
     return { ops: null }
   }
 }

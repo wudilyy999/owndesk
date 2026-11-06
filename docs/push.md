@@ -68,4 +68,4 @@ e2e 的做法：用已安装的 Google Chrome（`channel: "chrome"`，持久化�
 
 ## 来源
 
-`web-push`（web-push-libs，MPL-2.0）作为未修改的依赖使用；协议按 RFC 8030、RFC 8291、RFC 8292 和 WebKit 的 Web Push 文档实现，没有复制他人代码。见 `THIRD_PARTY.md`。
+推送发送使用 `@pushforge/builder`（MIT，零依赖）；VAPID 密钥格式与原先一致，在 `lib/companion/vapid-jwk.ts` 转成 JWK。协议按 RFC 8030、RFC 8291、RFC 8292 和 WebKit 的 Web Push 文档。见 `THIRD_PARTY.md`。

@@ -168,7 +168,7 @@ export async function seeImage(
     providerOptions: options.providerOptions,
     maxOutputTokens: 600,
     maxRetries: 1,
-    abortSignal: AbortSignal.timeout(60_000),
+    abortSignal: AbortSignal.timeout(180_000),
   })
   const parsed = parseSeen(result.text)
   return {

@@ -20,11 +20,11 @@ the official QQ bot and WeChat Official Account documentation. See `docs/channel
 
 ## Companion web push
 
-`web-push` 3.6.7 (web-push-libs/web-push, MPL-2.0) is used as an unmodified npm dependency for
-VAPID signing and payload encryption; no file of it is copied or edited here, so MPL-2.0 file-level
-terms stay with the package. The protocol follows RFC 8030, RFC 8291, RFC 8292 and WebKit's
-"Meet Web Push" notes (iOS requires an installed web app and a notification for every push).
-See `docs/push.md`.
+`@pushforge/builder` 2.0.5 (draphy/pushforge, MIT) encrypts payloads and signs VAPID (RFC 8030 /
+8291 / 8292) with the Web Crypto API. OwnDesk keeps VAPID keys as uncompressed P-256 + scalar
+(base64url) and converts them to JWK in `lib/companion/vapid-jwk.ts`. The MIT license text is at
+`licenses/pushforge/LICENSE`. WebKit's "Meet Web Push" notes still apply (iOS needs an installed
+web app and a visible notification for every push). See `docs/push.md`.
 
 ## Workstation Stage A (Chinese environment, preinstalled apps)
 

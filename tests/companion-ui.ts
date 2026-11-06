@@ -25,7 +25,9 @@ const typing = (page: Page) => page.locator('[data-testid="typing-indicator"]')
 const assistant = (page: Page) => page.locator('[data-role="assistant"]')
 const idle = (page: Page) =>
   page.waitForFunction(
-    () => !document.querySelector('input[placeholder="发消息"]:disabled')
+    () => !document.querySelector('input[placeholder="发消息"]:disabled'),
+    null,
+    { timeout: 260_000 }
   )
 
 // Timestamps (ms since page load) at which a new assistant bubble was added to the chat
@@ -72,7 +74,7 @@ const newBubble = (page: Page, old: string[]) =>
         (n) => !known.includes(n.getAttribute("data-message-id")!)
       ),
     old,
-    { timeout: 60_000 }
+    { timeout: 260_000 }
   )
 
 // A co-view she was asked for earlier (the full e2e links a web page) lands in the room whenever
@@ -124,7 +126,7 @@ try {
         "请分成三条很短的消息回我，每条之间空一行：先打招呼，再说你现在在做什么，最后问我吃饭了没"
       )
     await page.getByRole("button", { name: "发送" }).click()
-    await typing(page).waitFor({ state: "visible", timeout: 30_000 })
+    await typing(page).waitFor({ state: "visible", timeout: 120_000 })
     await snap(page, `01-typing-indicator${tag}`)
     await newBubble(page, before)
     if ((await typing(page).count()) > 0)
@@ -156,8 +158,10 @@ try {
   let newIds: string[] = []
   // A provider hiccup puts the old answer back (by design); ask again before judging
   for (let attempt = 0; attempt < 3; attempt++) {
-    await assistant(page).last().getByRole("button", { name: "重说" }).click()
-    await typing(page).waitFor({ state: "visible", timeout: 30_000 })
+    const redo = assistant(page).last().getByRole("button", { name: "重说" })
+    await redo.waitFor({ state: "visible", timeout: 60_000 })
+    await redo.click()
+    await typing(page).waitFor({ state: "visible", timeout: 120_000 })
     if (attempt === 0) await snap(page, "04-regenerate-typing")
     await idle(page)
     newIds = await roundIds(page)
@@ -187,7 +191,7 @@ try {
   await snap(page, "06-edit-box")
   await page.getByLabel("编辑消息").fill(edited)
   await page.getByRole("button", { name: "保存并重发" }).click()
-  await typing(page).waitFor({ state: "visible", timeout: 30_000 })
+  await typing(page).waitFor({ state: "visible", timeout: 120_000 })
   await idle(page)
   assert.ok(
     (await page.locator('[data-role="user"]').last().innerText()).includes(edited)
@@ -245,8 +249,16 @@ try {
     await sent.evaluate((img: HTMLImageElement) => img.naturalWidth > 0),
     "the picture is shown in the conversation"
   )
-  const answer = (await assistant(page).last().innerText()).trim()
+  let answer = (await assistant(page).last().innerText()).trim()
   console.log("picture answer:", answer)
+  // Vision on a slow BYOK relay can time out once; 重说 retries seeImage.
+  if (/点不开|看不了|看不清/.test(answer)) {
+    await assistant(page).last().getByRole("button", { name: "重说" }).click()
+    await typing(page).waitFor({ state: "visible", timeout: 120_000 })
+    await idle(page)
+    answer = (await assistant(page).last().innerText()).trim()
+    console.log("picture answer after redo:", answer)
+  }
   assert.match(
     answer,
     /太阳|阳光|草|天空|蓝天|白云|云|绿|黄|风景|画|插画|简笔|天/,
@@ -375,7 +387,7 @@ try {
   await page.getByRole("button", { name: "记忆", exact: true }).click()
   await page.getByText(tagged[0], { exact: true }).first().waitFor()
   await page.getByTestId("organize").click()
-  await page.getByText(/整理好了，动了 \d+ 处/).waitFor({ timeout: 240_000 })
+  await page.getByText(/整理好了，动了 \d+ 处/).waitFor({ timeout: 360_000 })
   await page.getByTestId("summary").first().waitFor()
   assert.ok(
     (await page.getByTestId("summary").count()) >= 1,

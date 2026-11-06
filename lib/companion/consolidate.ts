@@ -17,6 +17,7 @@ import {
   getProviderCredentials,
   resolveModelSpec,
 } from "@/lib/providers/registry"
+import { createModelWithFallback, withModelFallback } from "@/lib/providers/fallback"
 import { parseModelSpec } from "@/lib/providers/catalog"
 import { getSetting } from "@/lib/config"
 import { getCustomPrices, monthlyBlock, monthlyUsage } from "@/lib/spend"
@@ -68,19 +69,25 @@ async function modelFor(agentId: string, ownerId: string, deps: OrganizeDeps) {
       providerOptions: undefined,
     }
   const [agent] = await db.select().from(agents).where(eq(agents.id, agentId))
-  const spec = (await getSetting("model.chat")) ?? (await resolveModelSpec(agent.model))
+  let spec = (await getSetting("model.chat")) ?? (await resolveModelSpec(agent.model))
   if (!spec) throw new HttpError(409, "先在设置里配置模型服务和模型")
-  const price = findPrice(spec, { custom: await getCustomPrices() })
+  const fallback = (await getSetting("model.fallback"))?.trim() || null
+  let price = findPrice(spec, { custom: await getCustomPrices() })
   const block = monthlyBlock(await monthlyUsage(ownerId), price)
   if (block) throw new HttpError(402, block)
-  const parsed = parseModelSpec(spec)
-  if (!parsed) throw new HttpError(409, `不支持的模型：${spec}`)
-  const model = await createModel(spec, await getProviderCredentials(parsed.provider))
+  if (!parseModelSpec(spec)) throw new HttpError(409, `不支持的模型：${spec}`)
+  const created = await createModelWithFallback(
+    spec,
+    fallback && fallback !== spec ? fallback : null
+  )
+  spec = created.spec
+  if (created.usedFallback) price = findPrice(spec, { custom: await getCustomPrices() })
+  const parsed = parseModelSpec(spec)!
   const providerOptions =
     parsed.provider === "custom" || parsed.provider === "openrouter"
       ? { [parsed.provider]: { reasoningEffort: "low" } }
       : undefined
-  return { model, spec, price, providerOptions }
+  return { model: created.model, spec, price, providerOptions }
 }
 
 // One tidy-up over all active notes. The caller decides when (see `organizeDue`).
@@ -96,10 +103,18 @@ export async function organizeMemory(
   const { model, spec, price, providerOptions } = deps.decide
     ? { model: null, spec: "", price: null, providerOptions: undefined }
     : await modelFor(agentId, companion.ownerId, deps)
+  const fallbackSpec = (await getSetting("model.fallback"))?.trim() || null
   const decide =
     deps.decide ??
-    (async (view: MemoryView, page: { index: number; total: number }) =>
-      decideOrganizing(model!, view, page, { providerOptions }))
+    (async (view: MemoryView, page: { index: number; total: number }) => {
+      if (!spec) return decideOrganizing(model!, view, page, { providerOptions })
+      const { result } = await withModelFallback({
+        primarySpec: spec,
+        fallbackSpec: fallbackSpec && fallbackSpec !== spec ? fallbackSpec : null,
+        run: async (m) => decideOrganizing(m, view, page, { providerOptions }),
+      })
+      return result
+    })
   const groupId = randomUUID()
   const info = (reason: string | null) => ({
     actor: "model" as const,

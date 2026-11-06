@@ -66,7 +66,8 @@ const post = async (id: string, text: string) => {
   assert.equal(response.status, 200)
 }
 const waitFor = async (count: number) => {
-  for (let i = 0; i < 120; i++) {
+  // Slow BYOK relays often need 2+ minutes for a companion reply.
+  for (let i = 0; i < 600; i++) {
     if (received.filter((r) => r.path.includes("/messages")).length >= count) return
     await new Promise((resolve) => setTimeout(resolve, 500))
   }

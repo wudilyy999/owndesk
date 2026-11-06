@@ -16,6 +16,8 @@ const integrationSettings = {
   "model.default": { env: "OWNDESK_DEFAULT_MODEL" },
   // Light companion chat; empty means the agent's own model or "model.default"
   "model.chat": { env: "OWNDESK_CHAT_MODEL", internal: true },
+  // Optional second model (any provider/model spec) used when the primary times out or 5xxs
+  "model.fallback": { env: "OWNDESK_FALLBACK_MODEL", internal: true },
   // Sent as reasoning_effort to OpenAI-compatible endpoints; reasoning-heavy models
   // need it low to answer chat messages in a few seconds
   "chat.reasoningEffort": {
