@@ -33,16 +33,13 @@ test("model fallback retries timeouts and 5xx, not bad keys or 4xx", () => {
   assert.equal(isRetriableModelError(new Error("socket hang up")), true)
   assert.equal(isRetriableModelError(new Error("invalid json from model")), false)
 })
-  assert.equal(
-    isRetriableModelError(
-      Object.assign(new Error("<none>"), { name: "AI_APICallError" })
-    ),
-    true
-  )
-  assert.equal(
-    isRetriableModelError(
-      Object.assign(new Error("<none>"), { name: "AI_APICallError", status: 401 })
-    ),
-    false
-  )
-
+assert.equal(
+  isRetriableModelError(Object.assign(new Error("<none>"), { name: "AI_APICallError" })),
+  true
+)
+assert.equal(
+  isRetriableModelError(
+    Object.assign(new Error("<none>"), { name: "AI_APICallError", status: 401 })
+  ),
+  false
+)
