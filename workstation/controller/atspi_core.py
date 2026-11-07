@@ -27,6 +27,11 @@ _AT_SPI_STATE_NAMES = tuple((s.upper(),s) for s in (
 _AT_SPI_PRESS_ACTION_NAMES = ("press","click","activate","default","toggle","open","invoke")
 _AT_SPI_WINDOW_ROLES = {"alert","dialog","file chooser","frame","window"}
 _AT_SPI_WINDOW_ACTIVATION_ROLES = {"application",*_AT_SPI_WINDOW_ROLES}
+_AT_SPI_TABLE_ROLES = {"table", "tree table"}
+# Eager child expansion stays small so Calc-style virtual tables (2^31 children) cannot fill the budget.
+_AT_SPI_TABLE_EXPAND_LIMIT = 48
+_AT_SPI_TABLE_PROBE_LIMIT = 120
+_AT_SPI_FOCUS_SUBTREE_MAX_NODES = 240
 READ_ERRORS = []
 DEADLINE = float("inf")
 
@@ -285,7 +290,9 @@ def _atspi_value(element: object) -> object | None:
 def _atspi_element_for_path(desktop: object, path: list[int]) -> object | None:
     element = desktop
     for index in path:
-        if index >= _atspi_child_count(element):
+        # Virtual spreadsheets may advertise INT_MAX children; do not treat that as a hard bound.
+        count = _atspi_child_count(element)
+        if count < 10_000_000 and index >= count:
             return None
         element = _atspi_child_at(element, index)
         if element is None:
@@ -315,6 +322,217 @@ def _atspi_caret_offset(Atspi: Any, element: object) -> int:
     return _safe_int(value, default=-1)
 
 
+def _atspi_table_dimensions(Atspi: Any, element: object) -> tuple[int | None, int | None]:
+    if "Table" not in element.get_interfaces():
+        return None, None
+    try:
+        rows = max(0, _safe_int(Atspi.Table.get_n_rows(element), default=0))
+        cols = max(0, _safe_int(Atspi.Table.get_n_columns(element), default=0))
+    except (GLib.Error, RuntimeError, TypeError, ValueError):
+        return None, None
+    return rows, cols
+
+
+def _atspi_table_should_summarize(Atspi: Any, element: object, *, role: str | None = None) -> bool:
+    role_name = (role or _atspi_role(element)).casefold()
+    if role_name not in _AT_SPI_TABLE_ROLES:
+        return False
+    count = _atspi_child_count(element)
+    if count > _AT_SPI_TABLE_EXPAND_LIMIT:
+        return True
+    rows, cols = _atspi_table_dimensions(Atspi, element)
+    if rows is None or cols is None:
+        return False
+    return rows * cols > _AT_SPI_TABLE_EXPAND_LIMIT
+
+
+def _atspi_table_cell_at(
+    Atspi: Any,
+    element: object,
+    row: int,
+    col: int,
+    *,
+    path: list[int],
+) -> tuple[object, list[int]] | None:
+    if "Table" not in element.get_interfaces():
+        return None
+    try:
+        cell = Atspi.Table.get_accessible_at(element, row, col)
+    except (GLib.Error, RuntimeError, TypeError, ValueError):
+        READ_ERRORS.append({"method": "table_get_accessible_at", "error": "lookup_failed"})
+        return None
+    if cell is None:
+        return None
+    child_path = list(path)
+    try:
+        index = Atspi.Table.get_index_at(element, row, col)
+        if index is not None and int(index) >= 0:
+            child_path = [*path, int(index)]
+    except (GLib.Error, RuntimeError, TypeError, ValueError):
+        child_path = [*path, row, col]
+    return cell, child_path
+
+
+def _atspi_table_priority_cells(
+    Atspi: Any,
+    element: object,
+    *,
+    path: list[int],
+    region: dict[str, Any] | None = None,
+    max_cells: int = _AT_SPI_TABLE_PROBE_LIMIT,
+) -> tuple[list[tuple[object, list[int], dict[str, Any]]], dict[str, Any]]:
+    """Return focused/selected/region cells without enumerating a virtual grid."""
+    rows, cols = _atspi_table_dimensions(Atspi, element)
+    summary: dict[str, Any] = {
+        "role": "table",
+        "childCount": _atspi_child_count(element),
+        "omittedReason": "table_summarized",
+    }
+    if rows is not None:
+        summary["nRows"] = rows
+    if cols is not None:
+        summary["nCols"] = cols
+    cells: list[tuple[object, list[int], dict[str, Any]]] = []
+    seen: set[tuple[int, ...]] = set()
+
+    def add(cell: object, cell_path: list[int], meta: dict[str, Any]) -> None:
+        key = tuple(cell_path)
+        if key in seen or len(cells) >= max_cells:
+            return
+        seen.add(key)
+        cells.append((cell, cell_path, meta))
+
+    # Selected rows/columns when the Table interface exposes them.
+    if "Table" in element.get_interfaces() and rows and cols:
+        try:
+            selected_rows = [int(v) for v in (Atspi.Table.get_selected_rows(element) or []) if int(v) >= 0]
+            selected_cols = [int(v) for v in (Atspi.Table.get_selected_columns(element) or []) if int(v) >= 0]
+        except (GLib.Error, RuntimeError, TypeError, ValueError):
+            selected_rows, selected_cols = [], []
+        summary["selectedRows"] = selected_rows[:32]
+        summary["selectedColumns"] = selected_cols[:32]
+        for row in selected_rows[:8]:
+            for col in (selected_cols[:8] or range(min(cols, 4))):
+                found = _atspi_table_cell_at(Atspi, element, row, col, path=path)
+                if found:
+                    add(found[0], found[1], {"row": row, "col": col, "reason": "selected"})
+
+    region = region or {}
+    row_start = max(0, _safe_int(region.get("row_start"), default=0))
+    col_start = max(0, _safe_int(region.get("col_start"), default=0))
+    row_count = max(0, min(32, _safe_int(region.get("row_count"), default=8 if region else 12)))
+    col_count = max(0, min(32, _safe_int(region.get("col_count"), default=8 if region else 10)))
+    if rows is not None:
+        row_count = min(row_count, max(0, rows - row_start))
+    if cols is not None:
+        col_count = min(col_count, max(0, cols - col_start))
+    if "Table" in element.get_interfaces() and row_count and col_count:
+        summary["region"] = {
+            "row_start": row_start,
+            "col_start": col_start,
+            "row_count": row_count,
+            "col_count": col_count,
+        }
+        probes = 0
+        focused_found = False
+        for row in range(row_start, row_start + row_count):
+            for col in range(col_start, col_start + col_count):
+                if probes >= max_cells or time.monotonic() > DEADLINE:
+                    break
+                probes += 1
+                found = _atspi_table_cell_at(Atspi, element, row, col, path=path)
+                if not found:
+                    continue
+                cell, cell_path = found
+                states = _atspi_states(Atspi, cell)
+                meta = {"row": row, "col": col, "reason": "region"}
+                if "focused" in states or "selected" in states:
+                    meta["reason"] = "focused" if "focused" in states else "selected"
+                    add(cell, cell_path, meta)
+                    if "focused" in states:
+                        focused_found = True
+                elif region:
+                    add(cell, cell_path, meta)
+            if probes >= max_cells or time.monotonic() > DEADLINE:
+                break
+        # If the active cell is outside the default region, expand the probe once around A1-ish origin.
+        if not focused_found and not region and rows and cols:
+            extra = 0
+            for row in range(min(rows, 40)):
+                for col in range(min(cols, 20)):
+                    if extra >= 80 or time.monotonic() > DEADLINE:
+                        break
+                    if row_start <= row < row_start + row_count and col_start <= col < col_start + col_count:
+                        continue
+                    extra += 1
+                    found = _atspi_table_cell_at(Atspi, element, row, col, path=path)
+                    if not found:
+                        continue
+                    cell, cell_path = found
+                    if "focused" in _atspi_states(Atspi, cell):
+                        add(cell, cell_path, {"row": row, "col": col, "reason": "focused"})
+                        focused_found = True
+                        break
+                if focused_found or extra >= 80 or time.monotonic() > DEADLINE:
+                    break
+        summary["probes"] = probes
+    total = None
+    if rows is not None and cols is not None:
+        total = rows * cols
+    elif summary["childCount"] > 0:
+        total = summary["childCount"]
+    if total is not None:
+        summary["omittedCells"] = max(0, total - len(cells))
+    return cells, summary
+
+
+def _atspi_find_focused_under(
+    Atspi: Any,
+    root: object,
+    root_path: list[int],
+    *,
+    max_nodes: int = _AT_SPI_FOCUS_SUBTREE_MAX_NODES,
+) -> tuple[object, list[int]] | None:
+    """Find the deepest focused descendant under root, with table-safe traversal."""
+    candidates: list[tuple[object, list[int]]] = []
+    stack: list[tuple[object, list[int]]] = [(root, list(root_path))]
+    visited = 0
+    while stack and visited < max_nodes and time.monotonic() <= DEADLINE:
+        element, path = stack.pop()
+        visited += 1
+        try:
+            element.clear_cache()
+        except Exception:
+            pass
+        states = _atspi_states(Atspi, element)
+        if "focused" in states:
+            candidates.append((element, path))
+        role = _atspi_role(element)
+        if _atspi_table_should_summarize(Atspi, element, role=role):
+            cells, _summary = _atspi_table_priority_cells(Atspi, element, path=path, max_cells=48)
+            for cell, cell_path, _meta in cells:
+                visited += 1
+                if "focused" in _atspi_states(Atspi, cell):
+                    candidates.append((cell, cell_path))
+            continue
+        for index in range(_atspi_child_count(element)):
+            if visited + len(stack) >= max_nodes or time.monotonic() > DEADLINE:
+                break
+            child = _atspi_child_at(element, index)
+            if child is not None:
+                stack.append((child, [*path, index]))
+    if not candidates:
+        return None
+    return max(
+        candidates,
+        key=lambda item: (
+            _atspi_text_count(Atspi, item[0]) > 0 and _atspi_caret_offset(Atspi, item[0]) >= 0,
+            "editable" in _atspi_states(Atspi, item[0]),
+            len(item[1]),
+        ),
+    )
+
+
 def _atspi_find_focused(
     Atspi: Any,
     root: object,
@@ -336,29 +554,48 @@ def _atspi_find_focused(
         if app_active and not active_window_found:
             active_roots.append((app, [app_index]))
 
+    # LibreOffice sometimes exposes windows deeper than direct children; keep the desktop fallback.
     search_roots = active_roots or [(root, [])]
     candidates: list[tuple[object, list[int]]] = []
     for search_root, search_path in search_roots:
-        stack: list[tuple[object, list[int]]] = [(search_root, search_path)]
-        visited = 0
-        while stack and visited < max_nodes:
-            element, path = stack.pop()
-            visited += 1
-            if "focused" in _atspi_states(Atspi, element):
-                candidates.append((element, path))
-            for index in range(_atspi_child_count(element)):
-                child = _atspi_child_at(element, index)
-                if child is not None:
-                    stack.append((child, [*path, index]))
+        found = _atspi_find_focused_under(
+            Atspi,
+            search_root,
+            search_path,
+            max_nodes=max_nodes,
+        )
+        if found is not None:
+            candidates.append(found)
+    if not candidates and not active_roots:
+        # Last resort: scan top-level windows discovered like accessibility.windows().
+        for app_index in range(_atspi_child_count(root)):
+            app = _atspi_child_at(root, app_index)
+            if app is None:
+                continue
+            queue: list[tuple[object, list[int], int]] = [(app, [app_index], 0)]
+            while queue:
+                element, path, depth = queue.pop(0)
+                role = _atspi_role(element)
+                if role in _AT_SPI_WINDOW_ROLES and "active" in _atspi_states(Atspi, element):
+                    found = _atspi_find_focused_under(Atspi, element, path, max_nodes=max_nodes)
+                    if found is not None:
+                        candidates.append(found)
+                elif depth < 3:
+                    for index in range(_atspi_child_count(element)):
+                        child = _atspi_child_at(element, index)
+                        if child is not None:
+                            queue.append((child, [*path, index], depth + 1))
     if not candidates:
         return None
     return max(
         candidates,
         key=lambda item: (
             _atspi_text_count(Atspi, item[0]) > 0 and _atspi_caret_offset(Atspi, item[0]) >= 0,
+            "editable" in _atspi_states(Atspi, item[0]),
             len(item[1]),
         ),
     )
+
 
 
 def _parse_tag_invocation(
