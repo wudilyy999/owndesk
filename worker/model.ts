@@ -3,10 +3,7 @@ import { db, pool } from "@/db"
 import { tasks } from "@/db/schema"
 import { eq } from "drizzle-orm"
 import { z } from "zod"
-import {
-  getProviderCredentials,
-  modelContextWindow,
-} from "@/lib/providers/registry"
+import { getProviderCredentials, modelContextWindow } from "@/lib/providers/registry"
 import { withModelFallback } from "@/lib/providers/fallback"
 import { getSetting } from "@/lib/config"
 import { parseModelSpec } from "@/lib/providers/catalog"
