@@ -3,11 +3,23 @@ const window = {
   window_id: z.string().min(1).max(240).optional(),
   pid: z.number().int().positive().optional(),
 }
+const tableRegion = z
+  .object({
+    row_start: z.number().int().nonnegative().max(1_048_575).default(0),
+    col_start: z.number().int().nonnegative().max(16383).default(0),
+    row_count: z.number().int().min(1).max(32).default(8),
+    col_count: z.number().int().min(1).max(32).default(8),
+  })
+  .optional()
 const snapshot = {
   ...window,
   max_depth: z.number().int().min(0).max(12).default(5),
   max_nodes: z.number().int().min(1).max(500).default(120),
   include_hidden: z.boolean().default(false),
+  // Drill into one observed subtree or a bounded spreadsheet region instead of dumping whole grids.
+  subtree_path: z.array(z.number().int().nonnegative()).min(1).max(40).optional(),
+  table_region: tableRegion,
+  expand_tables: z.boolean().default(false),
 }
 const target = z
   .object({

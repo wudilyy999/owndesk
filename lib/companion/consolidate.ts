@@ -107,7 +107,8 @@ export async function organizeMemory(
   const decide =
     deps.decide ??
     (async (view: MemoryView, page: { index: number; total: number }) => {
-      if (!spec) return decideOrganizing(model!, view, page, { providerOptions })
+      // Injected test/fixture models must not go through provider createModel.
+      if (!spec || deps.model) return decideOrganizing(model!, view, page, { providerOptions })
       const { result } = await withModelFallback({
         primarySpec: spec,
         fallbackSpec: fallbackSpec && fallbackSpec !== spec ? fallbackSpec : null,

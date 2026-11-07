@@ -119,13 +119,23 @@ def select_window(records, state, options):
 def serialize(element, path, session, options):
     flat = []
     truncated = False
+    omit_reasons = []
     max_nodes = options.get("max_nodes", 120)
     max_depth = options.get("max_depth", 5)
+    table_region = options.get("table_region")
+    expand_tables = bool(options.get("expand_tables", False))
+    visits = {"nodes": 0, "table_probes": 0}
+
+    def remember_omit(reason, **detail):
+        if len(omit_reasons) < 8:
+            omit_reasons.append({"reason": reason, **detail})
 
     def visit(node, node_path, depth):
         nonlocal truncated
+        visits["nodes"] += 1
         if len(flat) >= max_nodes or time.monotonic() > ax.DEADLINE:
             truncated = True
+            remember_omit("budget", max_nodes=max_nodes)
             return None
         record = ax._atspi_node_metadata(Atspi, node, path=node_path, session=session)
         if "defunct" in record["states"]:
@@ -142,11 +152,61 @@ def serialize(element, path, session, options):
         count = ax._atspi_child_count(node)
         if depth >= max_depth:
             truncated = truncated or count > 0
+            if count > 0:
+                remember_omit("max_depth", path=list(node_path), childCount=count)
             return tree_node
         children = []
+        role = record["role"]
+        summarize_table = (not expand_tables) and ax._atspi_table_should_summarize(Atspi, node, role=role)
+        if summarize_table:
+            cells, summary = ax._atspi_table_priority_cells(
+                Atspi,
+                node,
+                path=node_path,
+                region=table_region if (
+                    not options.get("subtree_path")
+                    or list(options.get("subtree_path")) == list(node_path)
+                ) else table_region,
+                max_cells=min(40, max(8, max_nodes - len(flat))),
+            )
+            visits["table_probes"] += int(summary.get("probes") or 0)
+            record["tableSummary"] = summary
+            tree_node["tableSummary"] = summary
+            truncated = True
+            remember_omit(
+                "table_summarized",
+                path=list(node_path),
+                omittedCells=summary.get("omittedCells"),
+                nRows=summary.get("nRows"),
+                nCols=summary.get("nCols"),
+            )
+            for child, child_path, meta in cells:
+                if len(flat) >= max_nodes or time.monotonic() > ax.DEADLINE:
+                    truncated = True
+                    break
+                try:
+                    child_node = visit(child, child_path, depth + 1)
+                except ax.PortalError as error:
+                    if error.code != "AT_SPI_READ_LIMIT":
+                        raise
+                    truncated = True
+                    remember_omit("deadline")
+                    break
+                if child_node is not None:
+                    child_node = dict(child_node)
+                    child_node["tableCell"] = meta
+                    # Keep flat record annotated too.
+                    if flat and flat[-1].get("path") == child_path:
+                        flat[-1]["tableCell"] = meta
+                    children.append(child_node)
+            if children:
+                tree_node["children"] = children
+            return tree_node
+
         for index in range(count):
             if len(flat) >= max_nodes or time.monotonic() > ax.DEADLINE:
                 truncated = True
+                remember_omit("budget", max_nodes=max_nodes)
                 break
             child = ax._atspi_child_at(node, index)
             if child is not None:
@@ -156,6 +216,7 @@ def serialize(element, path, session, options):
                     if error.code != "AT_SPI_READ_LIMIT":
                         raise
                     truncated = True
+                    remember_omit("deadline")
                     break
                 if child_node is not None:
                     children.append(child_node)
@@ -166,7 +227,8 @@ def serialize(element, path, session, options):
         return tree_node
 
     tree = visit(element, path, 0)
-    return tree, flat, truncated
+    return tree, flat, truncated, omit_reasons, visits
+
 
 
 def snapshot(request):
@@ -196,21 +258,41 @@ def snapshot(request):
             root_path = window["path"]
             metadata.update(scope="target_window" if options.get("window_id") or options.get("pid") else "active_window",
                             pid=window.get("pid"), window=window)
-        tree, flat, truncated = serialize(root, root_path, session, options)
-        metadata.update(truncated=truncated, visited=len(flat))
-        if truncated or windows_truncated or ax.READ_ERRORS:
+        subtree = options.get("subtree_path")
+        if subtree is not None:
+            subtree_path = ax._parse_ax_path(subtree)
+            if subtree_path is None:
+                reject("INVALID_SUBTREE_PATH", "subtree_path must be a non-negative integer path")
+            if root_path and subtree_path[:len(root_path)] != root_path:
+                reject("SUBTREE_OUTSIDE_WINDOW", "subtree_path must stay inside the observed window")
+            subtree_element = ax._atspi_element_for_path(desktop, subtree_path)
+            if subtree_element is None:
+                reject("SUBTREE_NOT_FOUND", "subtree_path no longer exists")
+            root, root_path = subtree_element, subtree_path
+            metadata["scope"] = "subtree"
+            metadata["subtree_path"] = subtree_path
+        tree, flat, truncated, omit_reasons, visits = serialize(root, root_path, session, options)
+        metadata.update(truncated=truncated, visited=visits["nodes"], nodeVisits=visits["nodes"],
+                        tableProbes=visits.get("table_probes", 0))
+        if omit_reasons:
+            metadata["omitReasons"] = omit_reasons
+        if truncated or windows_truncated or ax.READ_ERRORS or omit_reasons:
             metadata["status"] = "partial"
         if ax.READ_ERRORS:
             metadata["warnings"] = ax.READ_ERRORS[:3]
+        # Prefer actionable/focused controls; keep table summaries even without text.
         elements = [node for node in flat if node.get("name") or node.get("text") or "value" in node
-                    or node.get("actions") or "editable" in node["states"]]
+                    or node.get("actions") or "editable" in node["states"]
+                    or node.get("tableSummary") or node.get("tableCell")
+                    or "focused" in node["states"] or "selected" in node["states"]]
         result.update(window_id=window["window_id"] if window else None,
                       app_name=window["app_name"] if window else "Linux desktop", elements=elements[:options.get("max_elements", 500)],
                       node_count=len(flat), omittedElements=max(0, len(elements)-options.get("max_elements", 500)))
         if options.get("include_tree", True):
             result["tree"] = tree
         result["_nativeSnapshot"] = {"window": window, "windows": [node for _, node in records], "nodes": flat,
-                                     "options": options, "truncated": truncated}
+                                     "options": options, "truncated": truncated, "omitReasons": omit_reasons,
+                                     "visits": visits}
     except ax.PortalError as error:
         if options.get("action") == "list_windows":
             return {"error":str(error),"code":error.code,"effect":"none","backend":"at-spi","windows":[],"truncated":True}
@@ -287,8 +369,12 @@ def target_element(request, root, window, session):
         if old is None:
             reject("STALE_ELEMENT_PATH", "Path is absent from this observation")
     elif options.get("target"):
-        tree, flat, truncated = serialize(root, window["path"], session,
-                                          {**request["expected"]["options"], "max_nodes": 800, "max_depth": 40})
+        tree, flat, truncated, _omit_reasons, _visits = serialize(
+            root,
+            window["path"],
+            session,
+            {**request["expected"]["options"], "max_nodes": 800, "max_depth": 40, "expand_tables": True},
+        )
         if truncated:
             reject("TARGET_SEARCH_TRUNCATED", "Target search was incomplete; narrow the window or use a fresh index")
         fresh = semantic_target(flat, options)
@@ -334,18 +420,41 @@ def verify_focus(root, window):
     return xid
 
 
-def focus_element(element):
+def focus_element(element, path=None, window_path=None):
+    """Grab focus and accept the target or a focused descendant under it.
+
+    LibreOffice Writer often moves focus from document text onto a child paragraph.
+    Fail closed if focus leaves the observed window or never appears under the target.
+    """
     global EFFECT
     if "Component" not in element.get_interfaces():
         reject("FOCUS_UNAVAILABLE", "Control exposes no Component focus interface")
     EFFECT = True
     if not Atspi.Component.grab_focus(element):
         reject("FOCUS_UNVERIFIED", "Native control rejected focus")
-    deadline = time.monotonic() + 0.6
+    deadline = time.monotonic() + 0.8
+    desktop = Atspi.get_desktop(0)
     while True:
-        element.clear_cache()
+        try:
+            element.clear_cache()
+        except Exception:
+            pass
         if "focused" in ax._atspi_states(Atspi, element):
-            return
+            return {"element": element, "path": path, "mode": "exact"}
+        if path is not None:
+            focused = ax._atspi_find_focused_under(Atspi, element, path, max_nodes=240)
+            if focused is not None:
+                focused_element, focused_path = focused
+                if window_path is not None and focused_path[:len(window_path)] != window_path:
+                    reject("FOCUS_UNVERIFIED", "Focus moved outside the observed window")
+                if focused_path[:len(path)] != path:
+                    reject("FOCUS_UNVERIFIED", "Focus moved outside the requested control")
+                return {"element": focused_element, "path": focused_path, "mode": "descendant"}
+        # Fail fast if some other window stole focus.
+        if window_path is not None:
+            global_focused = ax._atspi_find_focused(Atspi, desktop, max_nodes=320)
+            if global_focused is not None and global_focused[1][:len(window_path)] != window_path:
+                reject("FOCUS_UNVERIFIED", "Another window stole focus before typing")
         if time.monotonic() >= deadline:
             reject("FOCUS_UNVERIFIED", "Native control did not report focus")
         time.sleep(0.05)
@@ -361,23 +470,32 @@ def perform(request):
     if options.get("action") in ("tag_context", "tag_replace"):
         return tag_operation(request, root, window, desktop, session)
     if options.get("action") == "type":
+        # Keep the read budget alive for focus search, especially over summarized tables.
+        ax.DEADLINE = time.monotonic() + 6
         focused = ax._atspi_find_focused(Atspi, desktop)
         if focused is None or focused[1][:len(window["path"])] != window["path"]:
             reject("FOCUS_UNVERIFIED", "No focused field was found in the target window")
         if ax.protected(focused[0]):
             reject("PROTECTED_CONTROL", "Protected fields require the existing secret/takeover flow")
         xid = verify_focus(root, window)
+        focused_meta = ax._atspi_node_metadata(Atspi, focused[0], path=focused[1], session=session)
         # Typing time is input work, distinct from the bounded native-read budget.
         typing_timeout = 5 + len(options["text"]) * 0.02
         ax.DEADLINE = time.monotonic() + typing_timeout + 4
         EFFECT = True
         command(["xdotool", "type", "--clearmodifiers", "--delay", "8", "--file", "-"], options["text"], timeout=typing_timeout)
         verify_focus(root, window)
+        # Ensure focus did not jump to another window mid-type.
+        still = ax._atspi_find_focused(Atspi, desktop, max_nodes=320)
+        if still is None or still[1][:len(window["path"])] != window["path"]:
+            reject("FOCUS_UNVERIFIED", "Focus left the target window while typing")
         if options.get("submit"):
             command(["xdotool", "key", "--clearmodifiers", "Return"])
         return {"effect": "dispatched", "window_id": window["window_id"], "focus_verified": True,
-                "submitted": options.get("submit", False), "input_scope": "verified_foreground_window"}
+                "submitted": options.get("submit", False), "input_scope": "verified_foreground_window",
+                "focused_path": focused[1], "focused_role": focused_meta.get("role")}
     element, target = target_element(request, root, window, session)
+    value_target, value_meta = element, target
     dispatch = options.get("dispatch", "background")
     if operation == "focus" or (operation == "set_value" and options.get("submit")):
         if dispatch == "background":
@@ -411,6 +529,10 @@ def perform(request):
         interfaces = element.get_interfaces()
         if value is None:
             reject("VALUE_REQUIRED", "set_value requires value or text")
+        setter = None
+        prepared = None
+        value_target = element
+        value_meta = target
         if "EditableText" in interfaces and "editable" in target["states"]:
             setter, prepared = Atspi.EditableText.set_text_contents, str(value)
         elif "Value" in interfaces:
@@ -421,11 +543,16 @@ def perform(request):
             if not ax.math.isfinite(prepared):
                 reject("INVALID_NUMERIC_VALUE", "Numeric control requires a finite number")
             setter = Atspi.Value.set_current_value
+        elif "editable" in target["states"]:
+            # Document containers (Writer) often mark editable without EditableText; resolve after focus.
+            setter = "resolve_editable_descendant"
+            prepared = str(value)
         else:
             return {"effect": "none", "background_unavailable": True, "reason": "Control has no supported native value setter",
                     "requested_dispatch": dispatch, "actual_dispatch": "none", "target": target}
     elif operation != "focus":
         reject("INVALID_OPERATION", "Native operation must be press, focus or set_value")
+    focus_info = None
     if actual == "foreground":
         xid = x11_window(window)
         EFFECT = True
@@ -433,29 +560,56 @@ def perform(request):
         verify_focus(root, window)
     if operation == "focus":
         if target["role"] not in ax._AT_SPI_WINDOW_ACTIVATION_ROLES:
-            focus_element(element)
+            focus_info = focus_element(element, path=target.get("path"), window_path=window["path"])
     elif operation == "press":
         EFFECT = True
         if not Atspi.Action.do_action(element, chosen):
             reject("ACTION_FAILED", "Native press did not return a successful dispatch")
     else:
-        if options.get("submit"):
-            focus_element(element)
+        if options.get("submit") or setter == "resolve_editable_descendant":
+            focus_info = focus_element(element, path=target.get("path"), window_path=window["path"])
             verify_focus(root, window)
+            if setter == "resolve_editable_descendant":
+                focused_element = focus_info["element"]
+                focused_path = focus_info["path"] or target.get("path")
+                if ax.protected(focused_element):
+                    reject("PROTECTED_CONTROL", "Protected fields require the existing secret/takeover flow")
+                if "EditableText" not in focused_element.get_interfaces():
+                    return {"effect": "none", "background_unavailable": True,
+                            "reason": "Focused descendant exposes no EditableText setter",
+                            "requested_dispatch": dispatch, "actual_dispatch": "none", "target": target,
+                            "focused_path": focused_path}
+                value_target = focused_element
+                value_meta = ax._atspi_node_metadata(Atspi, focused_element, path=focused_path, session=session)
+                setter = Atspi.EditableText.set_text_contents
         EFFECT = True
-        if not setter(element, prepared):
+        if not setter(value_target, prepared):
             reject("VALUE_DISPATCH_FAILED", "Native value assignment was rejected or is uncertain")
         if options.get("submit"):
             verify_focus(root, window)
-            element.clear_cache()
-            if "focused" not in ax._atspi_states(Atspi, element):
+            try:
+                value_target.clear_cache()
+            except Exception:
+                pass
+            focused_ok = "focused" in ax._atspi_states(Atspi, value_target)
+            if not focused_ok and focus_info and focus_info.get("mode") == "descendant":
+                # Writer-style containers: submit uses the focused descendant verified earlier.
+                focused_ok = True
+            if not focused_ok:
                 reject("FOCUS_UNVERIFIED", "Value changed but submit was withheld because the field is not focused")
             command(["xdotool", "key", "--clearmodifiers", "Return"])
-    return {"effect": "dispatched", "operation": operation, "target": target, "window_id": window["window_id"],
-            "requested_dispatch": dispatch, "actual_dispatch": actual,
-            "foreground_fallback_used": dispatch == "auto" and actual == "foreground",
-            "focus_verified": operation == "focus" or options.get("submit", False),
-            "submitted": options.get("submit", False)}
+    result = {"effect": "dispatched", "operation": operation, "target": target, "window_id": window["window_id"],
+              "requested_dispatch": dispatch, "actual_dispatch": actual,
+              "foreground_fallback_used": dispatch == "auto" and actual == "foreground",
+              "focus_verified": operation == "focus" or options.get("submit", False) or bool(focus_info),
+              "submitted": options.get("submit", False)}
+    if focus_info is not None:
+        result["focus_mode"] = focus_info.get("mode")
+        if focus_info.get("path") is not None:
+            result["focused_path"] = focus_info["path"]
+    if operation == "set_value" and value_meta is not target:
+        result["value_target"] = {k: value_meta.get(k) for k in ("path", "role", "name", "states", "objectId") if k in value_meta}
+    return result
 
 
 def tag_operation(request, root, window, desktop, session):

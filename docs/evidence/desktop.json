@@ -5,11 +5,11 @@
     {
       "check": "Desktop UI: login, task-bound safe snapshot, real noVNC watch, manual takeover, handback/reconnect, mobile layout and actual cancellation",
       "detail": {
-        "taskId": "126ce260-3690-4029-9de7-10c8e174fac3",
+        "taskId": "a4d1a16e-d08a-43f2-8a39-b38c658d873f",
         "browser": "156.0.8078.4"
       }
     }
   ],
-  "recordedAt": "2026-11-01T09:17:15.730Z",
-  "directory": "data/experiments/agent_control_4e2084a4cbb74d8cb55d202e8dc34811"
+  "recordedAt": "2026-11-07T19:41:26.918Z",
+  "directory": "/workspace/owndesk/data/experiments/agent_control_1fd2362c46b54839ac6fb432fa0be567"
 }

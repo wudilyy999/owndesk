@@ -1,7 +1,7 @@
 {
   "passed": true,
   "applicationVersion": "0.17.0-dev",
-  "migration": "0022",
+  "migration": "0027",
   "guestProtocolVersion": 5,
   "focus": "core",
   "taskCounts": [
@@ -45,6 +45,6 @@
       "check": "Actual owner mobile settings UI: status, unpair/re-pair and target selection; unauthenticated/foreign-Origin/internal-token mutation and unacknowledged retry rejected; token absent from status"
     }
   ],
-  "directory": "data/experiments/agent_telegram_5b67b9a0f76d41b1bbac847867019868",
-  "recordedAt": "2026-11-01T09:16:50.932Z"
+  "directory": "/workspace/owndesk/data/experiments/agent_telegram_199f18db45ea497cac1dedbb0015d419",
+  "recordedAt": "2026-11-07T19:40:57.156Z"
 }
