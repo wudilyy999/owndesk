@@ -1,149 +1,225 @@
+<div align="center">
+
+<img src="public/icons/icon-192.png" alt="OwnDesk" width="88" height="88">
+
 # OwnDesk
 
-换电脑继续开发：先看[换机开发指南](docs/DEVELOPMENT-TRANSFER.md)。本仓库保留源码、测试、设计与脱敏文字报告；密钥和运行数据留在各自设备。
+### Your AI. A desk of its own.
 
-## 自托管安装
+Give it a task. Watch it work. Keep the know-how.
 
-对外安装与升级请先读 **[docs/self-host.md](docs/self-host.md)**（Cloudflare Tunnel、备份、GHCR）。一人一套，严格单主人。
+A self-hosted personal agent with a real Linux desktop, live human handoff, and reusable operation manuals.
 
-## 你的 AI，有自己的电脑。
+[![MIT License](https://img.shields.io/badge/License-MIT-AF5128?style=flat-square)](LICENSE)
+[![Stage: Alpha](https://img.shields.io/badge/Stage-Alpha-D49A50?style=flat-square)](#project-status)
+[![Self-hosted](https://img.shields.io/badge/Deployment-Self--hosted-536B59?style=flat-square)](#quick-start)
+[![Bring your own model](https://img.shields.io/badge/Models-BYOK-6B6359?style=flat-square)](#bring-your-own-model)
 
-**做过的工作，留下来继续用。**
+**English** · [简体中文](README.zh-CN.md)
 
-一个自托管、桌面优先的个人电脑 Agent。用自然语言交办工作，让它在自己的 Linux 容器桌面里操作浏览器和桌面软件；你可以观看实时画面、接管登录，再交还继续。完成后，将操作经验整理为可审阅、可复用的手册。
+[Quick start](#quick-start) · [Screenshots](#a-look-inside) · [What you can do](#start-with-something-useful) · [Documentation](#documentation)
 
-**自托管 · 自带模型 · 实时桌面 · 人机接力 · 操作手册 · MIT**
+</div>
 
-当前处于 **Alpha 开发阶段**，优先交付一个可用的单 Agent。最新源码能力、已打包候选与本机预览的配对状态见[当前发布范围](#当前发布范围)。
+![OwnDesk task workspace with a conversation, a completed reply, and a downloadable Markdown brief](docs/images/workspace.webp)
 
-## 看着它做，必要时接手，把经验留下
+OwnDesk gives everyday work a place to happen. Ask it to browse a website, organize files, or prepare a brief. Follow along in its desktop, take over when you need to sign in, and hand control back when you are ready. Turn a successful task into a manual you can review and use again.
 
-### 一台真正可操作的电脑
+## Why OwnDesk
 
-Agent 在 Docker 中使用 Linux 桌面、Chromium、文件管理器和终端。网页可以使用 DOM，桌面可以使用截图与键鼠；支持无障碍接口的软件还会提供控件名称、角色、文字、值和选中状态。
+|                                       | What that means for you                                                                                                                           |
+| ------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **A computer you can see**            | A persistent Linux workspace with Chromium, a file manager, a terminal, and desktop apps. Watch its live screen while a task runs.                |
+| **A handoff that feels natural**      | Take over the same desktop for a login or a tricky step. Leave a note, hand it back, and the agent observes the updated screen before continuing. |
+| **Work that leaves something useful** | Download the files it produces, revisit the conversation, and ask for a follow-up. Tasks keep their execution records and results.                |
+| **Know-how worth keeping**            | Generate an operation manual from a successful task, review its steps, and save it for related work. Export it as `SKILL.md`.                     |
+| **A more personal assistant**         | Chat, share images, and keep preferences in editable memory. Review, change, or remove what it remembers.                                         |
+| **Your setup, your choice**           | Run on your own machine or server, connect your preferred model, and manage schedules, usage, and budgets in one place.                           |
 
-**例如：**让它读取公开网页、整理文件、修改桌面设置，再把成果交到任务页面。遇到登录时，你接管同一台桌面，登录后交还，Agent 重新观察当前状态再继续。
+## Start with something useful
 
-### 一次完成，留下下次的起点
+Try these prompts after connecting a model:
 
-成功任务可以生成**操作手册草稿**。你检查、编辑并保存后，后续任务可以按需加载，结合当前截图或 DOM 重新执行。
+| You want to…                  | Ask OwnDesk…                                                                                                                   |
+| ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| **Catch up on a topic**       | “Read this public webpage, summarize three key points, keep the source link, and give me a downloadable `brief.md`.”           |
+| **Tidy a workspace**          | “Organize the files in this workstation folder into documents, images, and archives. Keep the filenames and check the result.” |
+| **Work through a login**      | “Open this dashboard. Ask me to take over when you reach the login, then continue after I hand it back.”                       |
+| **Improve a deliverable**     | “Shorten the brief from our previous task to one page and keep the source links.”                                              |
+| **Repeat a familiar process** | “Use my saved research-brief manual to prepare a new brief on this topic.”                                                     |
 
-**例如：**把“进入某个控制台、找到指定栏目、设置筛选条件”的路径保存下来。下次换地域、实例或时间范围时，手册提供操作经验，Agent 仍需确认当前页面。
+After a useful task, choose **生成操作手册** (Generate operation manual), review the draft, and save the steps for next time.
 
-手册用于提供流程说明与检查提示；它不授予登录或付款权限，也不把上次成功当作这次成功。另有实验性**已验证流程**模式，面向当前支持的 Thunar 目录任务族：参数化、独立样例验证、检查通过后复用。两种模式的范围分别见[操作手册](docs/MANUALS.md)与[流程验证和复用](docs/WORKFLOW-PACKAGES.md)。
+## A look inside
 
-### 中断之后，接着做
+Screenshots show the running application’s current Chinese interface with illustrative demo content. [Capture details and sources](docs/README-SHOWCASE.md).
 
-任务、模型回答、工具动作与结果分别持久化。worker 重启后复用已保存记录；上下文变长时，压缩历史并保留原目标、用户补充和当前进度。模型上下文最多保留最近两张当前有效截图，完整执行记录继续保存在自托管环境。
+<table>
+  <tr>
+    <td width="50%" valign="top">
+      <strong>Talk it through</strong><br>
+      Share context, send an image, and discuss the next task.<br><br>
+      <a href="docs/images/companion.webp"><img src="docs/images/companion.webp" alt="OwnDesk companion chat with a conversation about preparing a brief" width="100%"></a>
+    </td>
+    <td width="50%" valign="top">
+      <strong>Keep the preferences that matter</strong><br>
+      View, edit, and delete the assistant’s saved notes.<br><br>
+      <a href="docs/images/memory.webp"><img src="docs/images/memory.webp" alt="OwnDesk memory page with editable preferences for language, sources, and file format" width="100%"></a>
+    </td>
+  </tr>
+</table>
 
-已确认的动作使用原回执恢复；效果未知的操作进入复核，避免盲目重发。人工接管与交还也会更新控制权，旧画面和旧授权不能继续驱动输入。
+**Make a good workflow easier to repeat.** Saved manuals keep the purpose and steps together, with an export for reuse.
 
-## 可以从这些任务开始
+![OwnDesk operation manual showing a reusable five-step process for preparing a one-page brief](docs/images/manuals.webp)
 
-| 你交办的工作                                               | 工作现场                           |
-| ---------------------------------------------------------- | ---------------------------------- |
-| “读取这个公开网页，整理三条要点，生成 Markdown 给我下载。” | 浏览器、截图、DOM、成果下载        |
-| “把这些文件按要求整理，核对结果后告诉我放在哪里。”         | 桌面文件管理器、键鼠操作、结果核对 |
-| “遇到登录先叫我，我操作完你再继续。”                       | 实时桌面、人工接管、交还后重新观察 |
-| “把刚才成功的操作整理成手册，先让我检查。”                 | 草稿生成、编辑保存、后续按需加载   |
+<details>
+<summary><strong>On your phone, too</strong></summary>
 
-这些例子用于说明交互方式。实际任务能力取决于所选模型、软件界面及账号权限。
+Open OwnDesk in a mobile browser to chat and manage your assistant. The web app also supports installation to your home screen; see the [notification guide](docs/push.md).
 
-## 一个工作现场，几种协作方式
+<p align="center">
+  <img src="docs/images/mobile.webp" alt="OwnDesk companion chat at a 390-pixel mobile viewport" width="320">
+</p>
 
-| 能力                   | 当前实现                                                                   |
-| ---------------------- | -------------------------------------------------------------------------- |
-| **看得见，也能接手**   | 实时桌面、服务端只读观看、接管与交还、实际取消                             |
-| **截图与控件共同观察** | 原始截图与 Linux AT-SPI2 控件信息结合；网页支持 DOM；保留坐标和键盘操作    |
-| **经验留得下来**       | 成功任务生成手册草稿、人工审阅、按需加载；受限任务族支持已验证流程与流程包 |
-| **会话能够延续**       | 多轮追问、历史记录、长期记忆、上下文裁剪与摘要压缩                         |
-| **能力可以扩展**       | 社区插件索引、固定版本安装、配置与启停；当前兼容 Python 工具合同子集       |
-| **使用自己的模型**     | 网页配置模型服务及密钥；任务受理时固定模型与相关配置                       |
-| **工作可以定时触发**   | 例程计划、时区、漏跑策略与队列；Telegram 配对及任务控制链已有受控验证      |
-| **知道发生过什么**     | 动作回执、成果下载、逐次模型请求与费用记录；未知费用保留为未知             |
+</details>
 
-## 有执行记录，也有验收依据
+## Quick start
 
-| 实际验证                                                           | 证据与范围                                                                                                                                 |
-| ------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------ |
-| **一次真实跨软件任务：45 个 GUI 动作，经历 13 次上下文压缩后完成** | 使用真实模型，约 710 秒、59 次模型请求；文件、字体与最终窗口通过独立检查。[连续性验收](docs/evidence/context-continuity.json)              |
-| **9 个原生控件工具、11 项迁移要求通过开发验收**                    | 覆盖窗口、控件树、控件动作与输入；含真实桌面、容器 worker 恢复检查。机制验证使用本地受控模型响应。[AT-SPI 迁移](docs/AT-SPI-MIGRATION.md)  |
-| **手册生成、保存、新任务主动加载与执行已走通**                     | 有真实模型试验，同时保留失败案例；跨软件、跨布局泛化继续评估。[手册实测](docs/evidence/manuals-live.json)                                  |
-| **流程包在独立安装重新验证后复用**                                 | 同宿主、同架构、同镜像的 Thunar 目录任务族；4 个任务、108 个 GUI 动作，使用有限计划执行，0 次模型请求。[流程包](docs/WORKFLOW-PACKAGES.md) |
+### Run locally from source
 
-以上分别记录真实模型任务、受控机制验证与有限流程执行，不合并计算通用成功率。完整范围及失败记录见[开发状态](docs/STATUS.md)。
+You will need **Node.js 24.20.0** (see [`.nvmrc`](.nvmrc)), **Docker running Linux containers**, and an **empty PostgreSQL 16 database**. Allow space for a full desktop image; the server guide recommends 4 vCPU, 8 GB RAM, and 40 GB+ SSD. On Windows, WSL2 provides a Linux environment for these services.
 
-## 它怎样运行
+**1. Get OwnDesk.**
 
-```text
-浏览器 / Telegram / 定时例程
-              │
-              ▼
-      Web：登录、会话、设置与观看
-              │
-              ▼
-      PostgreSQL + DBOS：任务与恢复记录
-              │
-              ▼
-      Worker：模型循环、上下文、工具与控制权
-              │
-              ▼
-      Docker 工作站：Linux 桌面与应用
-        ├─ 网页 DOM
-        ├─ 截图、鼠标与键盘
-        └─ AT-SPI2 原生控件信息与动作
+```sh
+git clone https://github.com/wudilyy999/owndesk.git
+cd owndesk
+npm ci
 ```
 
-Web 与 worker 来自同一工程，只有 worker 访问 Docker。每个 Agent 使用自己的桌面工作区，同一工作区的任务排队执行；桌面文件与浏览器配置可跨任务保留。容器桌面共享宿主内核，隔离边界与部署要求见[私有部署说明](deploy/README.md)。
+**2. Create your local configuration.** The command below creates `.env` from the template and generates the installation identity and encryption keys. It preserves an existing configuration by refusing to overwrite it.
 
-## 开始使用
+<details>
+<summary>Show configuration command</summary>
 
-### 本机开发
+```sh
+node -e "
+const fs = require('node:fs'), c = require('node:crypto');
+let text = fs.readFileSync('.env.example', 'utf8');
+const values = {
+  BETTER_AUTH_SECRET: c.randomBytes(32).toString('hex'),
+  MASTER_KEY: c.randomBytes(32).toString('hex'),
+  INSTALL_ID: c.randomUUID()
+};
+for (const [key, value] of Object.entries(values))
+  text = text.replace(new RegExp('^' + key + '=.*', 'm'), key + '=' + value);
+fs.writeFileSync('.env', text, { flag: 'wx', mode: 0o600 });
+"
+```
 
-需要 **Node.js 24、Docker 与独立 PostgreSQL 数据库**。首次安装使用新目录、新数据库及独立配置；已有安装先备份并排空任务。
+</details>
 
-1. 执行 `npm ci`，将 `.env.example` 复制为 `.env`，配置数据库与站点地址。
-2. 生成并持久保存 `BETTER_AUTH_SECRET`（至少 32 字符）、`MASTER_KEY`（32 字节的十六进制表示）与 UUID 格式的 `INSTALL_ID`。
-3. 执行 `npm run db:migrate`。
-4. 在本地环境设置 `OWNER_EMAIL`、`OWNER_PASSWORD`（至少 12 字符），执行 `npm run owner:create`。可选配置 `OWNER_NAME` 与 `OWNER_TIMEZONE`。
-5. 执行 `npm run workstation:build`。
-6. 两个终端分别执行 `npm run worker` 与 `npm run dev`，打开 `http://localhost:6797`。
-7. 登录后，在“模型与 Agent 设置”配置模型服务、密钥与默认模型，创建或选择助手，开始交办任务。
+Edit `.env`: point `DATABASE_URL` at your empty database and keep `APP_URL=http://localhost:6797`. Add your owner account details:
 
-密钥只在本地配置或设置页填写。升级时保持原密钥与安装身份；`.env` 中的镜像设置会覆盖源码默认值。
+```dotenv
+OWNER_EMAIL=you@example.com
+OWNER_PASSWORD=replace-with-a-unique-password-of-at-least-12-characters
+OWNER_NAME=Owner
+OWNER_TIMEZONE=Asia/Shanghai
+```
 
-### 自己的 Linux 服务器
+**3. Initialize your account and build the desktop.**
 
-仓库提供 Compose、HTTPS 入口、网络规则与备份工具。按[专用 Linux 私有部署](deploy/README.md)配置独立环境，并核对镜像版本；模型服务地址需要从服务器可达，本机回环地址不能直接沿用。
+```sh
+npm run db:migrate
+npm run owner:create
+npm run workstation:build
+```
 
-任务与桌面数据保存在自托管环境；所选云端模型仍会接收任务所需的文本、截图或控件信息。
+After account creation, remove `OWNER_PASSWORD` from `.env` and keep it in your password manager. Keep the installation keys across restarts and upgrades.
 
-## 当前发布范围
+**4. Start the worker and the web app in two terminals.**
 
-| 范围            | 状态                                                                                                         |
-| --------------- | ------------------------------------------------------------------------------------------------------------ |
-| 最新源码        | `0.17.0-dev / SQL0018 / 工作站 0.6.5 / guest6`；原生控件迁移与上下文连续性修复已完成开发验收                 |
-| 新命名打包      | OwnDesk 工作站 `0.6.5` 已从正式 Dockerfile 构建并通过截图、原生控件与源码配对检查                            |
-| 已有本机预览    | 已配对升级：生产 Web 构建、当前源码 worker `0.17.0-dev / SQL0018`，工作站 `0.6.5 / guest6`；原账号与数据保留 |
-| 公开 Alpha 准备 | 冻结发布版本与镜像配对，检查公开文件、安装说明及秘密排除；发布前完成候选打包与定向核验                       |
-| 正式云端交付    | 真实 VPS、普通公网 DNS/HTTPS、当前候选的备份恢复与持续运行仍需闭环验收                                       |
+```sh
+# Terminal 1
+npm run worker
+```
 
-当前聚焦单 Agent。社区插件兼容范围限于已接入的工具合同；软件暴露的无障碍信息各有差异。手册复用和已验证流程均有明确适用范围。任意 Shell 与网页行为尚无完整语义级强制审批，高风险任务需要人工参与。
+```sh
+# Terminal 2
+npm run dev
+```
 
-本机升级已核对数据库恢复、历史数据、成果下载、实时桌面及接管交还；旧构建与旧镜像已清理，保留回滚归档。Web/worker 当前以本机进程运行；新版 Compose 镜像和真实 VPS 的发布验收另行记录。[本机升级证据](docs/evidence/owndesk-upgrade.json)
+**5. Open [localhost:6797](http://localhost:6797).** Sign in, open **模型与 Agent 设置** (Model & Agent settings), configure a provider and default model, then select **新对话** (New conversation) and try a prompt above. In a task’s execution details, you can view the desktop, take control, and download its output.
 
-## 文档
+### Put it on your own server
 
-- [开发状态与证据](docs/STATUS.md)
-- [操作手册](docs/MANUALS.md) · [流程验证与流程包](docs/WORKFLOW-PACKAGES.md)
-- [上下文与记忆](docs/CONTEXT.md) · [原生控件能力](docs/AT-SPI-MIGRATION.md)
-- [社区插件兼容范围](docs/AGENT-ZERO-COMPATIBILITY.md)
-- [私有部署](deploy/README.md) · [备份与恢复](deploy/BACKUP.md)
-- [OwnDesk 命名与旧安装迁移](docs/RENAMING.md)
-- [架构设计](docs/design/详细设计.md) · [控制协议](docs/control-protocol.md) · [开发准则](docs/design/开发准则.md)
+For an always-on workspace, follow the [self-hosting overview](docs/self-host.md) and [Linux deployment guide](deploy/README.md), including guest networking and the single-owner setup. They cover Compose, HTTPS, and persistent storage. [Cloudflare Tunnel](docs/cloudflare-tunnel.md) provides an access route for machines without a public IP; [backup and recovery](deploy/BACKUP.md) covers an existing installation.
 
-## 开源与致谢
+### Bring your own model
 
-本项目选择性复用 MIT 上游项目 v0.6.0 的界面、桌面与兼容代码；固定来源和文件级处理记录见 [provenance.json](provenance.json)。原生控件迁移复用 a0-connector 的部分 MIT 辅助函数，来源与许可见[第三方说明](THIRD_PARTY.md)。
+Provider integrations include **OpenAI, Anthropic, Google, xAI, DeepSeek, Mistral, Groq, OpenRouter, Ollama, LM Studio**, and **custom OpenAI-compatible endpoints**. Configure the model and credentials through settings. Choose a model with tool calling and image input for desktop tasks.
 
-项目采用 [MIT 许可](LICENSE)，保留上游版权声明。第三方组件、字体和镜像分别适用各自许可。
+Task records and workstation files live in your installation. Your selected model provider receives the context needed for a task, which may include text, screenshots, and application controls.
+
+## How it works
+
+```mermaid
+flowchart LR
+    U[You] --> W[Web app]
+    T[Telegram / scheduled routines] --> Q
+    W --> Q[PostgreSQL + DBOS]
+    Q --> A[Worker + your model]
+    A --> D[Linux desktop in Docker]
+    D --> F[Files and task results]
+    D -. Live view and handoff .-> W
+    F --> W
+```
+
+The web app handles conversations, settings, and viewing. The worker runs tasks and accesses Docker. The desktop combines browser DOM, screenshots and keyboard/mouse input, plus Linux accessibility controls where available. Its home folder and browser profile persist across tasks.
+
+Model decisions, actions, and results are recorded separately, so the worker can resume from saved progress after a restart. Scheduled routines use the same task queue. A successful task can produce a reviewed manual that a future task loads as guidance.
+
+## Project status
+
+**Alpha, focused on a useful personal agent for one owner.** The current source includes desktop control, handoff, downloadable results, companion chat and memory, chat-to-task continuity with instructions during execution, document and image uploads, scheduled routines, manuals, and a subset of Agent Zero plugin tools. Experimental verified workflows currently cover a limited Thunar directory task family. See [development status](docs/STATUS.md) for validation scope and deployment history.
+
+The [delivery roadmap](docs/DELIVERY-ROADMAP.md) tracks chat continuity, task-time memory retrieval, document uploads, MCP/OAuth app connections, conversational automation, learning from recorded demonstrations, and broader workflow reuse across browser and office apps. Each milestone links its implementation and validation progress.
+
+<details>
+<summary><strong>Execution evidence you can inspect</strong></summary>
+
+| Recorded check                                                 | What it established                                                                                                                                                   |
+| -------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [Context continuity](docs/evidence/context-continuity.json)    | One real-model desktop task completed with 45 GUI actions and 13 context compressions; files, font settings, and the final window were independently checked.         |
+| [Manual generation and reuse](docs/evidence/manuals-live.json) | A real model generated a manual draft, the owner saved it, and a later task loaded it for directory navigation. The report retains the failed missing-directory case. |
+| [Native desktop controls](docs/AT-SPI-MIGRATION.md)            | Nine native-control tools and eleven migration requirements were checked, including desktop actions and worker recovery with controlled model responses.              |
+| [Workflow packages](docs/WORKFLOW-PACKAGES.md)                 | A bounded Thunar directory workflow was revalidated and reused in an independent installation on the same host, architecture, and image.                              |
+
+These records describe individual scenarios and their limits; screenshots above illustrate the interface. Deployment checks and open work remain in the linked reports.
+
+</details>
+
+## Documentation
+
+Most detailed guides are currently in Chinese.
+
+| Get things done                                                 | Understand and extend                                    |
+| --------------------------------------------------------------- | -------------------------------------------------------- |
+| [First task](docs/QUICKSTART.md)                                | [Architecture](docs/design/详细设计.md)                  |
+| [Operation manuals](docs/MANUALS.md)                            | [Context and memory](docs/CONTEXT.md)                    |
+| [Telegram, QQ, and WeChat channels](docs/channels.md)           | [Linux native controls](docs/AT-SPI-MIGRATION.md)        |
+| [Mobile notifications](docs/push.md)                            | [Plugin compatibility](docs/AGENT-ZERO-COMPATIBILITY.md) |
+| [Self-hosting](docs/self-host.md) · [Upgrades](docs/upgrade.md) | [Workflow packages](docs/WORKFLOW-PACKAGES.md)           |
+| [Backup and recovery](deploy/BACKUP.md)                         | [Development setup](docs/DEVELOPMENT-TRANSFER.md)        |
+
+## Contributing
+
+Useful contributions start with a real task: a workflow you want to repeat, a reproducible problem, an integration, or a clearer guide. Open an [issue](https://github.com/wudilyy999/owndesk/issues) with the expected behavior and what happened, or send a focused pull request. For code changes, read [AGENTS.md](AGENTS.md) and include checks relevant to the changed behavior.
+
+If OwnDesk fits how you work, a star helps other people find it.
+
+## License and acknowledgements
+
+OwnDesk is [MIT licensed](LICENSE). It selectively adapts code from Xiryn v0.6.0 and uses MIT-licensed helpers from a0-connector. Upstream copyright notices are preserved; [provenance.json](provenance.json) and [THIRD_PARTY.md](THIRD_PARTY.md) record sources and component licenses.
