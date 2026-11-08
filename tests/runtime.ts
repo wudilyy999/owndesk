@@ -7589,6 +7589,11 @@ try {
       async function delivered(taskId: string) {
         try {
           const result = await completed(taskId)
+          assert.equal(
+            result.artifacts.length,
+            1,
+            "Completion precheck and finalization share one artifact receipt"
+          )
           const checked = result.artifacts.find(
             (a) => (a.verification as { grade: string }).grade === "program_checked"
           )!

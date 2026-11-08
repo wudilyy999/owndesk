@@ -166,12 +166,12 @@ export async function refreshWorkflowObservation(
   ])
 }
 
-async function completionSatisfied(task: Task) {
+async function completionSatisfied(task: Task, completionActionNo: number) {
   try {
     await collectArtifacts(
       task.id,
       task.activeSegment,
-      0,
+      completionActionNo,
       task.agentId,
       task.completionContract.artifact
         ? [{ path: task.completionContract.artifact.path, mediaType: "text/csv" }]
@@ -239,7 +239,7 @@ export async function nextWorkflowDecision(
     })
   if (
     (checkpoint.phase === "blocked" || afterHandback) &&
-    (await completionSatisfied(task))
+    (await completionSatisfied(task, actionNo + 1))
   )
     return finish()
   if (checkpoint.phase !== "blocked" && checkpoint.step >= execution.plan.steps.length)
