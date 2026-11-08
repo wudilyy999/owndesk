@@ -150,12 +150,34 @@ export function Demonstration({
             </Button>
             <Button
               size="sm"
+              variant="outline"
+              disabled={busy}
+              onClick={async () => {
+                setBusy(true)
+                recording.current = null
+                await queue.current
+                try {
+                  await post({ action: "cancel", id: session.id })
+                  setSession(null)
+                } catch (cause) {
+                  setError(String(cause))
+                } finally {
+                  setBusy(false)
+                }
+              }}
+            >
+              取消示范
+            </Button>
+            <Button
+              size="sm"
               disabled={busy}
               onClick={async () => {
                 setBusy(true)
                 setError("")
+                recording.current = null
                 await queue.current
                 try {
+                  if (failed.current) throw new Error("录制未完整保存，请取消后重新示范")
                   await post({ action: "finish", id: session.id })
                   setSession(null)
                   setFinished(true)

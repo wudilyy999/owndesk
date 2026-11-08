@@ -1,10 +1,10 @@
+import { workerRequest } from "@/lib/worker-request"
 import { z } from "zod"
 import { requireOwner, requireSameOrigin } from "@/lib/auth"
 import { errorResponse } from "@/lib/errors"
 import {
   listDemonstrations,
   startDemonstration,
-  recordDemonstration,
   finishDemonstration,
   cancelDemonstration,
   saveDemonstrationManual,
@@ -50,7 +50,7 @@ export async function POST(request: Request) {
     if (input.action === "start")
       result = await startDemonstration(owner.userId, input.agentId, input.name)
     else if (input.action === "record")
-      result = await recordDemonstration(owner.userId, input.id, input)
+      result = await workerRequest(request, "/internal/demonstrations/record", input)
     else if (input.action === "cancel")
       result = await cancelDemonstration(owner.userId, input.id)
     else if (input.action === "finish")

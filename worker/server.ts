@@ -1,3 +1,7 @@
+import { requireOwner, requireSameOrigin } from "@/lib/auth"
+import { errorResponse, HttpError } from "@/lib/errors"
+import { recordDemonstration } from "@/lib/demonstrations"
+import { z } from "zod"
 import { DBOS } from "@dbos-inc/dbos-sdk"
 import { createServer } from "node:http"
 import { setTimeout as delay } from "node:timers/promises"
@@ -112,6 +116,40 @@ export async function startWorker() {
   })
   await startRoutineSchedule()
   const server = createServer((req, res) => {
+    if (req.url === "/internal/demonstrations/record" && req.method === "POST") {
+      void (async () => {
+        try {
+          const headers = new Headers()
+          for (const [key, value] of Object.entries(req.headers))
+            if (value) headers.set(key, Array.isArray(value) ? value.join(", ") : value)
+          const request = new Request(`${env.APP_URL}/internal`, { headers })
+          requireSameOrigin(request)
+          const owner = await requireOwner(headers)
+          const chunks: Buffer[] = []
+          let size = 0
+          for await (const chunk of req) {
+            size += chunk.length
+            if (size > 16384) throw new HttpError(413, "Worker request too large")
+            chunks.push(chunk)
+          }
+          const input = JSON.parse(Buffer.concat(chunks).toString())
+          const result = await recordDemonstration(
+            owner.userId,
+            z.uuid().parse(input.id),
+            input
+          )
+          res
+            .writeHead(200, { "Content-Type": "application/json" })
+            .end(JSON.stringify(result))
+        } catch (error) {
+          const response = errorResponse(error)
+          res
+            .writeHead(response.status, { "Content-Type": "application/json" })
+            .end(await response.text())
+        }
+      })()
+      return
+    }
     if (req.url !== "/health") {
       res.writeHead(404).end()
       return
