@@ -1,3 +1,4 @@
+import { executeConnectionTool } from "./connections"
 import { readUpload } from "@/lib/uploads"
 import { importTaskUploads } from "./uploads"
 import { DBOS } from "@dbos-inc/dbos-sdk"
@@ -111,6 +112,7 @@ async function resolveRequest(taskId: string, requestId: string, reply: UserRepl
           request.response?.note ??
             "Human control returned. Inspect the current screen and pages."
         ),
+        connectionApproved: false,
         completionApproved: false,
         vaultFillApproved: false,
         paymentSubmitApproved: false,
@@ -165,6 +167,8 @@ async function resolveRequest(taskId: string, requestId: string, reply: UserRepl
     await client.query("COMMIT")
     return {
       note: `Decision: ${request.decision}. ${JSON.stringify(request.response)}`,
+      connectionApproved:
+        request.payload.purpose === "connection_call" && request.decision === "approve",
       completionApproved:
         request.payload.purpose === "completion" && request.decision === "complete",
       vaultFillApproved:
@@ -605,6 +609,8 @@ async function runTool(
     )
       return executeLifeTool(task.id, segmentNo, actionNo, toolName, input, epoch)
   }
+  if (toolName === "connection_call")
+    return executeConnectionTool(task, segmentNo, actionNo, input, epoch, ownerMessageSeq)
   if (toolName === "recall_memory") {
     const output = await recallNotes(task.agentId, input)
     return { ok: !("error" in output), output }
@@ -1229,6 +1235,26 @@ export async function runAgent(taskId: string, segmentNo: number) {
               { name: "complete-after-owner-review" }
             )
             if (completed.completed) return completed.output
+          }
+          if (answer.connectionApproved) {
+            const result = await DBOS.runStep(
+              () =>
+                runTool(
+                  task,
+                  segmentNo,
+                  number,
+                  call.toolName,
+                  call.input,
+                  decision.epoch,
+                  ownerMessageSeq
+                ),
+              { name: "connection-after-owner-approval" }
+            )
+            ownerNotes.push(`Connection result: ${JSON.stringify(result.output)}`)
+            if (result.needsReview) {
+              const review = await waitForRequest(task, result.needsReview)
+              ownerNotes.push(review.note)
+            }
           }
           if (answer.vaultFillApproved || answer.paymentSubmitApproved) {
             const filled = await DBOS.runStep(

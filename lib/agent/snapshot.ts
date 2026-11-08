@@ -10,6 +10,7 @@ import { parseModelSpec } from "@/lib/providers/catalog"
 import { HttpError } from "@/lib/errors"
 import { agentZeroPluginSnapshot } from "@/lib/agent-zero-plugins"
 import { manualSnapshot } from "@/lib/manuals"
+import { connectionSnapshot } from "@/lib/connections"
 import { taskMemoryContext } from "@/lib/task-memory"
 
 // Task acceptance and delegation freeze exactly the same model and memory policy.
@@ -44,7 +45,10 @@ export async function agentSnapshot(
   const plugins =
     runtime === "agent" && requireModel ? await agentZeroPluginSnapshot() : []
   const manuals = runtime === "agent" && requireModel ? await manualSnapshot(ownerId) : []
+  const connections =
+    runtime === "agent" && requireModel ? await connectionSnapshot(ownerId) : []
   return {
+    ...(connections.length ? { connections } : {}),
     model,
     contextWindowTokens: modelContextWindow(model),
     name: agent.name,

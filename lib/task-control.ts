@@ -293,7 +293,9 @@ export async function respondToRequest(
               ["execution_error", "control_recovery"].includes(
                 String(request.payload.purpose)
               ) ||
-              ["vault_fill", "payment_submit"].includes(String(request.payload.tool))
+              ["vault_fill", "payment_submit", "connection_call"].includes(
+                String(request.payload.tool)
+              )
             ? ["continue", "cancel"]
             : ["continue", "complete", "cancel"]
       if (!allowed.includes(decision))

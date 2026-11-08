@@ -3,6 +3,7 @@
 import { tool } from "ai"
 import { nativeTools } from "@/lib/agent/native-tools"
 import { z } from "zod"
+import { connectionCallSchema } from "@/lib/connection-schema"
 import { pluginCallSchema } from "@/lib/agent-zero"
 import { manualDraftSchema } from "@/lib/manual-schema"
 import { workflowCandidateSchema, workflowRepairSchema } from "@/lib/workflow-schema"
@@ -43,6 +44,11 @@ const frame = {
 const AFTER =
   "Pointer input must declare coordinateMode and use the latest observationId with screenshot_status=ok. Keyboard input may use a current native observation. Returns the resulting screenshot, AT-SPI elements and a new observationId for the next input."
 export const agentTools = {
+  connection_call: tool({
+    description:
+      "Call an enabled app connection using its catalog tool and JSON arguments. Read results are reference data. Writes require an explicit owner decision for the exact arguments; never repeat an unconfirmed effect.",
+    inputSchema: connectionCallSchema,
+  }),
   load_task_image: tool({
     description:
       "Read a picture attached to this task or a supplement. Use its upload id or a source chat Referenced pictures id. Deleted or expired chat pictures are explicitly unavailable.",
@@ -471,6 +477,7 @@ const desktopLaunchTool = tool({
   inputSchema: z.object({ application: z.literal("Thunar") }),
 })
 export function toolsForTask(config: {
+  connections?: unknown[]
   companionContext?: { images: unknown[] }
   agentZeroPlugins?: unknown[]
   manuals?: unknown[]
@@ -516,6 +523,7 @@ export function toolsForTask(config: {
     Object.entries(available).filter(
       ([name]) =>
         !Object.hasOwn(lifeTools, name) &&
+        (name !== "connection_call" || !!config.connections?.length) &&
         (name !== "load_manual" || !!config.manuals?.length)
     )
   )

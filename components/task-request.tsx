@@ -67,6 +67,11 @@ export function TaskRequest({
             "请确认下一步"
         )}
       </p>
+      {purpose === "connection_call" && (
+        <pre className="max-h-80 overflow-auto text-xs break-all whitespace-pre-wrap">
+          {JSON.stringify(request.payload.input, null, 2)}
+        </pre>
+      )}
       {purpose === "completion" && !!request.payload.comparison && (
         <>
           <p className="text-xs text-muted-foreground">
