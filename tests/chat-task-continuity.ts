@@ -351,6 +351,37 @@ try {
           }
         )
         assert.equal(denied.status(), 403)
+        const { startMcpFixture } = await import("./fixtures/mcp-server.mjs")
+        const connectionFixture = await startMcpFixture()
+        try {
+          await page.goto(`${process.env.APP_URL}/settings`)
+          const settings = page.locator("#connections")
+          await settings.getByLabel("连接名称", { exact: true }).fill("UI MCP")
+          await settings
+            .getByLabel("MCP 地址", { exact: true })
+            .fill(connectionFixture.url + "/mcp")
+          await settings
+            .getByLabel("访问令牌（可选）", { exact: true })
+            .fill("fixture-access")
+          await settings.getByRole("button", { name: "保存连接", exact: true }).click()
+          const item = settings.locator("article").filter({ hasText: "UI MCP" })
+          await item.getByRole("button", { name: "发现工具", exact: true }).click()
+          await item.getByText("UI MCP · 已停用 · 2 个工具", { exact: true }).waitFor()
+          await item.getByRole("button", { name: "启用", exact: true }).click()
+          await item.getByRole("button", { name: "停用", exact: true }).waitFor()
+          const connections = await page.request.get(
+            `${process.env.APP_URL}/api/connections`
+          )
+          assert(!(await connections.text()).includes("fixture-access"))
+          await page.screenshot({
+            path: path.join(directory, "connections-mobile.png"),
+            fullPage: true,
+          })
+          await item.getByRole("button", { name: "断开", exact: true }).click()
+          await item.getByRole("button", { name: "启用", exact: true }).waitFor()
+        } finally {
+          await connectionFixture.close()
+        }
         checks.push(
           "Actual authenticated desktop/mobile UI: upload and supplement in both views, answer request, download artifact and reject unauthenticated files/foreign origin"
         )

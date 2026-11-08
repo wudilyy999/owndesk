@@ -204,6 +204,13 @@
       "when": 1794127634118,
       "tag": "0028_task_uploads",
       "breakpoints": true
+    },
+    {
+      "idx": 29,
+      "version": "7",
+      "when": 1794128754795,
+      "tag": "0029_app_connections",
+      "breakpoints": true
     }
   ]
 }

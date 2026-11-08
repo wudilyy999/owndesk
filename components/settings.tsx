@@ -12,6 +12,7 @@ import { cn } from "@/lib/utils"
 import { MemoryPanel } from "@/components/memory"
 import { TelegramPanel } from "@/components/telegram"
 import { VaultPanel } from "@/components/vault"
+import { Connections } from "@/components/connections"
 import { AgentZeroPlugins } from "@/components/agent-zero-plugins"
 
 function SourceBadge({
@@ -391,6 +392,7 @@ export function Settings({
         </fieldset>
       </form>
       {editing !== "new" && <MemoryPanel key={editing} agentId={editing} />}
+      <Connections />
       <AgentZeroPlugins />
       <TelegramPanel agents={agentRows} />
       <VaultPanel />

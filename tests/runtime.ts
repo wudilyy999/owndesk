@@ -27,6 +27,7 @@ assert(
     "memory",
     "memoryrecall",
     "fileinput",
+    "connections",
     "chat",
     "continuity",
     "ui",
@@ -874,6 +875,50 @@ const modelServer = createServer((req, res) => {
       }
       return
     }
+    if (scenario.kind === "connections") {
+      if (index === 1)
+        answer(res, index, "connection_call", {
+          connectionId: scenario.itemId,
+          tool: "fixture_read",
+          args: { query: "runtime" },
+        })
+      else if (index === 2) {
+        assert.match(raw, /Read: runtime/)
+        answer(res, index, "connection_call", {
+          connectionId: scenario.itemId,
+          tool: "fixture_write",
+          args: { text: "approved-once" },
+        })
+      } else if (index === 3) {
+        assert.match(
+          raw,
+          /Written: approved-once/,
+          JSON.stringify(
+            body.messages
+              .filter(
+                (message: any) => message.role === "user" || message.role === "tool"
+              )
+              .map((message: any) => ({
+                role: message.role,
+                content: JSON.stringify(message.content).slice(0, 1800),
+              }))
+          )
+        )
+        answer(res, index, "connection_call", {
+          connectionId: scenario.itemId,
+          tool: "fixture_write",
+          args: { text: "lose-receipt" },
+        })
+      } else {
+        assert.equal(index, 4)
+        assert.match(raw, /will not be resent/)
+        answer(res, index, "complete_task", {
+          summary: "Inspected uncertain service effect; no duplicate send",
+          files: [],
+        })
+      }
+      return
+    }
     if (scenario.kind === "fileinput") {
       const imported = body.messages.find(
         (message: any) =>
@@ -1331,7 +1376,8 @@ try {
         goal: `CASE=${kind} RUN=${run}; ${kind.startsWith("pay_") ? (kind.startsWith("pay_submit_") ? "Prepare the fixture payment, ask for separate final submission approval, click once and preserve page evidence; never repeat unknown effects or claim independent settlement." : "Prepare only payment details using an approved method; never submit or claim payment succeeded, and do not repeat unknown effects.") : kind.startsWith("fill_") ? "Sign into the controlled site with an approved vault credential; report blocked or unknown effects without repeating them." : "Create and deliver the report."}`,
         clientRequestId: run,
         completionContract: {
-          ...(kind.startsWith("memory") ||
+          ...(kind === "connections" ||
+          kind.startsWith("memory") ||
           ["handoff_busy", "handoff_invalid", "handoff_followup"].includes(kind) ||
           kind.startsWith("usage_") ||
           kind.startsWith("vault_") ||
@@ -7459,6 +7505,79 @@ try {
         check:
           "Owner mobile/desktop usage UI: immutable price receipts, custom rates, unknown-cost reconciliation, zero monthly cap; API auth/Origin/money/cursor validation; pagination uses 53 explicitly seeded history rows without overlap",
       })
+    }
+    if (focus === "connections") {
+      const { startMcpFixture } = await import("./fixtures/mcp-server.mjs")
+      const { saveConnection, discoverConnection } = await import("@/lib/connections")
+      const fixture = await startMcpFixture()
+      try {
+        const connection = await saveConnection(ownerId, {
+          name: "Runtime service",
+          enabled: true,
+          config: {
+            kind: "mcp_http",
+            url: fixture.url + "/mcp",
+            bearer: "fixture-access",
+          },
+        })
+        await discoverConnection(ownerId, connection.id)
+        const run = await submit(
+          "connections",
+          false,
+          "custom/runtime-fixture",
+          async (scenario) => {
+            scenario.itemId = connection.id
+          }
+        )
+        const first = await pending(run.taskId, "connection_call")
+        assert.deepEqual(fixture.writes, [])
+        assert.deepEqual(first.payload.input, {
+          connectionId: connection.id,
+          tool: "fixture_write",
+          args: { text: "approved-once" },
+        })
+        await stop()
+        await respondToRequest(ownerId, first.id, "approve", first.payloadVersion, {
+          answer: "Approve exact first write",
+        })
+        await start()
+        const second = await pending(run.taskId, "connection_call")
+        assert.deepEqual(fixture.writes, ["approved-once"])
+        await respondToRequest(ownerId, second.id, "approve", second.payloadVersion, {
+          answer: "Approve controlled lost-response case",
+        })
+        const review = await until(async () => {
+          const task = await getTask(ownerId, run.taskId)
+          return task.requests.find(
+            (request) =>
+              request.status === "pending" && request.payload.tool === "connection_call"
+          )
+        }, "connection effect review")
+        assert.deepEqual(fixture.writes, ["approved-once", "lose-receipt"])
+        await stop()
+        await respondToRequest(ownerId, review.id, "continue", review.payloadVersion, {
+          note: "Fixture service shows the write happened; continue without another send",
+        })
+        await start()
+        await completed(run.taskId)
+        assert.deepEqual(fixture.writes, ["approved-once", "lose-receipt"])
+        assert.equal(run.scenario.calls.length, 4)
+        const actions = await pool.query(
+          "SELECT status FROM task_actions WHERE task_id=$1 AND kind='connection_call' ORDER BY action_no",
+          [run.taskId]
+        )
+        assert.deepEqual(
+          actions.rows.map((row) => row.status),
+          ["succeeded", "succeeded", "unknown"]
+        )
+        checks.push({
+          check:
+            "Actual MCP read; exact write approval survives worker restart; interrupted external response is reconciled through owner review without another call",
+          taskId: run.taskId,
+        })
+      } finally {
+        await fixture.close()
+      }
     }
     if (focus === "fileinput") {
       const { saveUpload } = await import("@/lib/uploads")

@@ -655,7 +655,7 @@ async function reconcileFile(
   }
 }
 
-async function finishAction(
+export async function finishAction(
   key: (string | number)[],
   agentId: string,
   attemptNo: number,
@@ -705,7 +705,7 @@ export async function requestReview(
   segmentNo: number,
   actionNo: number,
   agentId: string,
-  kind: ActionKind,
+  kind: ActionKind | "connection_call",
   reason: string,
   details?: Record<string, unknown>
 ): Promise<ActionResult> {

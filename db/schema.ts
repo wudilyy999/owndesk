@@ -82,6 +82,24 @@ export const taskUploads = pgTable(
   (t) => [index("task_uploads_owner_agent_idx").on(t.ownerId, t.agentId)]
 )
 
+export const appConnections = pgTable("app_connections", {
+  id: text().primaryKey(),
+  ownerId: text().notNull(),
+  name: text().notNull(),
+  kind: text().notNull(),
+  configCipher: text().notNull(),
+  tokensCipher: text(),
+  oauthSessionCipher: text(),
+  enabled: boolean().notNull().default(false),
+  revision: integer().notNull().default(1),
+  tools: jsonb()
+    .notNull()
+    .$type<import("@/lib/connection-schema").ConnectionTool[]>()
+    .default([]),
+  createdAt: timestamp(),
+  updatedAt: timestamp(),
+})
+
 /* ───────────────────────────── squads ───────────────────────────── */
 
 export const squads = pgTable("squads", {
@@ -744,6 +762,7 @@ export const tasks = pgTable(
       conversation?: { role: "user" | "assistant"; content: string }[]
       omittedConversationTurns?: number
       contextWindowTokens?: number
+      connections?: import("@/lib/connection-schema").ConnectionReference[]
       attachments?: import("@/lib/uploads").UploadReference[]
       companionContext?: import("@/lib/companion/task-context").CompanionTaskContext
       agentZeroPlugins?: AgentZeroPluginReference[]

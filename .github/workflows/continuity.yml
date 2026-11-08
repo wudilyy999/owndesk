@@ -37,6 +37,7 @@ jobs:
       - run: npm run test:continuity -- --ui
       - run: npm run test:memory:recall
       - run: npm run test:files
+      - run: npm run test:connections
       - run: npx tsx tests/companion-memory.ts
       - run: npx tsx tests/companion.ts
       - uses: docker/setup-buildx-action@v3
@@ -50,6 +51,7 @@ jobs:
       - run: npm run test:continuity:runtime
       - run: npm run test:memory:recall:runtime
       - run: npm run test:files:runtime
+      - run: npm run test:connections:runtime
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -57,6 +59,7 @@ jobs:
           path: |
             data/experiments/agent_memory_*/result.json
             data/experiments/agent_files_*/result.json
+            data/experiments/agent_connections_*/result.json
             data/experiments/agent_continuity_*/result.json
             data/experiments/agent_continuity_*/companion-*.png
             data/experiments/agent_continuity_*/web.log
