@@ -19,9 +19,27 @@ import { HttpError } from "@/lib/errors"
 import { assertDelegationRoster } from "@/lib/agent/roster"
 import type { ComparisonResult } from "@/lib/report-comparison"
 
+export type RoutineTransaction = Parameters<Parameters<typeof db.transaction>[0]>[0]
+export const routineTriggerSchema = z.discriminatedUnion("kind", [
+  z.object({ kind: z.literal("webhook") }),
+  z.object({
+    kind: z.literal("url_change"),
+    url: z.url().refine((value) => {
+      const url = new URL(value)
+      return (
+        !url.username &&
+        !url.password &&
+        (url.protocol === "https:" ||
+          (url.protocol === "http:" && ["localhost", "127.0.0.1"].includes(url.hostname)))
+      )
+    }, "Use HTTPS or local HTTP"),
+    everyMinutes: z.number().int().min(1).max(1440).default(5),
+  }),
+])
 export const routinePlanSchema = z
   .object({
     ...routineInputSchema.shape,
+    eventTrigger: routineTriggerSchema.nullable().optional(),
     agentId: z.string().min(1).max(100),
     squadId: z.null().optional(),
     timeZone: taskInputSchema.shape.timeZone.unwrap(),
@@ -148,7 +166,8 @@ export async function freezeRoutine(
 export async function saveRoutine(
   raw: z.input<typeof routinePlanSchema>,
   id?: string,
-  expectedVersion?: number
+  expectedVersion?: number,
+  transaction?: RoutineTransaction
 ) {
   const input = routinePlanSchema.parse(raw)
   const [agent] = await db.select().from(agents).where(eq(agents.id, input.agentId))
@@ -160,7 +179,7 @@ export async function saveRoutine(
   ])
   if (!zone.rowCount)
     throw new HttpError(400, "The database does not support this time zone")
-  return db.transaction(async (tx) => {
+  const save = async (tx: RoutineTransaction) => {
     if (id) {
       const [old] = await tx
         .select()
@@ -171,11 +190,16 @@ export async function saveRoutine(
       if (old.planVersion !== expectedVersion)
         throw new HttpError(409, "The plan changed; refresh before editing")
     }
-    const nextRunAt = input.enabled ? await initialRun(input, new Date()) : null
-    if (input.enabled && !nextRunAt)
+    const nextRunAt =
+      input.enabled && !input.eventTrigger ? await initialRun(input, new Date()) : null
+    if (input.enabled && !input.eventTrigger && !nextRunAt)
       throw new HttpError(400, "An enabled one-time plan must be in the future")
     const values = {
       ...input,
+      eventTrigger: input.eventTrigger ?? null,
+      watchState: null,
+      nextWatchAt:
+        input.enabled && input.eventTrigger?.kind === "url_change" ? new Date() : null,
       squadId: null,
       nextRunAt,
       planVersion: id ? expectedVersion! + 1 : 1,
@@ -184,11 +208,17 @@ export async function saveRoutine(
       ? await tx.update(routines).set(values).where(eq(routines.id, id)).returning()
       : await tx.insert(routines).values(values).returning()
     return saved
-  })
+  }
+  return transaction ? save(transaction) : db.transaction(save)
 }
 
-export async function setRoutineEnabled(id: string, version: number, enabled: boolean) {
-  const [routine] = await db
+export async function setRoutineEnabled(
+  id: string,
+  version: number,
+  enabled: boolean,
+  transaction?: RoutineTransaction
+) {
+  const [routine] = await (transaction ?? db)
     .select()
     .from(routines)
     .where(and(eq(routines.id, id), isNull(routines.deletedAt)))
@@ -196,12 +226,17 @@ export async function setRoutineEnabled(id: string, version: number, enabled: bo
   return saveRoutine(
     { ...routine, agentId: routine.agentId!, squadId: undefined, enabled },
     id,
-    version
+    version,
+    transaction
   )
 }
 
-export async function deleteRoutine(id: string, version: number) {
-  const changed = await db
+export async function deleteRoutine(
+  id: string,
+  version: number,
+  transaction?: RoutineTransaction
+) {
+  const changed = await (transaction ?? db)
     .update(routines)
     .set({
       enabled: false,
@@ -385,6 +420,8 @@ export async function routineOverview(ownerId: string) {
       .where(sql`${agents.model} IS DISTINCT FROM 'fixture/durable-report'`),
     routines: plans.map(({ routine, agentName }) => ({
       ...routine,
+      webhookCipher: undefined,
+      watchState: undefined,
       agentName,
       createdAt: routine.createdAt.toISOString(),
       nextRunAt: routine.nextRunAt?.toISOString() ?? null,

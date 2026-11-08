@@ -28,6 +28,7 @@ assert(
     "memoryrecall",
     "fileinput",
     "connections",
+    "automations",
     "chat",
     "continuity",
     "ui",
@@ -873,6 +874,14 @@ const modelServer = createServer((req, res) => {
           files: [{ path: "report.csv", mediaType: "text/csv" }],
         })
       }
+      return
+    }
+    if (scenario.kind === "automations") {
+      assert.match(raw, /trigger value/)
+      answer(res, index, "complete_task", {
+        summary: "Automation event processed",
+        files: [],
+      })
       return
     }
     if (scenario.kind === "connections") {
@@ -7491,6 +7500,64 @@ try {
       checks.push({
         check:
           "Owner mobile/desktop usage UI: immutable price receipts, custom rates, unknown-cost reconciliation, zero monthly cap; API auth/Origin/money/cursor validation; pagination uses 53 explicitly seeded history rows without overlap",
+      })
+    }
+    if (focus === "automations") {
+      const { manageChatRoutine } = await import("@/lib/companion/routines")
+      const { rotateRoutineWebhook, acceptRoutineEvent } =
+        await import("@/lib/routine-events")
+      const { updateCompanion } = await import("@/lib/companion/store")
+      const run = randomUUID(),
+        agentId = randomUUID(),
+        scenario: Scenario = { kind: "automations", calls: [] }
+      scenarios.set(run, scenario)
+      await pool.query(
+        "INSERT INTO agents(id,name,role,glyph,model,created_at,updated_at) VALUES($1,'Automation','Assistant','fixture','custom/runtime-fixture',now(),now())",
+        [agentId]
+      )
+      agents.push(agentId)
+      await updateCompanion(ownerId, agentId, { typingPace: "off" })
+      const routine = (await manageChatRoutine(ownerId, agentId, `runtime:${run}`, {
+        action: "create",
+        plan: {
+          name: "Event processing",
+          prompt: `CASE=automations RUN=${run}; Process trigger value`,
+          schedule: { kind: "daily", time: "09:00" },
+          eventTrigger: { kind: "webhook" },
+          enabled: true,
+        },
+      })) as { id: string }
+      const credential = await rotateRoutineWebhook(routine.id)
+      const event = { id: run, data: { message: "trigger value" } }
+      const accepted = await acceptRoutineEvent(routine.id, credential.token, event)
+      assert.equal(
+        (await acceptRoutineEvent(routine.id, credential.token, event)).runId,
+        accepted.runId
+      )
+      const taskId = await until(
+        async () =>
+          (
+            await pool.query("SELECT task_id FROM routine_runs WHERE id=$1", [
+              accepted.runId,
+            ])
+          ).rows[0].task_id,
+        "DBOS event dispatch"
+      )
+      await completed(taskId)
+      assert.equal(scenario.calls.length, 1)
+      await manageChatRoutine(ownerId, agentId, `pause:${run}`, {
+        action: "pause",
+        id: routine.id,
+        version: 1,
+      })
+      await assert.rejects(
+        acceptRoutineEvent(routine.id, credential.token, { ...event, id: randomUUID() }),
+        { status: 409 }
+      )
+      checks.push({
+        check:
+          "Chat-created webhook routine reaches existing DBOS dispatcher and actual Task once; duplicate event reuses run, pause rejects new events",
+        taskId,
       })
     }
     if (focus === "connections") {

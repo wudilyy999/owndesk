@@ -313,6 +313,10 @@ export const routines = pgTable(
   "routines",
   {
     id: id(),
+    eventTrigger: jsonb().$type<import("@/lib/routines").RoutinePlan["eventTrigger"]>(),
+    watchState: jsonb().$type<{ content: string; revision: number }>(),
+    nextWatchAt: pgTimestamp({ withTimezone: true, mode: "date" }),
+    webhookCipher: text(),
     name: text().notNull(),
     agentId: text().references(() => agents.id, { onDelete: "cascade" }),
     squadId: text().references(() => squads.id, { onDelete: "cascade" }),
@@ -346,6 +350,15 @@ export const routines = pgTable(
 
 // Every time a routine came due or was run by hand, including the times it
 // was skipped. What a run cost is in the ledger: the turn it started.
+export const routineCommands = pgTable("routine_commands", {
+  key: text().primaryKey(),
+  ownerId: text().notNull(),
+  agentId: text().notNull(),
+  input: jsonb().notNull(),
+  result: jsonb().notNull(),
+  createdAt: timestamp(),
+})
+
 export const routineRuns = pgTable(
   "routine_runs",
   {
@@ -353,7 +366,7 @@ export const routineRuns = pgTable(
     routineId: text()
       .notNull()
       .references(() => routines.id, { onDelete: "cascade" }),
-    trigger: text({ enum: ["schedule", "manual"] }).notNull(),
+    trigger: text({ enum: ["schedule", "manual", "event"] }).notNull(),
     status: text({
       enum: ["queued", "running", "ok", "failed", "stopped", "skipped"],
     }).notNull(),
