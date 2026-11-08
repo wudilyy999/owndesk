@@ -35,6 +35,8 @@ jobs:
       - run: touch .env
       - run: npx playwright install --with-deps chromium
       - run: npm run test:continuity -- --ui
+      - run: npm run test:memory:recall
+      - run: npx tsx tests/companion-memory.ts
       - uses: docker/setup-buildx-action@v3
       - uses: docker/build-push-action@v6
         with:
@@ -44,11 +46,13 @@ jobs:
           cache-from: type=gha,scope=owndesk-workstation
           cache-to: type=gha,scope=owndesk-workstation,mode=max
       - run: npm run test:continuity:runtime
+      - run: npm run test:memory:recall:runtime
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: continuity-evidence
           path: |
+            data/experiments/agent_memory_*/result.json
             data/experiments/agent_continuity_*/result.json
             data/experiments/agent_continuity_*/companion-*.png
             data/experiments/agent_continuity_*/web.log

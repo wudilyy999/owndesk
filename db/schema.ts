@@ -719,6 +719,7 @@ export const tasks = pgTable(
       model: string
       instructions: string
       memories: string[]
+      memorySummary?: string
       name?: string
       role?: string
       timeZone?: string

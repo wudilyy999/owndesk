@@ -25,6 +25,7 @@ assert(
     "recovery",
     "cua",
     "memory",
+    "memoryrecall",
     "chat",
     "continuity",
     "ui",
@@ -872,6 +873,46 @@ const modelServer = createServer((req, res) => {
       }
       return
     }
+    if (scenario.kind === "memoryrecall") {
+      const resultFor = (id: string) =>
+        JSON.parse(
+          body.messages.find(
+            (message: any) => message.role === "tool" && message.tool_call_id === id
+          ).content
+        )
+      if (index === 1) {
+        assert.match(body.messages[0].content, /Report preferences/)
+        assert.doesNotMatch(body.messages[0].content, /Old preference: blue/)
+        answer(res, index, "recall_memory", { summaries: true })
+      } else if (index === 2) {
+        assert.match(JSON.stringify(resultFor("call-1")), /Reports/)
+        answer(res, index, "recall_memory", { topic: "Reports", page: 1 })
+      } else if (index === 3) {
+        assert.equal(resultFor("call-2").pages, 5)
+        answer(res, index, "recall_memory", { topic: "Reports", page: 5 })
+      } else if (index === 4) {
+        assert.match(JSON.stringify(resultFor("call-3")), /Old preference: blue/)
+        answer(res, index, "fs_write", { path: "preference.txt", content: "blue" })
+      } else if (index === 5) {
+        answer(res, index, "ask_user", {
+          question: "Ready to apply updated preferences?",
+        })
+      } else if (index === 6) {
+        assert.doesNotMatch(body.messages[0].content, /Recent note 70/)
+        assert.match(body.messages[0].content, /Current report preferences/)
+        answer(res, index, "recall_memory", { topic: "Reports", page: 1 })
+      } else if (index === 7) {
+        assert.match(JSON.stringify(resultFor("call-6")), /Current preference: green/)
+        answer(res, index, "fs_write", { path: "preference.txt", content: "green" })
+      } else {
+        assert.equal(index, 8)
+        answer(res, index, "complete_task", {
+          summary: "Current preferences applied",
+          files: [{ path: "preference.txt", mediaType: "text/plain" }],
+        })
+      }
+      return
+    }
     if (scenario.kind === "memory") {
       const resultFor = (id: string) =>
         JSON.parse(
@@ -1217,7 +1258,7 @@ try {
         goal: `CASE=${kind} RUN=${run}; ${kind.startsWith("pay_") ? (kind.startsWith("pay_submit_") ? "Prepare the fixture payment, ask for separate final submission approval, click once and preserve page evidence; never repeat unknown effects or claim independent settlement." : "Prepare only payment details using an approved method; never submit or claim payment succeeded, and do not repeat unknown effects.") : kind.startsWith("fill_") ? "Sign into the controlled site with an approved vault credential; report blocked or unknown effects without repeating them." : "Create and deliver the report."}`,
         clientRequestId: run,
         completionContract: {
-          ...(kind === "memory" ||
+          ...(kind.startsWith("memory") ||
           ["handoff_busy", "handoff_invalid", "handoff_followup"].includes(kind) ||
           kind.startsWith("usage_") ||
           kind.startsWith("vault_") ||
@@ -7344,6 +7385,71 @@ try {
       checks.push({
         check:
           "Owner mobile/desktop usage UI: immutable price receipts, custom rates, unknown-cost reconciliation, zero monthly cap; API auth/Origin/money/cursor validation; pagination uses 53 explicitly seeded history rows without overlap",
+      })
+    }
+    if (focus === "memoryrecall") {
+      const summaryId = randomUUID(),
+        oldId = randomUUID()
+      const run = await submit(
+        "memoryrecall",
+        false,
+        "custom/runtime-fixture",
+        async (_scenario, agentId) => {
+          await pool.query(
+            "INSERT INTO memories(id,agent_id,kind,topic,content,created_at) VALUES($1,$2,'summary','Reports','Report preferences',now())",
+            [summaryId, agentId]
+          )
+          await pool.query(
+            "INSERT INTO memories(id,agent_id,summary_id,content,created_at) VALUES($1,$2,$3,'Old preference: blue',now()-interval '1 year')",
+            [oldId, agentId, summaryId]
+          )
+          await pool.query(
+            "INSERT INTO memories(id,agent_id,summary_id,content,created_at,updated_at) SELECT gen_random_uuid()::text,$1,$2,'Recent note '||n,now()+n*interval '1 second',now()+n*interval '1 second' FROM generate_series(1,70) n",
+            [agentId, summaryId]
+          )
+        }
+      )
+      const request = await pending(run.taskId, "question")
+      assert.equal(run.scenario.calls.length, 5)
+      await stop()
+      await pool.query(
+        "UPDATE memories SET content='Current preference: green',updated_at=now()+interval '5 minutes' WHERE id=$1",
+        [oldId]
+      )
+      await pool.query(
+        "UPDATE memories SET content='Current report preferences' WHERE id=$1",
+        [summaryId]
+      )
+      await pool.query(
+        "DELETE FROM memories WHERE agent_id=$1 AND content='Recent note 70'",
+        [run.agentId]
+      )
+      await respondToRequest(ownerId, request.id, "approve", request.payloadVersion, {
+        answer: "Use current preferences",
+        note: "Use current preferences",
+      })
+      await start()
+      const result = await completed(run.taskId)
+      assert.equal(run.scenario.calls.length, 8)
+      assert.equal(
+        await readFile(
+          path.join(process.env.ARTIFACT_DIR!, result.artifacts[0].storagePath),
+          "utf8"
+        ),
+        "green"
+      )
+      const writes = await pool.query(
+        "SELECT input->>'content' AS content FROM task_actions WHERE task_id=$1 AND kind='fs_write' AND status='succeeded' ORDER BY action_no",
+        [run.taskId]
+      )
+      assert.deepEqual(
+        writes.rows.map((row) => row.content),
+        ["blue", "green"]
+      )
+      checks.push({
+        check:
+          "Real task recalls note beyond initial 30 through topic pages, writes its value, resumes after worker restart with edited summary/deleted recent note and delivers updated recalled value",
+        taskId: run.taskId,
       })
     }
     if (focus === "memory") {
