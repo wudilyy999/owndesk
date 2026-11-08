@@ -7586,7 +7586,7 @@ try {
           budget: { maxSteps: 5 },
         })
       }
-      async function delivered(taskId: string) {
+      async function delivered(taskId: string, nameColumn = "name") {
         try {
           const result = await completed(taskId)
           assert.equal(
@@ -7602,7 +7602,10 @@ try {
             path.join(process.env.ARTIFACT_DIR!, checked.storagePath),
             "utf8"
           )
-          assert.equal(bytes.trim().replaceAll("\r", ""), "name,total\nExample,42")
+          assert.equal(
+            bytes.trim().replaceAll("\r", ""),
+            `${nameColumn},total\nExample,42`
+          )
           assert.equal(
             (
               await pool.query(
@@ -7725,6 +7728,18 @@ try {
         }
         await writeFile(path.join(directory, "cross-app-web.log"), webLog)
       }
+      const office = await runner(),
+        officePack = crossAppTemplate(office.environment, randomUUID(), "Writer")
+      const officeVersion = await importWorkflowPackage(ownerId, {
+        clientRequestId: randomUUID(),
+        reviewed: true,
+        package: officePack,
+      })
+      await delivered(
+        (await runFlow(office.agentId, officeVersion.versionId, "verify", "Writer"))
+          .taskId,
+        "Name"
+      )
       for (let n = 1; n <= 3; n++) {
         const agentId = n === 1 ? first.agentId : (await runner()).agentId
         const task = await runFlow(agentId, imported.versionId, "verify", `Browser-${n}`)
@@ -7752,17 +7767,6 @@ try {
       assert.equal(
         (await getWorkflowVersion(ownerId, another.versionId)).status,
         "verifying"
-      )
-      const office = await runner(),
-        officePack = crossAppTemplate(office.environment, randomUUID(), "Writer")
-      const officeVersion = await importWorkflowPackage(ownerId, {
-        clientRequestId: randomUUID(),
-        reviewed: true,
-        package: officePack,
-      })
-      await delivered(
-        (await runFlow(office.agentId, officeVersion.versionId, "verify", "Writer"))
-          .taskId
       )
       // A checkpoint after the clipboard copy tests durable restart without retyping/re-copying.
       const recovery = await runner(),

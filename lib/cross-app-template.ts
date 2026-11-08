@@ -53,7 +53,7 @@ export function crossAppTemplate(
     key(page, "c", ["ctrl"])
   } else {
     const page = guard("Writer", `${zh ? "未命名" : "Untitled"} 1 — LibreOffice Writer`)
-    type(page, "name,total")
+    type(page, "Name,total")
     key(page, "enter")
     type(page, "Example,42")
     key(page, "a", ["ctrl"])
@@ -102,7 +102,7 @@ export function crossAppTemplate(
     completion: { root: [{ literal: "/home/agent" }], directories: [], absent: [] },
     artifact: {
       path: [{ literal: "/home/agent/" }, { parameter: "input1" }, { literal: ".csv" }],
-      requiredColumns: ["name", "total"],
+      requiredColumns: [source === "Writer" ? "Name" : "name", "total"],
       minRows: 1,
     },
     steps: steps.map(({ evidence: _evidence, ...step }) => step),
