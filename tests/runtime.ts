@@ -7612,6 +7612,7 @@ try {
               "Real application clipboard transfer, CSV bytes and host contract, no model calls",
             taskId,
           })
+          await docker(["stop", workstationName(result.agentId)])
           return result
         } finally {
           await writeFile(

@@ -410,7 +410,6 @@ export async function captureDesktop(
 export async function openDesktopApplication(actionId, binding, application = "Thunar") {
   const launchers = {
     Thunar: ["thunar", ["--window", "/home/agent"]],
-    Browser: ["browser", ["about:blank"]],
     Writer: ["libreoffice", ["--writer"]],
     Calc: ["libreoffice", ["--calc"]],
     Mousepad: ["mousepad", ["--disable-server"]],

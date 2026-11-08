@@ -764,6 +764,15 @@ async function dispatch(route, body, actionId = randomUUID(), transient) {
       })
       .parse(body)
     requireAgent(input)
+    if (input.application === "Browser") {
+      const context = await ensureBrowser()
+      requireAgent(input)
+      const page =
+        firstPage && !firstPage.isClosed() ? firstPage : await context.newPage()
+      firstPage = undefined
+      await page.bringToFront()
+      return captureDesktop(actionId, { epoch, bootId })
+    }
     return openDesktopApplication(actionId, { epoch, bootId }, input.application)
   }
   if (
