@@ -1,5 +1,5 @@
 "use client"
-import { useEffect, useLayoutEffect, useRef, useState } from "react"
+import { useEffect, useLayoutEffect, useRef, useState, type RefObject } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import {
@@ -11,7 +11,7 @@ export function Demonstration({
   screen,
 }: {
   agentId: string
-  screen: HTMLDivElement | null
+  screen: RefObject<HTMLDivElement | null>
 }) {
   const [name, setName] = useState(""),
     [session, setSession] = useState<{ id: string; seq: number } | null>(null),
@@ -71,10 +71,11 @@ export function Demonstration({
     }
   })
   useEffect(() => {
-    if (!screen) return
+    const target = screen.current
+    if (!target) return
     const pointer = (event: MouseEvent) => {
       if (privateMode.current) return
-      const box = screen.getBoundingClientRect()
+      const box = target.getBoundingClientRect()
       enqueue.current({
         kind: "pointer",
         button: event.button,
@@ -97,13 +98,13 @@ export function Demonstration({
       })
       enqueue.current(parsed.success ? parsed.data : { kind: "protected_input" })
     }
-    screen.addEventListener("mouseup", pointer, true)
-    screen.addEventListener("wheel", scroll, true)
-    screen.addEventListener("keyup", key, true)
+    target.addEventListener("mouseup", pointer, true)
+    target.addEventListener("wheel", scroll, true)
+    target.addEventListener("keyup", key, true)
     return () => {
-      screen.removeEventListener("mouseup", pointer, true)
-      screen.removeEventListener("wheel", scroll, true)
-      screen.removeEventListener("keyup", key, true)
+      target.removeEventListener("mouseup", pointer, true)
+      target.removeEventListener("wheel", scroll, true)
+      target.removeEventListener("keyup", key, true)
     }
   }, [screen])
   return (
