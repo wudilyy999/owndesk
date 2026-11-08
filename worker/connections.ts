@@ -88,6 +88,8 @@ export async function executeConnectionTool(
       return { ok: false, output: { error: "Owner declined this connection call" } }
   }
   const control = await assertAgentControl(task.id, task.agentId, segmentNo)
+  // A connection approval binds exact arguments/revision, independently of GUI observations.
+  if (!tool.readOnly) epoch = control.epoch
   if (control.epoch !== epoch)
     return {
       ok: false,
