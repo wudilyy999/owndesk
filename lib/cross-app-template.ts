@@ -52,7 +52,7 @@ export function crossAppTemplate(
     key(page, "a", ["ctrl"])
     key(page, "c", ["ctrl"])
   } else {
-    const page = guard("Writer", `${zh ? "无标题" : "Untitled"} 1 - LibreOffice Writer`)
+    const page = guard("Writer", `${zh ? "未命名" : "Untitled"} 1 — LibreOffice Writer`)
     type(page, "name,total")
     key(page, "enter")
     type(page, "Example,42")
