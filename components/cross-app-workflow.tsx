@@ -1,5 +1,5 @@
 "use client"
-import { useState } from "react"
+import { useRef, useState } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 export function CrossAppWorkflow({ agents }: { agents: { id: string; name: string }[] }) {
@@ -10,6 +10,7 @@ export function CrossAppWorkflow({ agents }: { agents: { id: string; name: strin
     [reviewed, setReviewed] = useState(false),
     [error, setError] = useState(""),
     [busy, setBusy] = useState(false)
+  const pending = useRef<{ text: string; key: string } | null>(null)
   async function post(url: string, body: unknown) {
     const response = await fetch(url, {
       method: "POST",
@@ -95,8 +96,10 @@ export function CrossAppWorkflow({ agents }: { agents: { id: string; name: strin
               setBusy(true)
               setError("")
               try {
+                if (pending.current?.text !== text)
+                  pending.current = { text, key: crypto.randomUUID() }
                 await post("/api/workflows/import", {
-                  clientRequestId: crypto.randomUUID(),
+                  clientRequestId: pending.current.key,
                   reviewed: true,
                   package: JSON.parse(text),
                 })

@@ -75,4 +75,6 @@ jobs:
             data/experiments/agent_runtime_*/demonstration-*.png
             data/experiments/agent_runtime_*/demonstration-web.log
             data/experiments/agent_runtime_*/cross-app-*.json
+            data/experiments/agent_runtime_*/cross-app-ui.png
+            data/experiments/agent_runtime_*/cross-app-web.log
           retention-days: 14

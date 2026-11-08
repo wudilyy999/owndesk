@@ -7634,13 +7634,91 @@ try {
           )
         }
       }
-      const first = await runner(),
-        pack = crossAppTemplate(first.environment, randomUUID())
-      const imported = await importWorkflowPackage(ownerId, {
-        clientRequestId: randomUUID(),
-        reviewed: true,
-        package: pack,
+      const first = await runner()
+      let pack = crossAppTemplate(first.environment, randomUUID())
+      let imported: { versionId: string }
+      const web = spawn(
+        process.execPath,
+        [
+          "node_modules/next/dist/bin/next",
+          "dev",
+          "--hostname",
+          "127.0.0.1",
+          "--port",
+          "17097",
+        ],
+        { env: process.env, detached: true }
+      )
+      let webLog = ""
+      web.stdout!.on("data", (data) => {
+        webLog += data
       })
+      web.stderr!.on("data", (data) => {
+        webLog += data
+      })
+      const { chromium } = await import("playwright")
+      let browser: Awaited<ReturnType<typeof chromium.launch>> | undefined
+      try {
+        await until(async () => {
+          if (web.exitCode !== null) throw new Error(webLog)
+          try {
+            return (await fetch(`${process.env.APP_URL}/login`)).ok
+          } catch (error) {
+            if ((error as { cause?: { code?: string } }).cause?.code === "ECONNREFUSED")
+              return false
+            throw error
+          }
+        }, "workflow web ready")
+        browser = await chromium.launch({ headless: true })
+        const page = await browser.newPage({ viewport: { width: 390, height: 844 } })
+        await page.goto(`${process.env.APP_URL}/login`)
+        await page.getByLabel("邮箱").fill(process.env.OWNER_EMAIL!)
+        await page.getByLabel("密码").fill(process.env.OWNER_PASSWORD!)
+        await page.getByRole("button", { name: "登录", exact: true }).click()
+        await page.waitForURL((url) => url.pathname !== "/login")
+        await page.goto(`${process.env.APP_URL}/workflows`)
+        await page
+          .getByRole("button", { name: "生成浏览器与办公模板", exact: true })
+          .click()
+        const editor = page.getByLabel("跨应用流程 JSON")
+        await editor.waitFor()
+        pack = validateWorkflowPackage(JSON.parse(await editor.inputValue()))
+        assert.equal(
+          pack.environment.workstationImageId,
+          first.environment.workstationImageId
+        )
+        await page.getByLabel("已审阅步骤、输入和结果检查").check()
+        const response = page.waitForResponse(
+          (res) =>
+            res.url().endsWith("/api/workflows/import") &&
+            res.request().method() === "POST"
+        )
+        await page.getByRole("button", { name: "保存待验证候选", exact: true }).click()
+        const saved = await response
+        assert.equal(saved.status(), 201)
+        imported = await saved.json()
+        await page.getByText("导入草稿 · 待独立验证", { exact: true }).waitFor()
+        assert.equal(
+          await page.evaluate(() => document.documentElement.scrollWidth > innerWidth),
+          false
+        )
+        await page.screenshot({
+          path: path.join(directory, "cross-app-ui.png"),
+          fullPage: true,
+        })
+        checks.push({
+          check:
+            "Real mobile workflow UI generates template through authenticated worker, reviews and imports a candidate",
+        })
+      } finally {
+        await browser?.close()
+        if (web.pid && web.exitCode === null) {
+          const exited = once(web, "exit")
+          process.kill(-web.pid, "SIGTERM")
+          await exited
+        }
+        await writeFile(path.join(directory, "cross-app-web.log"), webLog)
+      }
       for (let n = 1; n <= 3; n++) {
         const agentId = n === 1 ? first.agentId : (await runner()).agentId
         const task = await runFlow(agentId, imported.versionId, "verify", `Browser-${n}`)

@@ -66,9 +66,9 @@ const crossAppPackageSchema = directoryPackageSchema.extend({
     application: z.literal("Desktop"),
   }),
   completion: z.strictObject({
-    root: workflowTextSchema,
-    directories: z.array(workflowTextSchema).max(50),
-    absent: z.array(workflowTextSchema).max(50),
+    root: z.tuple([z.strictObject({ literal: z.literal("/home/agent") })]),
+    directories: z.array(workflowTextSchema).max(0),
+    absent: z.array(workflowTextSchema).max(0),
   }),
   artifact: z.strictObject({
     path: workflowTextSchema,

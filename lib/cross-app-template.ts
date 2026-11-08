@@ -63,8 +63,8 @@ export function crossAppTemplate(
     { operation: "open_application", application: "Mousepad" } as WorkflowStep,
     "打开文本编辑器"
   )
-  const editor = guard("Mousepad", `${untitled} - Mousepad`),
-    modified = guard("Mousepad", `*${untitled} - Mousepad`)
+  const editor = guard("Mousepad", `${untitled} 1 - Mousepad`),
+    modified = guard("Mousepad", `*${untitled} 1 - Mousepad`)
   key(editor, "v", ["ctrl"])
   key(modified, "s", ["ctrl"])
   const dialog = guard("Mousepad", zh ? "另存为" : "Save As")
