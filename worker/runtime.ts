@@ -59,7 +59,11 @@ import type { PaymentSubmitInput, PaymentResultInput } from "@/lib/payment-schem
 import { executePaymentSubmit, executePaymentResult } from "./payment-submission"
 import { executeDelegate, importHandoffFiles } from "./delegation"
 import { buildWorkflowPlan, captureCompilationEnvironment } from "./compilation"
-import { WorkflowValidationError, type WorkflowPlan } from "@/lib/workflow-schema"
+import {
+  WorkflowValidationError,
+  workflowApplicationSchema,
+  type WorkflowPlan,
+} from "@/lib/workflow-schema"
 import {
   nextWorkflowDecision,
   advanceWorkflow,
@@ -550,7 +554,7 @@ async function runTool(
   // All local tools declare Zod object schemas; the SDK widens inputSchema to FlexibleSchema.
   const parsed = (
     internalLaunch
-      ? z.object({ application: z.literal("Thunar") })
+      ? z.object({ application: workflowApplicationSchema })
       : (toolsForCoordinateMode(task.configSnapshot.desktopCoordinateMode ?? "pixels")[
           toolName as keyof ReturnType<typeof toolsForCoordinateMode>
         ].inputSchema as z.ZodObject)

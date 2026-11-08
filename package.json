@@ -61,6 +61,7 @@
     "test:runtime:handoff": "tsx tests/runtime.ts handoff",
     "test:runtime:routine-handoff": "tsx tests/runtime.ts routinehandoff",
     "test:runtime:chat": "tsx tests/runtime.ts chat",
+    "test:crossapps:runtime": "tsx tests/runtime.ts crossapps",
     "test:demonstrations": "tsx tests/demonstrations.ts",
     "test:demonstrations:runtime": "tsx tests/runtime.ts demonstrations",
     "test:automations": "tsx tests/automations.ts",

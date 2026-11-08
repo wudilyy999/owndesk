@@ -40,7 +40,7 @@ export function WorkflowExport({ versionId }: { versionId: string }) {
       {preview && (
         <>
           <p>
-            已使用中性名称、参数和三组虚构样例；本地任务、费用、轨迹证据、审批及控制引用均不导出。软件环境仅作兼容性声明，接收方必须重新验证。
+            已使用中性名称、参数和三组虚构样例；跨应用包保留步骤中的固定文本，请逐项审阅。本地任务、费用、轨迹证据、审批及控制引用均不导出。软件环境仅作兼容性声明，接收方必须重新验证。
           </p>
           <details open>
             <summary>审阅导出内容</summary>
@@ -64,7 +64,7 @@ export function WorkflowExport({ versionId }: { versionId: string }) {
               )
               const link = document.createElement("a")
               link.href = url
-              link.download = "thunar-workflow.json"
+              link.download = "desktop-workflow.json"
               link.click()
               URL.revokeObjectURL(url)
             }}
@@ -153,7 +153,7 @@ export function WorkflowImport() {
     >
       <h2 className="font-medium">导入本地流程包</h2>
       <p>
-        仅接收有限的 Thunar 目录流程。导入后保留为草稿，不继承 ready
+        支持 Thunar 目录流程和跨应用 CSV 流程。导入后保留为草稿，不继承 ready
         状态、来源样例成绩或任何授权，也不会执行脚本、创建任务或启动工作站。
       </p>
       <label className="block space-y-2">

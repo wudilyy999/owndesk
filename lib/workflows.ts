@@ -6,6 +6,7 @@ import type { PoolClient } from "pg"
 import type { WorkflowPackage } from "@/lib/workflow-package"
 import {
   bindWorkflowContract,
+  bindWorkflowArtifact,
   validateWorkflowParameters,
   type WorkflowExecutionInput,
   type WorkflowExecution,
@@ -196,6 +197,9 @@ export async function freezeWorkflowExecution(
         : "This workflow candidate has not passed independent execution checks"
     )
   const parameters = validateWorkflowParameters(version.plan, input.parameters)
+  const artifact = version.plan.artifact
+    ? bindWorkflowArtifact(version.plan, parameters)
+    : undefined
   const tree = bindWorkflowContract(version.plan.completion, parameters)
   if (tree.directories.some((value) => tree.absent.includes(value)))
     throw new HttpError(400, "Required and absent directory names must differ")
@@ -211,6 +215,9 @@ export async function freezeWorkflowExecution(
       plan: version.plan,
       validatedEnvironment: version.validated_environment,
     },
-    completionContract: { directoryTree: tree, requireHumanReview: false },
+    completionContract: {
+      ...(artifact ? { artifact } : { directoryTree: tree }),
+      requireHumanReview: false,
+    },
   }
 }

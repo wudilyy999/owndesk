@@ -50,6 +50,7 @@ jobs:
           tags: owndesk-workstation:0.7.0
           cache-from: type=gha,scope=owndesk-workstation
           cache-to: type=gha,scope=owndesk-workstation,mode=max
+      - run: npm run test:crossapps:runtime
       - run: npm run test:continuity:runtime
       - run: npm run test:memory:recall:runtime
       - run: npm run test:files:runtime
@@ -73,4 +74,7 @@ jobs:
             data/experiments/agent_runtime_*/worker-*.log
             data/experiments/agent_runtime_*/demonstration-*.png
             data/experiments/agent_runtime_*/demonstration-web.log
+            data/experiments/agent_runtime_*/cross-app-*.json
+            data/experiments/agent_runtime_*/cross-app-ui.png
+            data/experiments/agent_runtime_*/cross-app-web.log
           retention-days: 14

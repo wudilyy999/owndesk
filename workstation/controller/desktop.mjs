@@ -407,17 +407,24 @@ export async function captureDesktop(
   }
 }
 
-export async function openDesktopApplication(actionId, binding) {
+export async function openDesktopApplication(actionId, binding, application = "Thunar") {
+  const launchers = {
+    Thunar: ["thunar", ["--window", "/home/agent"]],
+    Writer: ["libreoffice", ["--writer"]],
+    Calc: ["libreoffice", ["--calc"]],
+    Mousepad: ["mousepad", ["--disable-server"]],
+  }
+  const [program, args] = launchers[application]
   invalidateDesktopObservation()
   // Fixed native application/argv. Generated commands and file modifications never enter this adapter.
   await mkdir("/tmp/personal-agent-processes", { recursive: true })
   const log = await open(
-    `/tmp/personal-agent-processes/${encodeURIComponent(actionId)}-thunar`,
+    `/tmp/personal-agent-processes/${encodeURIComponent(actionId)}-application`,
     "w+",
     0o600
   )
   try {
-    const child = spawn("thunar", ["--window", "/home/agent"], {
+    const child = spawn(program, args, {
       detached: true,
       stdio: ["ignore", log.fd, log.fd],
     })
@@ -432,17 +439,20 @@ export async function openDesktopApplication(actionId, binding) {
       const buffer = Buffer.alloc(20000)
       const { bytesRead } = await log.read(buffer, 0, buffer.length, 0)
       throw new Error(
-        `Thunar startup failed (${exit.code ?? exit.signal}): ${buffer.subarray(0, bytesRead).toString()}`
+        `${application} startup failed (${exit.code ?? exit.signal}): ${buffer.subarray(0, bytesRead).toString()}`
       )
     }
   } finally {
     await log.close()
   }
   try {
-    return { launched: "Thunar", ...(await captureDesktop(`${actionId}:look`, binding)) }
+    return {
+      launched: application,
+      ...(await captureDesktop(`${actionId}:look`, binding)),
+    }
   } catch (error) {
     return {
-      launched: "Thunar",
+      launched: application,
       observationId: null,
       image: null,
       observationError: error.message,
