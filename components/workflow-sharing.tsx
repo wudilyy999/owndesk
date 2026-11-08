@@ -153,7 +153,7 @@ export function WorkflowImport() {
     >
       <h2 className="font-medium">导入本地流程包</h2>
       <p>
-        仅接收有限的 Thunar 目录流程。导入后保留为草稿，不继承 ready
+        支持 Thunar 目录流程和跨应用 CSV 流程。导入后保留为草稿，不继承 ready
         状态、来源样例成绩或任何授权，也不会执行脚本、创建任务或启动工作站。
       </p>
       <label className="block space-y-2">

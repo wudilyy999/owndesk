@@ -7677,6 +7677,7 @@ try {
         await page.getByRole("button", { name: "登录", exact: true }).click()
         await page.waitForURL((url) => url.pathname !== "/login")
         await page.goto(`${process.env.APP_URL}/workflows`)
+        await page.getByLabel("模板工作站", { exact: true }).selectOption(first.agentId)
         await page
           .getByRole("button", { name: "生成浏览器与办公模板", exact: true })
           .click()
