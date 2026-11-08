@@ -138,10 +138,10 @@ export function WorkflowRunForm({
         允许一次局部修订（界面条件失效时请求所选工作站的模型，可能产生费用；遵守全局预算）
       </label>
       <p className="text-sm text-muted-foreground">
-        每次使用新的父目录名。固定步骤不请求模型；最多120个动作、5分钟。未知效果始终停止复核。修订成功后另存草稿，原版本保持不变。
+        每次使用新的输出文件或目录名。固定步骤不请求模型；最多120个动作、5分钟。未知效果始终停止复核。修订成功后另存草稿，原版本保持不变。
         {verifying
           ? "通过3组不同参数的独立检查后启用该版本。"
-          : "结果继续由固定目录检查器核对。"}
+          : "结果继续由固定文件或目录检查器核对。"}
       </p>
       {error && (
         <p role="alert" className="text-sm break-words text-destructive">

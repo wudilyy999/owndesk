@@ -82,7 +82,11 @@ export function crossAppTemplate(
       operation: "assert",
       window: {
         application: "Mousepad",
-        title: [{ parameter: "input1" }, { literal: ".csv - Mousepad" }],
+        title: [
+          { literal: "~/" },
+          { parameter: "input1" },
+          { literal: ".csv - Mousepad" },
+        ],
       },
     } as WorkflowStep,
     "核对保存窗口"

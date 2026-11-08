@@ -50,13 +50,13 @@ jobs:
           tags: owndesk-workstation:0.7.0
           cache-from: type=gha,scope=owndesk-workstation
           cache-to: type=gha,scope=owndesk-workstation,mode=max
+      - run: npm run test:crossapps:runtime
       - run: npm run test:continuity:runtime
       - run: npm run test:memory:recall:runtime
       - run: npm run test:files:runtime
       - run: npm run test:connections:runtime
       - run: npm run test:automations:runtime
       - run: npm run test:demonstrations:runtime
-      - run: npm run test:crossapps:runtime
       - uses: actions/upload-artifact@v4
         if: always()
         with:
