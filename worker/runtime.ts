@@ -1237,8 +1237,10 @@ export async function runAgent(taskId: string, segmentNo: number) {
             if (completed.completed) return completed.output
           }
           if (answer.connectionApproved) {
-            const current = await DBOS.runStep(() => controlState(task), {name:"restore-connection-control"})
-            if(current.requestId) throw new WorkspacePaused()
+            const current = await DBOS.runStep(() => controlState(task), {
+              name: "restore-connection-control",
+            })
+            if (current.requestId) throw new WorkspacePaused()
             const result = await DBOS.runStep(
               () =>
                 runTool(
