@@ -9,6 +9,7 @@ const bodySchema = z.union([
   z.object({
     text: z.string().trim().max(4000),
     imageId: z.uuid().optional(),
+    attachmentIds: z.array(z.uuid()).max(8).optional(),
     redo: z.literal("edit").optional(),
   }),
   z.object({ redo: z.literal("regenerate") }),
@@ -35,6 +36,7 @@ export async function POST(request: Request) {
               agentId: agent.id,
               text: "text" in body ? body.text : "",
               imageId: "imageId" in body ? body.imageId : undefined,
+              attachmentIds: "attachmentIds" in body ? body.attachmentIds : undefined,
               redo: body.redo,
             },
             { playback: true },

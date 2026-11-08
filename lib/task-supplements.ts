@@ -1,4 +1,6 @@
 import { z } from "zod"
+import { isDeepStrictEqual } from "node:util"
+import { ownedUploads, type UploadReference } from "@/lib/uploads"
 import { pool } from "@/db"
 import { HttpError } from "@/lib/errors"
 import { appendEventInTransaction } from "@/lib/task-events"
@@ -6,8 +8,13 @@ import { appendEventInTransaction } from "@/lib/task-events"
 export const taskSupplementSchema = z.strictObject({
   text: z.string().trim().min(1).max(16000),
   clientRequestId: z.uuid(),
+  attachmentIds: z.array(z.uuid()).max(8).optional(),
 })
-export type TaskSupplement = { seq: number; text: string }
+export type TaskSupplement = {
+  seq: number
+  text: string
+  attachments?: UploadReference[]
+}
 
 export async function appendTaskSupplement(
   ownerId: string,
@@ -21,23 +28,29 @@ export async function appendTaskSupplement(
     const {
       rows: [task],
     } = await client.query<{
+      agent_id: string
       status: string
       cancel_requested_at: Date | null
       config_snapshot: Record<string, unknown>
     }>(
-      "SELECT status,cancel_requested_at,config_snapshot FROM tasks WHERE id=$1 AND owner_id=$2 FOR UPDATE",
+      "SELECT agent_id,status,cancel_requested_at,config_snapshot FROM tasks WHERE id=$1 AND owner_id=$2 FOR UPDATE",
       [taskId, ownerId]
     )
     if (!task) throw new HttpError(404, "Task not found")
     const key = `owner-supplement:${input.clientRequestId}`
     const {
       rows: [previous],
-    } = await client.query<{ seq: number; payload: { text: string } }>(
-      "SELECT seq,payload FROM task_events WHERE task_id=$1 AND key=$2",
-      [taskId, key]
-    )
+    } = await client.query<{
+      seq: number
+      payload: { text: string; attachments?: UploadReference[] }
+    }>("SELECT seq,payload FROM task_events WHERE task_id=$1 AND key=$2", [taskId, key])
     if (previous) {
-      if (previous.payload.text !== input.text)
+      if (
+        previous.payload.text !== input.text ||
+        !isDeepStrictEqual(previous.payload.attachments?.map((file) => file.id) ?? [], [
+          ...new Set(input.attachmentIds ?? []),
+        ])
+      )
         throw new HttpError(409, "Request key already used with different instructions")
       await client.query("COMMIT")
       return { seq: previous.seq, reused: true }
@@ -55,7 +68,13 @@ export async function appendTaskSupplement(
       task.config_snapshot.lifeSession
     )
       throw new HttpError(409, "Send supplements to an ordinary computer task")
+    const attachments = await ownedUploads(
+      ownerId,
+      task.agent_id,
+      input.attachmentIds ?? []
+    )
     const seq = await appendEventInTransaction(client, taskId, key, "owner_supplement", {
+      ...(attachments.length ? { attachments } : {}),
       text: input.text,
       message: input.text,
     })
@@ -75,7 +94,7 @@ export async function taskSupplements(
 ): Promise<TaskSupplement[]> {
   return (
     await pool.query<TaskSupplement>(
-      "SELECT seq,payload->>'text' AS text FROM task_events WHERE task_id=$1 AND type='owner_supplement' AND seq>$2 ORDER BY seq",
+      "SELECT seq,payload->>'text' AS text,payload->'attachments' AS attachments FROM task_events WHERE task_id=$1 AND type='owner_supplement' AND seq>$2 ORDER BY seq",
       [taskId, after]
     )
   ).rows

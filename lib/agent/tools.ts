@@ -45,7 +45,7 @@ const AFTER =
 export const agentTools = {
   load_task_image: tool({
     description:
-      "Read an original picture attached to this confirmed task. Use an id from the source chat's Referenced pictures. Deleted or expired pictures are explicitly unavailable.",
+      "Read a picture attached to this task or a supplement. Use its upload id or a source chat Referenced pictures id. Deleted or expired chat pictures are explicitly unavailable.",
     inputSchema: z.strictObject({ id: z.uuid() }),
   }),
   load_manual: tool({
@@ -516,7 +516,6 @@ export function toolsForTask(config: {
     Object.entries(available).filter(
       ([name]) =>
         !Object.hasOwn(lifeTools, name) &&
-        (name !== "load_task_image" || !!config.companionContext?.images.length) &&
         (name !== "load_manual" || !!config.manuals?.length)
     )
   )

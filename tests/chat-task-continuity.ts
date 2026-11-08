@@ -141,7 +141,7 @@ try {
     assert.equal(linked.status, "confirmed")
     assert.equal(linked.taskId, taskId)
     assert(Object.hasOwn(toolsForTask(saved), "load_task_image"))
-    assert(!Object.hasOwn(toolsForTask({}), "load_task_image"))
+    assert(!Object.hasOwn(toolsForTask({ lifeSession: {} }), "load_task_image"))
     assert.equal((await confirmErrand(owner, proposal)).reused, true)
     await assert.rejects(cancelErrand(owner, proposal), { status: 409 })
     checks.push(
@@ -226,13 +226,37 @@ try {
         await page.goto(`${process.env.APP_URL}/companion`)
         const card = page.getByRole("region", { name: "聊天任务" })
         await card.getByText("排队中", { exact: true }).waitFor()
+        const uploaded = page.waitForResponse(
+          (response) =>
+            response.request().method() === "POST" &&
+            response.url().includes("/api/uploads?")
+        )
+        await card.locator('input[type="file"]').setInputFiles({
+          name: "chat-input.csv",
+          mimeType: "text/csv",
+          buffer: Buffer.from("name,total\nchat,42\n"),
+        })
+        const uploadResponse = await uploaded
+        assert(uploadResponse.ok(), await uploadResponse.text())
+        const upload = await uploadResponse.json()
+        assert.equal(
+          (await fetch(`${process.env.APP_URL}/api/uploads/${upload.id}`)).status,
+          401
+        )
+        await card.getByRole("link", { name: "chat-input.csv", exact: true }).waitFor()
+
         await card
           .getByLabel("补充当前任务", { exact: true })
           .fill("Keep the original headings from chat")
         await card.getByRole("button", { name: "补充当前任务", exact: true }).click()
         await card
-          .getByText("你的补充：Keep the original headings from chat", { exact: true })
+          .getByText("你的补充：Keep the original headings from chat", { exact: false })
           .waitFor()
+        assert(
+          (await taskSupplements(taskId)).some((note) =>
+            note.attachments?.some((file) => file.id === upload.id)
+          )
+        )
         const requestId = `${taskId}-ui-question`
         await createTaskRequest(taskId, 1, requestId, "approval", {
           purpose: "question",
@@ -285,6 +309,20 @@ try {
         const composer = page.locator("form").filter({
           has: page.getByRole("button", { name: "补充当前任务", exact: true }),
         })
+        const workspaceUpload = page.waitForResponse(
+          (response) =>
+            response.request().method() === "POST" &&
+            response.url().includes("/api/uploads?")
+        )
+        await composer.locator('input[type="file"]').setInputFiles({
+          name: "workspace-input.csv",
+          mimeType: "text/csv",
+          buffer: Buffer.from("name,total\nworkspace,84\n"),
+        })
+        assert((await workspaceUpload).ok())
+        await composer
+          .getByRole("link", { name: "workspace-input.csv", exact: true })
+          .waitFor()
         await composer.getByRole("textbox").fill("Include a second copy from workspace")
         const supplementSaved = page.waitForResponse(
           (response) =>
@@ -295,12 +333,14 @@ try {
         const savedSupplement = await supplementSaved
         assert(savedSupplement.ok(), await savedSupplement.text())
         await page
-          .getByText("Include a second copy from workspace", { exact: true })
+          .getByText("Include a second copy from workspace", { exact: false })
           .first()
           .waitFor()
         assert(
           (await taskSupplements(taskId)).some(
-            (note) => note.text === "Include a second copy from workspace"
+            (note) =>
+              note.text === "Include a second copy from workspace" &&
+              note.attachments?.[0].name === "workspace-input.csv"
           )
         )
         const denied = await page.request.post(
@@ -312,7 +352,7 @@ try {
         )
         assert.equal(denied.status(), 403)
         checks.push(
-          "Actual authenticated desktop/mobile UI: supplement in both views, answer request, download artifact and reject foreign origin"
+          "Actual authenticated desktop/mobile UI: upload and supplement in both views, answer request, download artifact and reject unauthenticated files/foreign origin"
         )
       } finally {
         await browser.close()

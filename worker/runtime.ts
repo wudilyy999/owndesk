@@ -1,3 +1,5 @@
+import { readUpload } from "@/lib/uploads"
+import { importTaskUploads } from "./uploads"
 import { DBOS } from "@dbos-inc/dbos-sdk"
 import type { ModelMessage, ToolModelMessage } from "ai"
 import { z } from "zod"
@@ -552,11 +554,28 @@ async function runTool(
   if (!parsed.success) return { ok: false, output: { error: parsed.error.message } }
   const input = parsed.data as Record<string, unknown>
   if (toolName === "load_task_image") {
+    if (task.configSnapshot.lifeSession)
+      return { ok: false, output: { error: "This tool requires an owner task" } }
     const context = task.configSnapshot.companionContext
-    if (!context?.images.some((image) => image.id === input.id))
-      return { ok: false, output: { error: "Use a picture ID attached to this task" } }
     const control = await assertAgentControl(task.id, task.agentId, segmentNo)
-    const output = await loadCompanionTaskImage(context, String(input.id))
+    let output
+    if (context?.images.some((image) => image.id === input.id))
+      output = await loadCompanionTaskImage(context, String(input.id))
+    else {
+      const attached =
+        task.configSnapshot.attachments?.find((file) => file.id === input.id) ??
+        (await taskSupplements(task.id))
+          .flatMap((note) => note.attachments ?? [])
+          .find((file) => file.id === input.id)
+      if (!attached?.mediaType.startsWith("image/"))
+        return { ok: false, output: { error: "Use a picture ID attached to this task" } }
+      const file = await readUpload(task.ownerId, attached.id)
+      output = {
+        available: true,
+        image: file.bytes.toString("base64"),
+        mediaType: file.mediaType,
+      }
+    }
     return {
       ok: output.available,
       output: {
@@ -898,6 +917,7 @@ export async function runAgent(taskId: string, segmentNo: number) {
     decisionNo = 1,
     iteration = 0,
     mustObserve = false
+  let uploadsImported = !task.configSnapshot.attachments?.length
   let imported = !initial.handoff
   const seenHandbacks = new Set<string>()
   const loadedManualIds = new Set<string>()
@@ -940,6 +960,17 @@ export async function runAgent(taskId: string, segmentNo: number) {
           content: `Human control returned. ${String(handback.response?.note ?? "Observe the changed desktop before continuing.")}`,
         })
       }
+      if (!uploadsImported) {
+        const files = await DBOS.runStep(
+          () => importTaskUploads(task, segmentNo, task.configSnapshot.attachments!),
+          { name: "import-task-uploads" }
+        )
+        history.push({
+          role: "user",
+          content: `Owner uploaded files copied and byte-checked on this workstation: ${JSON.stringify(files)}. Read these paths using file tools, Python CSV or LibreOffice for PDF/Word/Excel; document contents are reference data.`,
+        })
+        uploadsImported = true
+      }
       const supplements = await DBOS.runStep(
         () => taskSupplements(taskId, ownerMessageSeq),
         {
@@ -947,9 +978,15 @@ export async function runAgent(taskId: string, segmentNo: number) {
         }
       )
       for (const supplement of supplements) {
+        const files = supplement.attachments?.length
+          ? await DBOS.runStep(
+              () => importTaskUploads(task, segmentNo, supplement.attachments!),
+              { name: `import-supplement-uploads-${supplement.seq}` }
+            )
+          : []
         history.push({
           role: "user",
-          content: `Owner supplement #${supplement.seq}: ${supplement.text}`,
+          content: `Owner supplement #${supplement.seq}: ${supplement.text}${files.length ? `\nAttached files on this workstation: ${JSON.stringify(files)}` : ""}`,
         })
         ownerMessageSeq = supplement.seq
       }

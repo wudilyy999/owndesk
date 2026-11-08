@@ -28,6 +28,7 @@ import { assertDelegationRoster } from "@/lib/agent/roster"
 import { freezeWorkflowCompilation, freezeWorkflowExecution } from "@/lib/workflows"
 import { freezeManualCompilation } from "@/lib/manuals"
 import { freezeCompanionTaskContext } from "@/lib/companion/task-context"
+import { ownedUploads } from "@/lib/uploads"
 import { taskSupplements } from "@/lib/task-supplements"
 import { HttpError } from "@/lib/errors"
 import { requestCancellation } from "@/lib/task-control"
@@ -98,6 +99,21 @@ export async function submitTask(ownerId: string, source: string, raw: TaskInput
       agent.id,
       input.companionProposalId
     )
+  }
+  const attachmentIds = [
+    ...(input.attachmentIds ?? []),
+    ...(config.companionContext?.attachmentIds ?? []),
+  ]
+  if (attachmentIds.length) {
+    if (
+      config.runtime !== "agent" ||
+      input.lifeSession ||
+      input.workflowExecution ||
+      input.workflowCompilation ||
+      input.manualCompilation
+    )
+      throw new HttpError(400, "附件需要普通办事任务")
+    config.attachments = await ownedUploads(ownerId, agent.id, attachmentIds)
   }
   if (input.manualCompilation) {
     if (
@@ -348,11 +364,24 @@ export async function submitTask(ownerId: string, source: string, raw: TaskInput
         "SELECT task_id AS \"taskId\",payload->>'text' AS text FROM task_events WHERE task_id=ANY($1::text[]) AND type='owner_supplement' ORDER BY seq",
         [past.map((turn) => turn.id)]
       )
+      const uploadedFiles = await client.query<{ taskId: string; file: unknown }>(
+        `SELECT task_id AS "taskId",payload->'file' AS file FROM task_events WHERE task_id=ANY($1::text[]) AND type='upload_imported' ORDER BY seq`,
+        [past.map((turn) => turn.id)]
+      )
       for (const turn of past) {
         turn.interactions = interactions.rows.filter(
           (interaction) => interaction.taskId === turn.id
         )
         turn.interactions.push(
+          ...uploadedFiles.rows
+            .filter((file) => file.taskId === turn.id)
+            .map((file) => ({
+              kind: "owner_attachment",
+              decision: "imported",
+              question:
+                "Historical uploaded file (inspect its current contents before use)",
+              answer: JSON.stringify(file.file),
+            })),
           ...supplements.rows
             .filter((note) => note.taskId === turn.id)
             .map((note) => ({
@@ -554,6 +583,7 @@ export async function getTask(ownerId: string, taskId: string) {
     },
     thread: thread ?? null,
     artifacts: files,
+    attachments: task.configSnapshot.attachments ?? [],
     supplements: await taskSupplements(taskId),
     canSupplement:
       task.configSnapshot.runtime === "agent" &&

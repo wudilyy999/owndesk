@@ -7,6 +7,8 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Room } from "@/components/companion-room"
+import { UploadPicker } from "@/components/upload-picker"
+import type { UploadReference } from "@/lib/uploads"
 import { CompanionTask } from "@/components/companion-task"
 import { Channels } from "@/components/companion-channels"
 import { PushSettings, usePresence } from "@/components/companion-push"
@@ -119,7 +121,9 @@ export function Companion() {
         </nav>
       </header>
       {error && <p className="pb-2 text-sm text-destructive">{error}</p>}
-      {view && tab === "chat" && <Chat zone={view.timeZone} pace={view.typingPace} />}
+      {view && tab === "chat" && (
+        <Chat agentId={view.agentId} zone={view.timeZone} pace={view.typingPace} />
+      )}
       {view && tab === "life" && <Room agentId={view.agentId} zone={view.timeZone} />}
       {view && tab === "memory" && <Notes zone={view.timeZone} />}
       {view && tab === "channels" && <Channels />}
@@ -168,6 +172,7 @@ function Bubble({
     activityId?: string
     hasImage?: boolean
     imageId?: string
+    attachments?: UploadReference[]
     taskId?: string
   }
   // Merge cards from before the model decided merges are no longer shown
@@ -234,6 +239,15 @@ function Bubble({
         ) : (
           <>
             {meta.imageId && <Picture id={meta.imageId} />}
+            {meta.attachments?.map((file) => (
+              <a
+                key={file.id}
+                href={`/api/uploads/${file.id}`}
+                className="block text-xs underline"
+              >
+                {file.name}
+              </a>
+            ))}
             {message.content}
             {meta.hasImage && meta.activityId && (
               // eslint-disable-next-line @next/next/no-img-element
@@ -264,7 +278,17 @@ const addNew = (old: CompanionMessage[], added: CompanionMessage[]) => {
 const actionButton =
   "rounded px-1.5 py-0.5 text-xs text-faint hover:bg-elevated hover:text-foreground disabled:opacity-50"
 
-function Chat({ zone, pace }: { zone: string; pace: TypingPace }) {
+function Chat({
+  agentId,
+  zone,
+  pace,
+}: {
+  agentId: string
+  zone: string
+  pace: TypingPace
+}) {
+  const [files, setFiles] = useState<UploadReference[]>([])
+  const [filesUploading, setFilesUploading] = useState(false)
   const [messages, setMessages] = useState<CompanionMessage[]>([])
   const [text, setText] = useState(""),
     [streaming, setStreaming] = useState(""),
@@ -362,11 +386,18 @@ function Chat({ zone, pace }: { zone: string; pace: TypingPace }) {
 
   async function submit() {
     const value = text.trim()
-    if ((!value && !picture) || busy || uploading) return
+    if ((!value && !picture && !files.length) || busy || uploading || filesUploading)
+      return
     const imageId = picture?.id
     setText("")
     setPicture(null)
-    await run({ text: value, imageId })
+    const attachmentIds = files.map((file) => file.id)
+    setFiles([])
+    await run({
+      text: value,
+      imageId,
+      ...(attachmentIds.length ? { attachmentIds } : {}),
+    })
   }
 
   async function upload(file: File | undefined) {
@@ -573,6 +604,13 @@ function Chat({ zone, pace }: { zone: string; pace: TypingPace }) {
           </Button>
         </div>
       )}
+      <UploadPicker
+        agentId={agentId}
+        files={files}
+        onChange={setFiles}
+        disabled={busy}
+        onBusy={setFilesUploading}
+      />
       <form
         className="flex gap-2"
         onSubmit={(event) => {
@@ -605,7 +643,15 @@ function Chat({ zone, pace }: { zone: string; pace: TypingPace }) {
           disabled={busy}
           maxLength={4000}
         />
-        <Button type="submit" disabled={busy || uploading || (!text.trim() && !picture)}>
+        <Button
+          type="submit"
+          disabled={
+            busy ||
+            uploading ||
+            filesUploading ||
+            (!text.trim() && !picture && !files.length)
+          }
+        >
           发送
         </Button>
       </form>
