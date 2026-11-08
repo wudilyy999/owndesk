@@ -12,6 +12,7 @@ import {
   DialogDescription,
   DialogTitle,
 } from "@/components/ui/dialog"
+import { Demonstration } from "@/components/demonstration"
 import { cn } from "@/lib/utils"
 
 export function Desktop({
@@ -221,6 +222,9 @@ export function Desktop({
         </div>
       </div>
       {display}
+      {takeover && !expanded && (
+        <Demonstration agentId={agentId} screen={screen.current} />
+      )}
       <p className="text-xs leading-5 text-muted-foreground">
         {peekSeconds
           ? "偷看由服务器强制只读，时间到会自动断开。"
@@ -247,6 +251,7 @@ export function Desktop({
               ? "关闭此窗口会保持 Agent 暂停。回到任务详情后点击交还。"
               : "Agent 可以继续工作，当前连接无法发送输入。"}
           </DialogDescription>
+          {takeover && <Demonstration agentId={agentId} screen={screen.current} />}
           <div ref={setOverlaySlot} className="relative min-h-0 flex-1 bg-[#1c1917]" />
           {state !== "已连接" && (
             <div className="flex items-center gap-3 text-sm">

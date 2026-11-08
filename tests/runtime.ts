@@ -29,6 +29,7 @@ assert(
     "fileinput",
     "connections",
     "automations",
+    "demonstrations",
     "chat",
     "continuity",
     "ui",
@@ -876,6 +877,23 @@ const modelServer = createServer((req, res) => {
       }
       return
     }
+    if (scenario.kind === "demonstrations") {
+      if (index === 1) answer(res, index, "load_manual", { id: scenario.itemId })
+      else if (index === 2) {
+        assert.match(raw, /DEMONSTRATED_RESULT/)
+        answer(res, index, "fs_write", {
+          path: "demonstrated.txt",
+          content: "DEMONSTRATED_RESULT",
+        })
+      } else {
+        assert.equal(index, 3)
+        answer(res, index, "complete_task", {
+          summary: "Applied demonstrated manual",
+          files: [{ path: "demonstrated.txt", mediaType: "text/plain" }],
+        })
+      }
+      return
+    }
     if (scenario.kind === "automations") {
       assert.match(raw, /trigger value/)
       answer(res, index, "complete_task", {
@@ -899,7 +917,20 @@ const modelServer = createServer((req, res) => {
           args: { text: "approved-once" },
         })
       } else if (index === 3) {
-        assert.match(raw, /Written: approved-once/)
+        assert.match(
+          raw,
+          /Written: approved-once/,
+          JSON.stringify(
+            body.messages
+              .filter(
+                (message: any) => message.role === "user" || message.role === "tool"
+              )
+              .map((message: any) => ({
+                role: message.role,
+                content: JSON.stringify(message.content).slice(0, 1800),
+              }))
+          )
+        )
         answer(res, index, "connection_call", {
           connectionId: scenario.itemId,
           tool: "fixture_write",
@@ -7500,6 +7531,90 @@ try {
       checks.push({
         check:
           "Owner mobile/desktop usage UI: immutable price receipts, custom rates, unknown-cost reconciliation, zero monthly cap; API auth/Origin/money/cursor validation; pagination uses 53 explicitly seeded history rows without overlap",
+      })
+    }
+    if (focus === "demonstrations") {
+      const { ensureWorkstation, workspaceRow } = await import("@/lib/workstation")
+      const {
+        startDemonstration,
+        recordDemonstration,
+        finishDemonstration,
+        saveDemonstrationManual,
+      } = await import("@/lib/demonstrations")
+      const agentId = randomUUID(),
+        run = randomUUID(),
+        scenario: Scenario = { kind: "demonstrations", calls: [] }
+      scenarios.set(run, scenario)
+      await pool.query(
+        "INSERT INTO agents(id,name,role,glyph,model,created_at,updated_at) VALUES($1,'Demonstration','Assistant','fixture','custom/runtime-fixture',now(),now())",
+        [agentId]
+      )
+      agents.push(agentId)
+      await ensureWorkstation(agentId)
+      await docker(["exec", "--detach", workstationName(agentId), "mousepad"])
+      await until(async () => {
+        const state = await dockerRaw([
+          "exec",
+          workstationName(agentId),
+          "xdotool",
+          "search",
+          "--onlyvisible",
+          "--class",
+          "Mousepad",
+        ])
+        return state.exitCode === 0
+      }, "editor ready")
+      const demo = await startDemonstration(ownerId, agentId, "Edit a report")
+      await docker(["exec", workstationName(agentId), "xdotool", "key", "ctrl+n"])
+      const event = await recordDemonstration(ownerId, demo.id, {
+        seq: 1,
+        event: { kind: "key", key: "Enter", ctrl: false, alt: false, shift: false },
+      })
+      assert.match(event.application ?? "", /mousepad/i)
+      await docker([
+        "exec",
+        workstationName(agentId),
+        "xdotool",
+        "type",
+        "private-value-not-recorded",
+      ])
+      await recordDemonstration(ownerId, demo.id, {
+        seq: 2,
+        event: { kind: "protected_input", text: "private-value-not-recorded" },
+      })
+      await recordDemonstration(ownerId, demo.id, {
+        seq: 3,
+        event: {
+          kind: "checkpoint",
+          note: "Write DEMONSTRATED_RESULT to demonstrated.txt and verify the file",
+        },
+      })
+      const draft = await finishDemonstration(ownerId, demo.id)
+      assert(!JSON.stringify(draft).includes("private-value-not-recorded"))
+      await saveDemonstrationManual(ownerId, demo.id, draft)
+      scenario.itemId = demo.id
+      const task = await submitTask(ownerId, "test", {
+        agentId,
+        goal: `CASE=demonstrations RUN=${run}; Apply the demonstrated report manual.`,
+        manualId: demo.id,
+        clientRequestId: run,
+        completionContract: { requireHumanReview: false },
+        budget: { maxSteps: 8 },
+      })
+      const result = await completed(task.taskId)
+      assert.equal(
+        await readFile(
+          path.join(process.env.ARTIFACT_DIR!, result.artifacts[0].storagePath),
+          "utf8"
+        ),
+        "DEMONSTRATED_RESULT"
+      )
+      assert.equal(scenario.calls.length, 3)
+      assert.equal((await workspaceRow(agentId)).mode, "idle")
+      checks.push({
+        check:
+          "Actual editor human input observed by application class, private text omitted; editable demonstration manual saved and loaded by a new Task with verified output file",
+        taskId: task.taskId,
       })
     }
     if (focus === "automations") {
