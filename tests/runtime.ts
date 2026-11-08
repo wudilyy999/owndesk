@@ -890,7 +890,7 @@ const modelServer = createServer((req, res) => {
           args: { text: "approved-once" },
         })
       } else if (index === 3) {
-        assert.match(raw, /Written: approved-once/)
+        assert.match(raw, /Written: approved-once/, JSON.stringify(body.messages.filter((message:any)=>message.role==='user' || message.role==='tool').map((message:any)=>({role:message.role,content:JSON.stringify(message.content).slice(0,1800)}))))
         answer(res, index, "connection_call", {
           connectionId: scenario.itemId,
           tool: "fixture_write",
