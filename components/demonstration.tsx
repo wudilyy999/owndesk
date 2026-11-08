@@ -1,5 +1,5 @@
 "use client"
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useLayoutEffect, useRef, useState } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import {
@@ -25,8 +25,10 @@ export function Demonstration({
     queue = useRef(Promise.resolve()),
     failed = useRef(false),
     lastProtected = useRef(false)
-  recording.current = session
-  privateMode.current = paused
+  useLayoutEffect(() => {
+    recording.current = session
+    privateMode.current = paused
+  }, [session, paused])
   async function post(body: unknown) {
     const response = await fetch("/api/demonstrations", {
       method: "POST",
@@ -48,24 +50,26 @@ export function Demonstration({
       .catch((cause) => setError(String(cause)))
   }, [agentId])
   const enqueue = useRef<(event: DemonstrationEvent) => void>(() => {})
-  enqueue.current = (event) => {
-    const current = recording.current
-    if (!current || failed.current) return
-    if (event.kind === "protected_input" && lastProtected.current) return
-    lastProtected.current = event.kind === "protected_input"
-    current.seq++
-    const seq = current.seq
-    setSession({ ...current })
-    queue.current = queue.current
-      .then(async () => {
-        if (failed.current) return
-        await post({ action: "record", id: current.id, seq, event })
-      })
-      .catch((cause) => {
-        failed.current = true
-        setError(String(cause))
-      })
-  }
+  useLayoutEffect(() => {
+    enqueue.current = (event) => {
+      const current = recording.current
+      if (!current || failed.current) return
+      if (event.kind === "protected_input" && lastProtected.current) return
+      lastProtected.current = event.kind === "protected_input"
+      current.seq++
+      const seq = current.seq
+      setSession({ ...current })
+      queue.current = queue.current
+        .then(async () => {
+          if (failed.current) return
+          await post({ action: "record", id: current.id, seq, event })
+        })
+        .catch((cause) => {
+          failed.current = true
+          setError(String(cause))
+        })
+    }
+  })
   useEffect(() => {
     if (!screen) return
     const pointer = (event: MouseEvent) => {
