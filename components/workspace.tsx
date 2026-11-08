@@ -9,6 +9,8 @@ import { Button } from "@/components/ui/button"
 import { Desktop } from "@/components/desktop"
 import { Textarea } from "@/components/ui/textarea"
 import { cn } from "@/lib/utils"
+import { UploadPicker } from "@/components/upload-picker"
+import type { UploadReference } from "@/lib/uploads"
 import { Composer } from "@/components/thread/composer"
 import { Transcript } from "@/components/thread/transcript"
 import type { ThreadSummary } from "@/lib/threads"
@@ -121,6 +123,8 @@ export function Workspace({
   const [events, setEvents] = useState<Event[]>([])
   const [error, setError] = useState("")
   const [busy, setBusy] = useState(false)
+  const [attachments, setAttachments] = useState<UploadReference[]>([])
+  const [uploading, setUploading] = useState(false)
   const [controlBusy, setControlBusy] = useState(false)
   const [idleTakeover, setIdleTakeover] = useState(false)
   const [navigationOpen, setNavigationOpen] = useState(false)
@@ -301,6 +305,9 @@ export function Workspace({
         !["completed", "cancelled", "failed"].includes(thread.status)
     )
   const draftKey = conversationId ? `thread:${conversationId}` : `new:${agentId}`
+  useEffect(() => {
+    setAttachments([])
+  }, [draftKey])
 
   const navigation = (
     <>
@@ -570,7 +577,7 @@ export function Workspace({
           label={conversationId ? "继续对话" : "交办任务"}
           busy={!!conversationActive}
           allowSupplement={detail?.canSupplement === true}
-          sending={busy || controlBusy}
+          sending={busy || controlBusy || uploading}
           disabled={!agentId || (!!selected && !detail)}
           onStop={() => {
             const current = threads.find((thread) => thread.id === conversationId)
@@ -587,12 +594,24 @@ export function Workspace({
               try {
                 const saved = sessionStorage.getItem(storageKey)
                 const previous = saved
-                  ? (JSON.parse(saved) as { text: string; clientRequestId: string })
+                  ? (JSON.parse(saved) as {
+                      text: string
+                      clientRequestId: string
+                      attachmentIds?: string[]
+                    })
                   : null
                 const payload =
-                  previous?.text === goal
+                  previous?.text === goal &&
+                  JSON.stringify(previous.attachmentIds ?? []) ===
+                    JSON.stringify(attachments.map((file) => file.id))
                     ? previous
-                    : { text: goal, clientRequestId: crypto.randomUUID() }
+                    : {
+                        text: goal,
+                        clientRequestId: crypto.randomUUID(),
+                        ...(attachments.length
+                          ? { attachmentIds: attachments.map((file) => file.id) }
+                          : {}),
+                      }
                 sessionStorage.setItem(storageKey, JSON.stringify(payload))
                 const response = await fetch(`/api/tasks/${activeTaskId}/supplements`, {
                   method: "POST",
@@ -603,6 +622,7 @@ export function Workspace({
                 if (!response.ok) throw new Error(result.error)
                 sessionStorage.removeItem(storageKey)
                 await refreshRef.current()
+                setAttachments([])
                 return true
               } catch (cause) {
                 setError(cause instanceof Error ? cause.message : String(cause))
@@ -633,6 +653,9 @@ export function Workspace({
             }
             const payload = {
               agentId,
+              ...(attachments.length
+                ? { attachmentIds: attachments.map((file) => file.id) }
+                : {}),
               ...(delegateAgentIds.length ? { delegateAgentIds } : {}),
               goal,
               ...(conversationId ? { threadId: conversationId } : {}),
@@ -692,6 +715,7 @@ export function Workspace({
                       ...previous,
                     ]
               )
+              setAttachments([])
               selectTask(result.taskId)
               setDelegateAgentIds([])
               setDelivery({
@@ -719,6 +743,13 @@ export function Workspace({
             }
           }}
         >
+          <UploadPicker
+            agentId={agentId}
+            files={attachments}
+            onChange={setAttachments}
+            disabled={busy || controlBusy}
+            onBusy={setUploading}
+          />
           <details className="space-y-3 rounded-xl border border-border/80 bg-surface/80 px-4 py-3 text-sm shadow-2xs">
             <summary className="cursor-pointer font-medium">
               本轮允许交接的 Agent（默认关闭）

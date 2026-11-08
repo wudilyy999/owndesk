@@ -36,7 +36,7 @@ RUN apt-get update \
       adwaita-icon-theme gnome-themes-extra feh \
       chromium fonts-noto-core fonts-wqy-microhei fonts-noto-color-emoji fonts-liberation fonts-dejavu-core \
       bash-completion ca-certificates curl wget git jq less nano procps iproute2 \
-      sudo tini tzdata unzip zip xz-utils openssh-client \
+      sudo tini tzdata unzip zip xz-utils openssh-client poppler-utils \
       python3 python3-pip python3-venv python-is-python3 \
       python3-pyatspi at-spi2-core libatk-adaptor \
  && rm -rf /var/lib/apt/lists/*

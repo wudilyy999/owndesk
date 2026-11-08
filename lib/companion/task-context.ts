@@ -7,6 +7,7 @@ export type CompanionTaskContext = {
   agentId: string
   omittedMessages: number
   messages: { id: string; role: "user" | "assistant"; content: string }[]
+  attachmentIds?: string[]
   images: { id: string; description: string | null }[]
 }
 
@@ -34,9 +35,10 @@ export async function freezeCompanionTaskContext(
     role: "user" | "assistant"
     content: string
     image_id: string | null
+    attachment_ids: string[] | null
     total: number
   }>(
-    `SELECT id,role,content,metadata->>'imageId' AS image_id,count(*) OVER()::int AS total FROM companion_messages
+    `SELECT id,role,content,metadata->>'imageId' AS image_id,metadata->'attachmentIds' AS attachment_ids,count(*) OVER()::int AS total FROM companion_messages
      WHERE agent_id=$1 AND superseded_at IS NULL AND kind IN ('chat','errand_update')
        AND (created_at,id) <= COALESCE(
          (SELECT ROW(created_at,id) FROM companion_messages WHERE id=$2 AND agent_id=$1),
@@ -46,10 +48,12 @@ export async function freezeCompanionTaskContext(
   )
   const messages: CompanionTaskContext["messages"] = []
   const images: CompanionTaskContext["images"] = []
+  const attachmentIds: string[] = []
   let chars = 0
   for (const row of rows) {
     if (chars + row.content.length > 32000) break
     chars += row.content.length
+    attachmentIds.push(...(row.attachment_ids ?? []))
     messages.unshift({ id: row.id, role: row.role, content: row.content })
     if (
       row.role === "user" &&
@@ -65,6 +69,7 @@ export async function freezeCompanionTaskContext(
     agentId,
     omittedMessages: (rows[0]?.total ?? 0) - messages.length,
     messages,
+    ...(attachmentIds.length ? { attachmentIds: [...new Set(attachmentIds)] } : {}),
     images,
   }
 }

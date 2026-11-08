@@ -14,6 +14,7 @@ export type ThreadSummary = {
 }
 export type ThreadTurn = ConversationTurn & {
   supplements: TaskSupplement[]
+  attachments: import("@/lib/uploads").UploadReference[]
   threadTurn: number
   createdAt: string
   reply: string | null
@@ -60,7 +61,7 @@ export async function getThread(
   const turns = (
     await pool.query<ThreadTurn>(
       `
-    SELECT t.id,t.goal,t.status,t.result,t.error,t.thread_turn AS "threadTurn",t.created_at AS "createdAt",
+    SELECT t.id,t.goal,t.status,t.result,t.error,COALESCE(t.config_snapshot->'attachments','[]'::jsonb) AS attachments,t.thread_turn AS "threadTurn",t.created_at AS "createdAt",
       (SELECT string_agg(part->>'text',E'\n' ORDER BY ord) FROM messages m,
         jsonb_array_elements(m.parts) WITH ORDINALITY AS p(part,ord)
         WHERE m.id=t.id||'-answer' AND m.thread_id=t.thread_id AND part->>'type'='text') AS reply
@@ -91,7 +92,7 @@ export async function getThread(
         [ids]
       ),
       pool.query<{ taskId: string } & TaskSupplement>(
-        `SELECT task_id AS "taskId",seq,payload->>'text' AS text FROM task_events WHERE task_id=ANY($1::text[]) AND type='owner_supplement' ORDER BY seq`,
+        `SELECT task_id AS "taskId",seq,payload->>'text' AS text,payload->'attachments' AS attachments FROM task_events WHERE task_id=ANY($1::text[]) AND type='owner_supplement' ORDER BY seq`,
         [ids]
       ),
     ])

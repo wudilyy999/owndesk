@@ -65,6 +65,23 @@ export const agents = pgTable("agents", {
   updatedAt: timestamp(),
 })
 
+export const taskUploads = pgTable(
+  "task_uploads",
+  {
+    id: text().primaryKey(),
+    ownerId: text().notNull(),
+    agentId: text()
+      .notNull()
+      .references(() => agents.id, { onDelete: "cascade" }),
+    name: text().notNull(),
+    mediaType: text().notNull(),
+    size: integer().notNull(),
+    storagePath: text().notNull(),
+    createdAt: timestamp(),
+  },
+  (t) => [index("task_uploads_owner_agent_idx").on(t.ownerId, t.agentId)]
+)
+
 /* ───────────────────────────── squads ───────────────────────────── */
 
 export const squads = pgTable("squads", {
@@ -627,6 +644,7 @@ export type CompletionContract = z.infer<typeof completionContractSchema>
 export const taskInputSchema = z.object({
   agentId: z.string().min(1).max(100),
   companionProposalId: z.string().min(1).max(100).optional(),
+  attachmentIds: z.array(z.uuid()).max(8).optional(),
   manualCompilation: manualCompilationInputSchema.optional(),
   manualId: z.uuid().optional(),
   workflowCompilation: workflowCompilationInputSchema.optional(),
@@ -726,6 +744,7 @@ export const tasks = pgTable(
       conversation?: { role: "user" | "assistant"; content: string }[]
       omittedConversationTurns?: number
       contextWindowTokens?: number
+      attachments?: import("@/lib/uploads").UploadReference[]
       companionContext?: import("@/lib/companion/task-context").CompanionTaskContext
       agentZeroPlugins?: AgentZeroPluginReference[]
       manuals?: ManualReference[]

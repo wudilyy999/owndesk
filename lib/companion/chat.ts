@@ -1,3 +1,4 @@
+import { ownedUploads } from "@/lib/uploads"
 // Light chat path: one model call per message, no durable task, no workstation.
 // Errands are only proposed here; the person confirms them in the UI (lib/companion/errands.ts).
 import { streamText, tool, isStepCount, type LanguageModel, type ModelMessage } from "ai"
@@ -221,6 +222,7 @@ export async function companionChat(
     redo?: "regenerate" | "edit"
     // A picture the person sent with this message (lib/companion/images.ts)
     imageId?: string
+    attachmentIds?: string[]
   },
   deps: ChatDeps = {},
   emit: (event: ChatEvent) => void = () => {}
@@ -240,12 +242,17 @@ export async function companionChat(
   // A redo keeps the picture of the message it answers
   const roundImage = (round?.user.metadata as { imageId?: string } | null)?.imageId
   const imageId = redo === "regenerate" ? roundImage : (input.imageId ?? roundImage)
+  const roundAttachments =
+    (round?.user.metadata as { attachmentIds?: string[] } | null)?.attachmentIds ?? []
+  const attachmentIds =
+    redo === "regenerate" ? roundAttachments : (input.attachmentIds ?? roundAttachments)
+  const attachments = await ownedUploads(input.ownerId, input.agentId, attachmentIds)
   let image: CompanionImage | null = null
   if (imageId) {
     image = await getImage(input.agentId, imageId)
     if (!image) throw new HttpError(404, "找不到这张图片")
   }
-  if (redo !== "regenerate" && !input.text.trim() && !image)
+  if (redo !== "regenerate" && !input.text.trim() && !image && !attachments.length)
     throw new HttpError(400, "说点什么，或者发张图片")
   let user: CompanionMessage
   if (round && redo === "regenerate") user = round.user
@@ -258,7 +265,12 @@ export async function companionChat(
           kind: "chat",
           content: input.text,
           channel,
-          metadata: image ? { imageId: image.id } : null,
+          metadata: {
+            ...(image ? { imageId: image.id } : {}),
+            ...(attachments.length
+              ? { attachmentIds: attachments.map((file) => file.id), attachments }
+              : {}),
+          },
         },
       ],
       now
@@ -553,10 +565,23 @@ export async function companionChat(
           )
         ))
         pictures.set(row.id, row.description)
-    const history = historyMessages(recent.reverse(), pictures, {
-      id: user.id,
-      image: picture,
-    })
+    const history = historyMessages(
+      recent.reverse().map((message) => {
+        const files = (message.metadata as { attachments?: unknown[] } | null)
+          ?.attachments
+        return files?.length
+          ? {
+              ...message,
+              content: `${message.content}\n附件：${JSON.stringify(files)}。文件内容需确认办事后在工作站读取。`,
+            }
+          : message
+      }),
+      pictures,
+      {
+        id: user.id,
+        image: picture,
+      }
+    )
     async function runStream(
       activeModel: LanguageModel,
       activeSpec: string,

@@ -186,6 +186,15 @@ export function Transcript({
               <div className="flex justify-end">
                 <div className="max-w-[88%] rounded-2xl rounded-br-sm border border-border/80 bg-elevated px-4 py-2.5 text-[14.5px] leading-relaxed break-words whitespace-pre-wrap shadow-2xs">
                   {turn.goal}
+                  {turn.attachments?.map((file) => (
+                    <a
+                      key={file.id}
+                      href={`/api/uploads/${file.id}`}
+                      className="block text-xs underline"
+                    >
+                      {file.name}
+                    </a>
+                  ))}
                 </div>
               </div>
               {(turn.supplements ?? []).map((supplement) => (
@@ -195,6 +204,15 @@ export function Transcript({
                       补充指令
                     </span>
                     {supplement.text}
+                    {supplement.attachments?.map((file) => (
+                      <a
+                        key={file.id}
+                        href={`/api/uploads/${file.id}`}
+                        className="block text-xs underline"
+                      >
+                        {file.name}
+                      </a>
+                    ))}
                   </div>
                 </div>
               ))}

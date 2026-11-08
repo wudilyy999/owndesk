@@ -26,6 +26,7 @@ assert(
     "cua",
     "memory",
     "memoryrecall",
+    "fileinput",
     "chat",
     "continuity",
     "ui",
@@ -869,6 +870,78 @@ const modelServer = createServer((req, res) => {
         answer(res, index, "complete_task", {
           summary: "Revised totals delivered",
           files: [{ path: "report.csv", mediaType: "text/csv" }],
+        })
+      }
+      return
+    }
+    if (scenario.kind === "fileinput") {
+      const imported = body.messages.find(
+        (message: any) =>
+          typeof message.content === "string" &&
+          message.content.startsWith("Owner uploaded files copied")
+      )?.content
+      const files = JSON.parse(/workstation: (\[.*\])\. Read/.exec(imported)![1]) as {
+        id: string
+        name: string
+        path: string
+        mediaType: string
+      }[]
+      const file = (name: string) => files.find((item) => item.name === name)!
+      const resultFor = (id: string) =>
+        JSON.parse(
+          body.messages.find(
+            (message: any) => message.role === "tool" && message.tool_call_id === id
+          ).content
+        )
+      if (index === 1)
+        answer(res, index, "load_task_image", { id: file("picture.jpg").id })
+      else if (index === 2) {
+        assert.match(raw, /data:image\/jpeg;base64,/)
+        answer(res, index, "shell", {
+          timeout: 180,
+          command: `set -eu
+mkdir -p /home/agent/converted
+pdftotext '${file("reference.pdf").path}' /home/agent/converted/reference.txt
+libreoffice -env:UserInstallation=file:///tmp/owndesk-file-input --headless --convert-to txt:Text --outdir /home/agent/converted '${file("instructions.docx").path}'
+libreoffice -env:UserInstallation=file:///tmp/owndesk-file-input --headless --convert-to csv --outdir /home/agent/converted '${file("totals.xlsx").path}'
+python3 - <<'PY'
+from pathlib import Path
+import csv
+assert 'PDF_INPUT_42' in Path('/home/agent/converted/reference.txt').read_text()
+assert 'WORD_INPUT_42' in Path('/home/agent/converted/instructions.txt').read_text()
+assert list(csv.reader(Path('/home/agent/converted/totals.csv').open()))[0] == ['EXCEL_INPUT','42']
+assert list(csv.reader(Path('${file("values.csv").path}').open()))[1] == ['Upload','42']
+Path('/home/agent/result.txt').write_text('PDF WORD EXCEL CSV IMAGE: 42')
+PY`,
+        })
+      } else if (index === 3) {
+        assert.equal(resultFor("call-2").exitCode, 0)
+        answer(res, index, "ask_user", {
+          question: "Attach a revised CSV before I finish",
+        })
+      } else if (index === 4) {
+        const message = body.messages.find(
+          (message: any) =>
+            typeof message.content === "string" &&
+            message.content.includes("Attached files on this workstation:")
+        )
+        const extra = JSON.parse(
+          message.content.split("Attached files on this workstation: ")[1]
+        )
+        answer(res, index, "shell", {
+          command: `python3 - <<'PY'
+from pathlib import Path
+import csv
+assert list(csv.reader(Path('${extra[0].path}').open()))[1] == ['Revised','84']
+Path('/home/agent/result.txt').write_text('PDF WORD EXCEL CSV IMAGE: 42; revised CSV: 84')
+PY`,
+        })
+      } else {
+        assert.equal(index, 5)
+        assert.equal(resultFor("call-4").exitCode, 0)
+        answer(res, index, "complete_task", {
+          summary: "Inputs read and revised total applied",
+          files: [{ path: "result.txt", mediaType: "text/plain" }],
         })
       }
       return
@@ -7385,6 +7458,102 @@ try {
       checks.push({
         check:
           "Owner mobile/desktop usage UI: immutable price receipts, custom rates, unknown-cost reconciliation, zero monthly cap; API auth/Origin/money/cursor validation; pagination uses 53 explicitly seeded history rows without overlap",
+      })
+    }
+    if (focus === "fileinput") {
+      const { saveUpload } = await import("@/lib/uploads")
+      const { appendTaskSupplement } = await import("@/lib/task-supplements")
+      const { default: sharp } = await import("sharp")
+      const run = randomUUID(),
+        agentId = randomUUID(),
+        scenario: Scenario = { kind: "fileinput", calls: [] }
+      scenarios.set(run, scenario)
+      await pool.query(
+        "INSERT INTO agents(id,name,role,glyph,model,created_at,updated_at) VALUES($1,'File input','Assistant','fixture','custom/runtime-fixture',now(),now())",
+        [agentId]
+      )
+      agents.push(agentId)
+      const generated = spawnSync(
+        "python3",
+        ["tests/fixtures/input-files.py", directory],
+        { encoding: "utf8" }
+      )
+      assert.equal(generated.status, 0, generated.stderr)
+      const files = []
+      for (const name of [
+        "values.csv",
+        "instructions.docx",
+        "totals.xlsx",
+        "reference.pdf",
+      ])
+        files.push(
+          await saveUpload(
+            ownerId,
+            agentId,
+            name,
+            await readFile(path.join(directory, name))
+          )
+        )
+      files.push(
+        await saveUpload(
+          ownerId,
+          agentId,
+          "picture.png",
+          await sharp({
+            create: { width: 16, height: 16, channels: 3, background: "blue" },
+          })
+            .png()
+            .toBuffer()
+        )
+      )
+      const task = await submitTask(ownerId, "test", {
+        agentId,
+        goal: `CASE=fileinput RUN=${run}; Read all attached inputs, wait for revised CSV, deliver combined result.`,
+        clientRequestId: run,
+        attachmentIds: files.map((file) => file.id),
+        completionContract: { requireHumanReview: false },
+        budget: { maxSteps: 12 },
+      })
+      const request = await pending(task.taskId, "question")
+      await stop()
+      const revised = await saveUpload(
+        ownerId,
+        agentId,
+        "revised.csv",
+        Buffer.from("name,total\nRevised,84\n")
+      )
+      await appendTaskSupplement(ownerId, task.taskId, {
+        text: "Use the attached revised CSV",
+        clientRequestId: randomUUID(),
+        attachmentIds: [revised.id],
+      })
+      await respondToRequest(ownerId, request.id, "approve", request.payloadVersion, {
+        answer: "Read the revised attachment",
+        note: "Read the revised attachment",
+      })
+      await start()
+      const result = await completed(task.taskId)
+      assert.equal(scenario.calls.length, 5)
+      assert.equal(
+        await readFile(
+          path.join(process.env.ARTIFACT_DIR!, result.artifacts[0].storagePath),
+          "utf8"
+        ),
+        "PDF WORD EXCEL CSV IMAGE: 42; revised CSV: 84"
+      )
+      assert.equal(
+        (
+          await pool.query(
+            "SELECT count(*)::int AS n FROM task_events WHERE task_id=$1 AND type='upload_imported'",
+            [task.taskId]
+          )
+        ).rows[0].n,
+        6
+      )
+      checks.push({
+        check:
+          "Real task reads PDF via Poppler, Word/Excel via LibreOffice, CSV via Python and actual image in model; attachment added during restart is imported once and final bytes verified",
+        taskId: task.taskId,
       })
     }
     if (focus === "memoryrecall") {
