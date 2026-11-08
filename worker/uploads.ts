@@ -47,6 +47,18 @@ export async function importTaskUploads(
         await docker(["cp", source.file, `${workstationName(task.agentId)}:${target}`], {
           timeoutMs: 60000,
         })
+        await docker(
+          [
+            "exec",
+            "--user",
+            "root",
+            workstationName(task.agentId),
+            "chown",
+            "1000:1000",
+            target,
+          ],
+          { timeoutMs: 15000 }
+        )
         const actual = await docker(
           ["exec", workstationName(task.agentId), "cat", target],
           { timeoutMs: 15000, maxOutputBytes: source.size + 1024 }
