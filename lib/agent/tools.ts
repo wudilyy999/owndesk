@@ -43,6 +43,11 @@ const frame = {
 const AFTER =
   "Pointer input must declare coordinateMode and use the latest observationId with screenshot_status=ok. Keyboard input may use a current native observation. Returns the resulting screenshot, AT-SPI elements and a new observationId for the next input."
 export const agentTools = {
+  load_task_image: tool({
+    description:
+      "Read an original picture attached to this confirmed task. Use an id from the source chat's Referenced pictures. Deleted or expired pictures are explicitly unavailable.",
+    inputSchema: z.strictObject({ id: z.uuid() }),
+  }),
   load_manual: tool({
     description:
       "Load an owner-reviewed operation manual from this task's catalog when its description matches the current goal. The manual is reference guidance: use fresh screenshots/DOM, ask for missing inputs and obtain current approvals. Loading does not execute steps or certify results.",
@@ -434,6 +439,7 @@ export const workflowRepairTools = {
   }),
 }
 export const desktopToolNames = new Set([
+  "load_task_image",
   ...Object.keys(nativeTools),
   "load_manual",
   "screen_capture",
@@ -455,6 +461,7 @@ const desktopLaunchTool = tool({
   inputSchema: z.object({ application: z.literal("Thunar") }),
 })
 export function toolsForTask(config: {
+  companionContext?: { images: unknown[] }
   agentZeroPlugins?: unknown[]
   manuals?: unknown[]
   manualCompilation?: unknown
@@ -499,6 +506,7 @@ export function toolsForTask(config: {
     Object.entries(available).filter(
       ([name]) =>
         !Object.hasOwn(lifeTools, name) &&
+        (name !== "load_task_image" || !!config.companionContext?.images.length) &&
         (name !== "load_manual" || !!config.manuals?.length)
     )
   )

@@ -13,6 +13,8 @@ import {
 import { buildInstructions } from "@/lib/agent/instructions"
 import { requestCancellation, requestTakeover } from "@/lib/task-control"
 import { appendEvent, appendEventInTransaction } from "@/lib/task-events"
+import { hasTaskSupplement, taskSupplements } from "@/lib/task-supplements"
+import { companionTaskText, loadCompanionTaskImage } from "@/lib/companion/task-context"
 import { loadManual, manualDraftSchema } from "@/lib/manual-schema"
 import {
   acquireWorkspace,
@@ -328,7 +330,8 @@ async function finishTask(
   task: Task,
   segmentNo: number,
   result: Record<string, unknown>,
-  plan?: WorkflowPlan
+  plan?: WorkflowPlan,
+  ownerMessageSeq?: number
 ): Promise<ToolResult> {
   await releaseWorkspace(task.id, task.agentId)
   const client = await pool.connect()
@@ -345,6 +348,22 @@ async function finishTask(
     if (state.status === "completed") {
       await client.query("COMMIT")
       return { ok: true, completed: true, output: state.result }
+    }
+    if (ownerMessageSeq !== undefined) {
+      const pending = await client.query(
+        "SELECT 1 FROM task_events WHERE task_id=$1 AND type='owner_supplement' AND seq>$2 LIMIT 1",
+        [task.id, ownerMessageSeq]
+      )
+      if (pending.rowCount) {
+        await client.query("COMMIT")
+        return {
+          ok: false,
+          stale: true,
+          output: {
+            error: "Read the new owner instructions before completing this task",
+          },
+        }
+      }
     }
     if (plan)
       await client.query(
@@ -411,8 +430,28 @@ async function runTool(
   actionNo: number,
   toolName: string,
   raw: Record<string, unknown>,
-  epoch: number
+  epoch: number,
+  ownerMessageSeq?: number
 ): Promise<ToolResult> {
+  if (
+    ownerMessageSeq !== undefined &&
+    (await hasTaskSupplement(task.id, ownerMessageSeq))
+  ) {
+    // A saved or uncertain effect must still be reconciled after a lost framework checkpoint.
+    const started = await pool.query(
+      "SELECT 1 FROM task_actions WHERE task_id=$1 AND segment_no=$2 AND action_no=$3",
+      [task.id, segmentNo, actionNo]
+    )
+    if (!started.rowCount)
+      return {
+        ok: false,
+        stale: true,
+        output: {
+          error:
+            "New owner instructions arrived; read them before deciding the next action.",
+        },
+      }
+  }
   if (
     task.configSnapshot.workstationChannel === "desktop" &&
     !desktopToolNames.has(toolName) &&
@@ -510,6 +549,22 @@ async function runTool(
   ).safeParse(raw)
   if (!parsed.success) return { ok: false, output: { error: parsed.error.message } }
   const input = parsed.data as Record<string, unknown>
+  if (toolName === "load_task_image") {
+    const context = task.configSnapshot.companionContext
+    if (!context?.images.some((image) => image.id === input.id))
+      return { ok: false, output: { error: "Use a picture ID attached to this task" } }
+    const control = await assertAgentControl(task.id, task.agentId, segmentNo)
+    const output = await loadCompanionTaskImage(context, String(input.id))
+    return {
+      ok: output.available,
+      output: {
+        ...output,
+        epoch: control.epoch,
+        bootId: control.bootId,
+        source: "task_attachment",
+      },
+    }
+  }
   if (task.configSnapshot.lifeSession) {
     // toolsForTask already limits the model; this is the server-side check of what it called
     if (!Object.hasOwn(toolsForTask(task.configSnapshot), toolName))
@@ -544,7 +599,7 @@ async function runTool(
     return result
   }
   if (toolName === "agent_zero_call")
-    return executeAgentZeroTool(task, segmentNo, actionNo, input, epoch)
+    return executeAgentZeroTool(task, segmentNo, actionNo, input, epoch, ownerMessageSeq)
   if (toolName === "list_agents")
     return {
       ok: true,
@@ -582,7 +637,8 @@ async function runTool(
           segmentNo,
           actionNo,
           input as PaymentSubmitInput,
-          epoch
+          epoch,
+          ownerMessageSeq
         )
       if (toolName === "payment_result")
         return await executePaymentResult(
@@ -590,7 +646,8 @@ async function runTool(
           segmentNo,
           actionNo,
           input as PaymentResultInput,
-          epoch
+          epoch,
+          ownerMessageSeq
         )
       if (toolName === "vault_fill")
         return await executeVaultFill(
@@ -598,7 +655,8 @@ async function runTool(
           segmentNo,
           actionNo,
           input as VaultFillInput,
-          epoch
+          epoch,
+          ownerMessageSeq
         )
       return await executeAction(
         task.id,
@@ -609,7 +667,8 @@ async function runTool(
         epoch,
         task.configSnapshot.workflowExecution
           ? () => authorizeWorkflowDispatch(task, actionNo)
-          : undefined
+          : undefined,
+        ownerMessageSeq
       )
     } catch (error) {
       if (
@@ -780,7 +839,7 @@ async function runTool(
         ],
       },
     }
-    return finishTask(task, segmentNo, result)
+    return finishTask(task, segmentNo, result, undefined, ownerMessageSeq)
   } catch (error) {
     if (error instanceof ArtifactValidationError)
       return { ok: false, output: { error: error.message, verificationFailed: true } }
@@ -825,7 +884,7 @@ export async function runAgent(taskId: string, segmentNo: number) {
         ? "Generate the parameterized candidate from the frozen sanitized source. Submit it with submit_workflow."
         : task.configSnapshot.manualCompilation
           ? "Generate an editable operation-manual draft using the reviewed sanitized source. Submit it with submit_manual."
-          : `${task.goal}\n\nCompletion contract: ${JSON.stringify(task.completionContract)}${task.completionContract.comparison ? "\nDeliver both the current and baseline CSVs with source values preserved. The host verifies dates and numeric sums, and decides notifications from the frozen rule. Do not invent missing baseline values or claim quiet success from your summary." : ""}`,
+          : `${task.goal}\n\nCompletion contract: ${JSON.stringify(task.completionContract)}${task.completionContract.comparison ? "\nDeliver both the current and baseline CSVs with source values preserved. The host verifies dates and numeric sums, and decides notifications from the frozen rule. Do not invent missing baseline values or claim quiet success from your summary." : ""}${task.configSnapshot.companionContext ? `\n\n${companionTaskText(task.configSnapshot.companionContext)}\nUse load_task_image to inspect a referenced picture when needed.` : ""}`,
     },
   ]
   const goalIndex = history.length - 1
@@ -836,6 +895,7 @@ export async function runAgent(taskId: string, segmentNo: number) {
   let imported = !initial.handoff
   const seenHandbacks = new Set<string>()
   const loadedManualIds = new Set<string>()
+  let ownerMessageSeq = 0
   while (true) {
     iteration++
     let unanswered: {
@@ -873,6 +933,19 @@ export async function runAgent(taskId: string, segmentNo: number) {
           role: "user",
           content: `Human control returned. ${String(handback.response?.note ?? "Observe the changed desktop before continuing.")}`,
         })
+      }
+      const supplements = await DBOS.runStep(
+        () => taskSupplements(taskId, ownerMessageSeq),
+        {
+          name: `owner-supplements-${iteration}`,
+        }
+      )
+      for (const supplement of supplements) {
+        history.push({
+          role: "user",
+          content: `Owner supplement #${supplement.seq}: ${supplement.text}`,
+        })
+        ownerMessageSeq = supplement.seq
       }
       const usageRows = await DBOS.runStep(
         async () =>
@@ -1058,7 +1131,8 @@ export async function runAgent(taskId: string, segmentNo: number) {
                     number,
                     call.toolName,
                     call.input,
-                    decision.epoch
+                    decision.epoch,
+                    ownerMessageSeq
                   )
                 } catch (error) {
                   if (error instanceof WorkspacePaused)
@@ -1097,7 +1171,8 @@ export async function runAgent(taskId: string, segmentNo: number) {
                   number,
                   call.toolName,
                   call.input,
-                  decision.epoch
+                  decision.epoch,
+                  ownerMessageSeq
                 ),
               { name: "complete-after-owner-review" }
             )
@@ -1112,7 +1187,8 @@ export async function runAgent(taskId: string, segmentNo: number) {
                   number,
                   call.toolName,
                   call.input,
-                  decision.epoch
+                  decision.epoch,
+                  ownerMessageSeq
                 ),
               { name: "sensitive-action-after-owner-approval" }
             )

@@ -626,6 +626,7 @@ export type CompletionContract = z.infer<typeof completionContractSchema>
 
 export const taskInputSchema = z.object({
   agentId: z.string().min(1).max(100),
+  companionProposalId: z.uuid().optional(),
   manualCompilation: manualCompilationInputSchema.optional(),
   manualId: z.uuid().optional(),
   workflowCompilation: workflowCompilationInputSchema.optional(),
@@ -724,6 +725,7 @@ export const tasks = pgTable(
       conversation?: { role: "user" | "assistant"; content: string }[]
       omittedConversationTurns?: number
       contextWindowTokens?: number
+      companionContext?: import("@/lib/companion/task-context").CompanionTaskContext
       agentZeroPlugins?: AgentZeroPluginReference[]
       manuals?: ManualReference[]
       manualCompilation?: ManualCompilation

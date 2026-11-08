@@ -59,6 +59,8 @@
     "test:runtime:handoff": "tsx tests/runtime.ts handoff",
     "test:runtime:routine-handoff": "tsx tests/runtime.ts routinehandoff",
     "test:runtime:chat": "tsx tests/runtime.ts chat",
+    "test:continuity": "tsx tests/chat-task-continuity.ts",
+    "test:continuity:runtime": "tsx tests/runtime.ts continuity",
     "test:companion": "tsx tests/companion.ts && tsx tests/companion-b1.ts && tsx tests/companion-b2a.ts && tsx tests/companion-memory.ts && tsx tests/push.ts",
     "test:companion:b1": "tsx tests/companion-b1.ts",
     "test:companion:ui": "tsx tests/companion-ui.ts",

@@ -188,6 +188,16 @@ export function Transcript({
                   {turn.goal}
                 </div>
               </div>
+              {(turn.supplements ?? []).map((supplement) => (
+                <div key={supplement.seq} className="flex justify-end">
+                  <div className="max-w-[88%] rounded-2xl border border-border bg-elevated px-4 py-2 text-sm whitespace-pre-wrap">
+                    <span className="mb-1 block text-xs text-muted-foreground">
+                      补充指令
+                    </span>
+                    {supplement.text}
+                  </div>
+                </div>
+              ))}
               <div className="space-y-3 pl-1">
                 <div className="flex flex-wrap items-center gap-2.5">
                   <span className="inline-flex items-center gap-1.5 text-sm font-semibold">

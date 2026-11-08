@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Room } from "@/components/companion-room"
+import { CompanionTask } from "@/components/companion-task"
 import { Channels } from "@/components/companion-channels"
 import { PushSettings, usePresence } from "@/components/companion-push"
 import { cn } from "@/lib/utils"
@@ -167,6 +168,7 @@ function Bubble({
     activityId?: string
     hasImage?: boolean
     imageId?: string
+    taskId?: string
   }
   // Merge cards from before the model decided merges are no longer shown
   if (message.kind === "memory_merge") return null
@@ -245,6 +247,9 @@ function Bubble({
           </>
         )}
       </div>
+      {meta.taskId && message.kind === "errand_proposal" && (
+        <CompanionTask taskId={meta.taskId} />
+      )}
       {actions}
     </div>
   )

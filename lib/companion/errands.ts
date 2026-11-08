@@ -33,7 +33,7 @@ async function claim(messageId: string, status: "confirmed" | "cancelled") {
     .where(
       and(
         eq(companionMessages.id, messageId),
-        sql`${companionMessages.metadata}->>'status' = 'pending'`
+        sql`${companionMessages.metadata}->>'status' = 'pending' AND ${companionMessages.supersededAt} IS NULL`
       )
     )
     .returning({ id: companionMessages.id })
@@ -42,34 +42,16 @@ async function claim(messageId: string, status: "confirmed" | "cancelled") {
 
 export async function confirmErrand(ownerId: string, messageId: string) {
   const { message, timeZone } = await ownedProposal(ownerId, messageId)
-  await claim(messageId, "confirmed")
   const goal = (message.metadata as { goal: string }).goal
-  try {
-    const task = await submitTask(ownerId, "companion", {
-      agentId: message.agentId,
-      goal,
-      clientRequestId: `errand:${messageId}`,
-      timeZone,
-      completionContract: { requireHumanReview: false },
-      budget: { maxSteps: 40 },
-    })
-    await db
-      .update(companionMessages)
-      .set({
-        metadata: sql`${companionMessages.metadata} || ${JSON.stringify({ taskId: task.taskId })}::jsonb`,
-      })
-      .where(eq(companionMessages.id, messageId))
-    return task
-  } catch (error) {
-    // The task never started, so the card can be answered again
-    await db
-      .update(companionMessages)
-      .set({
-        metadata: sql`${companionMessages.metadata} || '{"status":"pending"}'::jsonb`,
-      })
-      .where(eq(companionMessages.id, messageId))
-    throw error
-  }
+  return submitTask(ownerId, "companion", {
+    agentId: message.agentId,
+    companionProposalId: message.id,
+    goal,
+    clientRequestId: `errand:${messageId}`,
+    timeZone,
+    completionContract: { requireHumanReview: false },
+    budget: { maxSteps: 40 },
+  })
 }
 
 export async function cancelErrand(ownerId: string, messageId: string) {

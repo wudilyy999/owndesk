@@ -1,5 +1,6 @@
 import { pool } from "@/db"
 import { HttpError } from "@/lib/errors"
+import type { TaskSupplement } from "@/lib/task-supplements"
 import type { ConversationTurn, ThreadInteraction } from "./thread-context"
 
 export type ThreadSummary = {
@@ -12,6 +13,7 @@ export type ThreadSummary = {
   activeAt: string
 }
 export type ThreadTurn = ConversationTurn & {
+  supplements: TaskSupplement[]
   threadTurn: number
   createdAt: string
   reply: string | null
@@ -72,7 +74,7 @@ export async function getThread(
   turns.reverse()
   if (turns.length) {
     const ids = turns.map((turn) => turn.id)
-    const [artifacts, tools, interactions] = await Promise.all([
+    const [artifacts, tools, interactions, supplements] = await Promise.all([
       pool.query<{ taskId: string } & ThreadTurn["artifacts"][number]>(
         'SELECT task_id AS "taskId",id,name,size,verification FROM artifacts WHERE task_id=ANY($1::text[]) ORDER BY created_at,id',
         [ids]
@@ -88,8 +90,13 @@ export async function getThread(
         WHERE task_id=ANY($1::text[]) AND status='resolved' ORDER BY resolved_at,id`,
         [ids]
       ),
+      pool.query<{ taskId: string } & TaskSupplement>(
+        `SELECT task_id AS "taskId",seq,payload->>'text' AS text FROM task_events WHERE task_id=ANY($1::text[]) AND type='owner_supplement' ORDER BY seq`,
+        [ids]
+      ),
     ])
     for (const turn of turns) {
+      turn.supplements = supplements.rows.filter((note) => note.taskId === turn.id)
       turn.artifacts = artifacts.rows.filter((file) => file.taskId === turn.id)
       turn.tools = tools.rows.filter((tool) => tool.taskId === turn.id)
       turn.interactions = interactions.rows.filter(

@@ -143,7 +143,8 @@ export async function executeVaultFill(
   segmentNo: number,
   actionNo: number,
   input: VaultFillInput,
-  epoch: number
+  epoch: number,
+  ownerMessageSeq?: number
 ): Promise<ActionResult & { requestId?: string }> {
   const requestId = `${task.id}-s${segmentNo}-a${actionNo}-vault`
   const {
@@ -187,7 +188,8 @@ export async function executeVaultFill(
       "vault_fill",
       grant,
       epoch,
-      (attempt) => releaseValues(task, grant, requestId, attempt)
+      (attempt) => releaseValues(task, grant, requestId, attempt),
+      ownerMessageSeq
     )
   }
   const workspace = await assertAgentControl(task.id, task.agentId)
