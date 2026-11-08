@@ -1,3 +1,4 @@
+import { chatRoutineSchema, manageChatRoutine } from "./routines"
 import { ownedUploads } from "@/lib/uploads"
 // Light chat path: one model call per message, no durable task, no workstation.
 // Errands are only proposed here; the person confirms them in the UI (lib/companion/errands.ts).
@@ -156,6 +157,11 @@ export async function latestRound(agentId: string) {
   const at = rows.findIndex((row) => row.role === "user")
   if (at === -1) throw new HttpError(409, "没有可以重来的话")
   const user = rows[at]
+  const commands = await db.execute(
+    sql`SELECT 1 FROM routine_commands WHERE agent_id=${agentId} AND key LIKE ${`chat:${user.id}:%`} LIMIT 1`
+  )
+  if (commands.rowCount)
+    throw new HttpError(409, "这一轮已经修改自动化计划，请发送新消息继续调整")
   const replies = rows.slice(0, at).reverse()
   if (user.kind !== "chat" || user.channel !== "web")
     throw new HttpError(409, "只能重来网页里的最后一条消息")
@@ -478,6 +484,20 @@ export async function companionChat(
     const readOnly = redo === "regenerate"
     const frozen = { status: "这次是重说一遍，先不改记忆，下次再记" }
     const tools = {
+      manage_routine: tool({
+        description:
+          "管理这个助手的自动化。用户要求创建、修改、暂停、恢复、删除时调用；先 list 获取 ID 和版本。创建/修改明确名称、工作、时间与启用状态；eventTrigger 可设置 webhook 或网页变化。用户只问现有计划时使用 list。",
+        inputSchema: chatRoutineSchema,
+        execute: async (command, options) => {
+          if (readOnly && command.action !== "list") return frozen
+          return manageChatRoutine(
+            input.ownerId,
+            input.agentId,
+            `chat:${user.id}:${options.toolCallId}`,
+            command
+          )
+        },
+      }),
       remember: tool({
         description:
           "把关于对方的事记进长期记忆：对方说出新的事实、信息变了、记错了、或者让你忘掉某件事，都用这个。note 用一句话写清楚发生了什么（例如“最近戒咖啡了”“让我忘掉养猫的事”），记忆管理员会对照你所有的记忆，决定是新增、改写、合并、删除，还是先问对方。",

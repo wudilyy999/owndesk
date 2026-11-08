@@ -28,6 +28,7 @@ const statusLabels: Record<string, string> = {
 
 export function Routines({ initial }: { initial: Overview }) {
   const [data, setData] = useState(initial)
+  const [webhook, setWebhook] = useState<{ url: string; token: string } | null>(null)
   const empty: RoutinePlan = {
     name: "",
     agentId: data.agents[0]?.id ?? "",
@@ -60,7 +61,8 @@ export function Routines({ initial }: { initial: Overview }) {
       })
       const result = await response.json()
       if (!response.ok) throw new Error(result.error)
-      setData(result)
+      if (body.action === "webhook") setWebhook(result)
+      else setData(result)
       return true
     } catch (error) {
       setError(error instanceof Error ? error.message : String(error))
@@ -85,6 +87,16 @@ export function Routines({ initial }: { initial: Overview }) {
           Agent。每次触发保存独立任务；工作站忙时排队，暂停或删除计划保留已经受理的任务。
         </p>
       </header>
+      {webhook && (
+        <div role="status" className="space-y-2 rounded border p-3 text-xs">
+          <p>Webhook 地址：{webhook.url}</p>
+          <p className="break-all">Bearer token：{webhook.token}</p>
+          <p>事件内容：{"{ id: 唯一事件编号, data: 事件内容 }"}</p>
+          <Button size="sm" onClick={() => setWebhook(null)}>
+            收起令牌
+          </Button>
+        </div>
+      )}
       {error && (
         <p role="alert" className="text-sm text-destructive">
           {error}
@@ -223,6 +235,73 @@ export function Routines({ initial }: { initial: Overview }) {
               placeholder="Asia/Taipei"
             />
           </label>
+          <label className="block space-y-2">
+            触发方式
+            <select
+              aria-label="触发方式"
+              className={selectClass}
+              value={draft.eventTrigger?.kind ?? "time"}
+              onChange={(event) =>
+                set(
+                  "eventTrigger",
+                  event.target.value === "time"
+                    ? null
+                    : event.target.value === "webhook"
+                      ? { kind: "webhook" }
+                      : {
+                          kind: "url_change",
+                          url: "https://example.com",
+                          everyMinutes: 5,
+                        }
+                )
+              }
+            >
+              <option value="time">按时间</option>
+              <option value="url_change">网页内容变化</option>
+              <option value="webhook">外部事件</option>
+            </select>
+          </label>
+          {draft.eventTrigger?.kind === "url_change" && (
+            <>
+              <label className="block space-y-2">
+                监听地址
+                <Input
+                  type="url"
+                  required
+                  value={draft.eventTrigger.url}
+                  onChange={(event) =>
+                    set("eventTrigger", {
+                      ...(draft.eventTrigger as {
+                        kind: "url_change"
+                        everyMinutes: number
+                        url: string
+                      }),
+                      url: event.target.value,
+                    })
+                  }
+                />
+              </label>
+              <label className="block space-y-2">
+                检查间隔（分钟）
+                <Input
+                  type="number"
+                  min={1}
+                  max={1440}
+                  value={draft.eventTrigger.everyMinutes}
+                  onChange={(event) =>
+                    set("eventTrigger", {
+                      ...(draft.eventTrigger as {
+                        kind: "url_change"
+                        everyMinutes: number
+                        url: string
+                      }),
+                      everyMinutes: +event.target.value,
+                    })
+                  }
+                />
+              </label>
+            </>
+          )}
           {draft.schedule.kind === "once" ? (
             <label className="space-y-2 text-sm">
               当地日期与时间
@@ -608,6 +687,22 @@ export function Routines({ initial }: { initial: Overview }) {
             </p>
             <p className="text-sm text-muted-foreground">
               下次：{date(routine.nextRunAt, routine.timeZone)}
+              {routine.eventTrigger && (
+                <p className="text-xs">
+                  {routine.eventTrigger.kind === "url_change"
+                    ? `监听 ${routine.eventTrigger.url}`
+                    : "外部事件触发"}
+                </p>
+              )}
+              {routine.eventTrigger?.kind === "webhook" && (
+                <Button
+                  size="sm"
+                  disabled={busy}
+                  onClick={() => void mutate({ action: "webhook", id: routine.id })}
+                >
+                  生成事件令牌
+                </Button>
+              )}
               {routine.schedule.kind === "once" && !routine.enabled
                 ? "；已受理任务见下方历史。"
                 : ""}

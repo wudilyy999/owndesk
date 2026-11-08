@@ -4,11 +4,13 @@ import { db, pool } from "@/db"
 import { routineRuns } from "@/db/schema"
 import { HttpError } from "@/lib/errors"
 import { companionTick } from "@/lib/companion/tick"
+import { stageChangedRoutines } from "@/lib/routine-events"
 import { stageDueRoutines } from "@/lib/routines"
 import { submitTask } from "@/lib/tasks"
 
 export async function dispatchRoutines() {
   await stageDueRoutines()
+  await stageChangedRoutines()
   const pending = await db
     .select()
     .from(routineRuns)

@@ -61,6 +61,8 @@
     "test:runtime:handoff": "tsx tests/runtime.ts handoff",
     "test:runtime:routine-handoff": "tsx tests/runtime.ts routinehandoff",
     "test:runtime:chat": "tsx tests/runtime.ts chat",
+    "test:automations": "tsx tests/automations.ts",
+    "test:automations:runtime": "tsx tests/runtime.ts automations",
     "test:connections": "tsx tests/connections.ts",
     "test:connections:runtime": "tsx tests/runtime.ts connections",
     "test:files": "tsx tests/file-input.ts",

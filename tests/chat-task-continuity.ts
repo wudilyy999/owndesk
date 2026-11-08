@@ -382,6 +382,15 @@ try {
         } finally {
           await connectionFixture.close()
         }
+        await page.goto(`${process.env.APP_URL}/routines`)
+        await page.getByLabel("名称", { exact: true }).fill("UI event")
+        await page.getByLabel("每次要做的工作", { exact: true }).fill("Process UI event")
+        await page.getByLabel("触发方式", { exact: true }).selectOption("webhook")
+        await page.getByRole("button", { name: "创建计划", exact: true }).click()
+        await page.getByRole("button", { name: "生成事件令牌", exact: true }).click()
+        const tokenText = await page.getByRole("status").innerText()
+        assert(tokenText.includes("Bearer token："))
+        await page.getByRole("button", { name: "收起令牌", exact: true }).click()
         checks.push(
           "Actual authenticated desktop/mobile UI: upload and supplement in both views, answer request, download artifact and reject unauthenticated files/foreign origin"
         )

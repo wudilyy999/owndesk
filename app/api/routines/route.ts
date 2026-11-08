@@ -1,3 +1,4 @@
+import { rotateRoutineWebhook } from "@/lib/routine-events"
 import { z } from "zod"
 import { requireOwner, requireSameOrigin } from "@/lib/auth"
 import { errorResponse } from "@/lib/errors"
@@ -13,6 +14,7 @@ import {
 const id = z.string().min(1).max(100),
   version = z.number().int().positive()
 const mutation = z.discriminatedUnion("action", [
+  z.object({ action: z.literal("webhook"), id }),
   z.object({ action: z.literal("create"), input: routinePlanSchema }),
   z.object({ action: z.literal("save"), id, version, input: routinePlanSchema }),
   z.object({ action: z.literal("enabled"), id, version, enabled: z.boolean() }),
@@ -34,6 +36,8 @@ export async function POST(request: Request) {
     requireSameOrigin(request)
     const owner = await requireOwner(request.headers)
     const input = mutation.parse(await request.json())
+    if (input.action === "webhook")
+      return Response.json(await rotateRoutineWebhook(input.id))
     if (input.action === "create") await saveRoutine(input.input)
     else if (input.action === "save")
       await saveRoutine(input.input, input.id, input.version)
