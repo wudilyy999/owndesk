@@ -29,6 +29,7 @@ assert(
     "fileinput",
     "connections",
     "automations",
+    "demonstrations",
     "chat",
     "continuity",
     "ui",
@@ -872,6 +873,23 @@ const modelServer = createServer((req, res) => {
         answer(res, index, "complete_task", {
           summary: "Revised totals delivered",
           files: [{ path: "report.csv", mediaType: "text/csv" }],
+        })
+      }
+      return
+    }
+    if (scenario.kind === "demonstrations") {
+      if (index === 1) answer(res, index, "load_manual", { id: scenario.itemId })
+      else if (index === 2) {
+        assert.match(raw, /DEMONSTRATED_RESULT/)
+        answer(res, index, "fs_write", {
+          path: "demonstrated.txt",
+          content: "DEMONSTRATED_RESULT",
+        })
+      } else {
+        assert.equal(index, 3)
+        answer(res, index, "complete_task", {
+          summary: "Applied demonstrated manual",
+          files: [{ path: "demonstrated.txt", mediaType: "text/plain" }],
         })
       }
       return
@@ -7513,6 +7531,190 @@ try {
       checks.push({
         check:
           "Owner mobile/desktop usage UI: immutable price receipts, custom rates, unknown-cost reconciliation, zero monthly cap; API auth/Origin/money/cursor validation; pagination uses 53 explicitly seeded history rows without overlap",
+      })
+    }
+    if (focus === "demonstrations") {
+      const { ensureWorkstation, workspaceRow } = await import("@/lib/workstation")
+      const {
+        startDemonstration,
+        recordDemonstration,
+        finishDemonstration,
+        saveDemonstrationManual,
+      } = await import("@/lib/demonstrations")
+      const agentId = randomUUID(),
+        run = randomUUID(),
+        scenario: Scenario = { kind: "demonstrations", calls: [] }
+      scenarios.set(run, scenario)
+      await pool.query(
+        "INSERT INTO agents(id,name,role,glyph,model,created_at,updated_at) VALUES($1,'Demonstration','Assistant','fixture','custom/runtime-fixture',now(),now())",
+        [agentId]
+      )
+      agents.push(agentId)
+      await ensureWorkstation(agentId)
+      await docker(["exec", "--detach", workstationName(agentId), "mousepad"])
+      await until(async () => {
+        const state = await dockerRaw([
+          "exec",
+          workstationName(agentId),
+          "xdotool",
+          "search",
+          "--onlyvisible",
+          "--class",
+          "Mousepad",
+        ])
+        return state.exitCode === 0
+      }, "editor ready")
+      const demo = await startDemonstration(ownerId, agentId, "Edit a report")
+      await docker(["exec", workstationName(agentId), "xdotool", "key", "ctrl+n"])
+      const event = await recordDemonstration(ownerId, demo.id, {
+        seq: 1,
+        event: { kind: "key", key: "Enter", ctrl: false, alt: false, shift: false },
+      })
+      assert.match(event.application ?? "", /mousepad/i)
+      await docker([
+        "exec",
+        workstationName(agentId),
+        "xdotool",
+        "type",
+        "private-value-not-recorded",
+      ])
+      await recordDemonstration(ownerId, demo.id, {
+        seq: 2,
+        event: { kind: "protected_input", text: "private-value-not-recorded" },
+      })
+      await recordDemonstration(ownerId, demo.id, {
+        seq: 3,
+        event: {
+          kind: "checkpoint",
+          note: "Write DEMONSTRATED_RESULT to demonstrated.txt and verify the file",
+        },
+      })
+      const draft = await finishDemonstration(ownerId, demo.id)
+      assert(!JSON.stringify(draft).includes("private-value-not-recorded"))
+      await saveDemonstrationManual(ownerId, demo.id, draft)
+      scenario.itemId = demo.id
+      const task = await submitTask(ownerId, "test", {
+        agentId,
+        goal: `CASE=demonstrations RUN=${run}; Apply the demonstrated report manual.`,
+        manualId: demo.id,
+        clientRequestId: run,
+        completionContract: { requireHumanReview: false },
+        budget: { maxSteps: 8 },
+      })
+      const result = await completed(task.taskId)
+      assert.equal(
+        await readFile(
+          path.join(process.env.ARTIFACT_DIR!, result.artifacts[0].storagePath),
+          "utf8"
+        ),
+        "DEMONSTRATED_RESULT"
+      )
+      assert.equal(scenario.calls.length, 3)
+      assert.equal((await workspaceRow(agentId)).mode, "idle")
+      const web = spawn(
+        process.execPath,
+        [
+          "node_modules/next/dist/bin/next",
+          "dev",
+          "--hostname",
+          "127.0.0.1",
+          "--port",
+          "17097",
+        ],
+        { env: process.env, detached: true }
+      )
+      let webLog = ""
+      web.stdout!.on("data", (data) => {
+        webLog += data
+      })
+      web.stderr!.on("data", (data) => {
+        webLog += data
+      })
+      const { chromium } = await import("playwright")
+      let browser: Awaited<ReturnType<typeof chromium.launch>> | undefined
+      try {
+        await until(async () => {
+          if (web.exitCode !== null) throw new Error(webLog)
+          try {
+            return (await fetch(`${process.env.APP_URL}/login`)).ok
+          } catch (error) {
+            if ((error as { cause?: { code?: string } }).cause?.code === "ECONNREFUSED")
+              return false
+            throw error
+          }
+        }, "demonstration web ready")
+        browser = await chromium.launch({ headless: true })
+        const page = await browser.newPage({ viewport: { width: 1440, height: 1000 } })
+        await page.goto(`${process.env.APP_URL}/login`)
+        await page.getByLabel("邮箱").fill(process.env.OWNER_EMAIL!)
+        await page.getByLabel("密码").fill(process.env.OWNER_PASSWORD!)
+        await page.getByRole("button", { name: "登录", exact: true }).click()
+        await page.waitForURL((url) => url.pathname !== "/login")
+        await page.goto(`${process.env.APP_URL}/?task=${task.taskId}`)
+        await page.getByRole("button", { name: "接管桌面", exact: true }).click()
+        const canvas = page.locator("canvas").filter({ visible: true })
+        await canvas.waitFor({ state: "visible" })
+        await page.getByText("已连接", { exact: true }).first().waitFor()
+        await page.getByLabel("示范名称").fill("Recorded through noVNC")
+        await page.getByRole("button", { name: "开始示范", exact: true }).click()
+        await page.getByText(/正在录制/).waitFor()
+        await canvas.click({ position: { x: 400, y: 300 } })
+        await page.keyboard.press("Enter")
+        await page.keyboard.type("do-not-record-this-value")
+        await page.getByLabel("这一步的说明").fill("Check the resulting document")
+        await page.getByRole("button", { name: "记录说明", exact: true }).click()
+        const observed = await until(async () => {
+          const row = (
+            await pool.query(
+              "SELECT id,events FROM demonstrations WHERE agent_id=$1 AND status='recording'",
+              [agentId]
+            )
+          ).rows[0]
+          return row?.events.some((e: { kind: string }) => e.kind === "checkpoint")
+            ? row
+            : undefined
+        }, "noVNC events persisted by worker")
+        assert(
+          observed.events.some(
+            (e: { kind: string; application: string }) =>
+              e.kind === "pointer" && e.application
+          )
+        )
+        assert(
+          observed.events.some((e: { kind: string }) => e.kind === "protected_input")
+        )
+        assert(!JSON.stringify(observed).includes("do-not-record-this-value"))
+        await page.getByRole("button", { name: "结束并生成手册", exact: true }).click()
+        await page.getByRole("link", { name: "审阅、编辑并保存示范手册" }).waitFor()
+        await page.screenshot({
+          path: path.join(directory, "demonstration-desktop.png"),
+          fullPage: true,
+        })
+        assert.equal(
+          (
+            await pool.query("SELECT status FROM demonstrations WHERE id=$1", [
+              observed.id,
+            ])
+          ).rows[0].status,
+          "draft"
+        )
+        checks.push({
+          check:
+            "Real noVNC framebuffer and DOM events: click, function key and protected typing captured; worker observes application; editable draft created",
+        })
+      } finally {
+        await browser?.close()
+        if (web.pid && web.exitCode === null) {
+          const exited = once(web, "exit")
+          process.kill(-web.pid, "SIGTERM")
+          await exited
+        }
+        await writeFile(path.join(directory, "demonstration-web.log"), webLog)
+      }
+      checks.push({
+        check:
+          "Actual editor human input observed by application class, private text omitted; editable demonstration manual saved and loaded by a new Task with verified output file",
+        taskId: task.taskId,
       })
     }
     if (focus === "automations") {

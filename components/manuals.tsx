@@ -220,7 +220,15 @@ export function ManualDraftForm({ source }: { source: { id: string; agentId: str
   )
 }
 
-export function ManualEditor({ id, draft }: { id: string; draft: ManualDraft }) {
+export function ManualEditor({
+  id,
+  draft,
+  demonstration = false,
+}: {
+  id: string
+  draft: ManualDraft
+  demonstration?: boolean
+}) {
   const router = useRouter()
   const [value, setValue] = useState(draft)
   const [reviewed, setReviewed] = useState(false)
@@ -254,7 +262,12 @@ export function ManualEditor({ id, draft }: { id: string; draft: ManualDraft }) 
         setBusy(true)
         setError("")
         try {
-          await api("/api/manuals", { draftTaskId: id, reviewed, draft: value })
+          await api(
+            demonstration ? "/api/demonstrations" : "/api/manuals",
+            demonstration
+              ? { action: "save", id, reviewed, draft: value }
+              : { draftTaskId: id, reviewed, draft: value }
+          )
           sessionStorage.removeItem(storageKey)
           router.refresh()
         } catch (cause) {
@@ -288,6 +301,7 @@ export function ManualEditor({ id, draft }: { id: string; draft: ManualDraft }) 
       <label className="block space-y-1.5">
         操作步骤与结果检查
         <textarea
+          aria-label="操作步骤与结果检查"
           className={`${field} leading-7`}
           required
           maxLength={12000}

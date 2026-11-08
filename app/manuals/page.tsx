@@ -1,3 +1,4 @@
+import { listDemonstrations } from "@/lib/demonstrations"
 import { headers } from "next/headers"
 import { notFound, redirect } from "next/navigation"
 import Link from "next/link"
@@ -9,6 +10,7 @@ import { listManualDrafts, listManuals } from "@/lib/manuals"
 import { ManualActions, ManualDraftForm, ManualEditor } from "@/components/manuals"
 
 const verificationLabels: Record<string, string> = {
+  human_demonstrated: "人工示范与用户审阅",
   model_reported: "模型报告完成",
   program_checked: "程序已核对",
   human_confirmed: "用户已确认",
@@ -30,10 +32,11 @@ export default async function ManualsPage({
   const id = (await searchParams).source
   if (Array.isArray(id) || (id && id.length > 100)) notFound()
   const source = id ? await getTask(owner.userId, id) : null
-  const [manuals, drafts, agents] = await Promise.all([
+  const [manuals, drafts, agents, demonstrations] = await Promise.all([
     listManuals(owner.userId),
     listManualDrafts(owner.userId),
     listAgents(),
+    listDemonstrations(owner.userId),
   ])
   const eligible =
     source?.status === "completed" &&
@@ -56,6 +59,14 @@ export default async function ManualsPage({
           在相关任务中按需参考。每次使用都会重新观察当前电脑；固定、已验证的自动执行流程继续单独保留。
         </p>
       </header>
+      {demonstrations
+        .filter((row) => row.status === "draft")
+        .map((row) => (
+          <section key={row.id} className="space-y-4 rounded border p-5">
+            <h2 className="font-medium">示范手册：{row.name}</h2>
+            <ManualEditor id={row.id} draft={row.draft} demonstration />
+          </section>
+        ))}
       {source && (
         <section className="space-y-5 rounded-2xl border border-border bg-surface p-5 sm:p-6">
           <h2 className="text-lg font-medium">从成功任务生成草稿</h2>
@@ -140,10 +151,14 @@ export default async function ManualsPage({
                 : "。"}
             </p>
             <Link
-              href={`/?task=${encodeURIComponent(manual.sourceTaskId)}`}
+              href={
+                manual.sourceKind === "demonstration"
+                  ? "/manuals"
+                  : `/?task=${encodeURIComponent(manual.sourceTaskId)}`
+              }
               className="text-sm underline"
             >
-              查看原始任务
+              {manual.sourceKind === "demonstration" ? "人工示范来源" : "查看原始任务"}
             </Link>
             <details>
               <summary className="cursor-pointer text-sm">查看操作步骤</summary>

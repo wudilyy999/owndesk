@@ -391,6 +391,51 @@ try {
         const tokenText = await page.getByRole("status").innerText()
         assert(tokenText.includes("Bearer token："))
         await page.getByRole("button", { name: "收起令牌", exact: true }).click()
+        await pool.query(
+          "INSERT INTO workstation_control(agent_id,container_name,connection_secret,mode,epoch,updated_at) VALUES($1,$2,'fixture','human',1,now())",
+          [agent, `fixture-${agent}`]
+        )
+        const demonstration = await page.request.post(
+          `${process.env.APP_URL}/api/demonstrations`,
+          {
+            headers: { origin: process.env.APP_URL! },
+            data: { action: "start", agentId: agent, name: "UI Demonstration" },
+          }
+        )
+        assert(demonstration.ok())
+        const demo = await demonstration.json()
+        for (const [index, event] of [
+          { kind: "protected_input", text: "never-saved" },
+          { kind: "checkpoint", note: "Prepare UI report and verify totals" },
+        ].entries())
+          assert(
+            (
+              await page.request.post(`${process.env.APP_URL}/api/demonstrations`, {
+                headers: { origin: process.env.APP_URL! },
+                data: { action: "record", id: demo.id, seq: index + 1, event },
+              })
+            ).ok()
+          )
+        assert(
+          (
+            await page.request.post(`${process.env.APP_URL}/api/demonstrations`, {
+              headers: { origin: process.env.APP_URL! },
+              data: { action: "finish", id: demo.id },
+            })
+          ).ok()
+        )
+        await page.goto(`${process.env.APP_URL}/manuals`)
+        const editor = page.getByRole("form", { name: "审阅操作手册" })
+        await editor
+          .getByLabel("操作步骤与结果检查", { exact: true })
+          .fill("Prepare the requested report and verify totals equal 42.")
+        await editor.getByRole("checkbox").check()
+        await editor.getByRole("button", { name: "保存并启用手册", exact: true }).click()
+        await page
+          .getByText("Prepare the requested report and verify totals equal 42.", {
+            exact: true,
+          })
+          .waitFor({ state: "attached" })
         checks.push(
           "Actual authenticated desktop/mobile UI: upload and supplement in both views, answer request, download artifact and reject unauthenticated files/foreign origin"
         )

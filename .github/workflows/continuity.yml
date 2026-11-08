@@ -39,6 +39,7 @@ jobs:
       - run: npm run test:files
       - run: npm run test:connections
       - run: npm run test:automations
+      - run: npm run test:demonstrations
       - run: npx tsx tests/companion-memory.ts
       - run: npx tsx tests/companion.ts
       - uses: docker/setup-buildx-action@v3
@@ -54,6 +55,7 @@ jobs:
       - run: npm run test:files:runtime
       - run: npm run test:connections:runtime
       - run: npm run test:automations:runtime
+      - run: npm run test:demonstrations:runtime
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -63,9 +65,12 @@ jobs:
             data/experiments/agent_files_*/result.json
             data/experiments/agent_connections_*/result.json
             data/experiments/agent_automations_*/result.json
+            data/experiments/agent_demonstration_*/result.json
             data/experiments/agent_continuity_*/result.json
             data/experiments/agent_continuity_*/companion-*.png
             data/experiments/agent_continuity_*/web.log
             data/experiments/agent_runtime_*/result.json
             data/experiments/agent_runtime_*/worker-*.log
+            data/experiments/agent_runtime_*/demonstration-*.png
+            data/experiments/agent_runtime_*/demonstration-web.log
           retention-days: 14

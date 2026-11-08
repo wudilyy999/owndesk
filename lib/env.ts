@@ -26,6 +26,7 @@ const schema = z.object({
     .regex(/^[A-Za-z0-9_+\-]+(\/[A-Za-z0-9_+\-]+){0,2}$/)
     .optional(),
   WORKER_PORT: z.coerce.number().int().min(1024).max(65535).default(6798),
+  WORKER_INTERNAL_URL: z.url().optional(),
   WORKER_HOST: z.enum(["127.0.0.1", "0.0.0.0"]).default("127.0.0.1"),
   WORKSTATION_NETWORK: z.string().min(1).optional(),
   NETWORK_GUARD_IMAGE: z.string().min(1).optional(),

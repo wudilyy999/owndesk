@@ -100,6 +100,24 @@ export const appConnections = pgTable("app_connections", {
   updatedAt: timestamp(),
 })
 
+export const demonstrations = pgTable("demonstrations", {
+  id: text().primaryKey(),
+  ownerId: text().notNull(),
+  agentId: text()
+    .notNull()
+    .references(() => agents.id, { onDelete: "cascade" }),
+  name: text().notNull(),
+  epoch: integer().notNull(),
+  status: text().notNull(),
+  events: jsonb()
+    .notNull()
+    .$type<import("@/lib/demonstration-schema").RecordedDemonstrationEvent[]>()
+    .default([]),
+  draft: jsonb().$type<import("@/lib/manual-schema").ManualDraft>(),
+  createdAt: timestamp(),
+  updatedAt: timestamp(),
+})
+
 /* ───────────────────────────── squads ───────────────────────────── */
 
 export const squads = pgTable("squads", {

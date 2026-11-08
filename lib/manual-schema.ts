@@ -42,6 +42,7 @@ export const manualSchema = manualDraftSchema.extend({
   ownerId: z.string(),
   sourceTaskId: z.uuid(),
   sourceVerification: z.string(),
+  sourceKind: z.enum(["task", "demonstration"]).optional(),
   parameters: z.array(z.strictObject({ name: z.string(), label: z.string() })),
   humanInvolvement: z.boolean(),
   enabled: z.boolean(),
