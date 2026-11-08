@@ -1,7 +1,7 @@
 "use client"
 
 // Keyboard/IME handling, draft persistence and composer layout adapted from the pinned MIT upstream.
-import { useEffect, useState, type ReactNode } from "react"
+import { useEffect, useId, useState, type ReactNode } from "react"
 import { ArrowUpIcon, SquareIcon } from "lucide-react"
 import { Button } from "@/components/ui/button"
 
@@ -10,6 +10,7 @@ export function Composer({
   label,
   initialText = "",
   busy,
+  allowSupplement = false,
   disabled,
   sending,
   onSend,
@@ -20,12 +21,14 @@ export function Composer({
   label: string
   initialText?: string
   busy: boolean
+  allowSupplement?: boolean
   disabled: boolean
   sending: boolean
   onSend: (text: string) => Promise<boolean>
   onStop: () => void
   children?: ReactNode
 }) {
+  const inputId = useId()
   const [text, setText] = useState(initialText),
     [loadedKey, setLoadedKey] = useState("")
   const [storageError, setStorageError] = useState(""),
@@ -56,7 +59,7 @@ export function Composer({
     }
   }, [text, draftKey, loadedKey, storageAvailable])
   async function submit() {
-    if (!text.trim() || busy || disabled || sending) return
+    if (!text.trim() || (busy && !allowSupplement) || disabled || sending) return
     if (await onSend(text.trim())) {
       setText("")
       // The accepted task can immediately switch to its server-assigned thread.
@@ -81,12 +84,12 @@ export function Composer({
         void submit()
       }}
     >
-      <label htmlFor="task-goal" className="block text-sm font-medium text-foreground/90">
+      <label htmlFor={inputId} className="block text-sm font-medium text-foreground/90">
         {label}
       </label>
       <div className="overflow-hidden rounded-2xl border border-border bg-surface shadow-xs transition-all focus-within:border-primary/45 focus-within:ring-3 focus-within:ring-ring/15">
         <textarea
-          id="task-goal"
+          id={inputId}
           value={text}
           onChange={(event) => setText(event.target.value)}
           onKeyDown={(event) => {
@@ -114,7 +117,7 @@ export function Composer({
           <span className="text-xs text-muted-foreground">
             Enter 发送 · Shift+Enter 换行
           </span>
-          {busy ? (
+          {busy && (
             <Button
               type="button"
               variant="outline"
@@ -125,10 +128,17 @@ export function Composer({
               <SquareIcon className="size-3" />
               停止当前任务
             </Button>
-          ) : (
+          )}
+          {(!busy || allowSupplement) && (
             <Button type="submit" disabled={sending || disabled || !text.trim()}>
               <ArrowUpIcon className="size-3.5" />
-              {sending ? "正在提交…" : label === "继续对话" ? "发送追问" : "交给 Agent"}
+              {sending
+                ? "正在提交…"
+                : busy
+                  ? "补充当前任务"
+                  : label === "继续对话"
+                    ? "发送追问"
+                    : "交给 Agent"}
             </Button>
           )}
         </div>

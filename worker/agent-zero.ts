@@ -72,7 +72,8 @@ export async function executeAgentZeroTool(
   segmentNo: number,
   actionNo: number,
   raw: unknown,
-  epoch: number
+  epoch: number,
+  ownerMessageSeq?: number
 ) {
   let reference, call
   try {
@@ -102,7 +103,8 @@ export async function executeAgentZeroTool(
       return current.epoch === epoch
         ? { authorized: true }
         : { rejected: "Control changed during plugin preparation" }
-    }
+    },
+    ownerMessageSeq
   )
   if (!result.ok || result.needsReview || result.stale) return result
   const output = String(result.output.output ?? "")

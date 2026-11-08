@@ -639,7 +639,7 @@ export async function companionChat(
         kind: "errand_proposal",
         content: goal,
         channel,
-        metadata: { goal, status: "pending" },
+        metadata: { goal, status: "pending", sourceMessageId: user.id },
       })
     for (const candidate of candidates)
       rows.push({

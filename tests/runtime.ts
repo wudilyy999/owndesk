@@ -26,6 +26,7 @@ assert(
     "cua",
     "memory",
     "chat",
+    "continuity",
     "ui",
     "usage",
     "routines",
@@ -836,6 +837,39 @@ const modelServer = createServer((req, res) => {
         summary: "已读取同一对话的历史上下文。",
         files: [],
       })
+      return
+    }
+    if (scenario.kind === "continuity") {
+      if (index === 1) {
+        assert.match(raw, /Chinese headings from source chat/)
+        await new Promise<void>((resolve) => {
+          scenario.release = resolve
+        })
+        answer(res, index, "fs_write", {
+          path: "superseded.txt",
+          content: "old decision",
+        })
+      } else if (index === 2) {
+        assert.match(raw, /Use the revised totals/)
+        answer(res, index, "load_task_image", { id: scenario.itemId })
+      } else if (index === 3) {
+        assert.match(raw, /image_url/)
+        assert.match(raw, /data:image\/jpeg;base64,/)
+        answer(res, index, "fs_write", { path: "report.csv", content: goodCsv })
+      } else if (index === 4) {
+        answer(res, index, "ask_user", { question: "Confirm the revised total" })
+      } else if (index === 5) {
+        assert.match(raw, /Use the revised totals/)
+        assert.match(raw, /Double the total after restart/)
+        assert.match(raw, /owner confirmed total/)
+        answer(res, index, "fs_write", { path: "report.csv", content: doubledCsv })
+      } else {
+        assert.equal(index, 6)
+        answer(res, index, "complete_task", {
+          summary: "Revised totals delivered",
+          files: [{ path: "report.csv", mediaType: "text/csv" }],
+        })
+      }
       return
     }
     if (scenario.kind === "memory") {
@@ -6634,6 +6668,100 @@ try {
       checks.push({
         check:
           "Cancellation aborts the real HTTP model request, stops the workstation, and dispatches no model tools",
+      })
+    }
+    if (focus === "continuity") {
+      const { appendTaskSupplement, taskSupplements } =
+        await import("@/lib/task-supplements")
+      const { confirmErrand, syncErrands } = await import("@/lib/companion/errands")
+      const { updateCompanion } = await import("@/lib/companion/store")
+      const { saveImage } = await import("@/lib/companion/images")
+      const { default: sharp } = await import("sharp")
+      const run = randomUUID(),
+        agentId = randomUUID(),
+        sourceId = randomUUID(),
+        proposalId = randomUUID()
+      const scenario: Scenario = { kind: "continuity", calls: [] }
+      scenarios.set(run, scenario)
+      await pool.query(
+        "INSERT INTO agents(id,name,role,glyph,model,created_at,updated_at) VALUES($1,'Continuity','Personal assistant','fixture','custom/runtime-fixture',now(),now())",
+        [agentId]
+      )
+      agents.push(agentId)
+      await updateCompanion(ownerId, agentId, { typingPace: "off" })
+      const photo = await saveImage(
+        agentId,
+        await sharp({
+          create: { width: 32, height: 32, channels: 3, background: "blue" },
+        })
+          .png()
+          .toBuffer()
+      )
+      scenario.itemId = photo.id
+      await pool.query(
+        "INSERT INTO companion_messages(id,agent_id,role,content,metadata,created_at) VALUES($1,$2,'user','Chinese headings from source chat',$3,now()-interval '1 minute')",
+        [sourceId, agentId, JSON.stringify({ imageId: photo.id })]
+      )
+      const goal = `CASE=continuity RUN=${run}; Prepare the report from our chat and picture.`
+      await pool.query(
+        "INSERT INTO companion_messages(id,agent_id,role,kind,content,metadata,created_at) VALUES($1,$2,'assistant','errand_proposal',$3,$4,now())",
+        [
+          proposalId,
+          agentId,
+          goal,
+          JSON.stringify({ goal, status: "pending", sourceMessageId: sourceId }),
+        ]
+      )
+      const submitted = await confirmErrand(ownerId, proposalId)
+      await until(async () => scenario.release, "initial model response held")
+      const note = { text: "Use the revised totals", clientRequestId: randomUUID() }
+      await appendTaskSupplement(ownerId, submitted.taskId, note)
+      scenario.release!()
+      const request = await pending(submitted.taskId, "question")
+      assert.equal(scenario.calls.length, 4)
+      await stop()
+      await appendTaskSupplement(ownerId, submitted.taskId, {
+        text: "Double the total after restart",
+        clientRequestId: randomUUID(),
+      })
+      await respondToRequest(ownerId, request.id, "approve", request.payloadVersion, {
+        answer: "owner confirmed total",
+        note: "owner confirmed total",
+      })
+      await start()
+      const result = await completed(submitted.taskId)
+      assert.equal(scenario.calls.length, 6, "saved model decisions are not replayed")
+      assert.equal((await taskSupplements(submitted.taskId)).length, 2)
+      assert.equal(
+        await readFile(
+          path.join(process.env.ARTIFACT_DIR!, result.artifacts[0].storagePath),
+          "utf8"
+        ),
+        doubledCsv
+      )
+      const absent = await dockerRaw([
+        "exec",
+        workstationName(agentId),
+        "test",
+        "!",
+        "-e",
+        "/home/agent/superseded.txt",
+      ])
+      assert.equal(absent.exitCode, 0, "the old in-flight decision did not write a file")
+      const writes = await pool.query(
+        "SELECT input->>'content' AS content FROM task_actions WHERE task_id=$1 AND kind='fs_write' AND status='succeeded' ORDER BY action_no",
+        [submitted.taskId]
+      )
+      assert.deepEqual(
+        writes.rows.map((row) => row.content),
+        [goodCsv, doubledCsv]
+      )
+      await syncErrands()
+      assert.equal((await confirmErrand(ownerId, proposalId)).taskId, submitted.taskId)
+      checks.push({
+        check:
+          "Confirmed source chat and actual picture reach model; in-flight old write rejected; supplements survive worker restart and owner question; actual file bytes and one logical task verified",
+        taskId: submitted.taskId,
       })
     }
     if (focus === "chat") {

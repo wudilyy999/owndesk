@@ -208,7 +208,7 @@ try {
   assert.equal(await taskCount(), 0, "no task before confirmation")
   const task = await confirmErrand(ownerId, card.id)
   assert.equal(await taskCount(), 1)
-  await assert.rejects(confirmErrand(ownerId, card.id), /already answered/)
+  assert.equal((await confirmErrand(ownerId, card.id)).taskId, task.taskId)
   await assert.rejects(cancelErrand(ownerId, card.id), /already answered/)
   await assert.rejects(confirmErrand("someone-else", card.id))
   assert.equal(await syncErrands(), 0, "nothing to report while the task is running")

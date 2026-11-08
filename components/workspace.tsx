@@ -34,6 +34,8 @@ type Event = {
   created_at: string
 }
 type Detail = Summary & {
+  canSupplement: boolean
+  supplements: { seq: number; text: string }[]
   thread: { id: string; title: string | null } | null
   updatedAt: string
   agentId: string
@@ -550,7 +552,7 @@ export function Workspace({
             key={conversationId}
             threadId={conversationId}
             selectedTaskId={selected}
-            refreshKey={`${detail?.status}:${detail?.usage.decisions}:${detail?.artifacts.length}`}
+            refreshKey={`${detail?.status}:${detail?.usage.decisions}:${detail?.artifacts.length}:${detail?.supplements.length}`}
             agentName={agents.find((agent) => agent.id === agentId)!.name}
             onSelectTask={selectTask}
             onRename={(id, title) =>
@@ -567,6 +569,7 @@ export function Workspace({
           draftKey={draftKey}
           label={conversationId ? "继续对话" : "交办任务"}
           busy={!!conversationActive}
+          allowSupplement={detail?.canSupplement === true}
           sending={busy || controlBusy}
           disabled={!agentId || (!!selected && !detail)}
           onStop={() => {
@@ -576,6 +579,38 @@ export function Workspace({
           onSend={async (goal) => {
             setBusy(true)
             setError("")
+            if (conversationActive) {
+              const activeTaskId = threads.find(
+                (thread) => thread.id === conversationId
+              )!.latestTaskId
+              const storageKey = `personal-agent:supplement:${activeTaskId}`
+              try {
+                const saved = sessionStorage.getItem(storageKey)
+                const previous = saved
+                  ? (JSON.parse(saved) as { text: string; clientRequestId: string })
+                  : null
+                const payload =
+                  previous?.text === goal
+                    ? previous
+                    : { text: goal, clientRequestId: crypto.randomUUID() }
+                sessionStorage.setItem(storageKey, JSON.stringify(payload))
+                const response = await fetch(`/api/tasks/${activeTaskId}/supplements`, {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify(payload),
+                })
+                const result = await response.json()
+                if (!response.ok) throw new Error(result.error)
+                sessionStorage.removeItem(storageKey)
+                await refreshRef.current()
+                return true
+              } catch (cause) {
+                setError(cause instanceof Error ? cause.message : String(cause))
+                return false
+              } finally {
+                setBusy(false)
+              }
+            }
             const completionContract = {
               requireHumanReview: delivery.review,
               ...(delivery.path.trim()

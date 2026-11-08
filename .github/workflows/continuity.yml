@@ -1,0 +1,57 @@
+name: continuity
+on:
+  pull_request:
+  workflow_dispatch:
+jobs:
+  integration:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: agent
+          POSTGRES_PASSWORD: local-fixture-password
+          POSTGRES_DB: owndesk_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U agent -d owndesk_test"
+          --health-interval 5s --health-timeout 5s --health-retries 12
+    env:
+      DATABASE_URL: postgresql://agent:local-fixture-password@127.0.0.1:5432/owndesk_test
+      APP_URL: http://127.0.0.1:17297
+      BETTER_AUTH_SECRET: continuity-local-fixture-secret-0123456789
+      MASTER_KEY: "0000000000000000000000000000000000000000000000000000000000000000"
+      INSTALL_ID: 00000000-0000-4000-8000-000000000000
+      NEXT_TELEMETRY_DISABLED: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - run: touch .env
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:continuity -- --ui
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/build-push-action@v6
+        with:
+          context: workstation
+          load: true
+          tags: owndesk-workstation:0.7.0
+          cache-from: type=gha,scope=owndesk-workstation
+          cache-to: type=gha,scope=owndesk-workstation,mode=max
+      - run: npm run test:continuity:runtime
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: continuity-evidence
+          path: |
+            data/experiments/agent_continuity_*/result.json
+            data/experiments/agent_continuity_*/companion-*.png
+            data/experiments/agent_continuity_*/web.log
+            data/experiments/agent_runtime_*/result.json
+            data/experiments/agent_runtime_*/worker-*.log
+          retention-days: 14

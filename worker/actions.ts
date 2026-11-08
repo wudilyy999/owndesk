@@ -5,6 +5,7 @@ import { eq } from "drizzle-orm"
 import { db, pool } from "@/db"
 import { tasks, workstationControl } from "@/db/schema"
 import { appendEventInTransaction } from "@/lib/task-events"
+import { hasTaskSupplement } from "@/lib/task-supplements"
 import { docker } from "@/lib/docker"
 import { desktopToolNames } from "@/lib/agent/tools"
 import { interruptedShell } from "@/lib/action-receipts"
@@ -152,7 +153,8 @@ export async function executeAction(
   kind: ActionKind,
   input: Record<string, unknown>,
   expectedEpoch?: number,
-  authorizeDispatch?: (attemptNo: number) => Promise<DispatchAuthorization>
+  authorizeDispatch?: (attemptNo: number) => Promise<DispatchAuthorization>,
+  ownerMessageSeq?: number
 ): Promise<ActionResult> {
   if (!Object.hasOwn(routes, kind)) throw new Error(`Unknown workstation tool ${kind}`)
   if (["vault_fill", "payment_submit"].includes(kind) && !authorizeDispatch)
@@ -425,6 +427,20 @@ export async function executeAction(
     )
   }
   if (!status.found) {
+    // Previously journaled attempts must follow reconciliation, including sends still in transit.
+    if (
+      !existing &&
+      ownerMessageSeq !== undefined &&
+      (await hasTaskSupplement(taskId, ownerMessageSeq))
+    )
+      return finishAction(key, task.agentId, attempt.attempt_no, {
+        ok: false,
+        stale: true,
+        output: {
+          error: "New owner instructions arrived before dispatch",
+          rejectedBeforeEffect: true,
+        },
+      })
     const release = authorizeDispatch
       ? await authorizeDispatch(attempt.attempt_no)
       : undefined

@@ -27,6 +27,8 @@ import { agentSnapshot } from "@/lib/agent/snapshot"
 import { assertDelegationRoster } from "@/lib/agent/roster"
 import { freezeWorkflowCompilation, freezeWorkflowExecution } from "@/lib/workflows"
 import { freezeManualCompilation } from "@/lib/manuals"
+import { freezeCompanionTaskContext } from "@/lib/companion/task-context"
+import { taskSupplements } from "@/lib/task-supplements"
 import { HttpError } from "@/lib/errors"
 import { requestCancellation } from "@/lib/task-control"
 import { appendEventInTransaction } from "@/lib/task-events"
@@ -80,6 +82,23 @@ export async function submitTask(ownerId: string, source: string, raw: TaskInput
   )
   if (input.desktopCoordinateMode)
     config.desktopCoordinateMode = input.desktopCoordinateMode
+  if (input.companionProposalId) {
+    if (requestKey !== `errand:${input.companionProposalId}`)
+      throw new HttpError(400, "Use the proposal request key")
+    if (
+      source !== "companion" ||
+      input.lifeSession ||
+      input.workflowExecution ||
+      input.workflowCompilation ||
+      input.manualCompilation
+    )
+      throw new HttpError(400, "Companion context requires a confirmed ordinary errand")
+    config.companionContext = await freezeCompanionTaskContext(
+      ownerId,
+      agent.id,
+      input.companionProposalId
+    )
+  }
   if (input.manualCompilation) {
     if (
       config.runtime !== "agent" ||
@@ -192,6 +211,20 @@ export async function submitTask(ownerId: string, source: string, raw: TaskInput
   const client = await pool.connect()
   try {
     await client.query("BEGIN")
+    if (input.companionProposalId) {
+      const {
+        rows: [proposal],
+      } = await client.query<{ metadata: { status: string; goal: string } }>(
+        `SELECT m.metadata FROM companion_messages m JOIN companions c ON c.agent_id=m.agent_id
+         WHERE m.id=$1 AND m.agent_id=$2 AND c.owner_id=$3 AND m.superseded_at IS NULL
+           AND m.kind='errand_proposal' FOR UPDATE OF m`,
+        [input.companionProposalId, agent.id, ownerId]
+      )
+      if (!proposal || !["pending", "confirmed"].includes(proposal.metadata.status))
+        throw new HttpError(409, "This proposal was already answered or replaced")
+      if (proposal.metadata.goal !== input.goal)
+        throw new HttpError(409, "Confirm the proposal's original goal")
+    }
     if (config.manualCompilation) {
       await client.query("SELECT id FROM tasks WHERE id=$1 FOR UPDATE", [
         config.manualCompilation.sourceTaskId,
@@ -311,10 +344,25 @@ export async function submitTask(ownerId: string, source: string, raw: TaskInput
         WHERE task_id=ANY($1::text[]) AND status='resolved' ORDER BY resolved_at,id`,
         [past.map((turn) => turn.id)]
       )
-      for (const turn of past)
+      const supplements = await client.query<{ taskId: string; text: string }>(
+        "SELECT task_id AS \"taskId\",payload->>'text' AS text FROM task_events WHERE task_id=ANY($1::text[]) AND type='owner_supplement' ORDER BY seq",
+        [past.map((turn) => turn.id)]
+      )
+      for (const turn of past) {
         turn.interactions = interactions.rows.filter(
           (interaction) => interaction.taskId === turn.id
         )
+        turn.interactions.push(
+          ...supplements.rows
+            .filter((note) => note.taskId === turn.id)
+            .map((note) => ({
+              kind: "owner_supplement",
+              decision: "sent",
+              question: "Owner's additional instruction",
+              answer: note.text,
+            }))
+        )
+      }
       const context = conversationContext(past)
       config.conversation = context.conversation
       config.omittedConversationTurns =
@@ -394,6 +442,12 @@ export async function submitTask(ownerId: string, source: string, raw: TaskInput
       taskId,
       1
     )
+    if (input.companionProposalId) {
+      await client.query(
+        `UPDATE companion_messages SET metadata=metadata || $2::jsonb WHERE id=$1`,
+        [input.companionProposalId, JSON.stringify({ status: "confirmed", taskId })]
+      )
+    }
     await client.query("COMMIT")
     return { taskId, threadId, threadTurn, reused: false }
   } catch (error) {
@@ -500,6 +554,13 @@ export async function getTask(ownerId: string, taskId: string) {
     },
     thread: thread ?? null,
     artifacts: files,
+    supplements: await taskSupplements(taskId),
+    canSupplement:
+      task.configSnapshot.runtime === "agent" &&
+      !task.configSnapshot.workflowExecution &&
+      !task.configSnapshot.workflowCompilation &&
+      !task.configSnapshot.manualCompilation &&
+      !task.configSnapshot.lifeSession,
     requests,
     actions,
     paymentResults: paymentRows.rows.map((row) => row.evidence),

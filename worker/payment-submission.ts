@@ -113,7 +113,8 @@ export async function executePaymentSubmit(
   segmentNo: number,
   actionNo: number,
   input: PaymentSubmitInput,
-  epoch: number
+  epoch: number,
+  ownerMessageSeq?: number
 ) {
   const requestId = `${task.id}-s${segmentNo}-a${actionNo}-submit`
   const {
@@ -159,7 +160,8 @@ export async function executePaymentSubmit(
       "payment_submit",
       grant,
       epoch,
-      (attempt) => authorizeSubmission(task, grant, attempt)
+      (attempt) => authorizeSubmission(task, grant, attempt),
+      ownerMessageSeq
     )
   }
   const workspace = await assertAgentControl(task.id, task.agentId)
@@ -245,7 +247,8 @@ export async function executePaymentResult(
   segmentNo: number,
   actionNo: number,
   input: PaymentResultInput,
-  epoch: number
+  epoch: number,
+  ownerMessageSeq?: number
 ) {
   const {
     rows: [request],
@@ -278,6 +281,8 @@ export async function executePaymentResult(
       merchant: grant.evidence.merchant.text,
       amount: grant.evidence.amount.text,
     },
-    epoch
+    epoch,
+    undefined,
+    ownerMessageSeq
   )
 }
