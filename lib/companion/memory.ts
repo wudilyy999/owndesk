@@ -49,12 +49,16 @@ export async function memoryView(agentId: string): Promise<MemoryView> {
 export const PAGE_CHARS = 6000
 
 // Splits notes into pages of at most `chars` (a single long note gets a page of its own)
-export function paginate<T extends { content: string }>(notes: T[], chars = PAGE_CHARS) {
+export function paginate<T extends { content: string }>(
+  notes: T[],
+  chars = PAGE_CHARS,
+  maxItems = Infinity
+) {
   const pages: T[][] = []
   let size = 0
   for (const note of notes) {
     const cost = note.content.length + 8
-    if (!pages.length || size + cost > chars) {
+    if (!pages.length || size + cost > chars || pages.at(-1)!.length >= maxItems) {
       pages.push([])
       size = 0
     }
@@ -68,33 +72,45 @@ export function paginate<T extends { content: string }>(notes: T[], chars = PAGE
 // summaries, or all notes page by page. She picks the topic or the page herself.
 export async function recallNotes(
   agentId: string,
-  query: { topic?: string; page?: number }
+  query: { topic?: string; page?: number; summaries?: boolean }
 ) {
   const view = await memoryView(agentId)
-  const topics = view.summaries.map((summary) => summary.topic)
   const topic = query.topic?.trim()
-  if (topic) {
-    const summary = view.summaries.find((item) => item.topic === topic)
-    if (!summary)
-      return { error: `没有叫“${topic}”的主题`, topics, unsorted: unsorted(view) }
+  const summary = topic ? view.summaries.find((item) => item.topic === topic) : undefined
+  // Keep each array small enough for the model-context projection to retain every entry.
+  const pages = paginate(
+    query.summaries
+      ? view.summaries.map((item) => ({
+          id: item.id,
+          content: item.content,
+          topic: item.topic,
+        }))
+      : view.notes
+          .filter((note) => !topic || note.summaryId === summary?.id)
+          .map((note) => ({
+            id: note.id,
+            content: note.content,
+            topic:
+              view.summaries.find((item) => item.id === note.summaryId)?.topic ?? null,
+          })),
+    PAGE_CHARS,
+    16
+  )
+  if (topic && !summary && !query.summaries)
     return {
-      topic,
-      summary: summary.content,
-      notes: view.notes
-        .filter((note) => note.summaryId === summary.id)
-        .map((note) => ({ id: note.id, content: note.content })),
+      error: `没有叫“${topic}”的主题`,
+      topics: view.summaries.slice(0, 16).map((item) => item.topic),
+      unsorted: unsorted(view),
+      hint: "Use summaries=true and page to browse all topics.",
     }
-  }
-  const pages = paginate(view.notes)
   const page = Math.min(Math.max(query.page ?? 1, 1), Math.max(pages.length, 1))
   return {
+    ...(topic && summary && !query.summaries ? { topic, summary: summary.content } : {}),
     page,
     pages: pages.length,
-    notes: (pages[page - 1] ?? []).map((note) => ({
-      id: note.id,
-      content: note.content,
-      topic: view.summaries.find((item) => item.id === note.summaryId)?.topic ?? null,
-    })),
+    ...(query.summaries
+      ? { summaries: pages[page - 1] ?? [] }
+      : { notes: pages[page - 1] ?? [] }),
   }
 }
 

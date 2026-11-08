@@ -626,7 +626,7 @@ export type CompletionContract = z.infer<typeof completionContractSchema>
 
 export const taskInputSchema = z.object({
   agentId: z.string().min(1).max(100),
-  companionProposalId: z.uuid().optional(),
+  companionProposalId: z.string().min(1).max(100).optional(),
   manualCompilation: manualCompilationInputSchema.optional(),
   manualId: z.uuid().optional(),
   workflowCompilation: workflowCompilationInputSchema.optional(),
@@ -719,6 +719,7 @@ export const tasks = pgTable(
       model: string
       instructions: string
       memories: string[]
+      memorySummary?: string
       name?: string
       role?: string
       timeZone?: string

@@ -517,12 +517,13 @@ export async function companionChat(
       }),
       recall_memory: tool({
         description:
-          "翻看你记得的细节。上面只给了各个主题的总结；想知道某个主题的具体细节时，传 topic（总结里的主题名）；不传 topic 就按页翻全部笔记（page 从 1 开始）。需要时才翻，聊天用不到就不用。",
+          "翻看记忆。topic 选择主题详细笔记；不传 topic 按页翻全部笔记；summaries=true 按页读主题总结。page 从 1 开始，按返回的 pages 继续翻。",
         inputSchema: z.object({
           topic: z.string().trim().max(40).optional(),
           page: z.number().int().min(1).optional(),
+          summaries: z.boolean().optional(),
         }),
-        execute: async ({ topic, page }) => recallNotes(input.agentId, { topic, page }),
+        execute: async (query) => recallNotes(input.agentId, query),
       }),
       propose_errand: tool({
         description:

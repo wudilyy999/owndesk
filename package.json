@@ -54,6 +54,8 @@
     "test:c4:protocol": "tsx tests/workflow-benchmark-protocol.ts",
     "test:c5:sharing": "tsx tests/workflow-sharing.ts",
     "test:c5:provenance": "tsx tests/workflow-sharing-provenance.ts",
+    "test:memory:recall": "tsx tests/task-memory.ts",
+    "test:memory:recall:runtime": "tsx tests/runtime.ts memoryrecall",
     "test:runtime:memory": "tsx tests/runtime.ts memory",
     "test:runtime:ui": "tsx tests/runtime.ts ui",
     "test:runtime:handoff": "tsx tests/runtime.ts handoff",

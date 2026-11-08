@@ -1,6 +1,6 @@
-import { and, desc, eq } from "drizzle-orm"
+import { eq } from "drizzle-orm"
 import { db } from "@/db"
-import { memories, owners, type Agent, type Task } from "@/db/schema"
+import { owners, type Agent, type Task } from "@/db/schema"
 import {
   isProviderConfigured,
   resolveModelSpec,
@@ -10,6 +10,7 @@ import { parseModelSpec } from "@/lib/providers/catalog"
 import { HttpError } from "@/lib/errors"
 import { agentZeroPluginSnapshot } from "@/lib/agent-zero-plugins"
 import { manualSnapshot } from "@/lib/manuals"
+import { taskMemoryContext } from "@/lib/task-memory"
 
 // Task acceptance and delegation freeze exactly the same model and memory policy.
 export async function agentSnapshot(
@@ -34,33 +35,12 @@ export async function agentSnapshot(
     if (!parsed || !(await isProviderConfigured(parsed.provider)))
       throw new HttpError(409, "The selected model provider is not configured")
   }
-  const notes =
-    runtime === "agent"
-      ? await db
-          .select()
-          .from(memories)
-          .where(
-            and(
-              eq(memories.agentId, agent.id),
-              eq(memories.status, "active"),
-              eq(memories.kind, "note")
-            )
-          )
-          .orderBy(desc(memories.createdAt), desc(memories.id))
-          .limit(30)
-      : []
+  const memory =
+    runtime === "agent" ? await taskMemoryContext(agent.id) : { memories: [] }
   const [owner] =
     runtime === "agent"
       ? await db.select().from(owners).where(eq(owners.userId, ownerId))
       : []
-  const selectedNotes: string[] = []
-  let chars = 0
-  for (const note of notes) {
-    const line = `- [${note.id}] ${note.content}`
-    if (chars + line.length > 12000) break
-    selectedNotes.unshift(line)
-    chars += line.length
-  }
   const plugins =
     runtime === "agent" && requireModel ? await agentZeroPluginSnapshot() : []
   const manuals = runtime === "agent" && requireModel ? await manualSnapshot(ownerId) : []
@@ -71,7 +51,7 @@ export async function agentSnapshot(
     role: agent.role,
     timeZone: timeZone ?? owner?.timeZone ?? "UTC",
     instructions: agent.instructions ?? "",
-    memories: selectedNotes,
+    ...memory,
     ...(plugins.length ? { agentZeroPlugins: plugins } : {}),
     ...(manuals.length ? { manuals } : {}),
     runtime,

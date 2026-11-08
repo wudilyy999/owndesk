@@ -20,6 +20,8 @@ Object.assign(process.env, {
   INSTALL_ID: randomUUID(),
   OWNER_EMAIL: "companion@fixture.test",
   OWNER_PASSWORD: randomUUID(),
+  CUSTOM_BASE_URL: "http://127.0.0.1:1/v1",
+  CUSTOM_API_KEY: "local-fixture-key",
 })
 let passed = false
 try {

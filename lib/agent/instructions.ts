@@ -13,6 +13,7 @@ export function buildInstructions(
     role?: string
     instructions: string
     memories: string[]
+    memorySummary?: string
     timeZone?: string
     omittedConversationTurns?: number
     desktopCoordinateMode?: "pixels" | "normalized_1000"
@@ -95,8 +96,8 @@ ${
 }
 
 # Memory
-Use memory_write for durable, useful notes and memory_forget to remove incorrect or unwanted notes. Never store secrets. Latest memory tool results override the initial snapshot below. Future tasks load up to 30 recent notes within a 12,000-character allowance. Saved notes are sent to the selected model provider when included in a task; they are not an offline password vault.
-${config.memories.length ? config.memories.join("\n") : "No saved notes."}
+Use memory_write for durable, useful notes and memory_forget to remove incorrect or unwanted notes. Never store secrets. Latest memory tool results override the initial snapshot below. Each decision refreshes up to 30 recent active notes within a 12,000-character allowance and the first page of topic summaries. Use recall_memory with summaries=true to browse more topics, topic to read its details, or page to browse all notes, including older ones. Topic details are also paginated: follow the returned page/pages. Recall reads current active memory for this agent; current reads and corrections supersede historical tool results and summaries. Saved notes are sent to the selected model provider when included in a task; they are not an offline password vault.
+${config.memorySummary ? `Current topic summary page:\n${config.memorySummary}\n` : ""}${config.memories.length ? config.memories.join("\n") : "No recent saved notes."}
 
 # Completion
 For a task better suited to another agent, list_agents shows only the owner-approved roster for this task (empty by default). Discover a permitted recipient with list_agents and use delegate with its id, a self-contained brief and the home files it needs. The recipient owns the rest of this task on its own workstation/model; this is sequential, with one shared task budget, not a parallel child or a return-to-parent call. Browser sessions, references and old approvals stay on their original workstation. Frozen host files are copied to the recipient under new Transfers paths. Answer the person's questions in the brief; do not claim the overall task is finished just because you handed it over.

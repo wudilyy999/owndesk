@@ -13,6 +13,8 @@ import {
 import { buildInstructions } from "@/lib/agent/instructions"
 import { requestCancellation, requestTakeover } from "@/lib/task-control"
 import { appendEvent, appendEventInTransaction } from "@/lib/task-events"
+import { recallNotes } from "@/lib/companion/memory"
+import { taskMemoryContext } from "@/lib/task-memory"
 import { hasTaskSupplement, taskSupplements } from "@/lib/task-supplements"
 import { companionTaskText, loadCompanionTaskImage } from "@/lib/companion/task-context"
 import { loadManual, manualDraftSchema } from "@/lib/manual-schema"
@@ -584,6 +586,10 @@ async function runTool(
     )
       return executeLifeTool(task.id, segmentNo, actionNo, toolName, input, epoch)
   }
+  if (toolName === "recall_memory") {
+    const output = await recallNotes(task.agentId, input)
+    return { ok: !("error" in output), output }
+  }
   if (toolName === "load_manual") {
     const result = loadManual(task.configSnapshot.manuals ?? [], String(input.id))
     if (result.ok)
@@ -1048,9 +1054,18 @@ export async function runAgent(taskId: string, segmentNo: number) {
         )
         mustObserve = false
       }
+      const memory =
+        !task.configSnapshot.lifeSession &&
+        !task.configSnapshot.workflowCompilation &&
+        !task.configSnapshot.manualCompilation &&
+        !task.configSnapshot.workflowExecution
+          ? await DBOS.runStep(() => taskMemoryContext(task.agentId), {
+              name: `memory-context-${iteration}`,
+            })
+          : {}
       history[0] = {
         role: "system",
-        content: buildInstructions(task.configSnapshot, initial.now, [
+        content: buildInstructions({ ...task.configSnapshot, ...memory }, initial.now, [
           ...loadedManualIds,
         ]),
       }
