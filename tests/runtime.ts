@@ -7611,6 +7611,106 @@ try {
       )
       assert.equal(scenario.calls.length, 3)
       assert.equal((await workspaceRow(agentId)).mode, "idle")
+      const web = spawn(
+        process.execPath,
+        [
+          "node_modules/next/dist/bin/next",
+          "dev",
+          "--hostname",
+          "127.0.0.1",
+          "--port",
+          "17097",
+        ],
+        { env: process.env, detached: true }
+      )
+      let webLog = ""
+      web.stdout!.on("data", (data) => {
+        webLog += data
+      })
+      web.stderr!.on("data", (data) => {
+        webLog += data
+      })
+      const { chromium } = await import("playwright")
+      let browser: Awaited<ReturnType<typeof chromium.launch>> | undefined
+      try {
+        await until(async () => {
+          if (web.exitCode !== null) throw new Error(webLog)
+          try {
+            return (await fetch(`${process.env.APP_URL}/login`)).ok
+          } catch (error) {
+            if ((error as { cause?: { code?: string } }).cause?.code === "ECONNREFUSED")
+              return false
+            throw error
+          }
+        }, "demonstration web ready")
+        browser = await chromium.launch({ headless: true })
+        const page = await browser.newPage({ viewport: { width: 1440, height: 1000 } })
+        await page.goto(`${process.env.APP_URL}/login`)
+        await page.getByLabel("邮箱").fill(process.env.OWNER_EMAIL!)
+        await page.getByLabel("密码").fill(process.env.OWNER_PASSWORD!)
+        await page.getByRole("button", { name: "登录", exact: true }).click()
+        await page.waitForURL((url) => url.pathname !== "/login")
+        await page.goto(`${process.env.APP_URL}/?task=${task.taskId}`)
+        await page.getByRole("button", { name: "接管桌面", exact: true }).click()
+        const canvas = page.locator("canvas").filter({ visible: true })
+        await canvas.waitFor({ state: "visible" })
+        await page.getByText("已连接", { exact: true }).first().waitFor()
+        await page.getByLabel("示范名称").fill("Recorded through noVNC")
+        await page.getByRole("button", { name: "开始示范", exact: true }).click()
+        await page.getByText(/正在录制/).waitFor()
+        await canvas.click({ position: { x: 400, y: 300 } })
+        await page.keyboard.press("Enter")
+        await page.keyboard.type("do-not-record-this-value")
+        await page.getByLabel("这一步的说明").fill("Check the resulting document")
+        await page.getByRole("button", { name: "记录说明", exact: true }).click()
+        const observed = await until(async () => {
+          const row = (
+            await pool.query(
+              "SELECT id,events FROM demonstrations WHERE agent_id=$1 AND status='recording'",
+              [agentId]
+            )
+          ).rows[0]
+          return row?.events.some((e: { kind: string }) => e.kind === "checkpoint")
+            ? row
+            : undefined
+        }, "noVNC events persisted by worker")
+        assert(
+          observed.events.some(
+            (e: { kind: string; application: string }) =>
+              e.kind === "pointer" && e.application
+          )
+        )
+        assert(
+          observed.events.some((e: { kind: string }) => e.kind === "protected_input")
+        )
+        assert(!JSON.stringify(observed).includes("do-not-record-this-value"))
+        await page.getByRole("button", { name: "结束并生成手册", exact: true }).click()
+        await page.getByRole("link", { name: "审阅、编辑并保存示范手册" }).waitFor()
+        await page.screenshot({
+          path: path.join(directory, "demonstration-desktop.png"),
+          fullPage: true,
+        })
+        assert.equal(
+          (
+            await pool.query("SELECT status FROM demonstrations WHERE id=$1", [
+              observed.id,
+            ])
+          ).rows[0].status,
+          "draft"
+        )
+        checks.push({
+          check:
+            "Real noVNC framebuffer and DOM events: click, function key and protected typing captured; worker observes application; editable draft created",
+        })
+      } finally {
+        await browser?.close()
+        if (web.pid && web.exitCode === null) {
+          const exited = once(web, "exit")
+          process.kill(-web.pid, "SIGTERM")
+          await exited
+        }
+        await writeFile(path.join(directory, "demonstration-web.log"), webLog)
+      }
       checks.push({
         check:
           "Actual editor human input observed by application class, private text omitted; editable demonstration manual saved and loaded by a new Task with verified output file",

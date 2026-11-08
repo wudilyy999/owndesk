@@ -71,4 +71,6 @@ jobs:
             data/experiments/agent_continuity_*/web.log
             data/experiments/agent_runtime_*/result.json
             data/experiments/agent_runtime_*/worker-*.log
+            data/experiments/agent_runtime_*/demonstration-*.png
+            data/experiments/agent_runtime_*/demonstration-web.log
           retention-days: 14

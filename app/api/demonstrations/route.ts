@@ -5,6 +5,7 @@ import { errorResponse } from "@/lib/errors"
 import {
   listDemonstrations,
   startDemonstration,
+  recordDemonstration,
   finishDemonstration,
   cancelDemonstration,
   saveDemonstrationManual,
@@ -50,7 +51,9 @@ export async function POST(request: Request) {
     if (input.action === "start")
       result = await startDemonstration(owner.userId, input.agentId, input.name)
     else if (input.action === "record")
-      result = await workerRequest(request, "/internal/demonstrations/record", input)
+      result = ["protected_input", "checkpoint"].includes(input.event.kind)
+        ? await recordDemonstration(owner.userId, input.id, input)
+        : await workerRequest(request, "/internal/demonstrations/record", input)
     else if (input.action === "cancel")
       result = await cancelDemonstration(owner.userId, input.id)
     else if (input.action === "finish")
