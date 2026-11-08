@@ -4,6 +4,7 @@ import { pool } from "@/db"
 import type { Task } from "@/db/schema"
 import {
   bindWorkflowText,
+  type WorkflowApplication,
   type WorkflowCheckpoint,
   type WorkflowEnvironment,
   workflowRepairPlan,
@@ -27,10 +28,21 @@ type Run = {
   started_at: Date | null
 }
 
-export function workflowWindowMatches(frame: WorkflowCheckpoint["frame"], title: string) {
+export function workflowWindowMatches(
+  frame: WorkflowCheckpoint["frame"],
+  title: string,
+  application: WorkflowApplication = "Thunar"
+) {
+  const classes = {
+    Thunar: /"Thunar"/,
+    Browser: /chromium|Chromium/,
+    Writer: /libreoffice-writer/,
+    Calc: /libreoffice-calc/,
+    Mousepad: /mousepad/i,
+  }
   return (
     !!frame?.window &&
-    /"Thunar"/.test(frame.window.wmClass) &&
+    classes[application].test(frame.window.wmClass) &&
     frame.window.title === title
   )
 }
@@ -64,9 +76,13 @@ async function initialize(task: Task, run: Run) {
   const health = (await workstationHealth(task.agentId)) as Awaited<
     ReturnType<typeof workstationHealth>
   > & { capabilities?: string[] }
-  if (!health.capabilities?.includes("thunar-keyboard-v1"))
+  if (
+    !health.capabilities?.includes(
+      execution.plan.artifact ? "desktop-apps-v1" : "thunar-keyboard-v1"
+    )
+  )
     throw new Error(
-      "This workstation image lacks the thunar-keyboard-v1 adapter; drain and explicitly pair a supporting image"
+      "This workstation image lacks the required desktop adapter; drain and explicitly pair a supporting image"
     )
   const [container] = JSON.parse(
     (
@@ -87,7 +103,7 @@ async function initialize(task: Task, run: Run) {
     workstationImageId: container.Image,
     guestProtocol: health.protocolVersion,
     locale,
-    application: "Thunar",
+    application: execution.plan.artifact ? "Desktop" : "Thunar",
   }
   if (
     execution.validatedEnvironment &&
@@ -100,11 +116,12 @@ async function initialize(task: Task, run: Run) {
     throw new Error(
       "The workflow workstation image changed during this run; no further input is authorized"
     )
-  const root = task.completionContract.directoryTree!.root
+  const root =
+    task.completionContract.artifact?.path ?? task.completionContract.directoryTree!.root
   for (const flag of run.started_at ? [] : ["-e", "-L"]) {
     const result = await dockerRaw(["exec", row.containerName, "test", flag, root])
     if (result.exitCode === 0)
-      throw new Error("Destination already exists; choose a new workflow directory")
+      throw new Error("Destination already exists; choose a new workflow output path")
     if (result.exitCode !== 1)
       throw new Error(`Cannot check workflow destination: ${result.stderr}`)
   }
@@ -156,7 +173,9 @@ async function completionSatisfied(task: Task) {
       task.activeSegment,
       0,
       task.agentId,
-      [],
+      task.completionContract.artifact
+        ? [{ path: task.completionContract.artifact.path, mediaType: "text/csv" }]
+        : [],
       task.completionContract
     )
     return true
@@ -213,8 +232,10 @@ export async function nextWorkflowDecision(
   }
   const finish = () =>
     decision("complete_task", {
-      summary: `流程已执行并通过固定目录检查：${task.completionContract.directoryTree!.root}`,
-      files: [],
+      summary: `流程已执行并通过固定结果检查：${task.completionContract.artifact?.path ?? task.completionContract.directoryTree!.root}`,
+      files: task.completionContract.artifact
+        ? [{ path: task.completionContract.artifact.path, mediaType: "text/csv" }]
+        : [],
     })
   if (
     (checkpoint.phase === "blocked" || afterHandback) &&
@@ -254,12 +275,22 @@ export async function nextWorkflowDecision(
       checkpoint.phase === "observe"
     )
       return decision("screen_capture", {}, true)
-    if (!workflowWindowMatches(checkpoint.frame, expected)) {
+    if (
+      !workflowWindowMatches(
+        checkpoint.frame,
+        expected,
+        "when" in step
+          ? step.when.application
+          : step.operation === "assert"
+            ? step.window.application
+            : "Thunar"
+      )
+    ) {
       if (
         checkpoint.waitStartedAt !== null &&
         Date.now() - checkpoint.waitStartedAt >= 10000
       ) {
-        const failure = `Expected Thunar window ${expected}; observed ${checkpoint.frame.window?.title ?? "no active window"}. No input was sent for this step.`
+        const failure = `Expected application window ${expected}; observed ${checkpoint.frame.window?.title ?? "no active window"}. No input was sent for this step.`
         if (execution.allowRepair && !checkpoint.repair)
           return repairWorkflowStep(task, checkpoint, decisionNo, failure)
         Object.assign(checkpoint, {
@@ -279,7 +310,7 @@ export async function nextWorkflowDecision(
       purpose: "workflow_review",
       reason: checkpoint.blockedReason,
       message:
-        "The workflow is stopped. Inspect or manually complete the directory task, then continue to run its fixed result check. Previous uncertain input will not be repeated.",
+        "The workflow is stopped. Inspect or manually complete the task, then continue to run its fixed result check. Previous uncertain input will not be repeated.",
       workflowStep: checkpoint.step,
       nextStep: step?.label ?? "Fixed completion check",
     })
@@ -466,7 +497,7 @@ export async function completeWorkflowRun(client: PoolClient, task: Task) {
     }>(
       `SELECT r.parameters,r.environment FROM task_workflow_runs r JOIN tasks t ON t.id=r.task_id
      WHERE r.version_id=$1 AND r.purpose='verify' AND r.completed_at IS NOT NULL AND t.status='completed'
-     AND t.result->'directoryTree'->>'grade'='program_checked'
+     AND (t.result->'directoryTree'->>'grade'='program_checked' OR (t.config_snapshot->'workflowExecution'->'plan' ? 'artifact' AND EXISTS(SELECT 1 FROM artifacts a WHERE a.task_id=t.id AND a.verification->>'grade'='program_checked')))
      AND (r.checkpoint->>'step')::int=jsonb_array_length(t.config_snapshot->'workflowExecution'->'plan'->'steps')
      AND r.checkpoint->>'phase'<>'blocked'
      AND NOT (r.checkpoint ? 'repair')

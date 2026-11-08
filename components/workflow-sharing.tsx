@@ -40,7 +40,7 @@ export function WorkflowExport({ versionId }: { versionId: string }) {
       {preview && (
         <>
           <p>
-            已使用中性名称、参数和三组虚构样例；本地任务、费用、轨迹证据、审批及控制引用均不导出。软件环境仅作兼容性声明，接收方必须重新验证。
+            已使用中性名称、参数和三组虚构样例；跨应用包保留步骤中的固定文本，请逐项审阅。本地任务、费用、轨迹证据、审批及控制引用均不导出。软件环境仅作兼容性声明，接收方必须重新验证。
           </p>
           <details open>
             <summary>审阅导出内容</summary>
@@ -64,7 +64,7 @@ export function WorkflowExport({ versionId }: { versionId: string }) {
               )
               const link = document.createElement("a")
               link.href = url
-              link.download = "thunar-workflow.json"
+              link.download = "desktop-workflow.json"
               link.click()
               URL.revokeObjectURL(url)
             }}

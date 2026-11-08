@@ -758,9 +758,13 @@ async function dispatch(route, body, actionId = randomUUID(), transient) {
     return captureDesktop(actionId, { epoch, bootId })
   }
   if (route === "/desktop_open_application") {
-    const input = base.extend({ application: z.literal("Thunar") }).parse(body)
+    const input = base
+      .extend({
+        application: z.enum(["Thunar", "Browser", "Writer", "Calc", "Mousepad"]),
+      })
+      .parse(body)
     requireAgent(input)
-    return openDesktopApplication(actionId, { epoch, bootId })
+    return openDesktopApplication(actionId, { epoch, bootId }, input.application)
   }
   if (
     [
@@ -954,7 +958,12 @@ const server = createServer(async (request, response) => {
       JSON.stringify({
         ready: true,
         protocolVersion: 6,
-        capabilities: ["thunar-keyboard-v1", "atspi-observation-v1", "atspi-native-v1"],
+        capabilities: [
+          "thunar-keyboard-v1",
+          "desktop-apps-v1",
+          "atspi-observation-v1",
+          "atspi-native-v1",
+        ],
         epoch,
         mode,
         bootId,

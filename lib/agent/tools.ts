@@ -6,7 +6,11 @@ import { z } from "zod"
 import { connectionCallSchema } from "@/lib/connection-schema"
 import { pluginCallSchema } from "@/lib/agent-zero"
 import { manualDraftSchema } from "@/lib/manual-schema"
-import { workflowCandidateSchema, workflowRepairSchema } from "@/lib/workflow-schema"
+import {
+  workflowCandidateSchema,
+  workflowRepairSchema,
+  workflowApplicationSchema,
+} from "@/lib/workflow-schema"
 import { vaultFillInputSchema } from "@/lib/vault-schema"
 import {
   paymentInputSchema,
@@ -473,8 +477,8 @@ export const desktopToolNames = new Set([
 ])
 const desktopLaunchTool = tool({
   description:
-    "Open the native Thunar file manager at /home/agent in a fresh window. Returns the resulting screenshot. File changes use desktop mouse/keyboard tools only.",
-  inputSchema: z.object({ application: z.literal("Thunar") }),
+    "Open Thunar, the shared browser, Writer, Calc or Mousepad. Returns a fresh observation. Use current controls for file changes.",
+  inputSchema: z.object({ application: workflowApplicationSchema }),
 })
 export function toolsForTask(config: {
   connections?: unknown[]

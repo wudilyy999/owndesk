@@ -56,6 +56,7 @@ jobs:
       - run: npm run test:connections:runtime
       - run: npm run test:automations:runtime
       - run: npm run test:demonstrations:runtime
+      - run: npm run test:crossapps:runtime
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -71,4 +72,5 @@ jobs:
             data/experiments/agent_continuity_*/web.log
             data/experiments/agent_runtime_*/result.json
             data/experiments/agent_runtime_*/worker-*.log
+            data/experiments/agent_runtime_*/cross-app-*.json
           retention-days: 14

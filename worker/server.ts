@@ -1,3 +1,7 @@
+import { randomUUID } from "node:crypto"
+import { docker } from "@/lib/docker"
+import { crossAppTemplate } from "@/lib/cross-app-template"
+import { workstationHealth } from "@/lib/workstation"
 import { requireOwner, requireSameOrigin } from "@/lib/auth"
 import { errorResponse, HttpError } from "@/lib/errors"
 import { recordDemonstration } from "@/lib/demonstrations"
@@ -116,7 +120,12 @@ export async function startWorker() {
   })
   await startRoutineSchedule()
   const server = createServer((req, res) => {
-    if (req.url === "/internal/demonstrations/record" && req.method === "POST") {
+    if (
+      ["/internal/demonstrations/record", "/internal/workflows/template"].includes(
+        req.url ?? ""
+      ) &&
+      req.method === "POST"
+    ) {
       void (async () => {
         try {
           const headers = new Headers()
@@ -133,11 +142,42 @@ export async function startWorker() {
             chunks.push(chunk)
           }
           const input = JSON.parse(Buffer.concat(chunks).toString())
-          const result = await recordDemonstration(
-            owner.userId,
-            z.uuid().parse(input.id),
-            input
-          )
+          let result
+          if (req.url === "/internal/demonstrations/record")
+            result = await recordDemonstration(
+              owner.userId,
+              z.uuid().parse(input.id),
+              input
+            )
+          else {
+            const { agentId, source } = z
+              .object({
+                agentId: z.string().min(1),
+                source: z.enum(["Browser", "Writer"]).default("Browser"),
+              })
+              .parse(input)
+            const workspace = await ensureWorkstation(agentId),
+              health = await workstationHealth(agentId)
+            const [container] = JSON.parse(
+              (
+                await docker(["inspect", workspace.containerName], {
+                  maxOutputBytes: 100000,
+                })
+              ).stdout.toString()
+            )
+            result = crossAppTemplate(
+              {
+                workstationImageId: container.Image,
+                guestProtocol: health.protocolVersion,
+                locale: (container.Config.Env as string[])
+                  .find((value) => value.startsWith("LANG="))!
+                  .slice(5),
+                application: "Desktop",
+              },
+              randomUUID(),
+              source
+            )
+          }
           res
             .writeHead(200, { "Content-Type": "application/json" })
             .end(JSON.stringify(result))

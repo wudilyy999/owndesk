@@ -34,8 +34,16 @@ export const workflowTextSchema = z
   .min(1)
   .max(20)
 export type WorkflowText = z.infer<typeof workflowTextSchema>
+export const workflowApplicationSchema = z.enum([
+  "Thunar",
+  "Browser",
+  "Writer",
+  "Calc",
+  "Mousepad",
+])
+export type WorkflowApplication = z.infer<typeof workflowApplicationSchema>
 const windowSchema = z.strictObject({
-  application: z.literal("Thunar"),
+  application: workflowApplicationSchema,
   title: workflowTextSchema,
 })
 const step = {
@@ -48,7 +56,7 @@ export const workflowStepSchema = z.discriminatedUnion("operation", [
   z.strictObject({
     ...step,
     operation: z.literal("open_application"),
-    application: z.literal("Thunar"),
+    application: workflowApplicationSchema,
   }),
   z.strictObject({
     ...step,
@@ -69,6 +77,11 @@ export const workflowStepSchema = z.discriminatedUnion("operation", [
       "home",
       "end",
       "space",
+      "s",
+      "c",
+      "v",
+      "o",
+      "w",
     ]),
     modifiers: z.array(z.enum(["ctrl", "alt", "shift"])).max(3),
   }),
@@ -117,12 +130,13 @@ export type WorkflowEnvironment = {
   workstationImageId: string
   guestProtocol: number
   locale: string
-  application: "Thunar"
+  application: "Thunar" | "Desktop"
 }
 export type WorkflowPlan = WorkflowCandidate & {
   schemaVersion: 1
   parameters: WorkflowParameter[]
   completion: WorkflowDirectoryContract
+  artifact?: { path: WorkflowText; requiredColumns: string[]; minRows: number }
   environment: WorkflowEnvironment
   sourceTaskId: string | null
   sourceSegment: number | null
@@ -218,6 +232,40 @@ export function validateWorkflowRepair(
     throw new WorkflowValidationError(
       "The repair must preserve the failed step's intended operation"
     )
+  if (plan.artifact) {
+    const originalApp =
+      "when" in original
+        ? original.when.application
+        : original.operation === "assert"
+          ? original.window.application
+          : null
+    const final = repair.steps.at(-1)!
+    const finalApp =
+      "when" in final
+        ? final.when.application
+        : final.operation === "assert"
+          ? final.window.application
+          : null
+    if (originalApp !== finalApp)
+      throw new WorkflowValidationError("Repair must preserve the intended application")
+    for (const step of repair.steps.slice(0, -1)) {
+      if (step.operation === "observe" || step.operation === "assert") continue
+      if (
+        step.operation === "key_press" &&
+        step.key === "escape" &&
+        !step.modifiers.length
+      )
+        continue
+      throw new WorkflowValidationError(
+        "Cross-app repair prefixes may observe or dismiss a dialog only"
+      )
+    }
+    validateCrossAppWorkflow({
+      ...plan,
+      steps: workflowRepairPlan(plan, { step: stepIndex, steps: repair.steps }).steps,
+    })
+    return repair
+  }
   const paths = new Set(["/home/agent", bindWorkflowText(plan.completion.root, values)])
   for (const [index, step] of repair.steps.slice(0, -1).entries()) {
     if (["observe", "assert"].includes(step.operation)) continue
@@ -463,6 +511,16 @@ export function validateWorkflowCandidate(
   }
   const covered = new Set<number>()
   for (const step of candidate.steps) {
+    const application =
+      "when" in step
+        ? step.when.application
+        : step.operation === "assert"
+          ? step.window.application
+          : step.operation === "open_application"
+            ? step.application
+            : "Thunar"
+    if (application !== "Thunar")
+      throw new WorkflowValidationError("Directory workflow v1 supports Thunar only")
     for (const number of step.evidence) {
       if (!compilation.trace.some((entry) => entry.evidence === number))
         throw new WorkflowValidationError("Unknown source evidence")
@@ -501,4 +559,60 @@ export function validateWorkflowCandidate(
       "Private or human-only source segments require human checkpoints"
     )
   return candidate
+}
+
+export function bindWorkflowArtifact(plan: WorkflowPlan, values: Record<string, string>) {
+  if (!plan.artifact) throw new WorkflowValidationError("Artifact contract missing")
+  const path = bindWorkflowText(plan.artifact.path, values)
+  if (
+    !path.startsWith("/home/agent/") ||
+    !path.endsWith(".csv") ||
+    path.split("/").some((part) => part === ".." || part === ".") ||
+    /[\\\x00-\x1f]/.test(path)
+  )
+    throw new WorkflowValidationError(
+      "Artifact must be an ordinary file under /home/agent"
+    )
+  return { ...plan.artifact, path }
+}
+export function validateCrossAppWorkflow(plan: WorkflowPlan) {
+  if (!plan.artifact)
+    throw new WorkflowValidationError(
+      "Cross-app workflow requires a CSV artifact contract"
+    )
+  if (new Set(plan.steps.map((step) => step.id)).size !== plan.steps.length)
+    throw new WorkflowValidationError("Step IDs must be unique")
+  workflowCandidateSchema.parse({ description: plan.description, steps: plan.steps })
+  const names = plan.parameters.map(
+    (parameter) => workflowParameterSchema.parse(parameter).name
+  )
+  if (new Set(names).size !== names.length)
+    throw new WorkflowValidationError("Parameter names must be unique")
+  const parameters = new Set(names),
+    used = new Set<string>()
+  const inspect = (text: WorkflowText) => {
+    for (const token of text) {
+      if ("parameter" in token) {
+        if (!parameters.has(token.parameter))
+          throw new WorkflowValidationError("Unknown parameter")
+        used.add(token.parameter)
+      } else if (/[\x00-\x1f\x7f]/.test(token.literal))
+        throw new WorkflowValidationError("Use separate key steps for control characters")
+    }
+  }
+  for (const step of plan.steps) {
+    if ("when" in step) inspect(step.when.title)
+    if (step.operation === "assert") inspect(step.window.title)
+    if (step.operation === "key_type") inspect(step.text)
+  }
+  inspect(plan.artifact.path)
+  if ([...parameters].some((name) => !used.has(name)))
+    throw new WorkflowValidationError("Every parameter must be used")
+  bindWorkflowArtifact(
+    plan,
+    Object.fromEntries(
+      plan.parameters.map((parameter) => [parameter.name, parameter.sourceValue])
+    )
+  )
+  return plan
 }

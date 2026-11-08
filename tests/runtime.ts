@@ -30,6 +30,7 @@ assert(
     "connections",
     "automations",
     "demonstrations",
+    "crossapps",
     "chat",
     "continuity",
     "ui",
@@ -7531,6 +7532,260 @@ try {
       checks.push({
         check:
           "Owner mobile/desktop usage UI: immutable price receipts, custom rates, unknown-cost reconciliation, zero monthly cap; API auth/Origin/money/cursor validation; pagination uses 53 explicitly seeded history rows without overlap",
+      })
+    }
+    if (focus === "crossapps") {
+      const { ensureWorkstation, workstationHealth } = await import("@/lib/workstation")
+      const { crossAppTemplate } = await import("@/lib/cross-app-template")
+      const { importWorkflowPackage, exportWorkflowPackage } =
+        await import("@/lib/workflow-packages")
+      const { getWorkflowVersion } = await import("@/lib/workflows")
+      const { validateWorkflowPackage } = await import("@/lib/workflow-package")
+      async function runner() {
+        const agentId = randomUUID()
+        await pool.query(
+          "INSERT INTO agents(id,name,role,glyph,model,created_at,updated_at) VALUES($1,'Cross-app runner','Assistant','fixture','custom/runtime-fixture',now(),now())",
+          [agentId]
+        )
+        agents.push(agentId)
+        const workspace = await ensureWorkstation(agentId),
+          health = await workstationHealth(agentId)
+        const [container] = JSON.parse(
+          (await docker(["inspect", workspace.containerName])).stdout.toString()
+        )
+        return {
+          agentId,
+          environment: {
+            workstationImageId: container.Image as string,
+            guestProtocol: health.protocolVersion,
+            locale: (container.Config.Env as string[])
+              .find((value) => value.startsWith("LANG="))!
+              .slice(5),
+            application: "Desktop" as const,
+          },
+        }
+      }
+      async function runFlow(
+        agentId: string,
+        versionId: string,
+        purpose: "verify" | "run",
+        name: string
+      ) {
+        return submitTask(ownerId, "test", {
+          agentId,
+          goal: `Execute ${name}`,
+          completionContract: { requireHumanReview: false },
+          clientRequestId: randomUUID(),
+          workflowExecution: {
+            versionId,
+            purpose,
+            parameters: { input1: name },
+            maxActions: 120,
+            maxDurationSeconds: 300,
+          },
+          budget: { maxSteps: 5 },
+        })
+      }
+      async function delivered(taskId: string) {
+        try {
+          const result = await completed(taskId)
+          const checked = result.artifacts.find(
+            (a) => (a.verification as { grade: string }).grade === "program_checked"
+          )!
+          assert(checked, "host must verify CSV")
+          const bytes = await readFile(
+            path.join(process.env.ARTIFACT_DIR!, checked.storagePath),
+            "utf8"
+          )
+          assert.equal(bytes.trim().replaceAll("\r", ""), "name,total\nExample,42")
+          assert.equal(
+            (
+              await pool.query(
+                "SELECT count(*)::int AS n FROM task_model_attempts WHERE task_id=$1",
+                [taskId]
+              )
+            ).rows[0].n,
+            0
+          )
+          checks.push({
+            check:
+              "Real application clipboard transfer, CSV bytes and host contract, no model calls",
+            taskId,
+          })
+          return result
+        } finally {
+          await writeFile(
+            path.join(directory, `cross-app-${taskId}.json`),
+            JSON.stringify(await getTask(ownerId, taskId), null, 2)
+          )
+          await writeFile(
+            path.join(directory, `cross-app-actions-${taskId}.json`),
+            JSON.stringify(
+              (
+                await pool.query(
+                  "SELECT action_no,kind,status,input,receipt FROM task_actions WHERE task_id=$1 ORDER BY action_no",
+                  [taskId]
+                )
+              ).rows,
+              null,
+              2
+            )
+          )
+        }
+      }
+      const first = await runner(),
+        pack = crossAppTemplate(first.environment, randomUUID())
+      const imported = await importWorkflowPackage(ownerId, {
+        clientRequestId: randomUUID(),
+        reviewed: true,
+        package: pack,
+      })
+      for (let n = 1; n <= 3; n++) {
+        const agentId = n === 1 ? first.agentId : (await runner()).agentId
+        const task = await runFlow(agentId, imported.versionId, "verify", `Browser-${n}`)
+        await delivered(task.taskId)
+        assert.equal(
+          (await getWorkflowVersion(ownerId, imported.versionId)).status,
+          n === 3 ? "ready" : "verifying"
+        )
+      }
+      const reuse = await runner()
+      await delivered(
+        (await runFlow(reuse.agentId, imported.versionId, "run", "Reused")).taskId
+      )
+      const exported = await exportWorkflowPackage(ownerId, imported.versionId)
+      const another = await importWorkflowPackage(ownerId, {
+        clientRequestId: randomUUID(),
+        reviewed: true,
+        package: exported,
+      })
+      assert.equal((await getWorkflowVersion(ownerId, another.versionId)).status, "draft")
+      const recipient = await runner()
+      await delivered(
+        (await runFlow(recipient.agentId, another.versionId, "verify", "Imported")).taskId
+      )
+      assert.equal(
+        (await getWorkflowVersion(ownerId, another.versionId)).status,
+        "verifying"
+      )
+      const office = await runner(),
+        officePack = crossAppTemplate(office.environment, randomUUID(), "Writer")
+      const officeVersion = await importWorkflowPackage(ownerId, {
+        clientRequestId: randomUUID(),
+        reviewed: true,
+        package: officePack,
+      })
+      await delivered(
+        (await runFlow(office.agentId, officeVersion.versionId, "verify", "Writer"))
+          .taskId
+      )
+      // A checkpoint after the clipboard copy tests durable restart without retyping/re-copying.
+      const recovery = await runner(),
+        recoveryPack = validateWorkflowPackage({
+          ...pack,
+          packageId: randomUUID(),
+          steps: [
+            ...pack.steps.slice(0, 6),
+            {
+              id: "human",
+              label: "Restart checkpoint",
+              operation: "human_checkpoint",
+              reason: "Inspect clipboard and return",
+            },
+            ...pack.steps.slice(6),
+          ],
+        })
+      const recoveryVersion = await importWorkflowPackage(ownerId, {
+        clientRequestId: randomUUID(),
+        reviewed: true,
+        package: recoveryPack,
+      })
+      const recovered = await runFlow(
+        recovery.agentId,
+        recoveryVersion.versionId,
+        "verify",
+        "Recovered"
+      )
+      const request = await until(async () => {
+        const task = await getTask(ownerId, recovered.taskId)
+        return task.control?.mode === "human"
+          ? task.requests.find((r) => r.kind === "takeover" && r.status === "pending")
+          : undefined
+      }, "cross-app human checkpoint")
+      const before = (
+        await pool.query(
+          "SELECT action_no FROM task_actions WHERE task_id=$1 AND kind='key_type'",
+          [recovered.taskId]
+        )
+      ).rows
+      await stop()
+      await start()
+      await respondToRequest(ownerId, request.id, "handback", request.payloadVersion, {
+        note: "Continue from the saved checkpoint",
+      })
+      await delivered(recovered.taskId)
+      const after = (
+        await pool.query(
+          "SELECT action_no FROM task_actions WHERE task_id=$1 AND kind='key_type' ORDER BY action_no",
+          [recovered.taskId]
+        )
+      ).rows
+      assert.deepEqual(after.slice(0, before.length), before)
+      assert.equal(after.length, before.length + 1)
+      // A mismatched guard stops before any typing; manual completion is checked but cannot certify.
+      const blocked = await runner(),
+        badPack = validateWorkflowPackage({
+          ...pack,
+          packageId: randomUUID(),
+          steps: pack.steps.map((step, index) =>
+            index === 1
+              ? {
+                  ...step,
+                  when: {
+                    application: "Browser",
+                    title: [{ literal: "Missing window" }],
+                  },
+                }
+              : step
+          ),
+        })
+      const badVersion = await importWorkflowPackage(ownerId, {
+        clientRequestId: randomUUID(),
+        reviewed: true,
+        package: badPack,
+      })
+      const bad = await runFlow(
+        blocked.agentId,
+        badVersion.versionId,
+        "verify",
+        "Blocked"
+      )
+      const review = await pending(bad.taskId, "workflow_review")
+      assert.equal(
+        (
+          await pool.query(
+            "SELECT count(*)::int AS n FROM task_actions WHERE task_id=$1 AND kind IN ('key_type','key_press')",
+            [bad.taskId]
+          )
+        ).rows[0].n,
+        0
+      )
+      await docker([
+        "exec",
+        workstationName(blocked.agentId),
+        "python3",
+        "-c",
+        "from pathlib import Path; Path('/home/agent/Blocked.csv').write_text('name,total\\nExample,42')",
+      ])
+      await respondToRequest(ownerId, review.id, "continue", review.payloadVersion, {})
+      await delivered(bad.taskId)
+      assert.equal(
+        (await getWorkflowVersion(ownerId, badVersion.versionId)).status,
+        "verifying"
+      )
+      checks.push({
+        check:
+          "Three independent samples certify; ready run; exported package requires independent checks; Writer transfer; worker restart resumes checkpoint; wrong window blocks input and manual recovery cannot certify",
       })
     }
     if (focus === "demonstrations") {

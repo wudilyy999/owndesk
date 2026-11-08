@@ -1,3 +1,4 @@
+import { CrossAppWorkflow } from "@/components/cross-app-workflow"
 import { headers } from "next/headers"
 import { notFound, redirect } from "next/navigation"
 import Link from "next/link"
@@ -52,6 +53,7 @@ export default async function WorkflowsPage({
           从已检查通过的操作中提炼方法，保留参数、步骤和固定检查条件。
         </p>
       </header>
+      <CrossAppWorkflow agents={agentRows.map(({ id, name }) => ({ id, name }))} />
       <WorkflowImport />
       {source && (
         <section className="space-y-5 rounded-2xl border border-border bg-surface p-5 shadow-2xs sm:p-6">

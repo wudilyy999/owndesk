@@ -2,6 +2,8 @@ import { z } from "zod"
 import { directoryTreeSchema } from "@/db/schema"
 import {
   bindWorkflowContract,
+  bindWorkflowArtifact,
+  validateCrossAppWorkflow,
   validateWorkflowCandidate,
   validateWorkflowParameters,
   workflowBasenameSchema,
@@ -29,7 +31,7 @@ const portableStepSchema = z.discriminatedUnion("operation", [
   workflowStepSchema.options[4].omit({ evidence: true }),
   workflowStepSchema.options[5].omit({ evidence: true }),
 ])
-export const workflowPackageSchema = z.strictObject({
+const directoryPackageSchema = z.strictObject({
   format: z.literal("personal-agent.workflow"),
   formatVersion: z.literal(1),
   packageId: z.uuid(),
@@ -58,6 +60,26 @@ export const workflowPackageSchema = z.strictObject({
   steps: z.array(portableStepSchema).min(2).max(60),
   testSamples: z.array(z.record(z.string(), workflowBasenameSchema)).length(3),
 })
+const crossAppPackageSchema = directoryPackageSchema.extend({
+  formatVersion: z.literal(2),
+  environment: directoryPackageSchema.shape.environment.extend({
+    application: z.literal("Desktop"),
+  }),
+  completion: z.strictObject({
+    root: workflowTextSchema,
+    directories: z.array(workflowTextSchema).max(50),
+    absent: z.array(workflowTextSchema).max(50),
+  }),
+  artifact: z.strictObject({
+    path: workflowTextSchema,
+    requiredColumns: z.array(publicText(100)).min(1).max(50),
+    minRows: z.number().int().min(1).max(100000),
+  }),
+})
+export const workflowPackageSchema = z.discriminatedUnion("formatVersion", [
+  directoryPackageSchema,
+  crossAppPackageSchema,
+])
 export type WorkflowPackage = z.infer<typeof workflowPackageSchema>
 export const workflowImportSchema = z.strictObject({
   clientRequestId: z.uuid(),
@@ -84,6 +106,7 @@ export function workflowPlanFromPackage(pack: WorkflowPackage): WorkflowPlan {
       sourceValue: pack.testSamples[0][parameter.name],
     })),
     completion: pack.completion,
+    ...(pack.formatVersion === 2 ? { artifact: pack.artifact } : {}),
     environment: pack.environment,
     steps: pack.steps.map((step) => ({ ...step, evidence: [] })),
     sourceTaskId: null,
@@ -94,6 +117,22 @@ export function workflowPlanFromPackage(pack: WorkflowPackage): WorkflowPlan {
 
 export function validateWorkflowPackage(raw: unknown): WorkflowPackage {
   const pack = workflowPackageSchema.parse(raw)
+  if (pack.formatVersion === 2) {
+    const plan = validateCrossAppWorkflow(workflowPlanFromPackage(pack))
+    if (
+      new Set(
+        pack.testSamples.map((sample) =>
+          JSON.stringify(Object.fromEntries(Object.entries(sample).sort()))
+        )
+      ).size !== 3
+    )
+      throw new WorkflowValidationError("Use three distinct verification samples")
+    for (const sample of pack.testSamples) {
+      validateWorkflowParameters(plan, sample)
+      bindWorkflowArtifact(plan, sample)
+    }
+    return pack
+  }
   const names = pack.parameters.map((parameter) => parameter.name)
   if (new Set(names).size !== names.length)
     throw new WorkflowValidationError("Package parameter names must be unique")
@@ -197,11 +236,35 @@ export function prepareWorkflowPackage(
           ...base,
           ...step,
           reason:
-            "保留的人工检查点：请按本次目录合同处理现场，检查后显式交还给 Agent。原私有说明已移除。",
+            "保留的人工检查点：请按本次结果合同处理现场，检查后显式交还给 Agent。原私有说明已移除。",
         }
       return { ...base, ...step }
     }
   )
+  if (plan.artifact)
+    return validateWorkflowPackage({
+      format: "personal-agent.workflow",
+      formatVersion: 2,
+      packageId,
+      name: "跨应用 CSV 流程",
+      description: "通过已审阅的桌面步骤生成 CSV，使用固定文件检查条件核对结果。",
+      environment,
+      parameters: plan.parameters.map((parameter) => ({
+        name: aliases[parameter.name],
+        label: `输入参数 ${aliases[parameter.name]}`,
+      })),
+      completion: { root: [{ literal: "/home/agent" }], directories: [], absent: [] },
+      artifact: { ...plan.artifact, path: text(plan.artifact.path) },
+      steps,
+      testSamples: [1, 2, 3].map((sample) =>
+        Object.fromEntries(
+          plan.parameters.map((_, index) => [
+            `input${index + 1}`,
+            `Sample-${sample}-${index + 1}`,
+          ])
+        )
+      ),
+    })
   return validateWorkflowPackage({
     format: "personal-agent.workflow",
     formatVersion: 1,
