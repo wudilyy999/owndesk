@@ -44,7 +44,7 @@ class FakeElement:
         return len(self._children)
 
     def get_child_at_index(self, index):
-        if self._rows is not None:
+        if self._rows is not None and not self._children:
             # Virtual grid not child-indexed in this fake.
             return None
         if 0 <= index < len(self._children):
@@ -500,6 +500,78 @@ class TreeFilterTests(unittest.TestCase):
             )
         self.assertEqual(visits["requested_depth"], 8)
         self.assertEqual(visits["requested_nodes"], 20)
+
+
+    def serialize_fake(self, root, **options):
+        import accessibility as acc
+        with mock.patch.object(acc, "Atspi", FakeAtspi), mock.patch.object(ax, "Atspi", FakeAtspi), mock.patch.object(ax, "_atspi_states", side_effect=lambda _, e: list(e._states)):
+            return acc.serialize(root, [0], self.session, options)
+
+    def test_small_table_summarized_when_remaining_budget_too_small(self):
+        table = FakeElement("table", rows=5, cols=10, interfaces=["Accessible", "Table"])
+        self.assertFalse(ax._atspi_table_should_summarize(FakeAtspi, table, remaining_nodes=80))
+        self.assertTrue(ax._atspi_table_should_summarize(FakeAtspi, table, remaining_nodes=20))
+        self.assertTrue(ax._atspi_table_should_summarize(FakeAtspi, table), "focus search retains conservative PR12 threshold")
+
+    def test_protected_and_meaningful_wrappers_never_compacted(self):
+        for extra in [{"redacted": True}, {"description": "Meaning"}, {"states": ["focusable"]}]:
+            record = {"role": "panel", "states": [], **extra}
+            self.assertFalse(ax._atspi_is_redundant_structure(record, 1))
+
+    def test_compacted_chain_has_hard_path_limit(self):
+        leaf = FakeElement("push button", name="Deep")
+        for _ in range(120):
+            leaf = FakeElement("panel", children=[leaf])
+        root = FakeElement("frame", children=[leaf])
+        _, flat, truncated, reasons, visits = self.serialize_fake(root)
+        self.assertTrue(truncated)
+        self.assertTrue(any(r["reason"] == "traversal_budget" for r in reasons))
+        self.assertLess(visits["nodes"], 50)
+        self.assertTrue(all(len(n["path"]) <= 40 for n in flat))
+
+    def test_character_budget_omits_oversized_record_but_keeps_later_button(self):
+        from unittest import mock
+        import accessibility as acc
+        original = ax._atspi_node_metadata
+        def metadata(*args, **kwargs):
+            record = original(*args, **kwargs)
+            if record.get("name") == "Oversized":
+                record["text"] = "x" * 10000
+            return record
+        root = FakeElement("frame", children=[FakeElement("label", name="Oversized"), FakeElement("push button", name="Save")])
+        with mock.patch.object(ax, "_atspi_node_metadata", side_effect=metadata):
+            _, flat, truncated, reasons, visits = self.serialize_fake(root, max_chars=2000)
+        self.assertTrue(truncated)
+        self.assertTrue(any(r["reason"] == "char_budget" for r in reasons))
+        self.assertIn("Save", [n.get("name") for n in flat])
+        self.assertLessEqual(visits["record_chars"], 2000)
+        self.assertEqual([n["element_index"] for n in flat], list(range(len(flat))))
+
+    def test_depth_zero_does_not_traverse_wrapper(self):
+        root = FakeElement("frame", children=[FakeElement("panel", children=[FakeElement("push button", name="Save")])])
+        _, flat, truncated, reasons, visits = self.serialize_fake(root, max_depth=0)
+        self.assertEqual(len(flat), 1)
+        self.assertTrue(truncated)
+        self.assertEqual(visits["nodes"], 1)
+
+    def test_default_depth_reduces_observes_for_small_named_tree(self):
+        root = FakeElement("push button", name="Save")
+        for i in range(7):
+            root = FakeElement("panel", name=f"Section {i}", children=[root])
+        _, before, _, _, _ = self.serialize_fake(root, max_depth=5, max_nodes=120, compact_structure=False)
+        _, after, truncated, _, _ = self.serialize_fake(root)
+        self.assertNotIn("Save", [n.get("name") for n in before])
+        self.assertIn("Save", [n.get("name") for n in after])
+        self.assertFalse(truncated)
+
+    def test_hidden_menus_do_not_starve_visible_document(self):
+        menus = [FakeElement("menu", name=f"Menu{i}", children=[FakeElement("menu item", name="Hidden", states=["enabled"]) for _ in range(70)]) for i in range(10)]
+        root = FakeElement("frame", children=[*menus, FakeElement("push button", name="Document")])
+        _, flat, truncated, _, visits = self.serialize_fake(root)
+        self.assertIn("Document", [n.get("name") for n in flat])
+        self.assertFalse(truncated)
+        self.assertLess(visits["nodes"], 20)
+        self.assertLessEqual(visits["child_probes"], 2560)
 
 
 if __name__ == "__main__":

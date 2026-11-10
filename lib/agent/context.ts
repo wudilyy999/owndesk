@@ -169,6 +169,9 @@ function projectObservation(binding: Record<string, any>, limit: number) {
           "screenshotCapturedAt",
           "operation",
           "focus_verified",
+          "focus_mode",
+          "focused_path",
+          "focused_role",
           "requested_dispatch",
           "actual_dispatch",
           "background_unavailable",
@@ -202,6 +205,15 @@ function projectObservation(binding: Record<string, any>, limit: number) {
                 "reason",
                 "error",
                 "warnings",
+                "omitReasons",
+                "policy",
+                "requestedDepth",
+                "maxDepthSeen",
+                "maxPathDepthSeen",
+                "requestedNodes",
+                "requestedChars",
+                "recordChars",
+                "skippedWrappers",
               ].includes(key)
             )
           ),
@@ -225,6 +237,8 @@ function projectObservation(binding: Record<string, any>, limit: number) {
             "states",
             "bounds",
             "redacted",
+            "tableSummary",
+            "tableCell",
           ]
             .filter((key) => Object.hasOwn(element, key))
             .map((key) => [key, element[key]]),
@@ -243,6 +257,7 @@ function projectObservation(binding: Record<string, any>, limit: number) {
     // Preserve decision/state evidence and buttons before bulk lists fill the budget.
     const priority = (element: Record<string, any>) =>
       Object.hasOwn(element, "value") ||
+      Object.hasOwn(element, "tableSummary") ||
       ["status bar", "alert"].includes(element.role) ||
       (element.states ?? []).some((state: string) =>
         ["focused", "selected", "checked", "editable"].includes(state)

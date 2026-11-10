@@ -128,22 +128,49 @@ def serialize(element, path, session, options):
     omit_reasons = []
     max_nodes = options.get("max_nodes", 160)
     max_depth = options.get("max_depth", 8)
+    max_chars = options.get("max_chars", 48000)
+    max_visits = max_nodes * 4
+    max_probes = max_nodes * 16
     table_region = options.get("table_region")
     expand_tables = bool(options.get("expand_tables", False))
     compact_structure = bool(options.get("compact_structure", True))
     child_cap = int(options.get("child_expand_cap", ax._AT_SPI_CHILD_EXPAND_CAP))
-    visits = {"nodes": 0, "table_probes": 0, "skipped_wrappers": 0, "max_depth_seen": 0}
+    visits = {"nodes": 0, "table_probes": 0, "skipped_wrappers": 0, "max_depth_seen": 0, "max_path_depth_seen": 0, "record_chars": 0, "child_probes": 0}
     visits["requested_depth"] = max_depth
     visits["requested_nodes"] = max_nodes
+    visits["requested_chars"] = max_chars
 
     def remember_omit(reason, **detail):
         if len(omit_reasons) < 12:
             omit_reasons.append({"reason": reason, **detail})
 
-    def visit(node, node_path, depth):
+    def visit(node, node_path, depth, table_cell=None):
         nonlocal truncated
+        visits["child_probes"] += 1
+        if visits["child_probes"] > max_probes:
+            truncated = True
+            remember_omit("probe_budget", max_probes=max_probes)
+            return None
+        # Hidden menu entries should not spend the visible-node/metadata budget.
+        # Query only their states, rather than names, text, actions and geometry.
+        if depth and not options.get("include_hidden", False):
+            states = ax._atspi_states(Atspi, node)
+            if "defunct" in states:
+                ax.READ_ERRORS.append({"error": "defunct_node"})
+                return None
+            if "showing" not in states and ax._atspi_role(node) != "application":
+                return None
+        if visits["nodes"] >= max_visits:
+            truncated = True
+            remember_omit("traversal_budget", max_visits=max_visits, max_path_length=40)
+            return None
         visits["nodes"] += 1
         visits["max_depth_seen"] = max(visits["max_depth_seen"], depth)
+        visits["max_path_depth_seen"] = max(visits["max_path_depth_seen"], len(node_path) - len(path))
+        if len(node_path) > 40:
+            truncated = True
+            remember_omit("traversal_budget", max_visits=max_visits, max_path_length=40)
+            return None
         if len(flat) >= max_nodes or time.monotonic() > ax.DEADLINE:
             truncated = True
             remember_omit("budget", max_nodes=max_nodes)
@@ -159,7 +186,7 @@ def serialize(element, path, session, options):
         # reach buttons/fields; AT-SPI paths for descendants stay valid.
         if (
             compact_structure
-            and depth > 0
+            and 0 < depth < max_depth
             and ax._atspi_is_redundant_structure(record, count)
         ):
             visits["skipped_wrappers"] += 1
@@ -175,8 +202,16 @@ def serialize(element, path, session, options):
                 remember_omit("deadline")
                 return None
 
+        if table_cell is not None:
+            record["tableCell"] = table_cell
         record["element_index"] = len(flat)
         record["parentPath"] = node_path[:-1]
+        record_chars = len(json.dumps(record, ensure_ascii=True))
+        if visits["record_chars"] + record_chars > max_chars:
+            truncated = True
+            remember_omit("char_budget", path=list(node_path), max_chars=max_chars)
+            return None
+        visits["record_chars"] += record_chars
         flat.append(record)
         tree_node = dict(record)
         if record.get("redacted"):
@@ -201,9 +236,15 @@ def serialize(element, path, session, options):
                     not options.get("subtree_path")
                     or list(options.get("subtree_path")) == list(node_path)
                 ) else table_region,
-                max_cells=min(40, max(8, remaining)),
+                max_cells=min(40, max(1, remaining)),
             )
             visits["table_probes"] += int(summary.get("probes") or 0)
+            summary_chars = len(json.dumps(summary, ensure_ascii=True))
+            if visits["record_chars"] + summary_chars > max_chars:
+                truncated = True
+                remember_omit("char_budget", path=list(node_path), max_chars=max_chars)
+                return tree_node
+            visits["record_chars"] += summary_chars
             record["tableSummary"] = summary
             tree_node["tableSummary"] = summary
             truncated = True
@@ -215,11 +256,11 @@ def serialize(element, path, session, options):
                 nCols=summary.get("nCols"),
             )
             for child, child_path, meta in cells:
-                if len(flat) >= max_nodes or time.monotonic() > ax.DEADLINE:
+                if len(flat) >= max_nodes or visits["nodes"] >= max_visits or visits["child_probes"] >= max_probes or time.monotonic() > ax.DEADLINE:
                     truncated = True
                     break
                 try:
-                    child_node = visit(child, child_path, depth + 1)
+                    child_node = visit(child, child_path, depth + 1, table_cell=meta)
                 except ax.PortalError as error:
                     if error.code != "AT_SPI_READ_LIMIT":
                         raise
@@ -227,10 +268,6 @@ def serialize(element, path, session, options):
                     remember_omit("deadline")
                     break
                 if child_node is not None:
-                    child_node = dict(child_node)
-                    child_node["tableCell"] = meta
-                    if flat and flat[-1].get("path") == child_path:
-                        flat[-1]["tableCell"] = meta
                     children.append(child_node)
             if children:
                 tree_node["children"] = children
@@ -243,7 +280,7 @@ def serialize(element, path, session, options):
             truncated = True
             remember_omit("child_cap", path=list(node_path), childCount=count, cap=child_cap)
         for index in range(expand_count):
-            if len(flat) >= max_nodes or time.monotonic() > ax.DEADLINE:
+            if len(flat) >= max_nodes or visits["nodes"] >= max_visits or visits["child_probes"] >= max_probes or time.monotonic() > ax.DEADLINE:
                 truncated = True
                 remember_omit("budget", max_nodes=max_nodes)
                 break
@@ -316,9 +353,13 @@ def snapshot(request):
             visited=visits["nodes"],
             nodeVisits=visits["nodes"],
             tableProbes=visits.get("table_probes", 0),
+            childProbes=visits["child_probes"],
             requestedDepth=visits.get("requested_depth", options.get("max_depth", 8)),
             maxDepthSeen=visits.get("max_depth_seen", 0),
             requestedNodes=visits.get("requested_nodes", options.get("max_nodes", 160)),
+            requestedChars=visits["requested_chars"],
+            recordChars=visits["record_chars"],
+            maxPathDepthSeen=visits["max_path_depth_seen"],
             skippedWrappers=visits.get("skipped_wrappers", 0),
             policy="adaptive",
         )

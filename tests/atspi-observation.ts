@@ -183,7 +183,7 @@ try {
 
   const source = await readFile("workstation/controller/accessibility.py", "utf8")
   // screen_capture supplies its limits from desktop.mjs, so cap the reader's own node budget.
-  const budget = 'max_nodes = options.get("max_nodes", 120)'
+  const budget = 'max_nodes = options.get("max_nodes", 160)'
   assert(source.includes(budget))
   await docker(["exec", "--user", "root", "-i", container, "tee", readerPath], {
     input: source.replace(budget, "max_nodes = 3"),

@@ -36,7 +36,7 @@ _AT_SPI_TABLE_VIRTUAL_ROW_HINT = 500  # spreadsheet-scale row count → summariz
 _AT_SPI_TABLE_PROBE_LIMIT = 120
 _AT_SPI_FOCUS_SUBTREE_MAX_NODES = 240
 # Fan-out cap for ordinary (non-table) parents so one huge list cannot exhaust the observe.
-_AT_SPI_CHILD_EXPAND_CAP = 40
+_AT_SPI_CHILD_EXPAND_CAP = 80
 # Pure structural wrappers that may be skipped in the flat payload while still traversed.
 _AT_SPI_STRUCTURAL_ROLES = {
     "filler", "panel", "scroll pane", "split pane", "layered pane",
@@ -355,6 +355,12 @@ def _atspi_table_should_summarize(
     if role_name not in _AT_SPI_TABLE_ROLES:
         return False
     count = _atspi_child_count(element)
+    # Focus search keeps PR#12's conservative table policy unchanged.
+    if remaining_nodes is None:
+        if count > 48:
+            return True
+        rows, cols = _atspi_table_dimensions(Atspi, element)
+        return rows is not None and cols is not None and rows * cols > 48
     # Virtual Calc-style tables advertise INT_MAX / enormous child counts — never expand.
     if count > _AT_SPI_TABLE_EXPAND_CHILD_LIMIT:
         return True
@@ -367,11 +373,11 @@ def _atspi_table_should_summarize(
             return False
         budget = _AT_SPI_TABLE_EXPAND_CELL_LIMIT
         if remaining_nodes is not None:
-            budget = max(8, min(budget, remaining_nodes))
+            budget = max(0, min(budget, remaining_nodes))
         # Fits in the remaining observe budget → expand cells directly (one shot).
         if cells <= budget:
             return False
-        return cells > _AT_SPI_TABLE_EXPAND_CELL_LIMIT
+        return cells > budget
     # Unknown dimensions but moderate child_count: try normal expansion within budget.
     if remaining_nodes is not None and 0 < count <= remaining_nodes:
         return False
@@ -385,12 +391,12 @@ def _atspi_is_redundant_structure(record: dict[str, Any], child_count: int) -> b
         return False
     if child_count != 1:
         return False
-    if record.get("name") or record.get("text") or record.get("actions"):
+    if record.get("redacted") or record.get("description") or record.get("name") or record.get("text") or record.get("actions"):
         return False
     if "value" in record:
         return False
     states = set(record.get("states") or [])
-    if states & {"focused", "selected", "checked", "expanded", "editable"}:
+    if states & {"focused", "focusable", "selected", "checked", "expanded", "editable"}:
         return False
     return True
 
