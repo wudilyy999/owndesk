@@ -128,7 +128,7 @@ def serialize(element, path, session, options):
     omit_reasons = []
     max_nodes = options.get("max_nodes", 160)
     max_depth = options.get("max_depth", 8)
-    max_chars = options.get("max_chars", 48000)
+    max_chars = options.get("max_chars", 64000)
     max_visits = max_nodes * 4
     max_probes = max_nodes * 16
     table_region = options.get("table_region")

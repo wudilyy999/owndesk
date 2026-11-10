@@ -522,7 +522,7 @@ test("adaptive observation schemas expose bounded multi-level defaults", () => {
   const defaults = nativeSchemas.desktop_get_window_state.parse({})
   assert.equal(defaults.max_depth, 8)
   assert.equal(defaults.max_nodes, 160)
-  assert.equal(defaults.max_chars, 48000)
+  assert.equal(defaults.max_chars, 64000)
   assert.equal(defaults.child_expand_cap, 80)
   assert.equal(defaults.compact_structure, true)
   for (const params of [
