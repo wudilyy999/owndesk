@@ -1044,7 +1044,12 @@ try {
         await page.getByLabel("邮箱").fill(process.env.OWNER_EMAIL!)
         await page.getByLabel("密码").fill(process.env.OWNER_PASSWORD!)
         await page.getByRole("button", { name: "登录", exact: true }).click()
-        await page.getByRole("link", { name: "模型与 Agent 设置", exact: true }).click()
+        // The mobile workspace keeps settings inside the conversation drawer.
+        await page.getByRole("button", { name: "会话", exact: true }).click()
+        await page
+          .getByRole("dialog")
+          .getByRole("link", { name: "模型与 Agent 设置", exact: true })
+          .click()
         const form = page.getByRole("form", { name: "Telegram 交接权限", exact: true })
         await form.waitFor()
         assert.equal(await form.locator("input:checked").count(), 0)

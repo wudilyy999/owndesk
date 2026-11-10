@@ -432,6 +432,30 @@ print(json.dumps({'keys':list(keys),'mask':mask.value}))`,
             check:
               "Idle cold boot reconciles the controller boot and epoch before desktop use",
           })
+          // Guest shutdown breaks the viewer's X11 connection even while Docker
+          // briefly still reports it running. A second boot must serve a fresh
+          // real RFB banner, not a stale listener from the old display.
+          for (let boot = 0; boot < 2; boot++) {
+            const before = await workspaceRow(legacy)
+            await docker(["stop", "--time", "10", workstationName(legacy)])
+            await ensureWorkstation(legacy)
+            const after = await workspaceRow(legacy)
+            assert.notEqual(after.bootId, before.bootId)
+            assert(after.epoch > before.epoch)
+            const banner = await docker([
+              "exec",
+              viewerName(legacy),
+              "bash",
+              "-c",
+              'IFS= read -r -N 12 banner < /dev/tcp/127.0.0.1/5900; printf "%s" "$banner"',
+            ])
+            assert.match(banner.stdout.toString(), /^RFB 003\.\d{3}\n$/)
+            await ensureWorkstation(legacy) // warm ensure must keep working too
+          }
+          checks.push({
+            check:
+              "Viewer reconnects to the new X display across two further cold boots; real RFB banner and warm ensure pass",
+          })
         }
 
         for (const goal of transportOnly ? [] : ["background", "active-shell"]) {
