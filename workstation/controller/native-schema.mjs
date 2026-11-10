@@ -13,13 +13,17 @@ const tableRegion = z
   .optional()
 const snapshot = {
   ...window,
-  max_depth: z.number().int().min(0).max(12).default(5),
-  max_nodes: z.number().int().min(1).max(500).default(120),
+  // Adaptive defaults: several levels in ONE observe when the tree fits the budget.
+  max_depth: z.number().int().min(0).max(12).default(8),
+  max_nodes: z.number().int().min(1).max(500).default(160),
+  max_chars: z.number().int().min(2000).max(120000).default(64000),
   include_hidden: z.boolean().default(false),
-  // Drill into one observed subtree or a bounded spreadsheet region instead of dumping whole grids.
+  // Optional drill when omitReasons show a summarized/truncated region — not a mandatory first step.
   subtree_path: z.array(z.number().int().nonnegative()).min(1).max(40).optional(),
   table_region: tableRegion,
   expand_tables: z.boolean().default(false),
+  compact_structure: z.boolean().default(true),
+  child_expand_cap: z.number().int().min(4).max(120).default(80),
 }
 const target = z
   .object({

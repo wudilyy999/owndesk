@@ -460,3 +460,76 @@ test("actual SDK requests keep native-only results image-free and allow explicit
     assert.equal(requests, 1)
   }
 })
+
+test("adaptive native projection preserves table drilldown and focus evidence", () => {
+  const value = {
+    observationId,
+    epoch: 4,
+    bootId: "boot",
+    focus_verified: true,
+    focus_mode: "descendant",
+    focused_path: [0, 0, 2],
+    focused_role: "paragraph",
+    accessibility: {
+      source: "atspi2",
+      status: "partial",
+      truncated: true,
+      policy: "adaptive",
+      requestedDepth: 8,
+      maxDepthSeen: 6,
+      omitReasons: [
+        { reason: "table_summarized", path: [0, 0, 1], nRows: 1048576, nCols: 16384 },
+      ],
+    },
+    elements: [
+      {
+        element_index: 0,
+        path: [0, 0, 1],
+        role: "table",
+        tableSummary: { nRows: 1048576, nCols: 16384, omittedCells: 17179869182 },
+      },
+      {
+        element_index: 1,
+        path: [0, 0, 1, 0],
+        role: "table cell",
+        name: "A1",
+        tableCell: { row: 0, col: 0 },
+      },
+    ],
+  }
+  const message: any = {
+    role: "tool",
+    content: [
+      {
+        type: "tool-result",
+        toolName: "desktop_get_window_state",
+        toolCallId: "adaptive",
+        output: { type: "json", value },
+      },
+    ],
+  }
+  const projected = (compactContext([message])[0].content as any)[0].output.value
+  assert.deepEqual(projected.accessibility.omitReasons, value.accessibility.omitReasons)
+  assert.deepEqual(projected.elements[0].tableSummary, value.elements[0].tableSummary)
+  assert.deepEqual(projected.elements[1].tableCell, value.elements[1].tableCell)
+  assert.equal(projected.focus_mode, "descendant")
+  assert.deepEqual(projected.focused_path, value.focused_path)
+  assert.equal(projected.accessibility.policy, "adaptive")
+  assert(JSON.stringify(projected).length <= 12000)
+})
+
+test("adaptive observation schemas expose bounded multi-level defaults", () => {
+  const defaults = nativeSchemas.desktop_get_window_state.parse({})
+  assert.equal(defaults.max_depth, 8)
+  assert.equal(defaults.max_nodes, 160)
+  assert.equal(defaults.max_chars, 64000)
+  assert.equal(defaults.child_expand_cap, 80)
+  assert.equal(defaults.compact_structure, true)
+  for (const params of [
+    { max_chars: 1999 },
+    { max_chars: 120001 },
+    { child_expand_cap: 121 },
+  ]) {
+    assert.equal(nativeSchemas.desktop_get_window_state.safeParse(params).success, false)
+  }
+})

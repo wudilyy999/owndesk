@@ -28,10 +28,20 @@ _AT_SPI_PRESS_ACTION_NAMES = ("press","click","activate","default","toggle","ope
 _AT_SPI_WINDOW_ROLES = {"alert","dialog","file chooser","frame","window"}
 _AT_SPI_WINDOW_ACTIVATION_ROLES = {"application",*_AT_SPI_WINDOW_ROLES}
 _AT_SPI_TABLE_ROLES = {"table", "tree table"}
-# Eager child expansion stays small so Calc-style virtual tables (2^31 children) cannot fill the budget.
-_AT_SPI_TABLE_EXPAND_LIMIT = 48
+# Small real tables expand within the node budget; only huge/virtual grids are summarized.
+# child_count and nRows/nCols are O(1) AT-SPI queries — never walk millions of cells to decide.
+_AT_SPI_TABLE_EXPAND_CELL_LIMIT = 80  # rows*cols above this → summarize (unless expand_tables)
+_AT_SPI_TABLE_EXPAND_CHILD_LIMIT = 256  # advertised child_count above this → summarize
+_AT_SPI_TABLE_VIRTUAL_ROW_HINT = 500  # spreadsheet-scale row count → summarize
 _AT_SPI_TABLE_PROBE_LIMIT = 120
 _AT_SPI_FOCUS_SUBTREE_MAX_NODES = 240
+# Fan-out cap for ordinary (non-table) parents so one huge list cannot exhaust the observe.
+_AT_SPI_CHILD_EXPAND_CAP = 80
+# Pure structural wrappers that may be skipped in the flat payload while still traversed.
+_AT_SPI_STRUCTURAL_ROLES = {
+    "filler", "panel", "scroll pane", "split pane", "layered pane",
+    "section", "grouping", "viewport", "document frame", "page tab list",
+}
 READ_ERRORS = []
 DEADLINE = float("inf")
 
@@ -333,17 +343,62 @@ def _atspi_table_dimensions(Atspi: Any, element: object) -> tuple[int | None, in
     return rows, cols
 
 
-def _atspi_table_should_summarize(Atspi: Any, element: object, *, role: str | None = None) -> bool:
+def _atspi_table_should_summarize(
+    Atspi: Any,
+    element: object,
+    *,
+    role: str | None = None,
+    remaining_nodes: int | None = None,
+) -> bool:
+    """True only for huge/virtual grids. Small tables expand within remaining_nodes when possible."""
     role_name = (role or _atspi_role(element)).casefold()
     if role_name not in _AT_SPI_TABLE_ROLES:
         return False
     count = _atspi_child_count(element)
-    if count > _AT_SPI_TABLE_EXPAND_LIMIT:
+    # Focus search keeps PR#12's conservative table policy unchanged.
+    if remaining_nodes is None:
+        if count > 48:
+            return True
+        rows, cols = _atspi_table_dimensions(Atspi, element)
+        return rows is not None and cols is not None and rows * cols > 48
+    # Virtual Calc-style tables advertise INT_MAX / enormous child counts — never expand.
+    if count > _AT_SPI_TABLE_EXPAND_CHILD_LIMIT:
         return True
     rows, cols = _atspi_table_dimensions(Atspi, element)
-    if rows is None or cols is None:
+    if rows is not None and rows >= _AT_SPI_TABLE_VIRTUAL_ROW_HINT:
+        return True
+    if rows is not None and cols is not None:
+        cells = rows * cols
+        if cells <= 0:
+            return False
+        budget = _AT_SPI_TABLE_EXPAND_CELL_LIMIT
+        if remaining_nodes is not None:
+            budget = max(0, min(budget, remaining_nodes))
+        # Fits in the remaining observe budget → expand cells directly (one shot).
+        if cells <= budget:
+            return False
+        return cells > budget
+    # Unknown dimensions but moderate child_count: try normal expansion within budget.
+    if remaining_nodes is not None and 0 < count <= remaining_nodes:
         return False
-    return rows * cols > _AT_SPI_TABLE_EXPAND_LIMIT
+    return count > _AT_SPI_TABLE_EXPAND_CELL_LIMIT
+
+
+def _atspi_is_redundant_structure(record: dict[str, Any], child_count: int) -> bool:
+    """Single-child nameless containers that waste flat-budget without aiding the model."""
+    role = str(record.get("role") or "").casefold()
+    if role not in _AT_SPI_STRUCTURAL_ROLES:
+        return False
+    if child_count != 1:
+        return False
+    if record.get("redacted") or record.get("description") or record.get("name") or record.get("text") or record.get("actions"):
+        return False
+    if "value" in record:
+        return False
+    states = set(record.get("states") or [])
+    if states & {"focused", "focusable", "selected", "checked", "expanded", "editable"}:
+        return False
+    return True
 
 
 def _atspi_table_cell_at(
