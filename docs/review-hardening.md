@@ -33,3 +33,26 @@ Design references (ideas only; no source copied):
 compatibility with Node 24's built-in fetch dispatcher API. No global dispatcher
 is replaced; this transport applies only to connections, not the model relay or
 workstation's own networking.
+
+## Trusted fake-IP proxies
+
+`MCP_ALLOW_FAKE_IP=true` on both web and worker is an explicit operator opt-in
+for a trusted Clash/mihomo TUN fake-IP proxy (Compose forwards it; restart both).
+Default is false. Only hostname DNS answers in IPv4 `198.18.0.0/15` are exempt;
+literal IP URLs, mapped IPv6, mixed private answers, LAN, loopback and metadata
+remain blocked. DNS is still checked and pinned at connect time, HTTPS hostname
+verification stays on, redirects stay refused, and every MCP call still needs
+exact approval. This affects MCP HTTP and connection OAuth exchange/refresh,
+including Google OAuth tokens, not model/relay SDK calls, stdio or Google data APIs.
+
+A DNS answer alone cannot prove a proxy is present. Do not enable this on an
+untrusted resolver or an actual RFC2544 benchmark network: the proxy is trusted
+to route the hostname to its real destination, and the app cannot inspect that
+upstream resolution. If the proxy can route private destinations, enforce public
+egress there too. No broad private-network bypass or automatic proxy detection.
+
+Design reference (ideas only, no copied code): OpenClaw's narrow opt-in
+`allowRfc2544BenchmarkRange` in
+[src/infra/net/ssrf.ts](https://github.com/openclaw/openclaw/blob/main/src/infra/net/ssrf.ts)
+and [fake-IP issue #62113](https://github.com/openclaw/openclaw/issues/62113).
+OwnDesk is stricter about literal IP URLs and does not permit IPv6 ULA.

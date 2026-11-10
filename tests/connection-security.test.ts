@@ -25,6 +25,9 @@ const privateEndpoints = [
   "https://[fe80::1]/",
   "https://[2001:db8::1]/",
   "https://224.0.0.1/",
+  "https://198.18.0.1/",
+  "https://198.19.255.255/",
+  "https://[::ffff:198.18.0.1]/",
   "https://metadata.internal/",
 ]
 for (const url of privateEndpoints)
@@ -207,4 +210,68 @@ test("real HTTP transport blocks DNS-to-loopback before connecting and refuses e
     server.closeAllConnections()
     await new Promise<void>((resolve) => server.close(() => resolve()))
   }
+})
+
+test("fake-IP DNS is blocked by default and allowed only for an opted-in hostname", async () => {
+  for (const allow of [false, true]) {
+    for (const ip of ["198.18.0.0", "198.18.0.1", "198.19.255.255"]) {
+      for (const host of ["example.com", ip, "localhost", "metadata.internal"]) {
+        await new Promise<void>((resolve) =>
+          connectionLookup(false, async () => [{ address: ip, family: 4 }], allow)(
+            host,
+            { all: true },
+            (error, received) => {
+              if (allow && host === "example.com") {
+                assert.equal(error, null)
+                assert.deepEqual(received, [{ address: ip, family: 4 }])
+              } else assert(error)
+              resolve()
+            }
+          )
+        )
+      }
+    }
+  }
+})
+
+test("fake-IP opt-in never allows other private ranges or mixed private answers", async () => {
+  for (const addresses of [
+    ["198.17.255.255"],
+    ["198.20.0.0"],
+    ["198.18.0.1", "127.0.0.1"],
+    ["198.18.0.1", "10.0.0.1"],
+    ["169.254.169.254"],
+    ["192.168.1.1"],
+    ["100.64.0.1"],
+    ["fc00::1"],
+    ["::ffff:198.18.0.1"],
+    [],
+  ]) {
+    // Adjacent public unicast ranges are valid, never included in the exception.
+    const publicOnly = addresses.length > 0 && addresses.every(publicAddress)
+    await new Promise<void>((resolve) =>
+      connectionLookup(
+        true,
+        async () =>
+          addresses.map((address) => ({
+            address,
+            family: address.includes(":") ? 6 : 4,
+          })),
+        true
+      )("example.com", {}, (error) => {
+        assert.equal(!error, publicOnly)
+        resolve()
+      })
+    )
+  }
+})
+
+test("fake-IP fetch still rejects literal IP URLs before dialing", async () => {
+  for (const url of [
+    "https://198.18.0.1/",
+    "https://198.19.255.255/",
+    "https://[::ffff:198.18.0.1]/",
+    "https://10.0.0.1/",
+  ])
+    await assert.rejects(connectionFetch(false, true)(url), /public HTTPS/)
 })

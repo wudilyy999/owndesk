@@ -8,6 +8,16 @@ export function publicAddress(address: string) {
     return false
   }
 }
+// RFC 2544 is not public. Only an explicitly trusted fake-IP proxy may use
+// these DNS answers; literal URLs and all other reserved ranges stay blocked.
+export function fakeIpAddress(address: string) {
+  try {
+    const ip = ipaddr.parse(address)
+    return ip.kind() === "ipv4" && ip.match(ipaddr.parse("198.18.0.0"), 15)
+  } catch {
+    return false
+  }
+}
 export function loopbackEndpoint(hostname: string) {
   return ["localhost", "127.0.0.1", "[::1]"].includes(hostname)
 }

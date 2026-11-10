@@ -30,6 +30,7 @@ const schema = z.object({
   WORKER_HOST: z.enum(["127.0.0.1", "0.0.0.0"]).default("127.0.0.1"),
   WORKSTATION_NETWORK: z.string().min(1).optional(),
   NETWORK_GUARD_IMAGE: z.string().min(1).optional(),
+  MCP_ALLOW_FAKE_IP: z.enum(["true", "false"]).default("false"),
   PA_GUEST_DNS: z.ipv4().default("1.1.1.1"),
   WORKSTATION_CPUS: z.coerce.number().min(0.5).max(32).default(2),
   WORKSTATION_MEMORY_MB: z.coerce.number().int().min(1024).max(65536).default(4096),
