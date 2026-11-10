@@ -6,6 +6,7 @@ import { docker } from "@/lib/docker"
 import { HttpError } from "@/lib/errors"
 import { workspaceRow, workstationName, withWorkspaceOperation } from "@/lib/workstation"
 import {
+  MAX_DEMONSTRATION_EVENTS,
   demonstrationEventSchema,
   demonstrationDraft,
   type RecordedDemonstrationEvent,
@@ -49,7 +50,7 @@ export async function startDemonstration(ownerId: string, agentId: string, name:
 export async function recordDemonstration(ownerId: string, id: string, raw: unknown) {
   const input = z
     .object({
-      seq: z.number().int().positive().max(150),
+      seq: z.number().int().positive().max(MAX_DEMONSTRATION_EVENTS),
       event: demonstrationEventSchema,
     })
     .parse(raw)

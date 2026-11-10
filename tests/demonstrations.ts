@@ -105,6 +105,26 @@ try {
     checks.push(
       "Recording sequence, owner/control epoch, input redaction, finish retry, edited manual save and enabled catalog reuse verified"
     )
+    const capped = await startDemonstration(owner, agent, "Capped demonstration")
+    for (let seq = 1; seq <= 150; seq++)
+      await recordDemonstration(owner, capped.id, {
+        seq,
+        event: { kind: "checkpoint", note: `Step ${seq}` },
+      })
+    await assert.rejects(
+      recordDemonstration(owner, capped.id, {
+        seq: 151,
+        event: { kind: "checkpoint", note: "Must not append" },
+      }),
+      { name: "ZodError" }
+    )
+    const prefix = await finishDemonstration(owner, capped.id)
+    assert.match(prefix.body, /Step 150/)
+    assert.doesNotMatch(prefix.body, /Must not append/)
+    await saveDemonstrationManual(owner, capped.id, prefix)
+    checks.push(
+      "150 saved events survive rejection of event 151; prefix still finishes and saves as a manual"
+    )
     passed = true
   } finally {
     await pool.end()

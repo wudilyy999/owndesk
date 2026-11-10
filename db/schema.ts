@@ -762,6 +762,7 @@ export type RoutineRunSnapshot = {
   input: TaskInput
   timeZone: string
   range: { from: string; to: string; startsAt: string; endsAt: string } | null
+  eventData?: unknown
   coalesced?: { from: string; before: string }
 }
 

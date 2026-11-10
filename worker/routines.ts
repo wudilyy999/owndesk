@@ -1,3 +1,4 @@
+import { ZodError } from "zod"
 import { DBOS } from "@dbos-inc/dbos-sdk"
 import { eq } from "drizzle-orm"
 import { db, pool } from "@/db"
@@ -18,18 +19,24 @@ export async function dispatchRoutines() {
     .orderBy(routineRuns.startedAt)
     .limit(50)
   for (const run of pending) {
-    const frozen = run.snapshot!
     try {
+      const frozen = run.snapshot
+      if (!frozen) throw new HttpError(400, "Routine run snapshot is missing")
       const task = await submitTask(frozen.ownerId, "routine", frozen.input)
       await db
         .update(routineRuns)
         .set({ status: "running", taskId: task.taskId, threadId: task.threadId })
         .where(eq(routineRuns.id, run.id))
     } catch (error) {
-      if (!(error instanceof HttpError)) throw error
+      if (!(error instanceof HttpError) && !(error instanceof ZodError)) throw error
       await db
         .update(routineRuns)
-        .set({ status: "failed", detail: error.message, finishedAt: new Date() })
+        .set({
+          status: "failed",
+          detail:
+            error instanceof ZodError ? "Invalid routine task input" : error.message,
+          finishedAt: new Date(),
+        })
         .where(eq(routineRuns.id, run.id))
     }
   }

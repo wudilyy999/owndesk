@@ -120,3 +120,11 @@ Wayland Portal/PipeWire runtime and UI are not vendored.
   MemGPT (`letta-ai/letta`, Apache-2.0, Copyright Letta): self-edited memory blocks and
   background ("sleep-time") consolidation. No code from it is included; the prompts and the
   code are written from scratch.
+
+## Connection endpoint hardening
+
+`ipaddr.js` 2.5.0 (whitequark/ipaddr.js, MIT) classifies IP address ranges;
+`undici` 7.30.2 (nodejs/undici, MIT) supplies a per-connection DNS-filtered Agent.
+Package LICENSE files remain in their npm distributions. See
+`docs/review-hardening.md` for the design-only references; no third-party
+implementation source was copied into the endpoint policy.

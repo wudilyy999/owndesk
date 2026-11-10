@@ -8028,8 +8028,38 @@ try {
           observed.events.some((e: { kind: string }) => e.kind === "protected_input")
         )
         assert(!JSON.stringify(observed).includes("do-not-record-this-value"))
+        const section = page.getByRole("region", { name: "示范教学", exact: true })
+        for (let i = 0; i < 150; i++) {
+          if (await section.getByText(/已达到.*步上限/).isVisible()) break
+          await page.getByLabel("这一步的说明").fill(`Checkpoint ${i}`)
+          await page.getByRole("button", { name: "记录说明", exact: true }).click()
+        }
+        await section.getByText(/已达到.*步上限/).waitFor()
+        // An actual extra screen event must not submit sequence 151 or poison finish.
+        await canvas.hover()
+        await page.mouse.wheel(0, 1)
+        await until(
+          async () =>
+            (
+              await pool.query(
+                "SELECT jsonb_array_length(events) AS n FROM demonstrations WHERE id=$1",
+                [observed.id]
+              )
+            ).rows[0].n === 150,
+          "all 150 events persisted"
+        )
+        assert.equal(await page.getByRole("alert").count(), 0)
         await page.getByRole("button", { name: "结束并生成手册", exact: true }).click()
         await page.getByRole("link", { name: "审阅、编辑并保存示范手册" }).waitFor()
+        assert.equal(
+          (
+            await pool.query(
+              "SELECT jsonb_array_length(events) AS n FROM demonstrations WHERE id=$1",
+              [observed.id]
+            )
+          ).rows[0].n,
+          150
+        )
         await page.screenshot({
           path: path.join(directory, "demonstration-desktop.png"),
           fullPage: true,
@@ -8044,7 +8074,7 @@ try {
         )
         checks.push({
           check:
-            "Real noVNC framebuffer and DOM events: click, function key and protected typing captured; worker observes application; editable draft created",
+            "Real noVNC framebuffer/events and redaction; 150-event cap stops new events, extra screen input cannot poison finishing the saved prefix",
         })
       } finally {
         await browser?.close()
@@ -8062,6 +8092,8 @@ try {
       })
     }
     if (focus === "automations") {
+      await stop()
+      const { dispatchRoutines } = await import("@/worker/routines")
       const { manageChatRoutine } = await import("@/lib/companion/routines")
       const { rotateRoutineWebhook, acceptRoutineEvent } =
         await import("@/lib/routine-events")
@@ -8080,28 +8112,84 @@ try {
         action: "create",
         plan: {
           name: "Event processing",
-          prompt: `CASE=automations RUN=${run}; Process trigger value`,
+          prompt: `CASE=automations RUN=${run}; Process trigger value `.padEnd(4000, "p"),
           schedule: { kind: "daily", time: "09:00" },
           eventTrigger: { kind: "webhook" },
           enabled: true,
         },
       })) as { id: string }
       const credential = await rotateRoutineWebhook(routine.id)
-      const event = { id: run, data: { message: "trigger value" } }
+      const event = {
+        id: run,
+        data: {
+          message: "trigger value",
+          pad: "x".repeat(
+            11991 - JSON.stringify({ message: "trigger value", pad: "" }).length
+          ),
+        },
+      }
+      assert.equal(JSON.stringify(event.data).length, 11991)
       const accepted = await acceptRoutineEvent(routine.id, credential.token, event)
       assert.equal(
         (await acceptRoutineEvent(routine.id, credential.token, event)).runId,
         accepted.runId
       )
-      const taskId = await until(
-        async () =>
-          (
-            await pool.query("SELECT task_id FROM routine_runs WHERE id=$1", [
-              accepted.runId,
-            ])
-          ).rows[0].task_id,
-        "DBOS event dispatch"
+      await assert.rejects(
+        acceptRoutineEvent(routine.id, credential.token, {
+          ...event,
+          data: { ...event.data, pad: event.data.pad.slice(0, -1) + "y" },
+        }),
+        { status: 409 }
       )
+      const frozen = (
+        await pool.query("SELECT snapshot FROM routine_runs WHERE id=$1", [
+          accepted.runId,
+        ])
+      ).rows[0].snapshot
+      assert.equal(frozen.input.goal.length, 16000)
+      assert.match(frozen.input.goal, /事件内容已截断/)
+      assert.deepEqual(frozen.eventData, event.data)
+      // Reproduce a run frozen by the old version. It must fail without starving
+      // the healthy, bounded event immediately behind it in the actual queue.
+      const poisonId = randomUUID(),
+        poisonKey = `poison:${run}`
+      await pool.query(
+        `INSERT INTO routine_runs(id,routine_id,trigger,status,request_key,plan_version,snapshot,due_at,started_at)
+        VALUES($1,$2,'event','queued',$3,1,$4,now(),now()-interval '1 minute')`,
+        [
+          poisonId,
+          routine.id,
+          poisonKey,
+          JSON.stringify({
+            ...frozen,
+            input: {
+              ...frozen.input,
+              clientRequestId: poisonKey,
+              goal: "p".repeat(16076),
+            },
+          }),
+        ]
+      )
+      await dispatchRoutines()
+      const poison = (
+        await pool.query(
+          "SELECT status,detail,finished_at,task_id FROM routine_runs WHERE id=$1",
+          [poisonId]
+        )
+      ).rows[0]
+      assert.equal(poison.status, "failed")
+      assert.equal(poison.detail, "Invalid routine task input")
+      assert(poison.finished_at)
+      assert.equal(poison.task_id, null)
+      const healthy = (
+        await pool.query("SELECT status,task_id FROM routine_runs WHERE id=$1", [
+          accepted.runId,
+        ])
+      ).rows[0]
+      assert.equal(healthy.status, "running")
+      const taskId = healthy.task_id
+      assert(taskId)
+      await start()
       await completed(taskId)
       assert.equal(scenario.calls.length, 1)
       await manageChatRoutine(ownerId, agentId, `pause:${run}`, {
@@ -8115,7 +8203,7 @@ try {
       )
       checks.push({
         check:
-          "Chat-created webhook routine reaches existing DBOS dispatcher and actual Task once; duplicate event reuses run, pause rejects new events",
+          "11991-char event + 4000-char prompt is bounded and deduplicated from full payload; poisoned legacy snapshot fails, following healthy run reaches DBOS and completes once; pause rejects new events",
         taskId,
       })
     }
@@ -8129,11 +8217,21 @@ try {
           enabled: true,
           config: {
             kind: "mcp_http",
+            allowLoopback: true,
             url: fixture.url + "/mcp",
             bearer: "fixture-access",
           },
         })
-        await discoverConnection(ownerId, connection.id)
+        const catalog = await discoverConnection(ownerId, connection.id)
+        assert(
+          catalog.tools.every((tool) => !tool.readOnly),
+          "MCP hints never grant trust"
+        )
+        // Simulate a catalog cached before hardening; execution must still ask.
+        await pool.query("UPDATE app_connections SET tools=$2 WHERE id=$1", [
+          connection.id,
+          JSON.stringify(catalog.tools.map((tool) => ({ ...tool, readOnly: true }))),
+        ])
         const run = await submit(
           "connections",
           false,
@@ -8142,7 +8240,15 @@ try {
             scenario.itemId = connection.id
           }
         )
+        const read = await pending(run.taskId, "connection_call")
+        assert.equal((read.payload.input as { tool: string }).tool, "fixture_read")
+        assert.deepEqual(fixture.reads, [])
+        assert.deepEqual(fixture.writes, [])
+        await respondToRequest(ownerId, read.id, "approve", read.payloadVersion, {
+          answer: "Approve exact MCP read; server hint is not trusted",
+        })
         const first = await pending(run.taskId, "connection_call")
+        assert.deepEqual(fixture.reads, ["runtime"])
         assert.deepEqual(fixture.writes, [])
         assert.deepEqual(first.payload.input, {
           connectionId: connection.id,

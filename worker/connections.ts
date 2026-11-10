@@ -1,6 +1,7 @@
 import { isDeepStrictEqual } from "node:util"
 import { pool } from "@/db"
 import type { Task } from "@/db/schema"
+import { googleTools } from "@/lib/google-connection"
 import { connectionCallSchema } from "@/lib/connection-schema"
 import {
   callConnection,
@@ -64,7 +65,12 @@ export async function executeConnectionTool(
       ok: false,
       output: { error: "Connection changed; start a new task after checking Settings" },
     }
-  if (!tool.readOnly) {
+  // Recompute from the built-in adapter, not cached or server-supplied flags.
+  // This also fences tasks snapshotted before MCP annotation hardening.
+  const readOnly =
+    current.kind === "google" &&
+    googleTools.some((known) => known.name === input.tool && known.readOnly)
+  if (!readOnly) {
     const request = (
       await pool.query<{ status: string; decision: string; payload: { input: unknown } }>(
         "SELECT status,decision,payload FROM task_requests WHERE id=$1 AND task_id=$2",
@@ -89,7 +95,7 @@ export async function executeConnectionTool(
   }
   const control = await assertAgentControl(task.id, task.agentId, segmentNo)
   // A connection approval binds exact arguments/revision, independently of GUI observations.
-  if (!tool.readOnly) epoch = control.epoch
+  if (!readOnly) epoch = control.epoch
   if (control.epoch !== epoch)
     return {
       ok: false,
@@ -145,7 +151,7 @@ export async function executeConnectionTool(
           epoch,
           control.bootId,
           JSON.stringify(input),
-          tool.readOnly ? "read" : "ambiguous",
+          readOnly ? "read" : "ambiguous",
         ]
       )
       await client.query(
@@ -186,7 +192,7 @@ export async function executeConnectionTool(
       input.tool,
       input.args
     )) as Record<string, unknown>
-    if (!tool.readOnly && output.isError)
+    if (!readOnly && output.isError)
       return requestReview(
         task.id,
         segmentNo,
@@ -196,7 +202,7 @@ export async function executeConnectionTool(
         "Connection reported an error after dispatch; inspect the service result before continuing."
       )
   } catch (error) {
-    if (!tool.readOnly)
+    if (!readOnly)
       return requestReview(
         task.id,
         segmentNo,
