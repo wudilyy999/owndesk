@@ -9,6 +9,7 @@ export function Connections() {
     [name, setName] = useState(""),
     [kind, setKind] = useState("mcp_http"),
     [endpoint, setEndpoint] = useState(""),
+    [allowLoopback, setAllowLoopback] = useState(false),
     [bearer, setBearer] = useState(""),
     [command, setCommand] = useState(""),
     [args, setArgs] = useState("[]"),
@@ -29,6 +30,23 @@ export function Connections() {
   useEffect(() => {
     refresh().catch((cause) => setError(String(cause)))
   }, [])
+  function resetForm() {
+    setEditing(null)
+    setName("")
+    setKind("mcp_http")
+    setEndpoint("")
+    setAllowLoopback(false)
+    setBearer("")
+    setCommand("")
+    setArgs("[]")
+    setEnvironment("{}")
+    setClientId("")
+    setClientSecret("")
+    setAuthorizationUrl("")
+    setTokenUrl("")
+    setScope("")
+    setError("")
+  }
   async function post(url: string, body: unknown) {
     setBusy(true)
     setError("")
@@ -54,7 +72,8 @@ export function Connections() {
     <section id="connections" className="space-y-4 rounded-xl border border-border p-4">
       <h2 className="font-medium">应用连接</h2>
       <p className="text-xs text-muted-foreground">
-        连接可用于新任务。修改、禁用或断开后，正在运行的任务需要重新确认连接。写入操作显示参数并等你确认。
+        连接可用于新任务。修改、禁用或断开后，正在运行的任务需要重新确认连接。MCP
+        调用（包括自称只读的工具）显示参数并等你确认。
       </p>
       {error && (
         <p role="alert" className="text-sm text-destructive">
@@ -80,6 +99,7 @@ export function Connections() {
                     : {
                         kind,
                         url: endpoint,
+                        allowLoopback,
                         ...(bearer ? { bearer } : {}),
                         ...(authorizationUrl
                           ? {
@@ -100,10 +120,7 @@ export function Connections() {
                   config,
                 })
               ) {
-                setName("")
-                setBearer("")
-                setClientSecret("")
-                setEnvironment("{}")
+                resetForm()
               }
             } catch (cause) {
               setError(String(cause))
@@ -153,6 +170,14 @@ export function Connections() {
                 onChange={(event) => setBearer(event.target.value)}
                 className="block w-full rounded border p-2"
               />
+            </label>
+            <label className="block">
+              <input
+                type="checkbox"
+                checked={allowLoopback}
+                onChange={(event) => setAllowLoopback(event.target.checked)}
+              />
+              允许此连接访问本机回环地址（仅 localhost、127.0.0.1、::1；请确认服务可信）
             </label>
             <details>
               <summary>OAuth（可选）</summary>
@@ -241,6 +266,11 @@ export function Connections() {
         <Button disabled={busy} type="submit">
           {editing ? "替换连接配置" : "保存连接"}
         </Button>
+        {editing && (
+          <Button disabled={busy} type="button" variant="outline" onClick={resetForm}>
+            取消重新配置
+          </Button>
+        )}
       </form>
       {rows.map((row) => (
         <article key={row.id} className="space-y-2 border-t pt-3">
@@ -257,18 +287,10 @@ export function Connections() {
               variant="outline"
               disabled={busy}
               onClick={() => {
+                resetForm()
                 setEditing(row.id)
                 setName(row.name)
                 setKind(row.kind)
-                setEndpoint("")
-                setBearer("")
-                setCommand("")
-                setArgs("[]")
-                setEnvironment("{}")
-                setAuthorizationUrl("")
-                setTokenUrl("")
-                setClientId("")
-                setClientSecret("")
                 document.getElementById("connections")?.scrollIntoView()
               }}
             >
@@ -280,7 +302,14 @@ export function Connections() {
                 size="sm"
                 variant="outline"
                 disabled={busy || (action === "authorize" && row.kind === "mcp_stdio")}
-                onClick={() => void post(`/api/connections/${row.id}`, { action })}
+                onClick={async () => {
+                  if (
+                    (await post(`/api/connections/${row.id}`, { action })) &&
+                    action === "delete" &&
+                    editing === row.id
+                  )
+                    resetForm()
+                }}
               >
                 {["发现工具", "授权登录", "断开", "删除"][index]}
               </Button>

@@ -7,12 +7,13 @@ import { routines, routineRuns } from "@/db/schema"
 import { freezeRoutine, type RoutineTransaction } from "@/lib/routines"
 import { encryptSecret, decryptSecret } from "@/lib/secrets"
 import { env } from "@/lib/env"
+import { routineEventGoal, ROUTINE_EVENT_LABEL } from "./routine-event-goal"
 import { HttpError } from "@/lib/errors"
 
 const eventSchema = z
   .object({ id: z.string().min(1).max(200), data: z.unknown() })
   .refine(
-    (value) => JSON.stringify(value.data).length <= 12000,
+    (value) => value.data !== undefined && JSON.stringify(value.data).length <= 12000,
     "Event data exceeds 12000 characters"
   )
 const binding = (id: string) => `routine-webhook:${env.INSTALL_ID}:${id}`
@@ -46,13 +47,17 @@ async function stageEvent(
     .from(routineRuns)
     .where(eq(routineRuns.requestKey, key))
   if (previous) {
-    const suffix = previous.snapshot!.input.goal.split("\n触发事件（参考数据）：").at(-1)!
-    if (!isDeepStrictEqual(JSON.parse(suffix), data))
+    const snapshot = previous.snapshot!
+    const original = Object.hasOwn(snapshot, "eventData")
+      ? snapshot.eventData
+      : JSON.parse(snapshot.input.goal.split(ROUTINE_EVENT_LABEL).at(-1)!)
+    if (!isDeepStrictEqual(original, data))
       throw new HttpError(409, "Event ID already used with different data")
     return { runId: previous.id, reused: true }
   }
   const snapshot = await freezeRoutine(routine, ownerId, at, key)
-  snapshot.input.goal += `\n触发事件（参考数据）：${JSON.stringify(data)}`
+  snapshot.eventData = data
+  snapshot.input.goal = routineEventGoal(snapshot.input.goal, data)
   const runId = randomUUID()
   await tx.insert(routineRuns).values({
     id: runId,

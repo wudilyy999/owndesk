@@ -4,7 +4,7 @@ import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js"
 import { z } from "zod"
 
-function makeServer(onWrite) {
+function makeServer(onWrite, onRead = () => {}) {
   const server = new McpServer({ name: "fixture", version: "1.0.0" })
   server.registerTool(
     "fixture_read",
@@ -13,7 +13,10 @@ function makeServer(onWrite) {
       inputSchema: { query: z.string() },
       annotations: { readOnlyHint: true },
     },
-    async ({ query }) => ({ content: [{ type: "text", text: `Read: ${query}` }] })
+    async ({ query }) => {
+      onRead(query)
+      return { content: [{ type: "text", text: `Read: ${query}` }] }
+    }
   )
   server.registerTool(
     "fixture_write",
@@ -31,6 +34,7 @@ function makeServer(onWrite) {
 }
 export async function startMcpFixture() {
   const writes = [],
+    reads = [],
     tokens = [],
     sessions = []
   const http = createServer(async (req, res) => {
@@ -65,10 +69,13 @@ export async function startMcpFixture() {
         sessionIdGenerator: undefined,
         enableJsonResponse: true,
       })
-      const server = makeServer((text) => {
-        writes.push(text)
-        if (text === "lose-receipt") res.destroy()
-      })
+      const server = makeServer(
+        (text) => {
+          writes.push(text)
+          if (text === "lose-receipt") res.destroy()
+        },
+        (query) => reads.push(query)
+      )
       sessions.push(server)
       await server.connect(transport)
       res.on("close", () => {
@@ -87,6 +94,7 @@ export async function startMcpFixture() {
   return {
     url: `http://127.0.0.1:${http.address().port}`,
     writes,
+    reads,
     tokens,
     close: async () => {
       for (const server of sessions) await server.close()

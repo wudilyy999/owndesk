@@ -1,4 +1,5 @@
 import { z } from "zod"
+export const MAX_DEMONSTRATION_EVENTS = 150
 export const demonstrationEventSchema = z.discriminatedUnion("kind", [
   z.object({
     kind: z.literal("pointer"),

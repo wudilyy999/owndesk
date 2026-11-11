@@ -19,6 +19,7 @@ import {
   type ConnectionReference,
   type ConnectionTool,
 } from "./connection-schema"
+import { connectionFetch } from "./connection-fetch"
 import { googleTools, callGoogle } from "./google-connection"
 
 type ConnectionRow = {
@@ -135,8 +136,6 @@ const clientInformation = (config: NonNullable<ReturnType<typeof oauthConfig>>) 
   ...(config.clientSecret ? { client_secret: config.clientSecret } : {}),
 })
 const redirectUri = (id: string) => `${env.APP_URL}/api/connections/${id}/oauth`
-const boundedFetch: typeof fetch = (url, init) =>
-  fetch(url, { ...init, redirect: "error", signal: AbortSignal.timeout(30000) })
 export async function authorizeConnection(ownerId: string, id: string) {
   const row = await connectionRow(ownerId, id),
     config = decode<ConnectionConfig>(id, "config", row.config_cipher),
@@ -197,14 +196,15 @@ export async function finishConnectionAuthorization(
     [id, row.oauth_session_cipher]
   )
   if (!claimed.rowCount) throw new HttpError(409, "Authorization already used")
-  const oauth = oauthConfig(decode<ConnectionConfig>(id, "config", row.config_cipher))!
+  const config = decode<ConnectionConfig>(id, "config", row.config_cipher),
+    oauth = oauthConfig(config)!
   const tokens = await exchangeAuthorization(oauth.authorizationUrl, {
     metadata: metadata(oauth),
     clientInformation: clientInformation(oauth),
     authorizationCode: code,
     codeVerifier: session.codeVerifier,
     redirectUri: redirectUri(id),
-    fetchFn: boundedFetch,
+    fetchFn: connectionFetch(config.kind === "mcp_http" && config.allowLoopback),
   })
   await saveTokens(row, tokens)
 }
@@ -238,7 +238,7 @@ async function accessToken(row: ConnectionRow, config: ConnectionConfig) {
       metadata: metadata(oauth),
       clientInformation: clientInformation(oauth),
       refreshToken: tokens.refresh_token,
-      fetchFn: boundedFetch,
+      fetchFn: connectionFetch(config.kind === "mcp_http" && config.allowLoopback),
     })
     await saveTokens(row, next)
     tokens = { ...next, expiresAt: Date.now() + (next.expires_in ?? 3600) * 1000 }
@@ -259,7 +259,7 @@ async function mcp<T>(
             headers: token ? { Authorization: `Bearer ${token}` } : {},
             redirect: "error",
           },
-          fetch: boundedFetch,
+          fetch: connectionFetch(config.allowLoopback),
           reconnectionOptions: {
             maxReconnectionDelay: 1000,
             initialReconnectionDelay: 1000,
@@ -292,7 +292,8 @@ export async function discoverConnection(ownerId: string, id: string) {
                 name: tool.name,
                 description: tool.description,
                 inputSchema: tool.inputSchema,
-                readOnly: tool.annotations?.readOnlyHint === true,
+                // Server annotations are advisory, never owner authorization.
+                readOnly: false,
               }))
             )
             if (tools.length > 200)

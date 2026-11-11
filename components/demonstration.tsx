@@ -3,6 +3,7 @@ import { useEffect, useLayoutEffect, useRef, useState, type RefObject } from "re
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import {
+  MAX_DEMONSTRATION_EVENTS,
   demonstrationEventSchema,
   type DemonstrationEvent,
 } from "@/lib/demonstration-schema"
@@ -53,7 +54,7 @@ export function Demonstration({
   useLayoutEffect(() => {
     enqueue.current = (event) => {
       const current = recording.current
-      if (!current || failed.current) return
+      if (!current || failed.current || current.seq >= MAX_DEMONSTRATION_EVENTS) return
       if (event.kind === "protected_input" && lastProtected.current) return
       lastProtected.current = event.kind === "protected_input"
       current.seq++
@@ -120,6 +121,12 @@ export function Demonstration({
           <p>
             {paused ? "隐私暂停中" : "正在录制"} · {session.seq} 步
           </p>
+          {session.seq >= MAX_DEMONSTRATION_EVENTS && (
+            <p role="status">
+              已达到 {MAX_DEMONSTRATION_EVENTS}{" "}
+              步上限，已停止记录新动作；请结束并生成手册，后续操作可另开示范。
+            </p>
+          )}
           <div className="flex flex-wrap gap-2">
             <Button
               size="sm"
@@ -140,7 +147,7 @@ export function Demonstration({
             />
             <Button
               size="sm"
-              disabled={!note.trim() || paused}
+              disabled={!note.trim() || paused || session.seq >= MAX_DEMONSTRATION_EVENTS}
               onClick={() => {
                 enqueue.current({ kind: "checkpoint", note: note.trim() })
                 setNote("")

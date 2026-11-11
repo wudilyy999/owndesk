@@ -1,15 +1,6 @@
 import { z } from "zod"
-const endpoint = z.url().refine((value) => {
-  const url = new URL(value)
-  return (
-    !url.username &&
-    !url.password &&
-    !url.hash &&
-    (url.protocol === "https:" ||
-      (url.protocol === "http:" &&
-        ["localhost", "127.0.0.1", "[::1]"].includes(url.hostname)))
-  )
-}, "Use HTTPS or a local HTTP server")
+import { connectionEndpointAllowed } from "./connection-endpoint"
+const endpoint = z.url()
 export const oauthSchema = z.object({
   authorizationUrl: endpoint,
   tokenUrl: endpoint,
@@ -17,25 +8,35 @@ export const oauthSchema = z.object({
   clientSecret: z.string().optional(),
   scope: z.string().default(""),
 })
-export const connectionConfigSchema = z.discriminatedUnion("kind", [
-  z.object({
-    kind: z.literal("mcp_http"),
-    url: endpoint,
-    bearer: z.string().optional(),
-    oauth: oauthSchema.optional(),
-  }),
-  z.object({
-    kind: z.literal("mcp_stdio"),
-    command: z.string().min(1).max(500),
-    args: z.array(z.string().max(2000)).max(30).default([]),
-    env: z.record(z.string(), z.string()).default({}),
-  }),
-  z.object({
-    kind: z.literal("google"),
-    clientId: z.string().min(1),
-    clientSecret: z.string().min(1),
-  }),
-])
+export const connectionConfigSchema = z
+  .discriminatedUnion("kind", [
+    z.object({
+      kind: z.literal("mcp_http"),
+      url: endpoint,
+      allowLoopback: z.boolean().default(false),
+      bearer: z.string().optional(),
+      oauth: oauthSchema.optional(),
+    }),
+    z.object({
+      kind: z.literal("mcp_stdio"),
+      command: z.string().min(1).max(500),
+      args: z.array(z.string().max(2000)).max(30).default([]),
+      env: z.record(z.string(), z.string()).default({}),
+    }),
+    z.object({
+      kind: z.literal("google"),
+      clientId: z.string().min(1),
+      clientSecret: z.string().min(1),
+    }),
+  ])
+  .refine(
+    (config) =>
+      config.kind !== "mcp_http" ||
+      [config.url, config.oauth?.authorizationUrl, config.oauth?.tokenUrl]
+        .filter((url): url is string => url !== undefined)
+        .every((url) => connectionEndpointAllowed(url, config.allowLoopback)),
+    "Use public HTTPS endpoints; loopback requires explicit per-connection opt-in"
+  )
 export const connectionInputSchema = z.object({
   id: z.uuid().optional(),
   name: z.string().trim().min(1).max(80),

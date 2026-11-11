@@ -44,14 +44,19 @@ try {
     const owner = "connection-owner"
     const configured = await saveConnection(owner, {
       name: "Remote fixture",
-      config: { kind: "mcp_http", url: fixture.url + "/mcp", bearer: "fixture-access" },
+      config: {
+        kind: "mcp_http",
+        allowLoopback: true,
+        url: fixture.url + "/mcp",
+        bearer: "fixture-access",
+      },
     })
     assert.equal((await connectionSnapshot(owner)).length, 0)
     const catalog = await discoverConnection(owner, configured.id)
     assert.equal(catalog.tools.length, 2)
     assert.equal(
       catalog.tools.find((tool) => tool.name === "fixture_read")!.readOnly,
-      true
+      false
     )
     await setConnectionEnabled(owner, configured.id, true)
     const reference = (await connectionSnapshot(owner))[0]
@@ -124,6 +129,7 @@ try {
       enabled: true,
       config: {
         kind: "mcp_http",
+        allowLoopback: true,
         url: fixture.url + "/mcp",
         oauth: {
           authorizationUrl: fixture.url + "/authorize",

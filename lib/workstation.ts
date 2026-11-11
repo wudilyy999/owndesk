@@ -271,7 +271,7 @@ async function prepareWorkstation(agentId: string): Promise<Workspace> {
     throw new Error(
       "Workstation image protocol differs; drain and recreate it with the configured protocol-6 image"
     )
-  await prepareViewer(agentId, row)
+  await prepareViewer(agentId, row, health.bootId !== row.bootId)
   // Active tasks reconcile their boot in acquireWorkspace; an idle desktop has no task claimant.
   if (
     health.bootId !== row.bootId &&
@@ -294,7 +294,7 @@ async function prepareWorkstation(agentId: string): Promise<Workspace> {
   return row
 }
 
-async function prepareViewer(agentId: string, row: Workspace) {
+async function prepareViewer(agentId: string, row: Workspace, coldBoot: boolean) {
   const name = viewerName(agentId)
   const existing = await inspect(name)
   if (
@@ -343,7 +343,12 @@ async function prepareViewer(agentId: string, row: Workspace) {
       { env: { OWNDESK_VNC_PASSWORD: secret.password }, timeoutMs: 45000 }
     )
   }
-  if (!existing?.State.Running) await docker(["start", name], { timeoutMs: 45000 })
+  // A running viewer still holds the previous X11 connection after the guest
+  // reboots. Its old listener can briefly survive XIO before the process exits;
+  // restart it against the ready new display instead of trusting that listener.
+  if (existing?.State.Running && coldBoot)
+    await docker(["restart", "--time", "2", name], { timeoutMs: 45000 })
+  else if (!existing?.State.Running) await docker(["start", name], { timeoutMs: 45000 })
   await docker(
     [
       "exec",

@@ -363,6 +363,9 @@ try {
           await settings
             .getByLabel("访问令牌（可选）", { exact: true })
             .fill("fixture-access")
+          await settings
+            .getByRole("checkbox", { name: /允许此连接访问本机回环地址/ })
+            .check()
           await settings.getByRole("button", { name: "保存连接", exact: true }).click()
           const item = settings.locator("article").filter({ hasText: "UI MCP" })
           await item.getByRole("button", { name: "发现工具", exact: true }).click()
