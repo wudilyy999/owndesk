@@ -6297,8 +6297,9 @@ try {
         await card
           .getByText("通知决策：保持安静；本次成果和核对记录已保存。", { exact: true })
           .waitFor()
+        // Threaded tasks show their summary in the conversation, not the standalone card
         await page
-          .getByRole("article", { name: "交付结果", exact: true })
+          .getByLabel("对话记录")
           .getByText("模型声称发生巨大变化；请以程序比较为准。", { exact: true })
           .waitFor()
         const baseline = (await getTask(ownerId, quiet.taskId)).result!.comparison as any
