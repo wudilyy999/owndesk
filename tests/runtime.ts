@@ -2150,7 +2150,7 @@ try {
         .where(eq(schema.agents.id, target))
       await db
         .update(schema.memories)
-        .set({ content: "must-not-replace-frozen-memory" })
+        .set({ content: "recipient-memory-refreshed-after-acceptance" })
         .where(eq(schema.memories.agentId, target))
       await docker([
         "exec",
@@ -2230,9 +2230,10 @@ try {
       const messages = JSON.stringify(targetCall.messages)
       assert(
         messages.includes("recipient-standing-order-before-freeze") &&
-          messages.includes("recipient-memory-before-freeze") &&
           messages.includes("Use CSV")
       )
+      // Model/instructions stay frozen; memory is refreshed on every decision (685ea41).
+      assert(messages.includes("recipient-memory-refreshed-after-acceptance"))
       assert(!messages.includes("must-not-replace-frozen"))
       const web = spawn(
         process.execPath,
@@ -2282,7 +2283,7 @@ try {
           .getByText("交接说明：", { exact: false })
           .waitFor()
         assert.equal(
-          await page.getByRole("combobox").first().inputValue(),
+          await page.locator('select[aria-label="选择 Agent"]').first().inputValue(),
           normal.agentId
         )
         assert.equal(
@@ -2362,7 +2363,7 @@ try {
         await page.goto(`${process.env.APP_URL}/?task=${normal.taskId}`)
         await page.getByLabel("Agent 交接记录").waitFor()
         assert.equal(
-          await page.getByRole("combobox").first().inputValue(),
+          await page.locator('select[aria-label="选择 Agent"]').first().inputValue(),
           normal.agentId
         )
         assert.deepEqual(errors, [])
