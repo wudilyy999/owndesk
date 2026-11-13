@@ -137,7 +137,8 @@ try {
         return row.status === "active" ? undefined : row
       },
       "objective settles",
-      20 * 60_000
+      // Each round is a few model decisions; a slow relay can need far more than the default
+      Number(process.env.OBJECTIVES_LIVE_MINUTES ?? 20) * 60_000
     )
     assert.equal(final.status, "achieved", `ended ${final.status}: ${final.statusReason}`)
     const done = await rounds()
