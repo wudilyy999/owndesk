@@ -162,7 +162,7 @@ pass("Built two real versions and two broken derivatives", {
 let host: LinuxHost | undefined
 let passed = false
 try {
-  host = await linuxHost({ shareDirectory: true, memory: "4g" })
+  host = await linuxHost({ shareDirectory: true, memory: "4g", nft: true })
   const h = host
   const root = path.join(h.directory, "install")
   const deploy = path.join(root, "deploy")

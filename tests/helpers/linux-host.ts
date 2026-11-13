@@ -44,7 +44,9 @@ export function innerDocker(host: LinuxHost, args: string[], options: RunOptions
 // shareDirectory: bind the host's experiment directory at the same path inside the
 // Linux Docker host, so scripts can mount files from it (scripts/upgrade.sh does).
 export async function linuxHost(
-  options: { shareDirectory?: boolean; memory?: string } = {}
+  // nft: make the daemon program iptables-nft even when the outer host has legacy
+  // tables (the worker's guard reads DOCKER-USER with Debian's iptables-nft)
+  options: { shareDirectory?: boolean; memory?: string; nft?: boolean } = {}
 ): Promise<LinuxHost> {
   let host: LinuxHost
   if (process.env.PA_LINUX_HOST_STATE) {
@@ -79,6 +81,7 @@ export async function linuxHost(
       ...(options.shareDirectory ? ["--volume", `${directory}:${directory}`] : []),
       "--env",
       "DOCKER_TLS_CERTDIR=/certs",
+      ...(options.nft ? ["--env", "DOCKER_IPTABLES_LEGACY="] : []),
       "--publish",
       "127.0.0.1::2376/tcp",
       "--publish",
