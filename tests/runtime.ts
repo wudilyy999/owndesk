@@ -1537,15 +1537,19 @@ try {
       }, `owner request: ${purpose}`)
     }
     async function completed(taskId: string, timeout?: number) {
-      return until(async () => {
-        const task = await getTask(ownerId, taskId)
-        if (
-          task.status === "needs_review" &&
-          task.requests.some((request) => request.status === "pending")
-        )
-          throw new Error(JSON.stringify(task.requests))
-        return task.status === "completed" ? task : undefined
-      }, "task completion", timeout)
+      return until(
+        async () => {
+          const task = await getTask(ownerId, taskId)
+          if (
+            task.status === "needs_review" &&
+            task.requests.some((request) => request.status === "pending")
+          )
+            throw new Error(JSON.stringify(task.requests))
+          return task.status === "completed" ? task : undefined
+        },
+        "task completion",
+        timeout
+      )
     }
     if (focus === "routinehandoff") {
       const { eq } = await import("drizzle-orm")
