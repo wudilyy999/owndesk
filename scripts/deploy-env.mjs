@@ -56,6 +56,8 @@ const config = {
   WORKSTATION_CPUS: "2",
   WORKSTATION_MEMORY_MB: "4096",
   WORKSTATION_IDLE_MINUTES: "15",
+  // Lets the worker start the updater (version switch / rollback) against this directory
+  PA_DEPLOY_DIR: path.resolve(directory),
 }
 writeFileSync(
   paths[0],

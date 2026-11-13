@@ -486,6 +486,12 @@ export function Workspace({
           长期目标
         </Link>
         <Link
+          href="/versions"
+          className="block rounded-lg px-3 py-2 text-sm text-foreground/85 transition-colors hover:bg-surface hover:text-foreground"
+        >
+          版本
+        </Link>
+        <Link
           href="/workflows"
           className="block rounded-lg px-3 py-2 text-sm text-foreground/85 transition-colors hover:bg-surface hover:text-foreground"
         >

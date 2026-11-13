@@ -56,7 +56,8 @@ if [[ "$use_ghcr" -eq 1 ]]; then
   "
 else
   echo "GHCR images not available; building from source (this takes a while)..."
-  docker compose --file "$DEPLOY/compose.yaml" --env-file "$DEPLOY/.env" build web worker
+  PA_SOURCE_REVISION="$(git -C "$ROOT" rev-parse HEAD 2>/dev/null || echo unknown)" \
+    docker compose --file "$DEPLOY/compose.yaml" --env-file "$DEPLOY/.env" build web worker
   docker build --tag owndesk-workstation:0.7.0 "$ROOT/workstation"
 fi
 

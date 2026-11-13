@@ -37,6 +37,7 @@ import { resumeMonthlyBudgets } from "./budgets"
 import { startRoutineSchedule } from "./routines"
 import { sweepVault } from "@/lib/vault"
 import { assertWorkstationNetwork } from "./network"
+import { registerRunningVersion, requestSwitch } from "@/lib/versions"
 
 export async function startWorker() {
   await assertWorkstationNetwork()
@@ -119,11 +120,16 @@ export async function startWorker() {
     minPollingIntervalMs: 200,
   })
   await startRoutineSchedule()
+  void registerRunningVersion().catch((error) =>
+    console.error("Recording the running version failed", error)
+  )
   const server = createServer((req, res) => {
     if (
-      ["/internal/demonstrations/record", "/internal/workflows/template"].includes(
-        req.url ?? ""
-      ) &&
+      [
+        "/internal/demonstrations/record",
+        "/internal/workflows/template",
+        "/internal/versions/switch",
+      ].includes(req.url ?? "") &&
       req.method === "POST"
     ) {
       void (async () => {
@@ -143,7 +149,11 @@ export async function startWorker() {
           }
           const input = JSON.parse(Buffer.concat(chunks).toString())
           let result
-          if (req.url === "/internal/demonstrations/record")
+          if (req.url === "/internal/versions/switch")
+            result = await requestSwitch(
+              z.object({ versionId: z.string().min(1).max(64) }).parse(input).versionId
+            )
+          else if (req.url === "/internal/demonstrations/record")
             result = await recordDemonstration(
               owner.userId,
               z.uuid().parse(input.id),

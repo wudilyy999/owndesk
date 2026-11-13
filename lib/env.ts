@@ -41,6 +41,9 @@ const schema = z.object({
   VAPID_PRIVATE_KEY: blank(z.string().regex(/^[A-Za-z0-9_-]{40,50}$/)),
   // mailto: or https: contact the push service can use; defaults to APP_URL when that is https
   VAPID_SUBJECT: blank(z.string()),
+  // Host path of deploy/ (compose installs only); enables the versions page and updater
+  PA_DEPLOY_DIR: blank(z.string().startsWith("/")),
+  EVOLUTION_DIR: z.string().default("./data/evolution"),
   PA_CONTEXT_WINDOW_TOKENS: z.coerce.number().int().min(16384).default(65536),
 })
 

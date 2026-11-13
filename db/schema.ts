@@ -1676,3 +1676,85 @@ export const channelOutbox = pgTable(
 export type ChannelLink = typeof channelLinks.$inferSelect
 export type ChannelInbound = typeof channelInbound.$inferSelect
 export type ChannelOutbox = typeof channelOutbox.$inferSelect
+
+/* ─────────────────────────── versions (B0) ─────────────────────────── */
+
+// One row per web+worker image pair that ever ran here. The updater pins each
+// pair with local `keep-<image id>` tags so a moved tag (`latest`) cannot lose it.
+export const agentVersionStatuses = [
+  "candidate",
+  "evaluating",
+  "ready",
+  "rejected",
+  "active",
+  "retained",
+  "pruned",
+] as const
+export type AgentVersionImages = { web: string; worker: string }
+export const agentVersions = pgTable(
+  "agent_versions",
+  {
+    id: id(),
+    label: text().notNull(),
+    kind: text({ enum: ["upstream", "local"] })
+      .notNull()
+      .default("upstream"),
+    parentId: text().references((): AnyPgColumn => agentVersions.id, {
+      onDelete: "set null",
+    }),
+    // Commit the image was built from (OCI revision label); "unknown" for old images
+    sourceRevision: text().notNull().default("unknown"),
+    // Commit in the local version repository (evolution volume) holding /app/source.tar
+    gitCommit: text(),
+    webImageId: text().notNull(),
+    workerImageId: text().notNull(),
+    images: jsonb().notNull().$type<AgentVersionImages>(),
+    status: text({ enum: agentVersionStatuses }).notNull().default("retained"),
+    summary: text().notNull().default(""),
+    createdAt: timestamp(),
+    promotedAt: pgTimestamp({ withTimezone: true, mode: "date" }),
+    retiredAt: pgTimestamp({ withTimezone: true, mode: "date" }),
+  },
+  (t) => [uniqueIndex("agent_versions_images_idx").on(t.webImageId, t.workerImageId)]
+)
+
+export type DeploymentHealthEntry = {
+  at: string
+  ok: boolean
+  web: boolean
+  worker: boolean
+  detail?: string
+}
+export const deploymentActions = ["promote", "rollback", "auto_rollback"] as const
+export const deploymentStatuses = ["running", "healthy", "rolled_back", "failed"] as const
+export const deployments = pgTable(
+  "deployments",
+  {
+    id: id(),
+    fromVersionId: text().references(() => agentVersions.id, { onDelete: "set null" }),
+    toVersionId: text()
+      .notNull()
+      .references(() => agentVersions.id),
+    action: text({ enum: deploymentActions }).notNull(),
+    status: text({ enum: deploymentStatuses }).notNull().default("running"),
+    // Where the updater is: switching | migrating | starting | checking | watching | done
+    phase: text().notNull().default("switching"),
+    reason: text(),
+    healthLog: jsonb().notNull().$type<DeploymentHealthEntry[]>().default([]),
+    // The auto_rollback this deployment caused, or the deployment it undid
+    relatedId: text(),
+    startedAt: timestamp(),
+    updatedAt: timestamp(),
+    finishedAt: pgTimestamp({ withTimezone: true, mode: "date" }),
+  },
+  (t) => [
+    index("deployments_started_idx").on(t.startedAt),
+    // At most one switch in flight per installation
+    uniqueIndex("deployments_running_idx")
+      .on(t.status)
+      .where(sql`${t.status} = 'running'`),
+  ]
+)
+
+export type AgentVersion = typeof agentVersions.$inferSelect
+export type Deployment = typeof deployments.$inferSelect
