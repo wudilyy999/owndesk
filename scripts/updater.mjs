@@ -347,9 +347,19 @@ async function prune(activeId) {
       [kept.slice(0, KEEP_VERSIONS)]
     )
   ).rows
+  // A pruned or rejected pair can share one image with a kept pair (e.g. a new worker
+  // with the same web image): never untag what a kept version still uses.
+  const inUse = new Set(
+    (
+      await client.query("SELECT images FROM agent_versions WHERE id = ANY($1)", [
+        kept.slice(0, KEEP_VERSIONS),
+      ])
+    ).rows.flatMap((row) => [row.images.web, row.images.worker])
+  )
   for (const row of drop) {
     for (const tag of [row.images.web, row.images.worker])
-      if (/:keep-[a-f0-9]{12}$/.test(tag)) await run("docker", ["rmi", tag])
+      if (/:keep-[a-f0-9]{12}$/.test(tag) && !inUse.has(tag))
+        await run("docker", ["rmi", tag])
     await client.query(
       `UPDATE agent_versions SET status=CASE WHEN status='rejected' THEN 'rejected' ELSE 'pruned' END,
        retired_at=now() WHERE id=$1`,
