@@ -169,6 +169,26 @@ export async function submitTask(ownerId: string, source: string, raw: TaskInput
       throw new HttpError(400, "A life session is a plain single-agent task")
     config.lifeSession = input.lifeSession
   } else await preemptLifeSessions(ownerId, agent.id)
+  if (input.objectiveRound) {
+    if (
+      source !== "objective" ||
+      config.runtime !== "agent" ||
+      input.threadId ||
+      input.delegateAgentIds?.length ||
+      input.workflowCompilation ||
+      input.workflowExecution ||
+      input.manualCompilation ||
+      input.workstationChannel ||
+      input.completionContract.comparison
+    )
+      throw new HttpError(400, "An objective round is a plain single-agent task")
+    const owned = await pool.query(
+      "SELECT 1 FROM objectives WHERE id=$1 AND owner_id=$2 AND agent_id=$3",
+      [input.objectiveRound.objectiveId, ownerId, agent.id]
+    )
+    if (!owned.rowCount) throw new HttpError(404, "Objective not found")
+    config.objectiveRound = input.objectiveRound
+  }
   if (input.workstationChannel) {
     if (
       config.runtime !== "agent" ||
@@ -279,8 +299,9 @@ export async function submitTask(ownerId: string, source: string, raw: TaskInput
     const inserted = await client.query<{ id: string }>(
       `
       INSERT INTO tasks(id,owner_id,agent_id,source,request_key,request_payload,goal,status,
-        active_segment,completion_contract,config_snapshot,budget,next_event_seq,created_at,updated_at)
-      VALUES($1,$2,$3,$4,$5,$6,$7,'queued',1,$8,$9,$10,0,now(),now())
+        active_segment,completion_contract,config_snapshot,budget,next_event_seq,objective_id,
+        created_at,updated_at)
+      VALUES($1,$2,$3,$4,$5,$6,$7,'queued',1,$8,$9,$10,0,$11,now(),now())
       ON CONFLICT(owner_id,source,request_key) DO NOTHING RETURNING id`,
       [
         taskId,
@@ -293,6 +314,7 @@ export async function submitTask(ownerId: string, source: string, raw: TaskInput
         JSON.stringify(completionContract),
         JSON.stringify(config),
         JSON.stringify(budget),
+        input.objectiveRound?.objectiveId ?? null,
       ]
     )
     if (!inserted.rowCount) {

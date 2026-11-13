@@ -6,8 +6,15 @@ import type { ModelMessage, ToolModelMessage } from "ai"
 import { z } from "zod"
 import { db, pool } from "@/db"
 import { eq } from "drizzle-orm"
-import { tasks, budgetChangesSchema, type Task, type SegmentSnapshot } from "@/db/schema"
 import {
+  tasks,
+  budgetChangesSchema,
+  type Task,
+  type SegmentSnapshot,
+  type CompletionContract,
+} from "@/db/schema"
+import {
+  objectiveCompleteTool,
   toolsForCoordinateMode,
   toolsForTask,
   isAgentTool,
@@ -555,9 +562,11 @@ async function runTool(
   const parsed = (
     internalLaunch
       ? z.object({ application: workflowApplicationSchema })
-      : (toolsForCoordinateMode(task.configSnapshot.desktopCoordinateMode ?? "pixels")[
-          toolName as keyof ReturnType<typeof toolsForCoordinateMode>
-        ].inputSchema as z.ZodObject)
+      : toolName === "complete_task" && task.configSnapshot.objectiveRound
+        ? (objectiveCompleteTool.inputSchema as z.ZodObject)
+        : (toolsForCoordinateMode(task.configSnapshot.desktopCoordinateMode ?? "pixels")[
+            toolName as keyof ReturnType<typeof toolsForCoordinateMode>
+          ].inputSchema as z.ZodObject)
   ).safeParse(raw)
   if (!parsed.success) return { ok: false, output: { error: parsed.error.message } }
   const input = parsed.data as Record<string, unknown>
@@ -823,6 +832,14 @@ async function runTool(
       },
     }
   }
+  // An objective round that reports progress ends without the objective's final check;
+  // only a round that claims the whole objective is achieved faces the contract.
+  const round = task.configSnapshot.objectiveRound
+  const achieved =
+    !!round &&
+    (input.objective as { status?: unknown } | undefined)?.status === "achieved"
+  const contract: CompletionContract =
+    round && !achieved ? { requireHumanReview: false } : task.completionContract
   try {
     const { files, comparison, directoryTree } = await trackActivity(task.id, () =>
       collectArtifacts(
@@ -831,11 +848,11 @@ async function runTool(
         actionNo,
         task.agentId,
         input.files as Deliverable[],
-        task.completionContract
+        contract
       )
     )
     const completionRequest = `${id}-completion`
-    if (task.completionContract.requireHumanReview) {
+    if (contract.requireHumanReview) {
       const {
         rows: [review],
       } = await pool.query<{ status: string; decision: string }>(
@@ -861,8 +878,9 @@ async function runTool(
       files,
       ...(comparison ? { comparison, notification: comparison.notification } : {}),
       ...(directoryTree ? { directoryTree } : {}),
+      ...(round ? { objective: { status: achieved ? "achieved" : "progress" } } : {}),
       verification: {
-        grade: task.completionContract.requireHumanReview
+        grade: contract.requireHumanReview
           ? "human_confirmed"
           : directoryTree
             ? "program_checked"
@@ -1030,6 +1048,22 @@ export async function runAgent(taskId: string, segmentNo: number) {
         return done.output
       }
       if (
+        task.configSnapshot.objectiveRound &&
+        (usageRows[0].decisions >= control.budget.maxSteps || overCost)
+      ) {
+        // A round's allowance ends the round; the objective decides whether to continue
+        const done = await DBOS.runStep(
+          () =>
+            finishTask(task, segmentNo, {
+              summary: overCost ? "本轮花费额度用完。" : "本轮步数用完。",
+              files: [],
+              objective: { status: "progress", end: overCost ? "cost" : "steps" },
+            }),
+          { name: "objective-round-finish" }
+        )
+        return done.output
+      }
+      if (
         !task.configSnapshot.workflowExecution &&
         (usageRows[0].decisions >= control.budget.maxSteps || overCost)
       ) {
@@ -1157,12 +1191,19 @@ export async function runAgent(taskId: string, segmentNo: number) {
               toolName: "complete_task",
               input: {
                 summary: decision.text,
-                files: [
-                  task.completionContract.artifact,
-                  task.completionContract.comparison?.baseline,
-                ]
+                files: (task.configSnapshot.objectiveRound
+                  ? []
+                  : [
+                      task.completionContract.artifact,
+                      task.completionContract.comparison?.baseline,
+                    ]
+                )
                   .filter((file) => file !== undefined)
                   .map((file) => ({ path: file.path, mediaType: "text/csv" })),
+                // A plain answer ends an objective round as progress, never as achieved
+                ...(task.configSnapshot.objectiveRound
+                  ? { objective: { status: "progress" } }
+                  : {}),
               },
             },
           ]

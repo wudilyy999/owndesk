@@ -709,6 +709,13 @@ export const taskInputSchema = z.object({
     })
     .optional(),
   desktopCoordinateMode: z.enum(["pixels", "normalized_1000"]).optional(),
+  // One round of a long-running objective (lib/objectives.ts submits it)
+  objectiveRound: z
+    .object({
+      objectiveId: z.string().min(1).max(100),
+      roundNo: z.number().int().min(1).max(100000),
+    })
+    .optional(),
   delegateAgentIds: z.array(z.string().min(1).max(100)).max(32).optional(),
   threadId: z.string().min(1).max(100).optional(),
   goal: z.string().trim().min(1).max(16000),
@@ -807,6 +814,8 @@ export const tasks = pgTable(
       workstationChannel?: "desktop"
       // A companion's daily-life session: restricted tools, own prompt
       lifeSession?: { prompt: string; coview?: { requestId: string; url: string } }
+      // One round of a long-running objective
+      objectiveRound?: { objectiveId: string; roundNo: number }
       runtime: "fixture" | "agent"
     }>(),
     budget: jsonb().notNull().$type<TaskInput["budget"]>(),
@@ -815,15 +824,120 @@ export const tasks = pgTable(
     cancelRequestedAt: pgTimestamp({ withTimezone: true }),
     cancelWorkflowPending: boolean().notNull().default(false),
     nextEventSeq: integer().notNull().default(0),
+    objectiveId: text().references((): AnyPgColumn => objectives.id),
     createdAt: timestamp(),
     updatedAt: timestamp(),
   },
   (t) => [
     uniqueIndex("tasks_source_request_idx").on(t.ownerId, t.source, t.requestKey),
+    index("tasks_objective_idx").on(t.objectiveId),
     index("tasks_agent_created_idx").on(t.agentId, t.createdAt),
     uniqueIndex("tasks_thread_turn_idx").on(t.threadId, t.threadTurn),
   ]
 )
+
+/* ──────────────────────── long-running objectives ──────────────────────── */
+
+export const objectiveStatuses = [
+  "active",
+  "paused",
+  "achieved",
+  "budget_limited",
+  "stopped",
+] as const
+export type ObjectiveStatus = (typeof objectiveStatuses)[number]
+// Every limit is optional and absent by default; only roundMaxSteps sizes one round.
+export const objectiveBudgetSchema = z.object({
+  roundMaxSteps: z.number().int().min(1).max(200).default(40),
+  maxCostMicros: z.number().int().min(1).max(100_000_000_000).optional(),
+  maxSteps: z.number().int().min(1).max(1_000_000).optional(),
+  maxRounds: z.number().int().min(1).max(100_000).optional(),
+  deadlineAt: z.iso.datetime({ offset: true }).optional(),
+})
+export type ObjectiveBudget = z.infer<typeof objectiveBudgetSchema>
+// A long-running objective may check a file or a directory, or ask the owner; it has
+// no frozen baseline, so report comparisons stay a routine feature.
+export const objectiveContractSchema = z
+  .object({
+    artifact: csvArtifactSchema.optional(),
+    directoryTree: directoryTreeSchema.optional(),
+    requireHumanReview: z.boolean().default(false),
+  })
+  .strict()
+export const objectiveInputSchema = z.object({
+  agentId: z.string().min(1).max(100),
+  title: z.string().trim().min(1, "给目标起个名字").max(60),
+  objective: z.string().trim().min(1, "写下要达成的目标").max(4000),
+  doneCriteria: z.string().trim().max(2000).default(""),
+  completionContract: objectiveContractSchema.default({ requireHumanReview: false }),
+  budget: objectiveBudgetSchema.default({ roundMaxSteps: 40 }),
+})
+export type ObjectiveInput = z.infer<typeof objectiveInputSchema>
+
+export const objectives = pgTable(
+  "objectives",
+  {
+    id: id(),
+    ownerId: text().notNull(),
+    agentId: text()
+      .notNull()
+      .references(() => agents.id, { onDelete: "cascade" }),
+    title: text().notNull(),
+    objective: text().notNull(),
+    doneCriteria: text().notNull().default(""),
+    completionContract: jsonb().notNull().$type<CompletionContract>(),
+    status: text({ enum: objectiveStatuses }).notNull().default("active"),
+    statusReason: text(),
+    budget: jsonb().notNull().$type<ObjectiveBudget>(),
+    // Consecutive rounds that failed or were cancelled outside the owner's stop
+    failures: integer().notNull().default(0),
+    // The chat card that created it, so confirming twice creates one objective
+    proposalId: text().unique(),
+    createdAt: timestamp(),
+    updatedAt: timestamp(),
+    finishedAt: pgTimestamp({ withTimezone: true, mode: "date" }),
+  },
+  (t) => [index("objectives_status_idx").on(t.status)]
+)
+
+export type ObjectiveRoundInput = Omit<TaskInput, "clientRequestId"> & {
+  clientRequestId: string
+}
+export const objectiveVerdicts = [
+  "progress",
+  "achieved",
+  "steps",
+  "cost",
+  "failed",
+  "cancelled",
+] as const
+export type ObjectiveVerdict = (typeof objectiveVerdicts)[number]
+export const objectiveRounds = pgTable(
+  "objective_rounds",
+  {
+    id: id(),
+    objectiveId: text()
+      .notNull()
+      .references(() => objectives.id, { onDelete: "cascade" }),
+    roundNo: integer().notNull(),
+    // Frozen before submission, so a retried submission is the same request
+    input: jsonb().notNull().$type<ObjectiveRoundInput>(),
+    taskId: text()
+      .unique()
+      .references(() => tasks.id),
+    // Empty while the round's task is still open
+    verdict: text({ enum: objectiveVerdicts }),
+    summary: text(),
+    steps: integer().notNull().default(0),
+    costMicros: bigint({ mode: "number" }).notNull().default(0),
+    unknownCost: boolean().notNull().default(false),
+    startedAt: timestamp(),
+    finishedAt: pgTimestamp({ withTimezone: true, mode: "date" }),
+  },
+  (t) => [uniqueIndex("objective_rounds_round_idx").on(t.objectiveId, t.roundNo)]
+)
+export type Objective = typeof objectives.$inferSelect
+export type ObjectiveRound = typeof objectiveRounds.$inferSelect
 
 export const taskSegments = pgTable(
   "task_segments",
@@ -1317,6 +1431,8 @@ export const companionMessages = pgTable(
         "memory_candidate",
         "memory_merge",
         "coview",
+        "objective_proposal",
+        "objective_update",
       ],
     })
       .notNull()

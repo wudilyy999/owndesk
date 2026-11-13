@@ -86,6 +86,8 @@
     "test:telegram:handoff": "tsx tests/telegram.ts handoff",
     "test:runtime:usage": "tsx tests/runtime.ts usage",
     "test:runtime:routines": "tsx tests/runtime.ts routines",
+    "test:runtime:objectives": "tsx tests/runtime.ts objectives",
+    "test:objectives:live": "tsx tests/objectives-live.ts",
     "test:runtime:reports": "tsx tests/runtime.ts reports",
     "test:runtime:vault": "tsx tests/runtime.ts vault",
     "test:runtime:vaultfill": "tsx tests/runtime.ts vaultfill",

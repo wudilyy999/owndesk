@@ -6,6 +6,7 @@ import { routineRuns } from "@/db/schema"
 import { HttpError } from "@/lib/errors"
 import { companionTick } from "@/lib/companion/tick"
 import { stageChangedRoutines } from "@/lib/routine-events"
+import { advanceObjectives } from "@/lib/objectives"
 import { stageDueRoutines } from "@/lib/routines"
 import { submitTask } from "@/lib/tasks"
 
@@ -54,6 +55,7 @@ export const routineDispatcher = DBOS.registerWorkflow(
     // committed but before the routine run received its task ID.
     await DBOS.runStep(dispatchRoutines, { name: "dispatch-due-routines" })
     await DBOS.runStep(() => companionTick(), { name: "companion-tick" })
+    await DBOS.runStep(() => advanceObjectives(), { name: "advance-objectives" })
   },
   { name: "routine-dispatcher-v1" }
 )

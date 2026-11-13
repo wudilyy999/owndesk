@@ -225,6 +225,13 @@
       "when": 1794130219646,
       "tag": "0031_demonstrations",
       "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "7",
+      "when": 1794592276821,
+      "tag": "0032_objectives",
+      "breakpoints": true
     }
   ]
 }

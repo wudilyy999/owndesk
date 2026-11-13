@@ -351,6 +351,109 @@ try {
     /已经处理过/
   )
 
+  // 10. Long-running objectives from chat: a card to confirm, then list / pause by chat
+  await pool.query("DELETE FROM companion_messages")
+  const { confirmObjectiveProposal } = await import("@/lib/companion/objectives")
+  const draft = {
+    title: "整理旅行照片",
+    objective: "把 2026 年的旅行照片按城市整理成文件夹",
+    doneCriteria: "每个城市一个文件夹",
+    maxRounds: 5,
+  }
+  const proposalSeen: string[] = []
+  await companionChat(
+    { ownerId, agentId, text: "帮我慢慢把旅行照片整理好" },
+    {
+      model: scripted(
+        [[call("propose_objective", draft)], text("我写好了，你确认一下")],
+        proposalSeen
+      ),
+      price,
+    }
+  )
+  let card = (await rows()).find((m) => m.kind === "objective_proposal")!
+  assert.equal(card.content, "整理旅行照片")
+  assert.deepEqual(card.metadata, {
+    proposal: {
+      title: draft.title,
+      objective: draft.objective,
+      doneCriteria: draft.doneCriteria,
+      completionContract: { requireHumanReview: false },
+      budget: { roundMaxSteps: 40, maxRounds: 5 },
+    },
+    status: "pending",
+    sourceMessageId: (await rows()).find((m) => m.role === "user")!.id,
+  })
+  assert.match(proposalSeen[0], /propose_objective/)
+  // A pending card belongs to the latest turn: regenerating replaces it
+  await companionChat(
+    { ownerId, agentId, text: "", redo: "regenerate" },
+    {
+      model: scripted([[call("propose_objective", draft)], text("重新写好了")]),
+      price,
+    }
+  )
+  const cards = (await rows()).filter((m) => m.kind === "objective_proposal")
+  assert.equal(cards.length, 2)
+  assert.ok(cards[0].supersededAt)
+  await assert.rejects(confirmObjectiveProposal(ownerId, cards[0].id), /already answered/)
+  card = cards[1]
+  const objective = await confirmObjectiveProposal(ownerId, card.id)
+  assert.equal(objective.status, "active")
+  assert.deepEqual(objective.budget, { roundMaxSteps: 40, maxRounds: 5 })
+  const listSeen: string[] = []
+  await companionChat(
+    { ownerId, agentId, text: "照片整理得怎么样了，先停一下吧" },
+    {
+      model: scripted(
+        [
+          [call("manage_objective", { action: "list" })],
+          [call("manage_objective", { action: "pause", id: objective.id })],
+          text("先停下了"),
+        ],
+        listSeen
+      ),
+      price,
+    }
+  )
+  assert.match(listSeen[1], new RegExp(objective.id))
+  assert.match(listSeen[1], /整理旅行照片/)
+  // History shows her the card she proposed, not raw metadata
+  assert.match(listSeen[0], /我提出了一个长期目标，等你确认：整理旅行照片/)
+  const { objectives } = await import("@/db/schema")
+  const [paused] = await db
+    .select()
+    .from(objectives)
+    .where(eq(objectives.id, objective.id))
+  assert.equal(paused.status, "paused")
+  // Another agent's objective cannot be paused from this chat
+  const otherAgent = randomUUID()
+  await pool.query(
+    "INSERT INTO agents(id,name,role,glyph,model,created_at,updated_at) VALUES($1,'别人','Other','fixture','custom/mock',now(),now())",
+    [otherAgent]
+  )
+  const { createObjective } = await import("@/lib/objectives")
+  const foreign = await createObjective(ownerId, {
+    agentId: otherAgent,
+    title: "别人的目标",
+    objective: "不属于她",
+  })
+  const foreignSeen: string[] = []
+  await companionChat(
+    { ownerId, agentId, text: "停掉那个" },
+    {
+      model: scripted(
+        [[call("manage_objective", { action: "stop", id: foreign.id })], text("好")],
+        foreignSeen
+      ),
+      price,
+    }
+  )
+  assert.match(foreignSeen[1], /没有这个目标/)
+  const [still] = await db.select().from(objectives).where(eq(objectives.id, foreign.id))
+  assert.equal(still.status, "active")
+  await pool.query("UPDATE objectives SET status='stopped'")
+
   await closeDurableClient()
   await pool.end()
   console.log("companion B1 integration passed")
