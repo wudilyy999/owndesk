@@ -63,11 +63,14 @@ export async function importSource(revision = sourceRevision()) {
     `${tag}^{commit}`,
   ]).catch(() => "")
   if (existing) return existing
-  const work = await mkdtemp(path.join(os.tmpdir(), "owndesk-source-"))
+  const scratch = await mkdtemp(path.join(os.tmpdir(), "owndesk-source-"))
+  const work = path.join(scratch, "tree")
   try {
+    await mkdir(work)
     await exec("tar", ["-xf", SOURCE_TAR, "-C", work])
-    const index = { GIT_INDEX_FILE: path.join(work, ".git-index"), GIT_WORK_TREE: work }
-    await git(["add", "--all", "--force", "--", ".", ":!.git-index"], index)
+    // The index lives outside the tree so nothing but the source is committed
+    const index = { GIT_INDEX_FILE: path.join(scratch, "index"), GIT_WORK_TREE: work }
+    await git(["add", "--all", "--force", "--", "."], index)
     const tree = await git(["write-tree"], index)
     const parent = await git([
       "rev-parse",
@@ -95,7 +98,7 @@ export async function importSource(revision = sourceRevision()) {
     await git(["update-ref", tag, commit])
     return commit
   } finally {
-    await rm(work, { recursive: true, force: true })
+    await rm(scratch, { recursive: true, force: true })
   }
 }
 
