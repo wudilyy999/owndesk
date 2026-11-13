@@ -23,6 +23,10 @@ test("deployment bootstrap keeps separate private keys and refuses overwriting a
     assert.match(app, /PA_BIND_IP=127.0.0.1/)
     assert.match(app, /WORKSTATION_IDLE_MINUTES=15/)
     assert.match(app, /PA_HTTPS_PORT=19443/)
+    assert(
+      app.includes(`PA_DEPLOY_DIR=${path.resolve(directory)}\n`),
+      "the updater needs the deploy directory's host path"
+    )
     const publicKey = app.match(/^VAPID_PUBLIC_KEY=([A-Za-z0-9_-]{87})$/m)?.[1]
     const privateKey = app.match(/^VAPID_PRIVATE_KEY=([A-Za-z0-9_-]{43})$/m)?.[1]
     assert(publicKey && privateKey, "web push keys are generated")
