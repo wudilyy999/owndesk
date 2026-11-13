@@ -1536,7 +1536,7 @@ try {
         )
       }, `owner request: ${purpose}`)
     }
-    async function completed(taskId: string) {
+    async function completed(taskId: string, timeout?: number) {
       return until(async () => {
         const task = await getTask(ownerId, taskId)
         if (
@@ -1545,7 +1545,7 @@ try {
         )
           throw new Error(JSON.stringify(task.requests))
         return task.status === "completed" ? task : undefined
-      }, "task completion")
+      }, "task completion", timeout)
     }
     if (focus === "routinehandoff") {
       const { eq } = await import("drizzle-orm")
@@ -8164,7 +8164,9 @@ try {
       }
       async function delivered(taskId: string, nameColumn = "name") {
         try {
-          const result = await completed(taskId)
+          // Each transfer runs about 50s on a freshly booted workstation, and the first
+          // observation can wait 30s for the cold desktop; the default 75s cap is too tight.
+          const result = await completed(taskId, 600_000)
           assert.equal(
             result.artifacts.length,
             1,
