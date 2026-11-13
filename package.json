@@ -104,6 +104,7 @@
     "test:capacity": "tsx tests/capacity.ts",
     "test:capacity:idle": "tsx tests/capacity.ts idle",
     "test:restore": "tsx tests/restore.ts",
+    "test:versions": "tsx tests/versions.ts",
     "snapshot": "node scripts/snapshot.mjs",
     "test:connections:ui": "tsx tests/connections-ui.ts"
   },

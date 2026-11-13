@@ -41,7 +41,11 @@ export function innerDocker(host: LinuxHost, args: string[], options: RunOptions
   })
 }
 
-export async function linuxHost(): Promise<LinuxHost> {
+// shareDirectory: bind the host's experiment directory at the same path inside the
+// Linux Docker host, so scripts can mount files from it (scripts/upgrade.sh does).
+export async function linuxHost(
+  options: { shareDirectory?: boolean; memory?: string } = {}
+): Promise<LinuxHost> {
   let host: LinuxHost
   if (process.env.PA_LINUX_HOST_STATE) {
     host = JSON.parse(await readFile(process.env.PA_LINUX_HOST_STATE, "utf8"))
@@ -71,7 +75,8 @@ export async function linuxHost(): Promise<LinuxHost> {
       "--cpus",
       "2",
       "--memory",
-      "3g",
+      options.memory ?? "3g",
+      ...(options.shareDirectory ? ["--volume", `${directory}:${directory}`] : []),
       "--env",
       "DOCKER_TLS_CERTDIR=/certs",
       "--publish",
