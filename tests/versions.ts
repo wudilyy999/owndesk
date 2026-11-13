@@ -21,6 +21,7 @@ import {
 
 const exec = promisify(execFile)
 const repo = process.cwd()
+await mkdir(path.resolve("data/experiments"), { recursive: true })
 const evidence = process.env.B0_EVIDENCE_DIR
 const keep = process.env.B0_KEEP === "1"
 const HANG_AFTER = Number(process.env.B0_HANG_AFTER_SECONDS || 75)
