@@ -130,12 +130,13 @@ export async function linuxHost(
   await mkdir(certs, { recursive: true, mode: 0o700 })
   const deadline = Date.now() + 90000
   while (true) {
+    // key.pem appears before the client certificate is signed; wait for all three
     const ready = await dockerRaw([
       "exec",
       host.name,
-      "test",
-      "-f",
-      "/certs/client/key.pem",
+      "sh",
+      "-c",
+      "test -s /certs/client/key.pem && test -s /certs/client/cert.pem && test -s /certs/client/ca.pem",
     ])
     if (ready.exitCode === 0) break
     assert(Date.now() < deadline, "Linux host TLS certificates did not become ready")
