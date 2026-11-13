@@ -45,6 +45,7 @@ assert(
     "paymentsubmit",
     "handoff",
     "routinehandoff",
+    "objectives",
   ].includes(focus),
   `Unknown runtime check: ${focus}`
 )
@@ -191,6 +192,84 @@ const modelServer = createServer((req, res) => {
     const scenario = scenarios.get(marker[2])!
     scenario.calls.push(body)
     const index = scenario.calls.length
+    if (scenario.kind.startsWith("objective_")) {
+      // Each round is its own task; the round number and this round's calls come from the request
+      const prompt = JSON.stringify(latestPrompt.content)
+      const roundNo = Number(/round (\d+)\./.exec(prompt)![1])
+      const calls = body.messages.flatMap((message: any) => message.tool_calls ?? [])
+      const results = body.messages.filter((message: any) => message.role === "tool")
+      scenario.observed = { ...(scenario.observed ?? {}), [roundNo]: prompt }
+      if (scenario.kind === "objective_csv") {
+        if (roundNo === 1) {
+          if (!calls.length) {
+            answer(res, index, "fs_write", {
+              path: "report.csv",
+              content: "date,amount\n2026-10-12,100\n",
+            })
+            return
+          }
+          answer(res, index, "complete_task", {
+            summary:
+              "Wrote the first row of report.csv; the second day is still missing.",
+            files: [],
+            objective: { status: "progress" },
+          })
+          return
+        }
+        assert.match(prompt, /Round 1 \(progress\): Wrote the first row/)
+        if (!calls.length) {
+          // Claims achieved too early: the objective's CSV check must refuse one row
+          answer(res, index, "complete_task", {
+            summary: "Report is complete.",
+            files: [{ path: "report.csv", mediaType: "text/csv" }],
+            objective: { status: "achieved" },
+          })
+          return
+        }
+        if (calls.length === 1) {
+          assert.match(
+            results.at(-1).content,
+            /verificationFailed|rows|minimum|at least/i
+          )
+          answer(res, index, "fs_write", { path: "report.csv", content: goodCsv })
+          return
+        }
+        answer(res, index, "complete_task", {
+          summary: "Both days are in report.csv.",
+          files: [{ path: "report.csv", mediaType: "text/csv" }],
+          objective: { status: "achieved" },
+        })
+        return
+      }
+      if (scenario.kind === "objective_steps") {
+        answer(res, index, "fs_list", { path: "." })
+        return
+      }
+      if (scenario.kind === "objective_fail") {
+        // Never answered: the test cancels the round while its request is in flight
+        scenario.pending = res
+        return
+      }
+      if (scenario.kind === "objective_hold") {
+        await new Promise<void>((resolve) => {
+          scenario.release = resolve
+        })
+        scenario.release = undefined
+        answer(res, index, "complete_task", {
+          summary: `Round ${roundNo} made progress.`,
+          files: [],
+          objective: { status: "progress" },
+        })
+        return
+      }
+      // objective_quick: one round, achieved straight away
+      answer(res, index, "complete_task", {
+        summary: "Done in one go.",
+        files: [],
+        objective: { status: "achieved" },
+      })
+      return
+    }
     if (scenario.kind === "routine_roster") {
       const calls = body.messages.flatMap((message: any) => message.tool_calls ?? [])
       const listed = calls.find((call: any) => call.function.name === "list_agents")
@@ -1258,6 +1337,22 @@ async function until<T>(
   }
   throw new Error(`Timed out: ${name}`)
 }
+async function navLink(page: import("playwright").Page, name: string) {
+  // Phone widths keep the workspace navigation inside the "会话" drawer
+  const link = page.getByRole("link", { name, exact: true })
+  const drawer = page.getByRole("button", { name: "会话", exact: true })
+  const deadline = Date.now() + 30000
+  while (Date.now() < deadline) {
+    if (await link.isVisible()) return link
+    if (await drawer.isVisible()) {
+      await drawer.click()
+      await link.waitFor()
+      return link
+    }
+    await delay(100)
+  }
+  throw new Error(`Timed out: navigation link ${name}`)
+}
 async function command(file: string) {
   const child = spawn(process.execPath, ["--import", "tsx", file], { env: process.env })
   let output = ""
@@ -1441,16 +1536,20 @@ try {
         )
       }, `owner request: ${purpose}`)
     }
-    async function completed(taskId: string) {
-      return until(async () => {
-        const task = await getTask(ownerId, taskId)
-        if (
-          task.status === "needs_review" &&
-          task.requests.some((request) => request.status === "pending")
-        )
-          throw new Error(JSON.stringify(task.requests))
-        return task.status === "completed" ? task : undefined
-      }, "task completion")
+    async function completed(taskId: string, timeout?: number) {
+      return until(
+        async () => {
+          const task = await getTask(ownerId, taskId)
+          if (
+            task.status === "needs_review" &&
+            task.requests.some((request) => request.status === "pending")
+          )
+            throw new Error(JSON.stringify(task.requests))
+          return task.status === "completed" ? task : undefined
+        },
+        "task completion",
+        timeout
+      )
     }
     if (focus === "routinehandoff") {
       const { eq } = await import("drizzle-orm")
@@ -1580,7 +1679,7 @@ try {
         await page.getByLabel("邮箱").fill(process.env.OWNER_EMAIL!)
         await page.getByLabel("密码").fill(process.env.OWNER_PASSWORD!)
         await page.getByRole("button", { name: "登录", exact: true }).click()
-        await page.getByRole("link", { name: "定时例程", exact: true }).click()
+        await (await navLink(page, "定时例程")).click()
         await page.getByRole("heading", { name: "定时例程", exact: true }).waitFor()
         const roster = page.getByRole("group", {
           name: "本计划允许交接的 Agent（默认关闭）",
@@ -2041,7 +2140,10 @@ try {
         )
       ).rows[0]
       assert.equal(queue.queue_partition_key, target)
-      assert.equal(queue.application_version, "0.13.0-dev")
+      assert.equal(
+        queue.application_version,
+        (await import("@/lib/durable")).APPLICATION_VERSION
+      )
       await db
         .update(schema.agents)
         .set({
@@ -2052,7 +2154,7 @@ try {
         .where(eq(schema.agents.id, target))
       await db
         .update(schema.memories)
-        .set({ content: "must-not-replace-frozen-memory" })
+        .set({ content: "recipient-memory-refreshed-after-acceptance" })
         .where(eq(schema.memories.agentId, target))
       await docker([
         "exec",
@@ -2132,9 +2234,10 @@ try {
       const messages = JSON.stringify(targetCall.messages)
       assert(
         messages.includes("recipient-standing-order-before-freeze") &&
-          messages.includes("recipient-memory-before-freeze") &&
           messages.includes("Use CSV")
       )
+      // Model/instructions stay frozen; memory is refreshed on every decision (685ea41).
+      assert(messages.includes("recipient-memory-refreshed-after-acceptance"))
       assert(!messages.includes("must-not-replace-frozen"))
       const web = spawn(
         process.execPath,
@@ -2177,14 +2280,14 @@ try {
         await page.getByLabel("邮箱").fill(process.env.OWNER_EMAIL!)
         await page.getByLabel("密码").fill(process.env.OWNER_PASSWORD!)
         await page.getByRole("button", { name: "登录", exact: true }).click()
-        await page.getByRole("link", { name: "模型与 Agent 设置", exact: true }).waitFor()
+        await (await navLink(page, "模型与 Agent 设置")).waitFor()
         await page.goto(`${process.env.APP_URL}/?task=${normal.taskId}`)
         await page
           .getByLabel("Agent 交接记录")
           .getByText("交接说明：", { exact: false })
           .waitFor()
         assert.equal(
-          await page.getByRole("combobox").first().inputValue(),
+          await page.locator('select[aria-label="选择 Agent"]').first().inputValue(),
           normal.agentId
         )
         assert.equal(
@@ -2264,7 +2367,7 @@ try {
         await page.goto(`${process.env.APP_URL}/?task=${normal.taskId}`)
         await page.getByLabel("Agent 交接记录").waitFor()
         assert.equal(
-          await page.getByRole("combobox").first().inputValue(),
+          await page.locator('select[aria-label="选择 Agent"]').first().inputValue(),
           normal.agentId
         )
         assert.deepEqual(errors, [])
@@ -2772,7 +2875,7 @@ try {
         await page.getByLabel("邮箱").fill(process.env.OWNER_EMAIL!)
         await page.getByLabel("密码").fill(process.env.OWNER_PASSWORD!)
         await page.getByRole("button", { name: "登录", exact: true }).click()
-        await page.getByRole("link", { name: "模型与 Agent 设置", exact: true }).waitFor()
+        await (await navLink(page, "模型与 Agent 设置")).waitFor()
         const headers = { Origin: process.env.APP_URL! }
         const { env } = await import("@/lib/env")
         const { ensureWorkstation } = await import("@/lib/workstation")
@@ -5388,7 +5491,7 @@ try {
         await page.getByLabel("邮箱").fill(process.env.OWNER_EMAIL!)
         await page.getByLabel("密码").fill(process.env.OWNER_PASSWORD!)
         await page.getByRole("button", { name: "登录", exact: true }).click()
-        await page.getByRole("link", { name: "模型与 Agent 设置", exact: true }).waitFor()
+        await (await navLink(page, "模型与 Agent 设置")).waitFor()
         await page.goto(`${process.env.APP_URL}/settings`)
         const panel = page.getByRole("region", { name: "凭据保险箱", exact: true })
         await panel.getByRole("button", { name: "添加网站账号", exact: true }).click()
@@ -6192,14 +6295,15 @@ try {
         await page.getByLabel("邮箱").fill(process.env.OWNER_EMAIL!)
         await page.getByLabel("密码").fill(process.env.OWNER_PASSWORD!)
         await page.getByRole("button", { name: "登录", exact: true }).click()
-        await page.getByRole("link", { name: "定时例程", exact: true }).waitFor()
+        await (await navLink(page, "定时例程")).waitFor()
         await page.goto(`${process.env.APP_URL}/?task=${quiet.taskId}`)
         const card = page.getByRole("region", { name: "程序比较结果", exact: true })
         await card
           .getByText("通知决策：保持安静；本次成果和核对记录已保存。", { exact: true })
           .waitFor()
+        // Threaded tasks show their summary in the conversation, not the standalone card
         await page
-          .getByRole("article", { name: "交付结果", exact: true })
+          .getByLabel("对话记录")
           .getByText("模型声称发生巨大变化；请以程序比较为准。", { exact: true })
           .waitFor()
         const baseline = (await getTask(ownerId, quiet.taskId)).result!.comparison as any
@@ -6212,7 +6316,7 @@ try {
           path: path.join(directory, "report-result-mobile.png"),
           fullPage: true,
         })
-        await page.getByRole("link", { name: "定时例程", exact: true }).click()
+        await (await navLink(page, "定时例程")).click()
         await page.locator("summary").filter({ hasText: "成果检查与单次预算" }).click()
         await page.getByLabel("名称", { exact: true }).fill("网页条件通知 fixture")
         await page.getByLabel("执行 Agent", { exact: true }).selectOption(agent.id)
@@ -6701,7 +6805,7 @@ try {
         await page.getByLabel("邮箱").fill(process.env.OWNER_EMAIL!)
         await page.getByLabel("密码").fill(process.env.OWNER_PASSWORD!)
         await page.getByRole("button", { name: "登录", exact: true }).click()
-        await page.getByRole("link", { name: "定时例程", exact: true }).click()
+        await (await navLink(page, "定时例程")).click()
         await page.getByRole("heading", { name: "定时例程", exact: true }).waitFor()
         assert.equal(
           (
@@ -6790,6 +6894,482 @@ try {
       checks.push({
         check:
           "Actual owner-authenticated mobile/desktop routines UI: create disabled plan, versioned edit, manual durable acceptance and task history; cross-origin and invalid-date API rejection; browser timezone does not define plan timezone",
+      })
+    }
+    if (focus === "objectives") {
+      const {
+        advanceObjectives,
+        createObjective,
+        controlObjective,
+        updateObjectiveBudget,
+        listObjectives,
+      } = await import("@/lib/objectives")
+      const { confirmObjectiveProposal, cancelObjectiveProposal } =
+        await import("@/lib/companion/objectives")
+      const { ensureCompanion } = await import("@/lib/companion/store")
+      const [objectiveAgent] = await db
+        .insert(schema.agents)
+        .values({
+          name: "Objective fixture",
+          role: "Long-running objective test agent",
+          model: "custom/runtime-fixture",
+        })
+        .returning()
+      agents.push(objectiveAgent.id)
+      const scenarioFor = (kind: string) => {
+        const run = randomUUID()
+        const scenario: Scenario = { kind, calls: [] }
+        scenarios.set(run, scenario)
+        return { run, scenario, text: `CASE=${kind} RUN=${run} ` }
+      }
+      const objectiveRow = async (id: string) =>
+        (await pool.query("SELECT * FROM objectives WHERE id=$1", [id])).rows[0]
+      const roundRows = async (id: string) =>
+        (
+          await pool.query(
+            `SELECT r.*,t.status AS task_status,t.result,t.source,t.objective_id AS task_objective
+             FROM objective_rounds r LEFT JOIN tasks t ON t.id=r.task_id
+             WHERE r.objective_id=$1 ORDER BY r.round_no`,
+            [id]
+          )
+        ).rows
+      const budgetRequests = async (id: string) =>
+        (
+          await pool.query(
+            `SELECT q.payload FROM task_requests q JOIN tasks t ON t.id=q.task_id
+             WHERE t.objective_id=$1 AND q.kind='budget'`,
+            [id]
+          )
+        ).rows
+      // The worker's 30 s dispatcher advances objectives too; driving it here keeps the test fast
+      let lastDrive = 0
+      const drive = <T>(fn: () => Promise<T | false | undefined>, name: string) =>
+        until(
+          async () => {
+            if (Date.now() - lastDrive > 500) {
+              lastDrive = Date.now()
+              await advanceObjectives()
+            }
+            return fn()
+          },
+          name,
+          240000
+        )
+
+      // A. Several rounds, progress then achieved; the CSV check applies only to "achieved"
+      const csv = scenarioFor("objective_csv")
+      const a = await createObjective(ownerId, {
+        agentId: objectiveAgent.id,
+        title: "两天报表",
+        objective: `${csv.text}Build report.csv with the amounts of both days.`,
+        doneCriteria: "report.csv has a row for each of the two days",
+        completionContract: {
+          artifact: {
+            path: "report.csv",
+            requiredColumns: ["date", "amount"],
+            minRows: 2,
+          },
+        },
+      })
+      await drive(
+        async () => (await objectiveRow(a.id)).status === "achieved",
+        "CSV objective achieved"
+      )
+      const csvRounds = await roundRows(a.id)
+      assert.deepEqual(
+        csvRounds.map((row) => row.verdict),
+        ["progress", "achieved"]
+      )
+      for (const row of csvRounds) {
+        assert.equal(row.source, "objective")
+        assert.equal(row.task_objective, a.id)
+        assert.equal(row.task_status, "completed")
+        assert(row.steps > 0 && Number(row.cost_micros) > 0)
+      }
+      assert.equal(csvRounds[0].result.objective.status, "progress")
+      assert.deepEqual(csvRounds[0].result.files, [])
+      assert.equal(csvRounds[1].result.objective.status, "achieved")
+      assert.equal(csvRounds[1].result.files.length, 1)
+      // Round 2: early "achieved" refused, rewritten, accepted (3 model calls)
+      assert.equal(csv.scenario.calls.length, 5)
+      assert.match(csv.scenario.observed[2], /Round 1 \(progress\)/)
+      assert.match(csv.scenario.observed[1], /first round/)
+      assert.deepEqual(await budgetRequests(a.id), [])
+      assert.equal((await objectiveRow(a.id)).finished_at instanceof Date, true)
+      checks.push({
+        check:
+          "Long-running objective runs round after round on the existing task runtime; progress rounds skip the final CSV check, an early achieved claim with one row is refused, the corrected CSV is accepted, the next round sees earlier summaries",
+      })
+
+      // B. A round's step allowance ends the round (no budget card); maxRounds stops it
+      const steps = scenarioFor("objective_steps")
+      const b = await createObjective(ownerId, {
+        agentId: objectiveAgent.id,
+        title: "步数上限",
+        objective: `${steps.text}Keep looking around.`,
+        budget: { roundMaxSteps: 2, maxRounds: 2 },
+      })
+      await drive(
+        async () => (await objectiveRow(b.id)).status === "budget_limited",
+        "objective stops at its round limit"
+      )
+      let stepRounds = await roundRows(b.id)
+      assert.deepEqual(
+        stepRounds.map((row) => [row.verdict, row.steps, row.task_status]),
+        [
+          ["steps", 2, "completed"],
+          ["steps", 2, "completed"],
+        ]
+      )
+      assert.equal(stepRounds[0].result.objective.end, "steps")
+      assert.match((await objectiveRow(b.id)).status_reason, /2 轮/)
+      assert.deepEqual(await budgetRequests(b.id), [])
+      await assert.rejects(controlObjective(ownerId, b.id, "resume"), /先提高上限/)
+      await updateObjectiveBudget(ownerId, b.id, { roundMaxSteps: 2, maxRounds: 3 })
+      await controlObjective(ownerId, b.id, "resume")
+      assert.equal((await objectiveRow(b.id)).status, "active")
+      await drive(
+        async () =>
+          (await objectiveRow(b.id)).status === "budget_limited" &&
+          (await roundRows(b.id)).length === 3,
+        "raised limit allows exactly one more round"
+      )
+      stepRounds = await roundRows(b.id)
+      assert.equal(stepRounds[2].verdict, "steps")
+      assert.equal(steps.scenario.calls.length, 6)
+      assert.deepEqual(await budgetRequests(b.id), [])
+      checks.push({
+        check:
+          "A round that uses its step allowance ends without a budget card; the owner's round limit stops the objective, resume is refused until the limit is raised, then exactly one more round runs",
+      })
+
+      // C. Three failed or cancelled rounds in a row pause it
+      const failing = scenarioFor("objective_fail")
+      const c = await createObjective(ownerId, {
+        agentId: objectiveAgent.id,
+        title: "连续失败",
+        objective: `${failing.text}This never answers.`,
+      })
+      for (let roundNo = 1; roundNo <= 3; roundNo++) {
+        await drive(
+          async () => failing.scenario.calls.length === roundNo,
+          `failing round ${roundNo} in flight`
+        )
+        const [open] = (await roundRows(c.id)).filter((row) => !row.verdict)
+        assert.equal(open.round_no, roundNo)
+        await requestCancellation(ownerId, open.task_id)
+        await drive(
+          async () =>
+            (await roundRows(c.id)).find((row) => row.round_no === roundNo)?.verdict ===
+            "cancelled",
+          `failing round ${roundNo} recorded`
+        )
+      }
+      const paused = await objectiveRow(c.id)
+      assert.equal(paused.status, "paused")
+      assert.equal(paused.failures, 3)
+      assert.match(paused.status_reason, /连续 3 轮/)
+      for (let tick = 0; tick < 3; tick++) await advanceObjectives()
+      assert.equal((await roundRows(c.id)).length, 3)
+      checks.push({
+        check:
+          "Three rounds in a row that end without a result pause the objective with a reason; no further round starts",
+      })
+
+      // D. Pause lets the running round finish; resume continues; stop cancels the round
+      const hold = scenarioFor("objective_hold")
+      const d = await createObjective(ownerId, {
+        agentId: objectiveAgent.id,
+        title: "暂停继续停止",
+        objective: `${hold.text}Work slowly.`,
+      })
+      await drive(async () => !!hold.scenario.release, "held round in flight")
+      await controlObjective(ownerId, d.id, "pause")
+      hold.scenario.release!()
+      await drive(
+        async () => (await roundRows(d.id))[0]?.verdict === "progress",
+        "paused objective's running round finishes"
+      )
+      for (let tick = 0; tick < 3; tick++) await advanceObjectives()
+      assert.equal((await roundRows(d.id)).length, 1)
+      assert.equal((await objectiveRow(d.id)).status, "paused")
+      await controlObjective(ownerId, d.id, "resume")
+      await drive(
+        async () => hold.scenario.calls.length === 2 && !!hold.scenario.release,
+        "resumed round in flight"
+      )
+      assert.match(
+        hold.scenario.observed[2],
+        /Round 1 \(progress\): Round 1 made progress/
+      )
+      await controlObjective(ownerId, d.id, "stop")
+      await drive(
+        async () => (await roundRows(d.id))[1]?.verdict === "cancelled",
+        "stop cancels the running round"
+      )
+      const stopped = await objectiveRow(d.id)
+      assert.equal(stopped.status, "stopped")
+      assert.equal(stopped.failures, 0)
+      await assert.rejects(controlObjective(ownerId, d.id, "resume"), /已经结束/)
+      checks.push({
+        check:
+          "Pause lets the current round finish and starts no new round; resume continues from the earlier summary; stop cancels the running round and cannot be resumed",
+      })
+
+      // E. Monthly budget still blocks every round's model request
+      await setSetting("usage.monthlyBudget", "0")
+      const monthly = scenarioFor("objective_quick")
+      const f = await createObjective(ownerId, {
+        agentId: objectiveAgent.id,
+        title: "月预算",
+        objective: `${monthly.text}Finish quickly.`,
+      })
+      await drive(
+        async () => (await roundRows(f.id))[0]?.task_id,
+        "monthly round submitted"
+      )
+      await pending((await roundRows(f.id))[0].task_id, "monthly")
+      assert.equal(monthly.scenario.calls.length, 0)
+      for (let tick = 0; tick < 3; tick++) await advanceObjectives()
+      assert.equal((await roundRows(f.id)).length, 1)
+      assert.equal((await objectiveRow(f.id)).status, "active")
+      await controlObjective(ownerId, f.id, "stop")
+      await drive(
+        async () => (await roundRows(f.id))[0]?.verdict === "cancelled",
+        "monthly-held round stopped"
+      )
+      await setSetting("usage.monthlyBudget", null)
+      checks.push({
+        check:
+          "The monthly budget holds an objective round at the existing monthly card before any model request; no second round queues behind it",
+      })
+
+      // F. Chat card: confirming twice creates one objective; dispatch is idempotent
+      const [companionAgent] = await db
+        .insert(schema.agents)
+        .values({
+          name: "Objective companion",
+          role: "Companion",
+          model: "custom/runtime-fixture",
+        })
+        .returning()
+      agents.push(companionAgent.id)
+      await ensureCompanion(ownerId, companionAgent.id, "Asia/Taipei")
+      const quick = scenarioFor("objective_quick")
+      const [card] = await db
+        .insert(schema.companionMessages)
+        .values({
+          agentId: companionAgent.id,
+          role: "assistant",
+          kind: "objective_proposal",
+          content: "一次做完",
+          metadata: {
+            proposal: {
+              title: "一次做完",
+              objective: `${quick.text}Do it at once.`,
+              doneCriteria: "",
+              completionContract: { requireHumanReview: false },
+              budget: { roundMaxSteps: 40 },
+            },
+            status: "pending",
+          },
+        })
+        .returning()
+      const confirmed = await Promise.all([
+        confirmObjectiveProposal(ownerId, card.id),
+        confirmObjectiveProposal(ownerId, card.id),
+      ])
+      assert.equal(confirmed[0].id, confirmed[1].id)
+      assert.equal(
+        (
+          await pool.query(
+            "SELECT count(*)::int AS n FROM objectives WHERE proposal_id=$1",
+            [card.id]
+          )
+        ).rows[0].n,
+        1
+      )
+      assert.equal((await confirmObjectiveProposal(ownerId, card.id)).id, confirmed[0].id)
+      await assert.rejects(cancelObjectiveProposal(ownerId, card.id), { status: 409 })
+      const e = confirmed[0]
+      await Promise.all(Array.from({ length: 5 }, () => advanceObjectives()))
+      const firstRounds = await roundRows(e.id)
+      assert.equal(firstRounds.length, 1)
+      assert(firstRounds[0].task_id)
+      // A crash after submitting but before recording the task resubmits the same request
+      await pool.query("UPDATE objective_rounds SET task_id=NULL WHERE id=$1", [
+        firstRounds[0].id,
+      ])
+      await advanceObjectives()
+      assert.equal((await roundRows(e.id))[0].task_id, firstRounds[0].task_id)
+      assert.equal(
+        (
+          await pool.query("SELECT count(*)::int AS n FROM tasks WHERE objective_id=$1", [
+            e.id,
+          ])
+        ).rows[0].n,
+        1
+      )
+      await drive(
+        async () => (await objectiveRow(e.id)).status === "achieved",
+        "confirmed chat objective achieved"
+      )
+      const round = (await roundRows(e.id))[0]
+      assert.equal(
+        (
+          await pool.query("SELECT config_snapshot FROM tasks WHERE id=$1", [
+            round.task_id,
+          ])
+        ).rows[0].config_snapshot.timeZone,
+        "Asia/Taipei"
+      )
+      const updates = (
+        await pool.query(
+          "SELECT content,metadata FROM companion_messages WHERE agent_id=$1 AND kind='objective_update'",
+          [companionAgent.id]
+        )
+      ).rows
+      assert.equal(updates.length, 1)
+      assert.match(updates[0].content, /「一次做完」完成了/)
+      assert.equal(updates[0].metadata.objectiveId, e.id)
+      const listed = await listObjectives(ownerId)
+      assert.deepEqual(
+        new Set(listed.map((row) => row.id)),
+        new Set([a.id, b.id, c.id, d.id, f.id, e.id])
+      )
+      checks.push({
+        check:
+          "Chat objective card: concurrent confirms create one objective and a cancelled answer is refused; concurrent dispatch starts one round; a lost task link resubmits the same idempotent request; the companion's chat gets one progress update",
+      })
+
+      // G. Owner-authenticated /objectives page
+      const web = spawn(
+        process.execPath,
+        [
+          "node_modules/next/dist/bin/next",
+          "dev",
+          "--hostname",
+          "127.0.0.1",
+          "--port",
+          "17097",
+        ],
+        { env: process.env, detached: true }
+      )
+      let webLog = ""
+      web.stdout!.on("data", (data) => {
+        webLog += data
+      })
+      web.stderr!.on("data", (data) => {
+        webLog += data
+      })
+      const { chromium } = await import("playwright")
+      let browser: Awaited<ReturnType<typeof chromium.launch>> | undefined
+      try {
+        await until(async () => {
+          if (web.exitCode !== null) throw new Error(webLog)
+          try {
+            return (await fetch(`${process.env.APP_URL}/login`)).ok
+          } catch (error) {
+            if ((error as any).cause?.code === "ECONNREFUSED") return false
+            throw error
+          }
+        }, "Objectives Web ready")
+        assert.equal((await fetch(`${process.env.APP_URL}/api/objectives`)).status, 401)
+        browser = await chromium.launch({
+          headless: true,
+          executablePath: process.env.UI_BROWSER_PATH,
+        })
+        const context = await browser.newContext({
+          viewport: { width: 1280, height: 900 },
+          locale: "zh-CN",
+        })
+        const page = await context.newPage(),
+          pageErrors: string[] = []
+        page.on("pageerror", (error) => pageErrors.push(error.message))
+        await page.goto(`${process.env.APP_URL}/login`)
+        await page.getByLabel("邮箱").fill(process.env.OWNER_EMAIL!)
+        await page.getByLabel("密码").fill(process.env.OWNER_PASSWORD!)
+        await page.getByRole("button", { name: "登录", exact: true }).click()
+        await page.getByRole("link", { name: "长期目标", exact: true }).click()
+        await page.getByRole("heading", { name: "长期目标", exact: true }).waitFor()
+        await page.getByRole("article", { name: "目标 两天报表" }).waitFor()
+        assert.equal(
+          (
+            await context.request.post(`${process.env.APP_URL}/api/objectives`, {
+              headers: { Origin: "https://untrusted.fixture.test" },
+              data: { agentId: objectiveAgent.id, title: "x", objective: "y" },
+            })
+          ).status(),
+          403
+        )
+        const ui = scenarioFor("objective_quick")
+        await page.getByLabel("执行的 Agent").selectOption(objectiveAgent.id)
+        await page.getByLabel("目标名字").fill("页面目标")
+        await page.getByLabel("目标内容").fill(`${ui.text}Created from the page.`)
+        await page.getByLabel("新目标轮数上限").fill("4")
+        await page.getByRole("button", { name: "开始", exact: true }).click()
+        const article = page.getByRole("article", { name: "目标 页面目标" })
+        await article.waitFor()
+        const created = (await listObjectives(ownerId)).find(
+          (row) => row.title === "页面目标"
+        )!
+        assert.deepEqual(created.budget, { roundMaxSteps: 40, maxRounds: 4 })
+        await drive(
+          async () => (await objectiveRow(created.id)).status === "achieved",
+          "page objective achieved"
+        )
+        await page.reload()
+        await page
+          .getByRole("article", { name: "目标 页面目标" })
+          .getByTestId("objective-status")
+          .filter({ hasText: "已达成" })
+          .waitFor()
+        assert.equal(
+          await page
+            .getByRole("article", { name: "目标 连续失败" })
+            .getByText("第 3 轮")
+            .count(),
+          1
+        )
+        // Resume the paused objective from the page, then pause it again
+        const failingCard = page.getByRole("article", { name: "目标 连续失败" })
+        await failingCard.getByRole("button", { name: "继续", exact: true }).click()
+        await drive(
+          async () => failing.scenario.calls.length === 4,
+          "resumed objective starts round 4"
+        )
+        assert.equal((await objectiveRow(c.id)).failures, 0)
+        await page.reload()
+        await page
+          .getByRole("article", { name: "目标 连续失败" })
+          .getByRole("button", { name: "暂停", exact: true })
+          .click()
+        await until(
+          async () => (await objectiveRow(c.id)).status === "paused",
+          "page pause"
+        )
+        const open = (await roundRows(c.id)).find((row) => !row.verdict)!
+        await requestCancellation(ownerId, open.task_id)
+        await drive(
+          async () => (await roundRows(c.id)).every((row) => row.verdict),
+          "paused objective's round closed"
+        )
+        const afterPause = await objectiveRow(c.id)
+        assert.equal(afterPause.status, "paused")
+        assert.equal(afterPause.failures, 0)
+        assert.deepEqual(pageErrors, [])
+      } finally {
+        await browser?.close()
+        if (web.pid && web.exitCode === null) {
+          const exited = once(web, "exit")
+          process.kill(-web.pid, "SIGTERM")
+          await exited
+        }
+        await writeFile(path.join(directory, "objectives-web.log"), webLog)
+      }
+      checks.push({
+        check:
+          "Actual owner-authenticated /objectives page: nav link, list, cross-origin create refused, create with an optional round limit, achieved status after reload, resume and pause buttons",
       })
     }
     if (focus === "core") {
@@ -7435,7 +8015,7 @@ try {
         await page.getByLabel("邮箱").fill(process.env.OWNER_EMAIL!)
         await page.getByLabel("密码").fill(process.env.OWNER_PASSWORD!)
         await page.getByRole("button", { name: "登录", exact: true }).click()
-        await page.getByRole("link", { name: "用量与预算", exact: true }).click()
+        await (await navLink(page, "用量与预算")).click()
         await page.getByRole("heading", { name: "用量与预算", exact: true }).waitFor()
         assert.equal(
           (
@@ -7588,7 +8168,9 @@ try {
       }
       async function delivered(taskId: string, nameColumn = "name") {
         try {
-          const result = await completed(taskId)
+          // Each transfer runs about 50s on a freshly booted workstation, and the first
+          // observation can wait 30s for the cold desktop; the default 75s cap is too tight.
+          const result = await completed(taskId, 600_000)
           assert.equal(
             result.artifacts.length,
             1,

@@ -13,6 +13,7 @@ import {
   companionUsage,
   lifeActivities,
   memories,
+  objectives,
   type CompanionImage,
   type CompanionMessage,
 } from "@/db/schema"
@@ -36,6 +37,8 @@ import { queueCoview } from "./coview"
 import { playbackSchedule, realSleep, visibleMessage } from "./pacing"
 import { rhythmAt } from "./rules"
 import { ensureCompanion } from "./store"
+import type { ObjectiveProposal } from "./objectives"
+import { controlObjective, objectiveBrief } from "@/lib/objectives"
 
 const HISTORY = 30
 const MAX_BUBBLES = 4
@@ -111,7 +114,9 @@ export function historyMessages(
       content:
         row.kind === "errand_proposal"
           ? `（我提出了一个任务，等你确认：${(row.metadata as { goal?: string }).goal}）`
-          : row.content,
+          : row.kind === "objective_proposal"
+            ? `（我提出了一个长期目标，等你确认：${row.content}）`
+            : row.content,
     }
   })
 }
@@ -140,6 +145,7 @@ const REDOABLE_KINDS = new Set([
   "memory_candidate",
   "memory_merge",
   "errand_proposal",
+  "objective_proposal",
 ])
 
 // The latest turn (her last user message and what she answered) is the only one that can be
@@ -479,6 +485,7 @@ export async function companionChat(
         : undefined
     })()
     const proposals: string[] = []
+    const objectiveProposals: ObjectiveProposal[] = []
     const candidates: { memoryId: string; note: string }[] = []
     // Redoing a message must not record the same thing twice: notes are read-only then
     const readOnly = redo === "regenerate"
@@ -564,6 +571,61 @@ export async function companionChat(
         execute: async ({ goal }) => {
           proposals.push(goal)
           return { status: "已发给对方，等对方在界面里确认后才会开始" }
+        },
+      }),
+      propose_objective: tool({
+        description:
+          "对方想让你长期、分很多轮去完成一个较大的目标（不是一次能办完的小事）时，写清目标和完成标准发给对方确认。确认前不会开始；上限不填就不限。",
+        inputSchema: z.object({
+          title: z.string().trim().min(1).max(60),
+          objective: z.string().trim().min(1).max(4000),
+          doneCriteria: z.string().trim().max(2000).default(""),
+          requireReview: z.boolean().default(false),
+          maxCostUsd: z.number().positive().max(100000).optional(),
+          maxRounds: z.number().int().min(1).max(100000).optional(),
+          deadlineAt: z.iso.datetime({ offset: true }).optional(),
+        }),
+        execute: async (draft) => {
+          objectiveProposals.push({
+            title: draft.title,
+            objective: draft.objective,
+            doneCriteria: draft.doneCriteria,
+            completionContract: { requireHumanReview: draft.requireReview },
+            budget: {
+              roundMaxSteps: 40,
+              ...(draft.maxCostUsd !== undefined
+                ? { maxCostMicros: Math.round(draft.maxCostUsd * 1_000_000) }
+                : {}),
+              ...(draft.maxRounds !== undefined ? { maxRounds: draft.maxRounds } : {}),
+              ...(draft.deadlineAt !== undefined ? { deadlineAt: draft.deadlineAt } : {}),
+            },
+          })
+          return { status: "已发给对方，等对方在界面里确认后才会开始" }
+        },
+      }),
+      manage_objective: tool({
+        description:
+          "查看、暂停或停止对方的长期目标。对方问目标进展时用 list；要暂停或停止时先 list 拿到 id。继续、改上限请对方到长期目标页操作。",
+        inputSchema: z.object({
+          action: z.enum(["list", "pause", "stop"]),
+          id: z.string().min(1).max(100).optional(),
+        }),
+        execute: async ({ action, id }) => {
+          if (action === "list") return objectiveBrief(input.ownerId, input.agentId)
+          if (readOnly) return frozen
+          if (!id) return { error: "先 list 拿到目标的 id" }
+          const [owned] = await db
+            .select({ id: objectives.id })
+            .from(objectives)
+            .where(and(eq(objectives.id, id), eq(objectives.agentId, input.agentId)))
+          if (!owned) return { error: "没有这个目标" }
+          try {
+            await controlObjective(input.ownerId, id, action)
+            return { status: action === "pause" ? "已暂停" : "已停止" }
+          } catch (error) {
+            if (error instanceof HttpError) return { error: error.message }
+            throw error
+          }
         },
       }),
     }
@@ -686,6 +748,14 @@ export async function companionChat(
         content: goal,
         channel,
         metadata: { goal, status: "pending", sourceMessageId: user.id },
+      })
+    for (const proposal of objectiveProposals)
+      rows.push({
+        role: "assistant",
+        kind: "objective_proposal",
+        content: proposal.title,
+        channel,
+        metadata: { proposal, status: "pending", sourceMessageId: user.id },
       })
     for (const candidate of candidates)
       rows.push({

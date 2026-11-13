@@ -480,6 +480,12 @@ export function Workspace({
           定时例程
         </Link>
         <Link
+          href="/objectives"
+          className="block rounded-lg px-3 py-2 text-sm text-foreground/85 transition-colors hover:bg-surface hover:text-foreground"
+        >
+          长期目标
+        </Link>
+        <Link
           href="/workflows"
           className="block rounded-lg px-3 py-2 text-sm text-foreground/85 transition-colors hover:bg-surface hover:text-foreground"
         >

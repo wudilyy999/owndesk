@@ -255,6 +255,16 @@ export const completionTools = {
     }),
   }),
 }
+// One round of a long-running objective ends with the same tool plus the round's verdict
+export const objectiveCompleteTool = tool({
+  description:
+    "End this round of the long-running objective. Use objective.status=progress to report what this round did and what remains; the next round continues from your summary. Use objective.status=achieved only when the whole objective is verifiably done; then the objective's completion check applies to the files you deliver, and an invalid result returns an error so you can correct it.",
+  inputSchema: z.object({
+    summary: z.string().min(1).max(16000),
+    files: z.array(deliverable).max(8).default([]),
+    objective: z.object({ status: z.enum(["progress", "achieved"]) }),
+  }),
+})
 export const userTools = {
   ask_user: tool({
     description:
@@ -491,6 +501,7 @@ export function toolsForTask(config: {
   workflowExecution?: { allowRepair?: boolean }
   workstationChannel?: "desktop"
   lifeSession?: { prompt?: string; coview?: unknown }
+  objectiveRound?: unknown
 }) {
   if (config.lifeSession) {
     const allowed = config.lifeSession.coview ? coviewToolNames : lifeToolNames
@@ -523,7 +534,7 @@ export function toolsForTask(config: {
                   name !== "agent_zero_call" || !!config.agentZeroPlugins?.length
               )
             )
-  return Object.fromEntries(
+  const selected = Object.fromEntries(
     Object.entries(available).filter(
       ([name]) =>
         !Object.hasOwn(lifeTools, name) &&
@@ -531,4 +542,7 @@ export function toolsForTask(config: {
         (name !== "load_manual" || !!config.manuals?.length)
     )
   )
+  if (config.objectiveRound && "complete_task" in selected)
+    selected.complete_task = objectiveCompleteTool
+  return selected
 }

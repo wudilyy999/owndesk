@@ -155,18 +155,28 @@ function Bubble({
   message,
   zone,
   onAnswer,
+  onObjective,
   onMemory,
   actions,
 }: {
   message: CompanionMessage
   zone: string
   onAnswer: (id: string, action: "confirm" | "cancel") => void
+  onObjective: (id: string, action: "confirm" | "cancel") => void
   onMemory: (memoryId: string, action: "accept" | "dismiss") => void
   actions?: React.ReactNode
 }) {
   const mine = message.role === "user"
   const meta = (message.metadata ?? {}) as {
     goal?: string
+    objectiveId?: string
+    proposal?: {
+      title: string
+      objective: string
+      doneCriteria: string
+      completionContract: { requireHumanReview: boolean }
+      budget: { maxCostMicros?: number; maxRounds?: number; deadlineAt?: string }
+    }
     status?: string
     memoryId?: string
     activityId?: string
@@ -210,6 +220,52 @@ function Bubble({
             ) : (
               <p className="text-xs text-faint">
                 {meta.status === "cancelled" ? "已取消" : "已确认"}
+              </p>
+            )}
+          </div>
+        ) : message.kind === "objective_proposal" && meta.proposal ? (
+          <div className="space-y-2" data-testid="objective-proposal">
+            <p className="text-xs text-faint">要我长期去做这件事吗？</p>
+            <p className="font-medium">{meta.proposal.title}</p>
+            <p>{meta.proposal.objective}</p>
+            {meta.proposal.doneCriteria && (
+              <p className="text-xs">完成标准：{meta.proposal.doneCriteria}</p>
+            )}
+            <p className="text-xs text-faint">
+              {[
+                meta.proposal.budget.maxCostMicros !== undefined &&
+                  `花费上限 $${(meta.proposal.budget.maxCostMicros / 1_000_000).toFixed(2)}`,
+                meta.proposal.budget.maxRounds !== undefined &&
+                  `最多 ${meta.proposal.budget.maxRounds} 轮`,
+                meta.proposal.budget.deadlineAt &&
+                  `截止 ${when(new Date(meta.proposal.budget.deadlineAt), zone)}`,
+                meta.proposal.completionContract.requireHumanReview && "完成时需要你确认",
+              ]
+                .filter(Boolean)
+                .join(" · ") || "没有上限（每月预算照常生效）"}
+            </p>
+            {meta.status === "pending" ? (
+              <div className="flex gap-2">
+                <Button size="sm" onClick={() => onObjective(message.id, "confirm")}>
+                  确认，开始
+                </Button>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => onObjective(message.id, "cancel")}
+                >
+                  不用了
+                </Button>
+              </div>
+            ) : (
+              <p className="text-xs text-faint">
+                {meta.status === "cancelled" ? (
+                  "已取消"
+                ) : (
+                  <a href="/objectives" className="underline underline-offset-4">
+                    已开始，到长期目标页查看
+                  </a>
+                )}
               </p>
             )}
           </div>
@@ -441,6 +497,15 @@ function Chat({
     }
   }
 
+  async function answerObjective(id: string, action: "confirm" | "cancel") {
+    try {
+      await api(`/api/companion/objectives/${id}`, send("POST", { action }))
+      await refresh()
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : String(cause))
+    }
+  }
+
   async function answer(id: string, action: "confirm" | "cancel") {
     try {
       await api(`/api/companion/errands/${id}`, send("POST", { action }))
@@ -464,7 +529,9 @@ function Chat({
       (row) =>
         row.channel === "web" &&
         (row.kind === "chat" ||
-          ((row.kind === "memory_candidate" || row.kind === "errand_proposal") &&
+          ((row.kind === "memory_candidate" ||
+            row.kind === "errand_proposal" ||
+            row.kind === "objective_proposal") &&
             (row.metadata as { status?: string } | null)?.status === "pending"))
     )
   const lastReply = redoable && round.length ? round[round.length - 1] : null
@@ -517,6 +584,7 @@ function Chat({
               message={message}
               zone={zone}
               onAnswer={answer}
+              onObjective={answerObjective}
               onMemory={remember}
               actions={
                 plain ? (

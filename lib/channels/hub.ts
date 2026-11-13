@@ -43,6 +43,8 @@ export function renderMessage(
       const goal = (message.metadata as { goal?: string } | null)?.goal ?? message.content
       return `要我去电脑上办「${goal}」的话，在网页聊天页点一下确认就开始。`
     }
+    case "objective_proposal":
+      return `要我长期去做「${message.content}」的话，在网页聊天页点一下确认就开始。`
     case "memory_candidate":
     case "memory_merge":
       return null
