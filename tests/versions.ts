@@ -378,6 +378,8 @@ try {
       "git",
       "-c",
       "safe.directory=*",
+      "-c",
+      "core.quotePath=false",
       "--git-dir",
       "/app/data/evolution/versions.git",
       ...args,
@@ -395,7 +397,9 @@ try {
       })
       .sort()
   const evolutionFiles = listing(out(await repoGit(["ls-tree", "-r", "upstream"])))
-  const sourceFiles = listing(await git(["ls-tree", "-r", revisionA]))
+  const sourceFiles = listing(
+    await git(["-c", "core.quotePath=false", "ls-tree", "-r", revisionA])
+  )
   assert.deepEqual(
     evolutionFiles,
     sourceFiles,
