@@ -400,11 +400,11 @@ try {
     return version?.status === "active" && version.gitCommit ? version : null
   }, "worker records the running version")
   assert.equal(versionA.revision, revisionA)
-  const workerId = out(await compose(["ps", "--quiet", "worker"]))
-  const repoGit = (args: string[]) =>
+  // The worker container is recreated by every switch: look it up each time
+  const repoGit = async (args: string[]) =>
     inner([
       "exec",
-      workerId,
+      out(await compose(["ps", "--quiet", "worker"])),
       "git",
       "-c",
       "safe.directory=*",
