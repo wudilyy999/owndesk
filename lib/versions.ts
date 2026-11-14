@@ -201,17 +201,24 @@ export async function listVersions() {
 }
 export type VersionsOverview = Awaited<ReturnType<typeof listVersions>>
 
-// One-click rollback (or forward again) to a kept version. Runs in the worker, which
-// starts the updater from its own image; returns as soon as the updater is started.
-export async function requestSwitch(versionId: string) {
+// One-click rollback (or forward again) to a kept version, or adoption of an improvement
+// candidate that passed every test (B1). Runs in the worker, which starts the updater from
+// its own image; returns as soon as the updater is started.
+export async function requestSwitch(
+  versionId: string,
+  action: "rollback" | "promote" = "rollback"
+) {
   if (!versionsEnabled())
     throw new HttpError(409, "版本切换只在 Docker 部署（scripts/install.sh）里可用")
   const [target] = await db
     .select()
     .from(agentVersions)
     .where(eq(agentVersions.id, versionId))
-  if (!target || target.status !== "retained")
-    throw new HttpError(409, "只能切换到保留着的版本")
+  if (!target || target.status !== (action === "promote" ? "ready" : "retained"))
+    throw new HttpError(
+      409,
+      action === "promote" ? "只能采用全部测试都通过的版本" : "只能切换到保留着的版本"
+    )
   const [running] = await db
     .select({ id: deployments.id })
     .from(deployments)
@@ -246,7 +253,7 @@ export async function requestSwitch(versionId: string) {
     "--deploy",
     deploy,
     "--action",
-    "rollback",
+    action,
     "--web",
     target.images.web,
     "--worker",

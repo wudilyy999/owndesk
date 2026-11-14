@@ -21,6 +21,12 @@ import {
 import { HttpError } from "@/lib/errors"
 import { requestCancellation } from "@/lib/task-control"
 import { submitTask } from "@/lib/tasks"
+import {
+  isImprovement,
+  resumeImprovementRounds,
+  startImprovementRound,
+} from "@/lib/evolution/runner"
+import { watchAdoptions } from "@/lib/evolution/improvements"
 
 export const OBJECTIVE_SOURCE = "objective"
 // Rounds in a row that failed or were cancelled outside the owner's stop before it pauses
@@ -461,8 +467,15 @@ async function closeFinishedRounds() {
 async function agentBusy(agentId: string) {
   const { rowCount } = await pool.query(
     `SELECT 1 FROM tasks WHERE agent_id=$1 AND status NOT IN ('completed','failed','cancelled')
-     AND NOT config_snapshot ? 'lifeSession' LIMIT 1`,
+     AND NOT config_snapshot ? 'lifeSession' AND source<>'improvement' LIMIT 1`,
     [agentId]
+  )
+  return !!rowCount
+}
+
+async function labBusy() {
+  const { rowCount } = await pool.query(
+    "SELECT 1 FROM tasks WHERE source='improvement' AND status='running' LIMIT 1"
   )
   return !!rowCount
 }
@@ -503,7 +516,9 @@ async function nextRound(objective: Objective, now: Date) {
       )
     return null
   }
-  if (await agentBusy(objective.agentId)) return null
+  // Improvement rounds run in the lab, not on her workstation; one improvement at a time
+  if (isImprovement(objective) ? await labBusy() : await agentBusy(objective.agentId))
+    return null
   const previous = await db
     .select({
       roundNo: objectiveRounds.roundNo,
@@ -545,6 +560,8 @@ export async function advanceObjectives(now = new Date()) {
     if (!locked) return 0
     try {
       await closeFinishedRounds()
+      await resumeImprovementRounds()
+      await watchAdoptions()
       const active = await db
         .select()
         .from(objectives)
@@ -554,11 +571,18 @@ export async function advanceObjectives(now = new Date()) {
         const round = await nextRound(objective, now)
         if (!round) continue
         try {
-          const task = await submitTask(objective.ownerId, OBJECTIVE_SOURCE, round.input)
-          await pool.query("UPDATE objective_rounds SET task_id=$2 WHERE id=$1", [
-            round.id,
-            task.taskId,
-          ])
+          if (isImprovement(objective)) await startImprovementRound(objective, round)
+          else {
+            const task = await submitTask(
+              objective.ownerId,
+              OBJECTIVE_SOURCE,
+              round.input
+            )
+            await pool.query("UPDATE objective_rounds SET task_id=$2 WHERE id=$1", [
+              round.id,
+              task.taskId,
+            ])
+          }
           started++
         } catch (error) {
           if (!(error instanceof HttpError) && !(error instanceof ZodError)) throw error

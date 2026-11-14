@@ -1433,6 +1433,9 @@ export const companionMessages = pgTable(
         "coview",
         "objective_proposal",
         "objective_update",
+        // Self-improvement (B1): the proposal card and the lab's report card
+        "improvement_proposal",
+        "improvement_report",
       ],
     })
       .notNull()

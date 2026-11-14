@@ -38,6 +38,10 @@ import { startRoutineSchedule } from "./routines"
 import { sweepVault } from "@/lib/vault"
 import { assertWorkstationNetwork } from "./network"
 import { registerRunningVersion, requestSwitch } from "@/lib/versions"
+import {
+  adoptImprovement,
+  confirmImprovementProposal,
+} from "@/lib/evolution/improvements"
 
 export async function startWorker() {
   await assertWorkstationNetwork()
@@ -129,6 +133,7 @@ export async function startWorker() {
         "/internal/demonstrations/record",
         "/internal/workflows/template",
         "/internal/versions/switch",
+        "/internal/improvements",
       ].includes(req.url ?? "") &&
       req.method === "POST"
     ) {
@@ -149,7 +154,37 @@ export async function startWorker() {
           }
           const input = JSON.parse(Buffer.concat(chunks).toString())
           let result
-          if (req.url === "/internal/versions/switch")
+          if (req.url === "/internal/improvements") {
+            const body = z
+              .discriminatedUnion("action", [
+                z.object({
+                  action: z.literal("confirm"),
+                  messageId: z.string().min(1).max(100),
+                  checklist: z
+                    .array(z.string().trim().min(1).max(300))
+                    .min(1)
+                    .max(12)
+                    .optional(),
+                }),
+                z.object({
+                  action: z.literal("adopt"),
+                  objectiveId: z.string().min(1).max(100),
+                }),
+              ])
+              .parse(input)
+            result =
+              body.action === "confirm"
+                ? {
+                    objectiveId: (
+                      await confirmImprovementProposal(
+                        owner.userId,
+                        body.messageId,
+                        body.checklist
+                      )
+                    ).id,
+                  }
+                : await adoptImprovement(owner.userId, body.objectiveId)
+          } else if (req.url === "/internal/versions/switch")
             result = await requestSwitch(
               z.object({ versionId: z.string().min(1).max(64) }).parse(input).versionId
             )

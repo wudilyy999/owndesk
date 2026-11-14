@@ -45,6 +45,10 @@ export function renderMessage(
     }
     case "objective_proposal":
       return `要我长期去做「${message.content}」的话，在网页聊天页点一下确认就开始。`
+    case "improvement_proposal":
+      return `要我在实验室里改进「${message.content}」的话，在网页聊天页确认改进提议卡就开始。`
+    case "improvement_report":
+      return `「${message.content}」的改进全部测试通过了，到网页上看报告并决定要不要采用。`
     case "memory_candidate":
     case "memory_merge":
       return null

@@ -13,6 +13,10 @@ import { CompanionTask } from "@/components/companion-task"
 import { Channels } from "@/components/companion-channels"
 import { PushSettings, usePresence } from "@/components/companion-push"
 import { cn } from "@/lib/utils"
+import {
+  ImprovementProposalCard,
+  ImprovementReportCard,
+} from "@/components/improvement-cards"
 import type { Companion as CompanionRow, CompanionMessage } from "@/db/schema"
 import type { TypingPace } from "@/lib/companion/pacing"
 
@@ -157,12 +161,14 @@ function Bubble({
   onAnswer,
   onObjective,
   onMemory,
+  onImprovement,
   actions,
 }: {
   message: CompanionMessage
   zone: string
   onAnswer: (id: string, action: "confirm" | "cancel") => void
   onObjective: (id: string, action: "confirm" | "cancel") => void
+  onImprovement: () => void
   onMemory: (memoryId: string, action: "accept" | "dismiss") => void
   actions?: React.ReactNode
 }) {
@@ -269,6 +275,10 @@ function Bubble({
               </p>
             )}
           </div>
+        ) : message.kind === "improvement_proposal" ? (
+          <ImprovementProposalCard message={message} onChanged={onImprovement} />
+        ) : message.kind === "improvement_report" ? (
+          <ImprovementReportCard message={message} />
         ) : message.kind === "memory_candidate" ? (
           <div className="space-y-2">
             <p className="text-xs text-faint">我想把这件事记下来，可以吗？</p>
@@ -531,7 +541,8 @@ function Chat({
         (row.kind === "chat" ||
           ((row.kind === "memory_candidate" ||
             row.kind === "errand_proposal" ||
-            row.kind === "objective_proposal") &&
+            row.kind === "objective_proposal" ||
+            row.kind === "improvement_proposal") &&
             (row.metadata as { status?: string } | null)?.status === "pending"))
     )
   const lastReply = redoable && round.length ? round[round.length - 1] : null
@@ -585,6 +596,7 @@ function Chat({
               zone={zone}
               onAnswer={answer}
               onObjective={answerObjective}
+              onImprovement={() => void refresh()}
               onMemory={remember}
               actions={
                 plain ? (
