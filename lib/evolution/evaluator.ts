@@ -813,9 +813,10 @@ export async function evaluate(input: EvaluateInput) {
   evaluation.stages.push(policy)
   input.log(`stage policy: ${policy.status}`)
   if (policy.status === "fail" || input.stopAfter === "policy") {
-    skipRest(["build", "checks", "stack", "e2e"])
+    skipRest(["checks", "build", "stack", "e2e"])
     return finish()
   }
+  // Tests first: a candidate that fails them is not worth a multi-minute image build
   const checks = await checksStage(
     input.labImage,
     input.trustedCommit,
@@ -823,16 +824,18 @@ export async function evaluate(input: EvaluateInput) {
     input.key,
     input.log
   )
+  evaluation.stages.push(checks)
+  input.log(`stage checks: ${checks.status}`)
+  if (checks.status === "fail" || input.stopAfter === "checks") {
+    skipRest(["build", "stack", "e2e"])
+    return finish()
+  }
   const built = await buildStage(input.trustedCommit, input.commit, input.key, input.log)
-  evaluation.stages.push(built.result, checks)
-  input.log(`stage build: ${built.result.status}; checks: ${checks.status}`)
-  if (
-    built.result.status === "fail" ||
-    checks.status === "fail" ||
-    input.stopAfter === "checks"
-  ) {
+  evaluation.stages.push(built.result)
+  input.log(`stage build: ${built.result.status}`)
+  if (built.result.status === "fail") {
     skipRest(["stack", "e2e"])
-    return finish(built.result.status === "pass" ? built.images : undefined)
+    return finish()
   }
   let stack: CandidateStack | undefined
   try {

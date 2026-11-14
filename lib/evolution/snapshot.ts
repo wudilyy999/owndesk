@@ -72,15 +72,11 @@ export async function sanitizedSeed(input: {
       created_at: new Date().toISOString(),
     })
   )
-  const agents = await pool.query(
-    "SELECT id,name,role,instructions,glyph,created_at,updated_at FROM agents ORDER BY created_at"
-  )
-  for (const row of agents.rows) statements.push(insertJson("agents", row))
-  const companions = await pool.query(
-    `SELECT agent_id,persona,time_zone,shares_paused,max_shares_per_day,quiet_start,quiet_end,
-      life_times,life_daily_budget_micros,life_session_max_steps,rhythm,push_preview,created_at,updated_at
-     FROM companions`
-  )
+  const agents = await pool.query("SELECT * FROM agents ORDER BY created_at")
+  for (const row of agents.rows)
+    statements.push(insertJson("agents", { ...row, workstation_id: null }))
+  // Persona and companion settings (no secrets live in this table)
+  const companions = await pool.query("SELECT * FROM companions")
   for (const row of companions.rows)
     statements.push(
       insertJson("companions", { ...row, owner_id: userId, life_enabled: false })
