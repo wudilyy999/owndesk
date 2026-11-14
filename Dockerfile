@@ -6,6 +6,12 @@ ENV NEXT_TELEMETRY_DISABLED=1
 COPY package.json package-lock.json ./
 RUN npm ci
 COPY . .
+# B0: ship the exact source of this build (minus dependencies) so every install can
+# recover it offline; the version repository commits it on the `upstream` branch.
+ARG SOURCE_REVISION=unknown
+RUN tar --sort=name --owner=0 --group=0 --numeric-owner --mtime=@0 \
+      --exclude=./node_modules --exclude=./.next -cf /source.tar . \
+ && printf '%s\n' "$SOURCE_REVISION" > /source.revision
 # Build placeholders are public, short-lived inputs; deployments supply their own secrets.
 RUN DATABASE_URL=postgresql://build:build@127.0.0.1/build \
     APP_URL=http://localhost:6797 \
@@ -30,6 +36,11 @@ COPY --from=build /app/scripts ./scripts
 COPY --from=build /app/workstation/controller/native-schema.mjs /app/workstation/controller/native-schema.d.mts ./workstation/controller/
 COPY --from=build /app/licenses ./licenses
 COPY --from=build /app/LICENSE /app/THIRD_PARTY.md /app/provenance.json ./
+COPY --from=build /source.tar /source.revision ./
+ARG SOURCE_REVISION=unknown
+LABEL org.opencontainers.image.revision=$SOURCE_REVISION \
+      org.opencontainers.image.source=https://github.com/wudilyy999/owndesk
+ENV OWNDESK_REVISION=$SOURCE_REVISION
 RUN mkdir -p /app/data/artifacts && chown node:node /app/data/artifacts
 USER node
 EXPOSE 6797
@@ -39,8 +50,10 @@ FROM docker:29.7.2-dind AS docker-cli
 FROM web AS worker
 USER root
 COPY --from=docker-cli /usr/local/bin/docker /usr/local/bin/docker
+# Compose drives version switches (scripts/updater.mjs); git keeps the version repository.
+COPY --from=docker-cli /usr/local/libexec/docker/cli-plugins/docker-compose /usr/local/libexec/docker/cli-plugins/docker-compose
 RUN apt-get update \
- && apt-get install -y --no-install-recommends iptables iproute2 \
+ && apt-get install -y --no-install-recommends iptables iproute2 git \
  && rm -rf /var/lib/apt/lists/*
 EXPOSE 6798
 CMD ["node", "--import", "tsx", "worker/main.ts"]

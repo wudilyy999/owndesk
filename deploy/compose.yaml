@@ -14,6 +14,8 @@ x-application: &application
   VAPID_PRIVATE_KEY: ${VAPID_PRIVATE_KEY:-}
   VAPID_SUBJECT: ${VAPID_SUBJECT:-}
   MCP_ALLOW_FAKE_IP: ${MCP_ALLOW_FAKE_IP:-false}
+  # Host path of this directory: enables the versions page and the updater (B0)
+  PA_DEPLOY_DIR: ${PA_DEPLOY_DIR:-}
 
 services:
   postgres:
@@ -37,6 +39,8 @@ services:
     build:
       context: ..
       target: web
+      args:
+        SOURCE_REVISION: ${PA_SOURCE_REVISION:-unknown}
     environment: *application
     volumes:
       - artifacts:/app/data/artifacts:ro
@@ -65,6 +69,8 @@ services:
     build:
       context: ..
       target: worker
+      args:
+        SOURCE_REVISION: ${PA_SOURCE_REVISION:-unknown}
     environment:
       <<: *application
       WORKER_HOST: 0.0.0.0
@@ -81,6 +87,7 @@ services:
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - artifacts:/app/data/artifacts
+      - evolution:/app/data/evolution
     networks: [control, outbound]
     depends_on:
       postgres: { condition: service_healthy }
@@ -124,5 +131,7 @@ networks:
 volumes:
   postgres:
   artifacts:
+  # Version repository: source of every version that ran here (git, B0)
+  evolution:
   caddy:
   caddy_config:

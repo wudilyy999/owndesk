@@ -41,7 +41,11 @@ export function innerDocker(host: LinuxHost, args: string[], options: RunOptions
   })
 }
 
-export async function linuxHost(): Promise<LinuxHost> {
+export async function linuxHost(
+  // nft: make the daemon program iptables-nft even when the outer host has legacy
+  // tables (the worker's guard reads DOCKER-USER with Debian's iptables-nft)
+  options: { memory?: string; nft?: boolean } = {}
+): Promise<LinuxHost> {
   let host: LinuxHost
   if (process.env.PA_LINUX_HOST_STATE) {
     host = JSON.parse(await readFile(process.env.PA_LINUX_HOST_STATE, "utf8"))
@@ -71,9 +75,10 @@ export async function linuxHost(): Promise<LinuxHost> {
       "--cpus",
       "2",
       "--memory",
-      "3g",
+      options.memory ?? "3g",
       "--env",
       "DOCKER_TLS_CERTDIR=/certs",
+      ...(options.nft ? ["--env", "DOCKER_IPTABLES_LEGACY="] : []),
       "--publish",
       "127.0.0.1::2376/tcp",
       "--publish",
@@ -122,12 +127,13 @@ export async function linuxHost(): Promise<LinuxHost> {
   await mkdir(certs, { recursive: true, mode: 0o700 })
   const deadline = Date.now() + 90000
   while (true) {
+    // key.pem appears before the client certificate is signed; wait for all three
     const ready = await dockerRaw([
       "exec",
       host.name,
-      "test",
-      "-f",
-      "/certs/client/key.pem",
+      "sh",
+      "-c",
+      "test -s /certs/client/key.pem && test -s /certs/client/cert.pem && test -s /certs/client/ca.pem",
     ])
     if (ready.exitCode === 0) break
     assert(Date.now() < deadline, "Linux host TLS certificates did not become ready")
