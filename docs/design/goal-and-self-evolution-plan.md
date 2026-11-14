@@ -418,6 +418,12 @@ deployments: {
   5. 回退过程中杀掉更新器，再跑一次能把状态收敛到一致；
   6. `test:deployment`、`test:restore` 回归通过。
 - **风险**：更新器挂 docker.sock，权限高 → 只用已经在跑的可信镜像，只执行固定的 compose 命令，不接受模型输入。
+- **实现说明（B0 已完成）**：
+  - 更新器是 `scripts/updater.mjs`（`start` / `watch` / `resume` 三个固定命令），状态记在 `agent_versions` / `deployments` 两张表里（迁移 `0033_versions.sql`），同一时间最多一次切换（部分唯一索引）。
+  - 健康检测先只用 compose 已有的两条检查（web `/login`、worker `/health`，worker 只有在数据库租约和 DBOS 启动后才回应）。fixture 任务、伴侣测试消息留到 B1 的评测器里做，不放进回退触发条件。
+  - 不设观察期：切换后留一个用旧镜像启动的看护容器一直检测，连续 3 次不通过就回退；下一次切换时替换。
+  - 版本身份 = web + worker 两个镜像 ID，各打一个本机 `keep-<镜像ID>` 标签，所以 `latest` 这种会移动的标签不会丢掉旧版本。默认保留 3 个，没通过健康检测的版本标记为 `rejected` 并清理标签（与保留版本共用的镜像不动）。
+  - `evaluations` 表留给 B1。
 
 ### B1：改进实验室 MVP（不碰工作站代码、不改表结构、不加依赖）
 
