@@ -5,7 +5,7 @@
 import assert from "node:assert/strict"
 import { execFile, spawn } from "node:child_process"
 import { randomUUID } from "node:crypto"
-import { copyFile, mkdir, readFile, rm, writeFile } from "node:fs/promises"
+import { copyFile, mkdir, rm, writeFile } from "node:fs/promises"
 import path from "node:path"
 import { setTimeout as delay } from "node:timers/promises"
 import { parseEnv, promisify } from "node:util"
@@ -162,50 +162,11 @@ pass("Built two real versions and two broken derivatives", {
 let host: LinuxHost | undefined
 let passed = false
 try {
-  host = await linuxHost({ shareDirectory: true, memory: "4g", nft: true })
+  host = await linuxHost({ memory: "4g", nft: true })
   const h = host
-  const root = path.join(h.directory, "install")
-  const deploy = path.join(root, "deploy")
-  await mkdir(path.join(root, "scripts"), { recursive: true })
-  for (const file of ["upgrade.sh", "deploy-env.mjs", "vapid-keys.mjs"])
-    await copyFile(path.join(repo, "scripts", file), path.join(root, "scripts", file))
-  await exec("node", [
-    path.join(root, "scripts/deploy-env.mjs"),
-    "https://localhost:8443",
-    "owner@b0.test",
-    deploy,
-  ])
-  for (const file of ["compose.yaml", "Caddyfile"])
-    await copyFile(path.join(repo, "deploy", file), path.join(deploy, file))
-  const envFile = path.join(deploy, ".env")
-  const readConfig = async () => parseEnv(await readFile(envFile, "utf8"))
-  let text = await readFile(envFile, "utf8")
-  text = text
-    .replace(/^PA_WEB_IMAGE=.*$/m, "PA_WEB_IMAGE=owndesk-web:b0-a")
-    .replace(/^PA_WORKER_IMAGE=.*$/m, "PA_WORKER_IMAGE=owndesk-worker:b0-a")
-  text += "PA_HEALTH_INTERVAL_SECONDS=3\nPA_HEALTH_START_SECONDS=240\n"
-  await writeFile(envFile, text, { mode: 0o600 })
-  const config = (await readConfig()) as Record<string, string>
-  assert.equal(config.PA_DEPLOY_DIR, deploy, "deploy-env records the deploy directory")
-  const project = `pa-${config.INSTALL_ID}`
-  const inner = (args: string[], timeoutMs = 300000) =>
-    innerDocker(h, args, { timeoutMs, env: config, maxOutputBytes: 32 * 1024 * 1024 })
-  const compose = (args: string[], timeoutMs = 300000) =>
-    inner(
-      [
-        "compose",
-        "--file",
-        path.join(deploy, "compose.yaml"),
-        "--env-file",
-        envFile,
-        "--project-name",
-        project,
-        ...args,
-      ],
-      timeoutMs
-    )
   const out = (result: { stdout: Buffer }) => result.stdout.toString().trim()
-
+  const inner = (args: string[], timeoutMs = 300000) =>
+    innerDocker(h, args, { timeoutMs, maxOutputBytes: 32 * 1024 * 1024 })
   await loadImages(h, [
     "owndesk-web:b0-a",
     "owndesk-worker:b0-a",
@@ -215,6 +176,71 @@ try {
     "owndesk-worker:b0-hang",
     "postgres:16.15-alpine",
   ])
+  // The machine OwnDesk is installed on is the Linux host itself: the install lives at
+  // /srv/owndesk inside it, and a root shell container (worker image: docker, compose,
+  // node, bash) plays the operator's terminal on that machine.
+  const root = "/srv/owndesk"
+  const deploy = `${root}/deploy`
+  const local = path.join(h.directory, "install")
+  await mkdir(path.join(local, "scripts"), { recursive: true })
+  await mkdir(path.join(local, "deploy"), { recursive: true })
+  for (const file of ["upgrade.sh", "deploy-env.mjs", "vapid-keys.mjs"])
+    await copyFile(path.join(repo, "scripts", file), path.join(local, "scripts", file))
+  for (const file of ["compose.yaml", "Caddyfile"])
+    await copyFile(path.join(repo, "deploy", file), path.join(local, "deploy", file))
+  await docker(["cp", `${local}/.`, `${h.name}:${root}`])
+  const shell = "b0-operator-shell"
+  await inner([
+    "run",
+    "--detach",
+    "--name",
+    shell,
+    "--entrypoint",
+    "sleep",
+    "--volume",
+    "/var/run/docker.sock:/var/run/docker.sock",
+    "--volume",
+    `${root}:${root}`,
+    "owndesk-worker:b0-a",
+    "infinity",
+  ])
+  const sh = (args: string[], timeoutMs = 300000) =>
+    inner(["exec", shell, ...args], timeoutMs)
+  await sh([
+    "node",
+    `${root}/scripts/deploy-env.mjs`,
+    "https://localhost:8443",
+    "owner@b0.test",
+    deploy,
+  ])
+  const envFile = `${deploy}/.env`
+  const readConfig = async () =>
+    parseEnv(out(await sh(["cat", envFile]))) as Record<string, string>
+  await sh([
+    "sh",
+    "-c",
+    `sed -i 's#^PA_WEB_IMAGE=.*#PA_WEB_IMAGE=owndesk-web:b0-a#; s#^PA_WORKER_IMAGE=.*#PA_WORKER_IMAGE=owndesk-worker:b0-a#' ${envFile} && printf 'PA_HEALTH_INTERVAL_SECONDS=3\\nPA_HEALTH_START_SECONDS=240\\n' >> ${envFile}`,
+  ])
+  const config = await readConfig()
+  assert.equal(config.PA_DEPLOY_DIR, deploy, "deploy-env records the deploy directory")
+  assert.equal(config.PA_HEALTH_INTERVAL_SECONDS, "3")
+  const project = `pa-${config.INSTALL_ID}`
+  const compose = (args: string[], timeoutMs = 300000) =>
+    sh(
+      [
+        "docker",
+        "compose",
+        "--file",
+        `${deploy}/compose.yaml`,
+        "--env-file",
+        envFile,
+        "--project-name",
+        project,
+        ...args,
+      ],
+      timeoutMs
+    )
+
   await inner(
     [
       "run",
@@ -233,7 +259,7 @@ try {
         "WORKSTATION_NETWORK",
         "PA_GUEST_SUBNET",
         "PA_CONTROL_IPS",
-      ].flatMap((name) => ["--env", name]),
+      ].flatMap((name) => ["--env", `${name}=${config[name] ?? ""}`]),
       "owndesk-worker:b0-a",
       "node",
       "scripts/network.mjs",
@@ -247,7 +273,7 @@ try {
     "run",
     "--rm",
     "--env-from-file",
-    path.join(deploy, "owner.env"),
+    `${deploy}/owner.env`,
     "worker",
     "npm",
     "run",
@@ -335,16 +361,20 @@ try {
       marker,
       "owner data survived"
     )
-  const upgrade = (args: string[]) =>
-    new Promise<{ code: number; output: string }>((resolve) => {
-      const child = spawn("bash", [path.join(root, "scripts/upgrade.sh"), ...args], {
-        env: { ...process.env, ...hostEnvironment(h) },
-      })
-      let output = ""
-      child.stdout.on("data", (chunk) => (output += chunk))
-      child.stderr.on("data", (chunk) => (output += chunk))
-      child.on("close", (code) => resolve({ code: code ?? -1, output }))
-    })
+  const upgrade = async (args: string[]) => {
+    const result = await dockerRaw(
+      ["exec", shell, "bash", `${root}/scripts/upgrade.sh`, ...args],
+      {
+        env: hostEnvironment(h),
+        timeoutMs: 900000,
+        maxOutputBytes: 8 * 1024 * 1024,
+      }
+    )
+    return {
+      code: result.exitCode ?? -1,
+      output: result.stdout.toString() + result.stderr,
+    }
+  }
   const log = async (name: string, value: string) => {
     if (evidence) await writeFile(path.join(evidence, `versions-${name}.log`), value)
   }
@@ -447,17 +477,7 @@ try {
   }, "B source imported")
   const history = out(await repoGit(["log", "--format=%s", "upstream"])).split("\n")
   assert.equal(history.length, 2, history.join("\n"))
-  const backups = out(
-    await inner([
-      "run",
-      "--rm",
-      "--volume",
-      `${deploy}:/d`,
-      "postgres:16.15-alpine",
-      "ls",
-      "/d/backups",
-    ])
-  )
+  const backups = out(await sh(["ls", `${deploy}/backups`]))
   assert.match(backups, /pre-deploy-\d+\.dump/)
   pass(
     "Upgrade A→B: healthy, A kept, watcher from A's image, database snapshot taken, data intact",
@@ -536,7 +556,7 @@ try {
   )
 
   // 5. One-click switching through the web API (owner session, same origin).
-  const owner = parseEnv(await readFile(path.join(deploy, "owner.env"), "utf8"))
+  const owner = parseEnv(out(await sh(["cat", `${deploy}/owner.env`])))
   const web = async (script: string) =>
     JSON.parse(
       out(
