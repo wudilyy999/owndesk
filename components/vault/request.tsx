@@ -58,8 +58,7 @@ export function VaultRequest({
         指定站点：<strong>{origin}</strong>
       </p>
       <p className="text-xs leading-5 text-muted-foreground">
-        表单通过认证网页加密保存，只把条目编号和版本回复给任务。此步骤不填写网页、不授权付款。临时条目仅本任务有效，10
-        分钟过期；验证码始终临时保存。
+        保存凭据后，网页填写和付款仍需单独确认。临时凭据仅限本任务使用，10 分钟后过期。
       </p>
       {error && (
         <p role="alert" className="text-destructive">

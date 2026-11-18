@@ -1,6 +1,7 @@
 "use client"
 // Adapted from the pinned MIT upstream components/routines/routines-view.tsx (MIT): plan editor,
 // five schedule choices, enable/manual-run actions and run-history navigation.
+import { PageLayout } from "@/components/page-header"
 import { useState } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
@@ -76,17 +77,7 @@ export function Routines({ initial }: { initial: Overview }) {
       ? new Date(value).toLocaleString("zh-CN", { timeZone: zone, hour12: false })
       : "无后续计划"
   return (
-    <main className="mx-auto max-w-5xl space-y-8 px-6 py-8">
-      <header>
-        <Link href="/" className="text-sm underline underline-offset-4">
-          返回工作现场
-        </Link>
-        <h1 className="mt-5 text-2xl font-semibold">定时例程</h1>
-        <p className="mt-3 max-w-2xl text-sm leading-6 text-muted-foreground">
-          把重复工作交给
-          Agent。每次触发保存独立任务；工作站忙时排队，暂停或删除计划保留已经受理的任务。
-        </p>
-      </header>
+    <PageLayout title="定时例程">
       {webhook && (
         <div role="status" className="space-y-2 rounded border p-3 text-xs">
           <p>Webhook 地址：{webhook.url}</p>
@@ -863,6 +854,6 @@ export function Routines({ initial }: { initial: Overview }) {
           </article>
         ))}
       </section>
-    </main>
+    </PageLayout>
   )
 }

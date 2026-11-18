@@ -1,7 +1,7 @@
 "use client"
 // Versions: what is running, the versions kept for one-click rollback, switch history.
+import { PageLayout } from "@/components/page-header"
 import { useEffect, useState } from "react"
-import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import type { VersionsOverview } from "@/lib/versions"
 
@@ -70,20 +70,7 @@ export function Versions({ initial }: { initial: VersionsOverview }) {
   const active = data.versions.find((version) => version.status === "active")
   const kept = data.versions.filter((version) => version.status === "retained")
   return (
-    <main className="mx-auto max-w-5xl space-y-8 px-6 py-8">
-      <header>
-        <Link href="/" className="text-sm underline underline-offset-4">
-          返回工作现场
-        </Link>
-        <h1 className="mt-5 text-2xl font-semibold">版本</h1>
-        <p className="mt-3 max-w-2xl text-sm leading-6 text-muted-foreground">
-          每次换版本前都会保留旧版本。换上之后一直做健康检测，连续 3
-          次不通过就自动退回旧版本，保证还能用。也可以随时切换到保留着的版本。
-        </p>
-        <p className="mt-3 max-w-2xl text-sm leading-6 text-muted-foreground">
-          回退只更换程序镜像，保留任务和文件数据。
-        </p>
-      </header>
+    <PageLayout title="版本">
       {error && (
         <p role="alert" className="text-sm text-destructive">
           {error}
@@ -116,6 +103,11 @@ export function Versions({ initial }: { initial: VersionsOverview }) {
       </section>
       <section aria-label="保留的版本" className="space-y-3">
         <h2 className="font-medium">保留的版本</h2>
+        {data.enabled && kept.length > 0 && (
+          <p className="text-sm text-muted-foreground">
+            切换版本会短暂中断服务，任务和文件会保留。
+          </p>
+        )}
         {kept.length === 0 && (
           <p className="text-sm text-muted-foreground">还没有可以切换的旧版本。</p>
         )}
@@ -163,6 +155,6 @@ export function Versions({ initial }: { initial: VersionsOverview }) {
           ))}
         </ul>
       </section>
-    </main>
+    </PageLayout>
   )
 }

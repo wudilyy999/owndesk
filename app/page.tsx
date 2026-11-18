@@ -41,7 +41,6 @@ export default async function Home({
   const displayTasks = selectedTask ? [selectedTask, ...taskRows] : taskRows
   return (
     <Workspace
-      ownerName={owner.user.name}
       maxSteps={await getMaxSteps()}
       initialSelected={requestedTask}
       initialThreads={threadRows.map((thread) => ({

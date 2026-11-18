@@ -1,8 +1,8 @@
 "use client"
 // Companion page: chat, the companion's own days, notes it keeps about you, and settings.
 // Chat-bubble and "life feed" ideas follow common companion apps (SillyTavern, AIRI); no code taken.
+import { WorkspaceBackLink } from "@/components/page-header"
 import { useCallback, useEffect, useRef, useState } from "react"
-import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
@@ -103,13 +103,8 @@ export function Companion() {
     <main className="mx-auto flex h-dvh max-w-3xl flex-col px-4 py-4">
       <header className="flex flex-col gap-2 pb-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-baseline justify-between gap-3 sm:block">
-          <h1 className="text-lg font-medium whitespace-nowrap">{view?.name ?? "…"}</h1>
-          <Link
-            href="/"
-            className="text-xs whitespace-nowrap text-faint underline underline-offset-4"
-          >
-            返回工作现场
-          </Link>
+          <h1 className="min-w-0 truncate text-lg font-medium">{view?.name ?? "…"}</h1>
+          <WorkspaceBackLink />
         </div>
         <nav className="-mx-1 flex [scrollbar-width:none] gap-1 overflow-x-auto px-1 pb-0.5 [&>button]:shrink-0 [&>button]:whitespace-nowrap">
           {tabs.map(([id, label]) => (

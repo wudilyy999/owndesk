@@ -1,5 +1,6 @@
 "use client"
 // Long-running objectives: create one, watch its rounds, pause, resume, stop, change limits.
+import { PageLayout } from "@/components/page-header"
 import { useState } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
@@ -147,17 +148,7 @@ export function Objectives({ initial }: { initial: Data }) {
   const date = (value: string | Date | null) =>
     value ? new Date(value).toLocaleString("zh-CN", { hour12: false }) : ""
   return (
-    <main className="mx-auto max-w-5xl space-y-8 px-6 py-8">
-      <header>
-        <Link href="/" className="text-sm underline underline-offset-4">
-          返回工作现场
-        </Link>
-        <h1 className="mt-5 text-2xl font-semibold">长期目标</h1>
-        <p className="mt-3 max-w-2xl text-sm leading-6 text-muted-foreground">
-          交给 Agent
-          一个需要很多步的目标，它会一轮一轮接着做，直到达成、你暂停或停止，或者碰到你设的上限。上限都可以不填，不填就不限；每月预算照常生效。
-        </p>
-      </header>
+    <PageLayout title="长期目标">
       {error && (
         <p role="alert" className="text-sm text-destructive">
           {error}
@@ -442,6 +433,6 @@ export function Objectives({ initial }: { initial: Data }) {
           )
         })}
       </section>
-    </main>
+    </PageLayout>
   )
 }

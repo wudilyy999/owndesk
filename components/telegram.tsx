@@ -120,8 +120,7 @@ export function TelegramPanel({
           )}
         </div>
         <p className="text-xs leading-5 text-muted-foreground">
-          Token
-          加密存储。环境变量仍有配置时，移除本地值后会继续使用环境值；彻底停用需移除对应环境变量。
+          如果环境变量也设置了 Token，移除本地 Token 后仍会使用该配置。
         </p>
       </form>
       {panel && (

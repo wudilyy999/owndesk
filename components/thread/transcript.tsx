@@ -76,9 +76,9 @@ export function Transcript({
       className="space-y-5 rounded-2xl border border-border bg-surface p-5 shadow-xs sm:p-6"
     >
       <header className="flex flex-wrap items-center justify-between gap-3 border-b border-hairline pb-4">
-        <h3 className="min-w-0 text-lg font-medium break-words">
+        <h1 className="min-w-0 text-xl font-medium break-words">
           {title || "正在读取对话…"}
-        </h3>
+        </h1>
         <div className="flex flex-wrap gap-3 text-xs text-muted-foreground">
           <button
             type="button"

@@ -1,7 +1,7 @@
 "use client"
 // SourceBadge and SecretInput reused from the pinned MIT upstream's pinned settings form (MIT).
+import { PageLayout } from "@/components/page-header"
 import { useEffect, useState } from "react"
-import Link from "next/link"
 import { KeyRoundIcon } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -148,7 +148,7 @@ export function Settings({
         )
       )
       setKey("")
-      setMessage("配置已保存。新任务使用最新配置，已受理任务保留自己的配置快照。")
+      setMessage("配置已保存，将用于新任务。")
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : String(cause))
     } finally {
@@ -156,17 +156,7 @@ export function Settings({
     }
   }
   return (
-    <main className="mx-auto max-w-3xl space-y-7 px-6 py-10">
-      <header>
-        <Link href="/" className="text-sm underline underline-offset-4">
-          返回工作现场
-        </Link>
-        <h1 className="mt-5 text-2xl font-semibold">模型与 Agent</h1>
-        <p className="mt-3 text-sm leading-6 text-muted-foreground">
-          配置模型后创建一个
-          Agent。它会在服务器的独立桌面里工作，密钥加密保存，发送模型请求时使用。
-        </p>
-      </header>
+    <PageLayout title="模型与 Agent">
       {error && (
         <p
           role="alert"
@@ -320,7 +310,7 @@ export function Settings({
               updated,
             ])
             setEditing(updated.id)
-            setMessage("Agent 已保存。返回工作现场后可以选择它并下达任务。")
+            setMessage("Agent 已保存。")
           } catch (cause) {
             setError(cause instanceof Error ? cause.message : String(cause))
           } finally {
@@ -396,6 +386,6 @@ export function Settings({
       <AgentZeroPlugins />
       <TelegramPanel agents={agentRows} />
       <VaultPanel />
-    </main>
+    </PageLayout>
   )
 }
