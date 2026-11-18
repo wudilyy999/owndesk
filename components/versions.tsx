@@ -80,6 +80,9 @@ export function Versions({ initial }: { initial: VersionsOverview }) {
           每次换版本前都会保留旧版本。换上之后一直做健康检测，连续 3
           次不通过就自动退回旧版本，保证还能用。也可以随时切换到保留着的版本。
         </p>
+        <p className="mt-3 max-w-2xl text-sm leading-6 text-muted-foreground">
+          回退只更换程序镜像，保留任务和文件数据。
+        </p>
       </header>
       {error && (
         <p role="alert" className="text-sm text-destructive">
