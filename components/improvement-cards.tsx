@@ -151,17 +151,21 @@ export const stageNames: Record<string, string> = {
   checks: "自动测试",
   stack: "候选环境",
   e2e: "真实实测",
+  acceptance: "验收清单",
 }
 
 export function ImprovementReportCard({ message }: { message: CompanionMessage }) {
   const meta = (message.metadata ?? {}) as {
+    passed?: boolean
     summary?: string
     stages?: ReportStage[]
     acceptance?: { item: string; status: string; note: string }[]
   }
   return (
     <div className="space-y-2" data-testid="improvement-report">
-      <p className="text-xs text-faint">改进报告：全部测试通过</p>
+      <p className="text-xs text-faint">
+        改进报告：{meta.passed ? "全部测试通过" : "测试未通过，继续改进"}
+      </p>
       <p className="font-medium">{message.content}</p>
       {meta.summary && <p>{meta.summary}</p>}
       <ul className="text-xs">

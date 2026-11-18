@@ -47,11 +47,14 @@ EXPOSE 6797
 CMD ["node", "node_modules/next/dist/bin/next", "start", "--hostname", "0.0.0.0", "--port", "6797"]
 
 FROM docker:29.7.2-dind AS docker-cli
+FROM ghcr.io/gitleaks/gitleaks:v8.30.1 AS secret-scanner
 FROM web AS worker
 USER root
 COPY --from=docker-cli /usr/local/bin/docker /usr/local/bin/docker
+COPY --from=secret-scanner /usr/bin/gitleaks /usr/local/bin/gitleaks
 # Compose drives version switches (scripts/updater.mjs); git keeps the version repository.
 COPY --from=docker-cli /usr/local/libexec/docker/cli-plugins/docker-compose /usr/local/libexec/docker/cli-plugins/docker-compose
+COPY --from=docker-cli /usr/local/libexec/docker/cli-plugins/docker-buildx /usr/local/libexec/docker/cli-plugins/docker-buildx
 RUN apt-get update \
  && apt-get install -y --no-install-recommends iptables iproute2 git \
  && rm -rf /var/lib/apt/lists/*

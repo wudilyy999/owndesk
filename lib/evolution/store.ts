@@ -38,6 +38,8 @@ export type Candidate = {
   claim?: string
   files?: { path: string; added: number; removed: number; status: string }[]
   evaluation?: Evaluation
+  // A later round continues evaluation of this exact source after allowance renews.
+  evaluationBlocked?: "steps" | "cost"
   versionId?: string
   images?: { web: string; worker: string }
   // Why this round was opened: owner feedback, an auto rollback, or a failed evaluation

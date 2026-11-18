@@ -144,6 +144,11 @@ export function Improvements({ initial }: { initial: ImprovementOverview }) {
                 采用后新版本出了问题，已自动退回旧版本：{item.adoption.reason}
               </p>
             )}
+            {item.adoption?.outcome === "failed" && (
+              <p className="text-sm text-destructive">
+                旧版本恢复尚未完成，改进已暂停：{item.adoption.reason}
+              </p>
+            )}
             {last && (
               <div className="space-y-1 text-sm" data-testid="improvement-latest">
                 <p>
@@ -194,6 +199,25 @@ export function Improvements({ initial }: { initial: ImprovementOverview }) {
                       ))}
                     </ul>
                   </details>
+                )}
+                {evaluation && evaluation.acceptance.length > 0 && (
+                  <ul className="space-y-1">
+                    {evaluation.acceptance.map((check) => (
+                      <li key={check.item}>
+                        {check.status === "pass" ? "✅" : "❌"} {check.item}：{check.note}
+                        {check.screenshot && (
+                          <a
+                            href={check.screenshot}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="ml-2 underline underline-offset-4"
+                          >
+                            查看验收截图
+                          </a>
+                        )}
+                      </li>
+                    ))}
+                  </ul>
                 )}
               </div>
             )}

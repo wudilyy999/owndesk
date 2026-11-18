@@ -547,6 +547,26 @@
   ],
   "additionalSources": [
     {
+      "repository": "https://github.com/docker/buildx",
+      "version": "0.36.1",
+      "license": "Apache-2.0",
+      "notice": "licenses/docker-buildx/LICENSE",
+      "sourcePath": "docker:29.7.2-dind /usr/local/libexec/docker/cli-plugins/docker-buildx",
+      "path": "Dockerfile",
+      "mode": "external-tool",
+      "scope": "Unmodified build plugin copied into the trusted worker for candidate image builds"
+    },
+    {
+      "repository": "https://github.com/gitleaks/gitleaks",
+      "version": "8.30.1",
+      "license": "MIT",
+      "notice": "licenses/gitleaks/LICENSE",
+      "sourcePath": "release binary /usr/bin/gitleaks",
+      "path": "lib/evolution/scanner.ts",
+      "mode": "external-tool",
+      "scope": "Unmodified scanner binary in trusted worker; invocation adapter written independently"
+    },
+    {
       "repository": "https://github.com/agent0ai/a0-connector",
       "commit": "3741c8809f1f99b4efee2ed1a24234a98bf896d4",
       "license": "MIT",

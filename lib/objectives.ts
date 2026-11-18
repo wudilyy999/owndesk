@@ -4,6 +4,7 @@
 // every model request. Rounds are started by the routine dispatcher (worker/routines.ts).
 import { and, desc, eq, inArray, isNull } from "drizzle-orm"
 import { ZodError } from "zod"
+import type { PoolClient } from "pg"
 import { db, pool } from "@/db"
 import {
   agents,
@@ -42,13 +43,23 @@ export type ObjectiveUsage = {
   unknownCost: number
 }
 
-export async function objectiveUsage(objectiveId: string): Promise<ObjectiveUsage> {
+export async function objectiveUsage(
+  objectiveId: string,
+  client?: PoolClient
+): Promise<ObjectiveUsage> {
   const {
     rows: [row],
-  } = await pool.query<{ rounds: number; steps: number; cost: string; unknown: number }>(
+  } = await (client ?? pool).query<{
+    rounds: number
+    steps: number
+    cost: string
+    unknown: number
+  }>(
     `SELECT (SELECT count(*)::int FROM objective_rounds WHERE objective_id=$1) AS rounds,
       (SELECT count(*)::int FROM task_model_decisions d JOIN tasks t ON t.id=d.task_id
-        WHERE t.objective_id=$1 AND d.status='succeeded') AS steps,
+        WHERE t.objective_id=$1 AND t.source<>'improvement' AND d.status='succeeded') +
+      (SELECT count(*)::int FROM task_model_attempts a JOIN tasks t ON t.id=a.task_id
+        WHERE t.objective_id=$1 AND t.source='improvement' AND a.status<>'pending') AS steps,
       COALESCE(sum(COALESCE(a.cost_micros,a.reconciled_cost_micros)),0)::text AS cost,
       count(a.*) FILTER(WHERE a.cost_micros IS NULL AND a.reconciled_cost_micros IS NULL)::int AS unknown
      FROM tasks t LEFT JOIN task_model_attempts a ON a.task_id=t.id WHERE t.objective_id=$1`,
@@ -369,7 +380,9 @@ async function closeFinishedRounds() {
     const {
       rows: [usage],
     } = await pool.query<{ steps: number; cost: string; unknown: number }>(
-      `SELECT (SELECT count(*)::int FROM task_model_decisions WHERE task_id=$1 AND status='succeeded') AS steps,
+      `SELECT CASE WHEN (SELECT source FROM tasks WHERE id=$1)='improvement'
+          THEN count(*) FILTER(WHERE status<>'pending')::int
+          ELSE (SELECT count(*)::int FROM task_model_decisions WHERE task_id=$1 AND status='succeeded') END AS steps,
         COALESCE(sum(COALESCE(cost_micros,reconciled_cost_micros)),0)::text AS cost,
         count(*) FILTER(WHERE cost_micros IS NULL AND reconciled_cost_micros IS NULL)::int AS unknown
        FROM task_model_attempts WHERE task_id=$1`,

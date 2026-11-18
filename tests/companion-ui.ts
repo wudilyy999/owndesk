@@ -3,7 +3,8 @@
 // installability (manifest, icons, service worker, offline page). Stage B2a adds sending a picture and the memory change log
 // with undo. Screenshots go to B1_SHOTS.
 import assert from "node:assert/strict"
-import { mkdir, readFile } from "node:fs/promises"
+import { mkdir, mkdtemp, readFile, rm } from "node:fs/promises"
+import os from "node:os"
 import path from "node:path"
 import { chromium, type Page } from "playwright"
 import sharp from "sharp"
@@ -14,10 +15,20 @@ const shots = path.resolve(
   process.env.B1_SHOTS ?? path.join("data/experiments", `companion-ui-${Date.now()}`)
 )
 await mkdir(shots, { recursive: true })
-const browser = await chromium.launch({
-  headless: true,
-  executablePath: process.env.UI_BROWSER_PATH,
-})
+const profile = process.env.UI_BROWSER_WS
+  ? undefined
+  : await mkdtemp(path.join(os.tmpdir(), "owndesk-companion-ui-"))
+const browser = process.env.UI_BROWSER_WS
+  ? await chromium.connectOverCDP(process.env.UI_BROWSER_WS)
+  : undefined
+const context = browser
+  ? browser.contexts()[0]
+  : await chromium.launchPersistentContext(profile!, {
+      headless: true,
+      executablePath: process.env.UI_BROWSER_PATH,
+      viewport: { width: 1100, height: 900 },
+    })
+assert(context, "companion UI uses the browser's normal profile")
 const errors: string[] = []
 const snap = (page: Page, name: string) =>
   page.screenshot({ path: path.join(shots, `${name}.png`) })
@@ -89,11 +100,9 @@ for (let i = 0; i < 300; i++) {
 }
 
 try {
-  const context = await browser.newContext({
-    viewport: { width: 1100, height: 900 },
-    permissions: ["clipboard-read", "clipboard-write"],
-  })
+  await context.grantPermissions(["clipboard-read", "clipboard-write"])
   const page = await context.newPage()
+  await page.setViewportSize({ width: 1100, height: 900 })
   page.on("pageerror", (error) => errors.push(error.message))
   await page.goto(`${env.APP_URL}/login`)
   await page.getByLabel("邮箱").fill(credentials.email)
@@ -298,10 +307,11 @@ try {
     )
   // Memory changes: what she changed on her own is listed with a one-click undo. The changes are
   // made through the same code the chat uses (the real model's decisions are in the e2e run).
-  const { db, pool } = await import("@/db")
-  const { companions } = await import("@/db/schema")
+  const { pool } = await import("@/db")
   const memory = await import("@/lib/companion/memory")
-  const [{ agentId }] = await db.select({ agentId: companions.agentId }).from(companions)
+  const companionResponse = await page.request.get(`${env.APP_URL}/api/companion`)
+  assert.equal(companionResponse.status(), 200)
+  const { agentId } = (await companionResponse.json()) as { agentId: string }
   const info = {
     actor: "model",
     origin: "chat",
@@ -340,8 +350,14 @@ try {
     .click()
   await page.getByText("喜欢喝冰美式（界面测试）", { exact: true }).first().waitFor()
   assert.equal(
-    await page.getByText("最近戒咖啡了（界面测试）", { exact: true }).count(),
+    await log.getByText("→ 最近戒咖啡了（界面测试）", { exact: true }).count(),
     1
+  )
+  assert.ok(
+    !((await memoryApi()) as { content: string }[]).some(
+      (note) => note.content === "最近戒咖啡了（界面测试）"
+    ),
+    "the replaced wording remains in the change log, while the active note is restored"
   )
   // The entry stays, marked as undone
   await log.getByText("已撤销").first().waitFor()
@@ -504,5 +520,10 @@ try {
   assert.deepEqual(errors, [])
   console.log(`companion UI passed; screenshots in ${shots}`)
 } finally {
-  await browser.close()
+  if (browser) await browser.close()
+  else await context.close()
+  if (profile) {
+    assert.equal(path.dirname(path.resolve(profile)), path.resolve(os.tmpdir()))
+    await rm(profile, { recursive: true, force: true })
+  }
 }

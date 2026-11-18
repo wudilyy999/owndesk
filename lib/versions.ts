@@ -206,7 +206,8 @@ export type VersionsOverview = Awaited<ReturnType<typeof listVersions>>
 // its own image; returns as soon as the updater is started.
 export async function requestSwitch(
   versionId: string,
-  action: "rollback" | "promote" = "rollback"
+  action: "rollback" | "promote" = "rollback",
+  expectedFrom?: string
 ) {
   if (!versionsEnabled())
     throw new HttpError(409, "版本切换只在 Docker 部署（scripts/install.sh）里可用")
@@ -254,6 +255,7 @@ export async function requestSwitch(
     deploy,
     "--action",
     action,
+    ...(expectedFrom ? ["--expected-from", expectedFrom] : []),
     "--web",
     target.images.web,
     "--worker",

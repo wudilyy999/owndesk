@@ -88,12 +88,12 @@ export async function commitTree(
 }
 
 export async function changedFiles(base: string, head: string): Promise<ChangedFile[]> {
-  const numstat = (await gitText(["diff", "--numstat", "-M", "-z", base, head])).split(
-    "\0"
-  )
-  const statuses = (
-    await gitText(["diff", "--name-status", "-M", "-z", base, head])
-  ).split("\0")
+  const numstat = (await git(["diff", "--numstat", "-M", "-z", base, head]))
+    .toString("utf8")
+    .split("\0")
+  const statuses = (await git(["diff", "--name-status", "-M", "-z", base, head]))
+    .toString("utf8")
+    .split("\0")
   const byPath = new Map<string, ChangedFile>()
   for (let i = 0; i < statuses.length;) {
     const code = statuses[i++]
@@ -119,6 +119,13 @@ export async function changedFiles(base: string, head: string): Promise<ChangedF
     entry.binary = added === "-"
     entry.added = added === "-" ? 0 : Number(added)
     entry.removed = removed === "-" ? 0 : Number(removed)
+  }
+  for (const entry of (await git(["ls-tree", "-r", "-z", head]))
+    .toString("utf8")
+    .split("\0")) {
+    const tab = entry.indexOf("\t")
+    const file = byPath.get(entry.slice(tab + 1))
+    if (file && tab >= 0) file.mode = entry.slice(0, 6)
   }
   return [...byPath.values()]
 }

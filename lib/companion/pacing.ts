@@ -50,5 +50,12 @@ export const visibleMessage = (now = new Date()) =>
     or(isNull(companionMessages.revealAt), lte(companionMessages.revealAt, now))
   )
 
-export const realSleep = (ms: number) =>
-  ms > 0 ? new Promise<void>((resolve) => setTimeout(resolve, ms)) : Promise.resolve()
+export async function realSleep(ms: number) {
+  const deadline = Date.now() + ms
+  let remaining = ms
+  // Visibility uses wall-clock deadlines; a timer may fire early or the clock may move back.
+  while (remaining > 0) {
+    await new Promise<void>((resolve) => setTimeout(resolve, remaining))
+    remaining = deadline - Date.now()
+  }
+}

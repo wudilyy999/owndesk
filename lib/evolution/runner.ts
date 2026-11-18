@@ -128,7 +128,30 @@ export async function resumeImprovementRounds() {
      WHERE r.verdict IS NULL AND t.source=$1 AND t.status='running' AND o.proposal_id LIKE 'improvement:%'`,
     [IMPROVEMENT_SOURCE]
   )
-  for (const row of rows) kick(row.objective_id, row.round_no, row.task_id)
+  for (const row of rows) {
+    if (running.has(row.objective_id)) continue
+    const pending = await pool.query(
+      `UPDATE task_model_attempts SET status='unknown',finished_at=now(),error='Worker restarted before a model receipt was recorded'
+       WHERE task_id=$1 AND status='pending' AND COALESCE(price_snapshot->>'kind','priced')<>'local' RETURNING id`,
+      [row.task_id]
+    )
+    // Worker startup may already have marked these receipts unknown before this hook.
+    const unresolved = await pool.query(
+      `SELECT id FROM task_model_attempts WHERE task_id=$1 AND status='unknown'
+       AND cost_micros IS NULL AND reconciled_cost_micros IS NULL LIMIT 1`,
+      [row.task_id]
+    )
+    if (pending.rowCount || unresolved.rowCount) {
+      await finishTask(row.task_id, {
+        status: "completed",
+        achieved: false,
+        end: "cost",
+        summary: "重启前有模型请求尚未收到回执；请在用量页核对后再继续改进。",
+      })
+      continue
+    }
+    kick(row.objective_id, row.round_no, row.task_id)
+  }
 }
 
 export function idleForTests() {
@@ -148,13 +171,14 @@ async function trustedCommit(improvement: Improvement) {
 async function finishTask(
   taskId: string,
   outcome:
-    | { status: "completed"; summary: string; achieved: boolean; end?: "cost" }
+    | { status: "completed"; summary: string; achieved: boolean; end?: "steps" | "cost" }
     | { status: "failed"; error: string }
     | { status: "cancelled" }
 ) {
+  let ended: { rows: { objective_id: string }[] }
   if (outcome.status === "completed")
-    await pool.query(
-      "UPDATE tasks SET status='completed',result=$2,updated_at=now() WHERE id=$1 AND status='running'",
+    ended = await pool.query(
+      "UPDATE tasks SET status='completed',result=$2,updated_at=now() WHERE id=$1 AND status='running' RETURNING objective_id",
       [
         taskId,
         JSON.stringify({
@@ -166,15 +190,35 @@ async function finishTask(
       ]
     )
   else if (outcome.status === "failed")
-    await pool.query(
-      "UPDATE tasks SET status='failed',error=$2,updated_at=now() WHERE id=$1 AND status='running'",
+    ended = await pool.query(
+      "UPDATE tasks SET status='failed',error=$2,updated_at=now() WHERE id=$1 AND status='running' RETURNING objective_id",
       [taskId, outcome.error.slice(0, 4000)]
     )
   else
-    await pool.query(
-      "UPDATE tasks SET status='cancelled',updated_at=now() WHERE id=$1 AND status='running'",
+    ended = await pool.query(
+      "UPDATE tasks SET status='cancelled',updated_at=now() WHERE id=$1 AND status='running' RETURNING objective_id",
       [taskId]
     )
+  const terminal =
+    ended.rows[0] ??
+    (
+      await pool.query<{ objective_id: string }>(
+        "SELECT objective_id FROM tasks WHERE id=$1 AND status IN ('completed','failed','cancelled')",
+        [taskId]
+      )
+    ).rows[0]
+  if (terminal)
+    await updateImprovement(terminal.objective_id, (item) => {
+      const candidate = item.candidates.find((entry) => entry.taskId === taskId)
+      if (!candidate || candidate.phase === "done") return
+      candidate.phase = "done"
+      candidate.claim ??=
+        outcome.status === "completed"
+          ? outcome.summary
+          : outcome.status === "cancelled"
+            ? "本轮已停止。"
+            : "本轮因运行错误中断，可在任务记录查看原因。"
+    })
 }
 
 async function cancelled(objectiveId: string, taskId: string) {
@@ -213,8 +257,11 @@ export function reformerBrief(
       : previous
         ? `The previous candidate (round ${previous.roundNo}) is already applied in your copy.`
         : "",
+    previous?.claim
+      ? `Previous round's working notes (verify these against the code; they are not evaluation results):\n${previous.claim}`
+      : "",
     candidate.feedback ? `New information for this round:\n${candidate.feedback}` : "",
-    "Work in the project at the current directory. Explore first, then make the change, add tests, run typecheck, and call finish.",
+    "Work in the project at the current directory. Find the feature's entry points, implement the smallest complete change, add a focused test, format changed files, run typecheck, and call finish. Continue from the previous working notes instead of repeating its exploration.",
   ]
     .filter(Boolean)
     .join("\n\n")
@@ -225,7 +272,12 @@ async function rulesExcerpt(commit: string) {
     .then((value) => value.toString("utf8"))
     .catch(() => "")
   const start = text.indexOf("# 行为规则")
-  return start >= 0 ? text.slice(start, start + 3000) : ""
+  return start >= 0
+    ? text
+        .slice(start)
+        .split(/\n## 20\d{2}-/)[0]
+        .slice(0, 3000)
+    : ""
 }
 
 async function runRound(objectiveId: string, roundNo: number, taskId: string) {
@@ -245,12 +297,19 @@ async function runRound(objectiveId: string, roundNo: number, taskId: string) {
     if (!candidate) {
       improvement = await updateImprovement(objectiveId, (value) => {
         const previous = value.candidates.filter((item) => item.commit).at(-1)
+        const resumeEvaluation = previous?.evaluationBlocked && !value.feedback
         value.candidates.push({
           roundNo,
           branch: `cand/${shortId(objectiveId)}-${roundNo}`,
-          parent: previous?.commit ?? value.baseCommit,
+          parent:
+            previous?.files?.length === 0
+              ? value.baseCommit
+              : (previous?.commit ?? value.baseCommit),
           taskId,
-          phase: "reforming",
+          phase: resumeEvaluation ? "evaluating" : "reforming",
+          ...(resumeEvaluation
+            ? { commit: previous.commit, claim: previous.claim, files: previous.files }
+            : {}),
           feedback: value.feedback,
         })
         value.feedback = undefined
@@ -299,10 +358,17 @@ async function runRound(objectiveId: string, roundNo: number, taskId: string) {
               removed: file.removed,
               status: file.status,
             }))
-            item.phase = "evaluating"
+            item.phase = result.finished ? "evaluating" : "done"
           })
           candidate = improvement.candidates.find((item) => item.roundNo === roundNo)!
           log(`candidate committed ${commit.slice(0, 12)} (${files.length} files)`)
+          if (!result.finished)
+            return finishTask(taskId, {
+              status: "completed",
+              achieved: false,
+              end: result.end ?? "steps",
+              summary: `${result.summary}；修改已保存在候选副本，后续轮次会继续。`,
+            })
         } finally {
           await rm(tree, { recursive: true, force: true })
         }
@@ -311,6 +377,8 @@ async function runRound(objectiveId: string, roundNo: number, taskId: string) {
       }
     }
     if (candidate.phase === "evaluating") {
+      await git(["update-ref", `refs/heads/${candidate.branch}`, candidate.commit!])
+      let blockedReason: LabBudgetError | undefined
       const { evaluation, images } = await evaluate({
         key,
         baseCommit: improvement.baseCommit,
@@ -322,7 +390,10 @@ async function runRound(objectiveId: string, roundNo: number, taskId: string) {
         objective,
         taskId,
         spec,
-        onBlocked: async (reason) => log(`gateway refused: ${reason}`),
+        onBlocked: async (reason, end) => {
+          blockedReason = new LabBudgetError(reason, end)
+          log(`gateway refused: ${reason}`)
+        },
         log,
       })
       let versionId: string | undefined
@@ -331,6 +402,7 @@ async function runRound(objectiveId: string, roundNo: number, taskId: string) {
       improvement = await updateImprovement(objectiveId, (value) => {
         const item = value.candidates.find((entry) => entry.roundNo === roundNo)!
         item.evaluation = evaluation
+        item.evaluationBlocked = blockedReason?.end
         item.images = images
         item.versionId = versionId
         item.phase = "done"
@@ -338,11 +410,15 @@ async function runRound(objectiveId: string, roundNo: number, taskId: string) {
       })
       candidate = improvement.candidates.find((item) => item.roundNo === roundNo)!
       log(`evaluation ${evaluation.passed ? "PASSED" : "failed"}`)
+      if (blockedReason) {
+        await postReport(improvement, candidate)
+        throw blockedReason
+      }
     }
     if (await cancelled(objectiveId, taskId))
       return finishTask(taskId, { status: "cancelled" })
     const evaluation = candidate.evaluation!
-    if (evaluation.passed) await postReport(improvement, candidate)
+    await postReport(improvement, candidate)
     await finishTask(taskId, {
       status: "completed",
       achieved: evaluation.passed,
@@ -364,7 +440,7 @@ async function runRound(objectiveId: string, roundNo: number, taskId: string) {
       return finishTask(taskId, {
         status: "completed",
         achieved: false,
-        end: "cost",
+        end: error.end,
         summary: `实验室停在上限：${error.message}`,
       })
     if (await cancelled(objectiveId, taskId).catch(() => false))
@@ -435,6 +511,7 @@ async function postReport(improvement: Improvement, candidate: Candidate) {
       roundNo: candidate.roundNo,
       versionId: candidate.versionId,
       summary: candidate.claim,
+      passed: evaluation.passed,
       stages: evaluation.stages.map((stage) => ({
         name: stage.name,
         status: stage.status,

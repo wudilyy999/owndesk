@@ -2,7 +2,7 @@
 // ask for another round, or abandon it; and what happens after adoption (B0's updater
 // switches versions; an automatic rollback opens a debug round in the copy).
 import { randomUUID } from "node:crypto"
-import { and, eq, sql } from "drizzle-orm"
+import { and, eq, inArray, sql } from "drizzle-orm"
 import { z } from "zod"
 import { db, pool } from "@/db"
 import {
@@ -13,7 +13,7 @@ import {
   objectiveBudgetSchema,
 } from "@/db/schema"
 import { HttpError } from "@/lib/errors"
-import { repoReady, resolveCommit } from "@/lib/evolution/repo"
+import { git, repoReady, resolveCommit } from "@/lib/evolution/repo"
 import {
   evolutionEnabled,
   IMPROVEMENT_PREFIX,
@@ -185,7 +185,39 @@ export async function adoptImprovement(ownerId: string, objectiveId: string) {
     !candidate.versionId
   )
     throw new HttpError(409, "只有全部测试都通过的版本才能采用")
-  await requestSwitch(candidate.versionId, "promote")
+  const {
+    rows: [active],
+  } = await pool.query<{
+    id: string
+    kind: string
+    git_commit: string | null
+    source_revision: string
+  }>(
+    "SELECT id,kind,git_commit,source_revision FROM agent_versions WHERE status='active'"
+  )
+  if (!active || !candidate.commit)
+    throw new HttpError(409, "无法核对当前版本的源码，暂时不能采用")
+  // An adopted local image also records its original candidate commit. B0 may import
+  // the same source as a separate upstream commit when the worker restarts.
+  const refs = [
+    active.git_commit,
+    active.kind === "local" ? active.source_revision : null,
+  ]
+  const currentIsBase = (
+    await Promise.all(
+      refs
+        .filter((ref): ref is string => !!ref && /^[a-f0-9]{40}$/.test(ref))
+        .map((ref) =>
+          git(["merge-base", "--is-ancestor", ref, candidate.commit!]).then(
+            () => true,
+            () => false
+          )
+        )
+    )
+  ).some(Boolean)
+  if (!currentIsBase)
+    throw new HttpError(409, "当前版本已更新，请基于当前版本重新发起改进后再采用")
+  await requestSwitch(candidate.versionId, "promote", active.id)
   await updateImprovement(objectiveId, (value) => {
     value.status = "adopting"
     value.adoption = {
@@ -271,12 +303,48 @@ export async function watchAdoptions() {
       status: string
       reason: string | null
       health_log: unknown[]
+      rollback_status: string | null
+      rollback_reason: string | null
     }>(
-      `SELECT status,reason,health_log FROM deployments WHERE to_version_id=$1 AND action='promote'
-       AND started_at >= $2::timestamptz - interval '1 minute' ORDER BY started_at DESC LIMIT 1`,
+      `SELECT d.status,d.reason,d.health_log,r.status AS rollback_status,r.reason AS rollback_reason
+       FROM deployments d LEFT JOIN deployments r ON r.id=d.related_id
+        AND r.action='auto_rollback' AND r.related_id=d.id
+        AND r.from_version_id=d.to_version_id AND r.to_version_id=d.from_version_id
+       WHERE d.to_version_id=$1 AND d.action='promote'
+       AND d.started_at >= $2::timestamptz - interval '1 minute' ORDER BY d.started_at DESC LIMIT 1`,
       [adoption.versionId, adoption.at]
     )
     if (!deployment) continue
+    // B0 marks the promotion rolled_back before it starts restoring the old images.
+    // Only the related rollback's healthy result proves recovery finished.
+    if (
+      deployment.status === "failed" ||
+      (deployment.status === "rolled_back" && deployment.rollback_status !== "healthy")
+    ) {
+      if (
+        (deployment.status === "failed" || deployment.rollback_status === "failed") &&
+        adoption.outcome !== "failed"
+      ) {
+        const reason = deployment.rollback_reason ?? deployment.reason ?? "健康检测没通过"
+        await updateImprovement(improvement.objectiveId, (item) => {
+          item.adoption = { ...item.adoption!, outcome: "failed", reason }
+        })
+        await db
+          .update(objectives)
+          .set({
+            status: "paused",
+            statusReason: `旧版本恢复尚未完成：${reason}`,
+            updatedAt: new Date(),
+          })
+          .where(eq(objectives.id, improvement.objectiveId))
+        await tell(
+          improvement.agentId,
+          improvement.objectiveId,
+          `「${improvement.title}」采用后健康检测失败，旧版本恢复尚未完成（${reason}）。改进已暂停，恢复正常后再在副本里 debug。`
+        )
+      }
+      continue
+    }
     if (deployment.status === "healthy" && improvement.status === "adopting") {
       await updateImprovement(improvement.objectiveId, (item) => {
         item.status = "adopted"
@@ -287,7 +355,7 @@ export async function watchAdoptions() {
         improvement.objectiveId,
         `「${improvement.title}」已经换成新版本，运行正常。旧版本保留着，可以在版本页一键回退。`
       )
-    } else if (deployment.status === "rolled_back" || deployment.status === "failed") {
+    } else if (deployment.status === "rolled_back") {
       const reason = deployment.reason ?? "健康检测没通过"
       await updateImprovement(improvement.objectiveId, (item) => {
         item.status = "working"
@@ -318,10 +386,7 @@ export async function improvementOverview(ownerId: string) {
   const items = await listImprovements(ownerId)
   const ids = items.map((item) => item.objectiveId)
   const rows = ids.length
-    ? await db
-        .select()
-        .from(objectives)
-        .where(sql`${objectives.id} = ANY(${ids})`)
+    ? await db.select().from(objectives).where(inArray(objectives.id, ids))
     : []
   const versions = await db
     .select({

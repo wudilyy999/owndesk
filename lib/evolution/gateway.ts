@@ -10,9 +10,8 @@ import type { Objective } from "@/db/schema"
 import {
   beginAttempt,
   finishAttempt,
-  priceFor,
+  LabBudgetError,
   SEGMENT,
-  spendBlock,
 } from "@/lib/evolution/meter"
 import { getProviderMeta, parseModelSpec } from "@/lib/providers/catalog"
 import { getProviderCredentials } from "@/lib/providers/registry"
@@ -63,10 +62,16 @@ type Usage = {
   prompt_tokens_details?: { cached_tokens?: number }
 }
 const toUsage = (usage: Usage | undefined) =>
-  usage && typeof usage.prompt_tokens === "number"
+  usage &&
+  typeof usage.prompt_tokens === "number" &&
+  typeof usage.completion_tokens === "number" &&
+  Number.isFinite(usage.prompt_tokens) &&
+  Number.isFinite(usage.completion_tokens) &&
+  usage.prompt_tokens >= 0 &&
+  usage.completion_tokens >= 0
     ? {
         input: usage.prompt_tokens,
-        output: usage.completion_tokens ?? 0,
+        output: usage.completion_tokens,
         cached: usage.prompt_tokens_details?.cached_tokens ?? 0,
       }
     : null
@@ -76,11 +81,10 @@ export async function startGateway(input: {
   objective: () => Promise<Objective>
   taskId: string
   spec: string
-  onBlocked?: (reason: string) => Promise<void>
+  onBlocked?: (reason: string, end?: "steps" | "cost") => Promise<void>
 }): Promise<Gateway> {
   const token = randomBytes(24).toString("base64url")
   const target = await upstream(input.spec)
-  const price = await priceFor(input.spec)
   let total = 0
   let refused = 0
   let windowStart = Date.now()
@@ -115,22 +119,29 @@ export async function startGateway(input: {
         refused++
         return json(res, 429, { error: { message: "Lab rate limit" } })
       }
-      const blocked = await spendBlock(await input.objective(), input.spec)
-      if (blocked) {
-        refused++
-        await input.onBlocked?.(blocked)
-        return json(res, 402, { error: { message: `实验室额度已用完：${blocked}` } })
-      }
       let request: Record<string, unknown>
       try {
         request = JSON.parse(await body(req))
+        if (!request || typeof request !== "object" || Array.isArray(request))
+          throw new Error("Expected an object")
       } catch {
         return json(res, 400, { error: { message: "Bad request body" } })
       }
       request.model = target.model
       if (request.stream) request.stream_options = { include_usage: true }
+      let admission
+      try {
+        admission = await beginAttempt(input.taskId, SEGMENT.gateway, input.spec)
+      } catch (error) {
+        if (!(error instanceof LabBudgetError)) throw error
+        refused++
+        await input.onBlocked?.(error.message, error.end)
+        return json(res, 402, {
+          error: { message: `实验室额度已用完：${error.message}` },
+        })
+      }
+      const { id: attempt, price } = admission
       total++
-      const attempt = await beginAttempt(input.taskId, SEGMENT.gateway, input.spec, price)
       let response: Response
       try {
         response = await fetch(target.url, {
@@ -147,7 +158,6 @@ export async function startGateway(input: {
         return json(res, 502, { error: { message: "Upstream unreachable" } })
       }
       if (!response.ok || !response.body) {
-        const text = await response.text().catch(() => "")
         // The provider answered with an error: nothing was generated, nothing billed
         await finishAttempt(
           attempt,
@@ -155,11 +165,10 @@ export async function startGateway(input: {
           { input: 0, output: 0 },
           `HTTP ${response.status}`
         )
-        res
-          .writeHead(response.status, {
-            "Content-Type": response.headers.get("content-type") ?? "application/json",
-          })
-          .end(text)
+        await response.body?.cancel()
+        json(res, response.status, {
+          error: { message: `Model service returned HTTP ${response.status}` },
+        })
         return
       }
       res.writeHead(200, {

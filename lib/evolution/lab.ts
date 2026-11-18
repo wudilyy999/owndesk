@@ -39,11 +39,12 @@ export async function ensureLabImage(
   const lock = await trustedFile(trustedCommit, "package-lock.json")
   const pkg = await trustedFile(trustedCommit, "package.json")
   const base = await baseImage(trustedCommit)
-  // Git blob ids of the dependency files name the image: same lock, same image
+  // Include the trusted image recipe so evaluator tooling changes rebuild the image.
   const blobs = await gitText([
     "rev-parse",
     `${trustedCommit}:package.json`,
     `${trustedCommit}:package-lock.json`,
+    `${trustedCommit}:lib/evolution/lab.ts`,
   ])
   const tag = `owndesk-lab:${blobs
     .split("\n")
@@ -61,6 +62,7 @@ export async function ensureLabImage(
         `FROM ${base}`,
         "WORKDIR /lab",
         "ENV NEXT_TELEMETRY_DISABLED=1 CI=1",
+        "RUN apt-get update && apt-get install -y --no-install-recommends python3 && rm -rf /var/lib/apt/lists/*",
         "COPY package.json package-lock.json ./",
         "RUN npm ci && chown -R node:node /lab",
         "USER node",
@@ -83,7 +85,11 @@ export type LabContainer = { name: string }
 export async function startLab(
   image: string,
   key: string,
-  { memoryMb = 3072, cpus = 2 }: { memoryMb?: number; cpus?: number } = {}
+  {
+    memoryMb = 3072,
+    cpus = 2,
+    network = "none",
+  }: { memoryMb?: number; cpus?: number; network?: string } = {}
 ): Promise<LabContainer> {
   const name = `${prefix()}-lab-${key}`.slice(0, 120)
   await dockerRaw(["rm", "-f", name], { timeoutMs: 60000 })
@@ -96,7 +102,7 @@ export async function startLab(
       "--label",
       `${LAB_LABEL}=${env.INSTALL_ID}`,
       "--network",
-      "none",
+      network,
       "--memory",
       `${memoryMb}m`,
       "--cpus",

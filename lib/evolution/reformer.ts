@@ -4,22 +4,26 @@
 import { generateText, tool, type ModelMessage } from "ai"
 import { z } from "zod"
 import type { Objective } from "@/db/schema"
+import { getSetting } from "@/lib/config"
 import { labExec, readLabFile, type LabContainer } from "@/lib/evolution/lab"
 import {
   beginAttempt,
   finishAttempt,
   LabBudgetError,
-  priceFor,
   SEGMENT,
-  spendBlock,
 } from "@/lib/evolution/meter"
 import { isProtectedPath } from "@/lib/evolution/policy"
 import { createModel } from "@/lib/providers/registry"
+import { parseModelSpec } from "@/lib/providers/catalog"
 
-const MAX_TURNS = 60
 const OUTPUT_CHARS = 12000
 
-export type ReformerResult = { summary: string; turns: number; finished: boolean }
+export type ReformerResult = {
+  summary: string
+  turns: number
+  finished: boolean
+  end?: "steps" | "cost"
+}
 
 const relative = z
   .string()
@@ -57,7 +61,7 @@ const tools = {
   }),
   search: tool({
     description:
-      "Search the project for a regular expression (grep -E). Returns file:line:text.",
+      "Search application code and tests for a regular expression (grep -E). Specify dir to search another directory. Returns file:line:text.",
     inputSchema: z.object({
       pattern: z.string().min(1).max(200),
       dir: relative.default("."),
@@ -126,7 +130,7 @@ async function runTool(
       ).parse(input)
       const result = await labExec(
         lab,
-        `grep -rnIE --exclude-dir=node_modules --exclude-dir=.next -e ${quote(pattern)} ${quote(dir)} | head -200`
+        `grep -rnIE --exclude-dir=node_modules --exclude-dir=.next -e ${quote(pattern)} ${dir === "." ? "app components lib worker tests" : quote(dir)} | head -200`
       )
       return { ok: true, output: clip(result.output || "No matches") }
     }
@@ -205,6 +209,7 @@ export function reformerSystem(rules: string) {
     "- You may change app/, components/, lib/ and worker/ and add NEW test files under tests/ (name them *.test.ts so `npm test` runs them). Never modify or delete existing tests.",
     "- Never change: lib/evolution/, scripts/, deploy/, Dockerfile, workstation/, db/ (no schema or migration changes), package.json or package-lock.json (no new dependencies), auth, secrets, vault, spend/budget, network guard, docker, workstation, desktop and agent tool code. Changes there are rejected automatically.",
     "- Read before you edit; keep the change small and focused; match the existing code style; keep user-facing text in Simplified Chinese like the rest of the UI.",
+    "- Find the requested feature in application code. Once you have its entry points, edit them before broad searches or baseline checks. Stay focused on the feature; investigate protected lab/evaluator code or synthetic fixtures only when a reported failure requires it.",
     "- Add at least one unit test for new logic. Run typecheck before finishing and fix every error. Format the files you changed with run_check format.",
     "- Claims about tests count for nothing: an independent evaluator rebuilds and retests everything.",
     rules ? `Project development rules (AGENTS.md, excerpt):\n${rules}` : "",
@@ -224,22 +229,49 @@ export async function runReformer(input: {
   log?: (line: string) => void
 }): Promise<ReformerResult> {
   const model = await createModel(input.spec)
-  const price = await priceFor(input.spec)
+  const provider = parseModelSpec(input.spec)?.provider
+  const providerOptions =
+    provider === "custom" || provider === "openrouter"
+      ? {
+          [provider]: {
+            reasoningEffort: (await getSetting("chat.reasoningEffort")) ?? "low",
+          },
+        }
+      : undefined
   const messages: ModelMessage[] = [{ role: "user", content: input.brief }]
+  const progress: string[] = []
+  const notes = () =>
+    progress.length
+      ? `\nRecent tool outcomes; continue from these files:\n${progress.slice(-12).join("\n").slice(-1800)}`
+      : ""
   let typecheckFailures = 0
-  for (let turn = 1; turn <= (input.maxTurns ?? MAX_TURNS); turn++) {
-    const blocked = await spendBlock(input.objective, input.spec)
-    if (blocked) throw new LabBudgetError(blocked)
-    const attempt = await beginAttempt(input.taskId, SEGMENT.reformer, input.spec, price)
+  const maxTurns = input.maxTurns ?? input.objective.budget.roundMaxSteps
+  for (let turn = 1; turn <= maxTurns; turn++) {
+    let receipt
+    try {
+      receipt = await beginAttempt(input.taskId, SEGMENT.reformer, input.spec)
+    } catch (error) {
+      if (!(error instanceof LabBudgetError)) throw error
+      return {
+        summary: error.message + notes(),
+        turns: turn - 1,
+        finished: false,
+        end: error.end,
+      }
+    }
+    const { id: attempt, price, remainingSteps } = receipt
     let result
     try {
       result = await generateText({
         model,
-        system: reformerSystem(input.rules),
+        providerOptions,
+        system: `${reformerSystem(input.rules)}\nAfter this request, ${remainingSteps} model requests remain in this round, shared with the candidate's chat and independent acceptance review. Use the relevant files you have already found, implement the smallest complete change, run the checks and finish promptly so the reviewer can use the remaining allowance.`,
         messages,
         tools,
-        toolChoice: "required",
-        maxRetries: 2,
+        // A text-only response still has usage and consumes a round step.
+        // Let the loop account for it and request a tool on the next turn.
+        toolChoice: "auto",
+        maxRetries: 0,
         maxOutputTokens: 16000,
         abortSignal: AbortSignal.timeout(300000),
       })
@@ -247,11 +279,18 @@ export async function runReformer(input: {
       await finishAttempt(attempt, price, null, String(error))
       throw error
     }
-    await finishAttempt(attempt, price, {
-      input: result.totalUsage.inputTokens ?? 0,
-      output: result.totalUsage.outputTokens ?? 0,
-      cached: result.totalUsage.inputTokenDetails?.cacheReadTokens ?? 0,
-    })
+    const usage = result.totalUsage
+    await finishAttempt(
+      attempt,
+      price,
+      usage.inputTokens === undefined || usage.outputTokens === undefined
+        ? null
+        : {
+            input: usage.inputTokens,
+            output: usage.outputTokens,
+            cached: usage.inputTokenDetails?.cacheReadTokens ?? 0,
+          }
+    )
     messages.push(...(result.response.messages as ModelMessage[]))
     if (!result.toolCalls.length) {
       messages.push({
@@ -290,7 +329,11 @@ export async function runReformer(input: {
           output: error instanceof Error ? error.message : String(error),
         }
       }
-      input.log?.(`turn ${turn}: ${call.toolName} ${outcome.ok ? "ok" : "failed"}`)
+      const target = args.path ?? args.dir ?? args.kind
+      progress.push(
+        `${call.toolName}${typeof target === "string" ? ` ${target}` : ""}${typeof args.offset === "number" ? ` from line ${args.offset}` : ""}${typeof args.pattern === "string" ? ` pattern ${args.pattern}` : ""}: ${outcome.ok ? "ok" : "failed"}`
+      )
+      input.log?.(`turn ${turn}: ${progress.at(-1)}`)
       results.content.push({
         type: "tool-result",
         toolCallId: call.toolCallId,
@@ -304,8 +347,8 @@ export async function runReformer(input: {
     if ((results.content as unknown[]).length) messages.push(results)
   }
   return {
-    summary: "改造者用完了这一轮的步数，没有说完成",
-    turns: MAX_TURNS,
+    summary: "改造者用完了这一轮的步数，没有说完成" + notes(),
+    turns: maxTurns,
     finished: false,
   }
 }

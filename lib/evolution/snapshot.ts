@@ -74,7 +74,9 @@ export async function sanitizedSeed(input: {
   )
   const agents = await pool.query("SELECT * FROM agents ORDER BY created_at")
   for (const row of agents.rows)
-    statements.push(insertJson("agents", { ...row, workstation_id: null }))
+    statements.push(
+      insertJson("agents", { ...row, model: input.labPriceSpec, workstation_id: null })
+    )
   // Persona and companion settings (no secrets live in this table)
   const companions = await pool.query("SELECT * FROM companions")
   for (const row of companions.rows)
@@ -107,6 +109,62 @@ export async function sanitizedSeed(input: {
     )
   const base = Date.now() - 3 * 3600_000
   for (const companion of companions.rows) {
+    // Synthetic dates and rounds let the reviewer exercise filtering and progress
+    // without importing any of the owner's diary, objectives or task history.
+    const today = new Date()
+    today.setUTCHours(4, 0, 0, 0)
+    for (const [index, title] of ["公园散步", "番茄炒蛋", "整理周报"].entries()) {
+      const createdAt = new Date(today.getTime() - index * 86400_000).toISOString()
+      statements.push(
+        insertJson("life_activities", {
+          id: randomUUID(),
+          agent_id: companion.agent_id,
+          kind: "diary",
+          title: `（合成）${title}日记`,
+          summary: `（合成）${title}的测试记录`,
+          body: `（合成）这是用于候选界面验收的${title}日记。`,
+          starred: false,
+          created_at: createdAt,
+        })
+      )
+    }
+    const objectiveId = randomUUID()
+    statements.push(
+      insertJson("objectives", {
+        id: objectiveId,
+        owner_id: userId,
+        agent_id: companion.agent_id,
+        title: "（合成）整理本周周报",
+        objective: "（合成）整理本周的测试周报",
+        completion_contract: { requireHumanReview: false },
+        budget: { roundMaxSteps: 40 },
+        status: "paused",
+        created_at: new Date(today.getTime() - 9 * 86400_000).toISOString(),
+        updated_at: today.toISOString(),
+      })
+    )
+    for (const [index, daysAgo] of [8, 1, 0].entries()) {
+      const at = new Date(today.getTime() - daysAgo * 86400_000).toISOString()
+      statements.push(
+        insertJson("objective_rounds", {
+          id: randomUUID(),
+          objective_id: objectiveId,
+          round_no: index + 1,
+          input: {
+            agentId: companion.agent_id,
+            goal: "（合成）整理测试周报",
+            clientRequestId: randomUUID(),
+            objectiveRound: { objectiveId, roundNo: index + 1 },
+            budget: { maxSteps: 40 },
+            completionContract: { requireHumanReview: false },
+          },
+          verdict: "progress",
+          summary: `（合成）完成第 ${index + 1} 部分整理`,
+          started_at: at,
+          finished_at: at,
+        })
+      )
+    }
     SYNTHETIC_CHAT.forEach(([role, content], index) =>
       statements.push(
         insertJson("companion_messages", {

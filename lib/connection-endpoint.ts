@@ -13,7 +13,7 @@ export function publicAddress(address: string) {
 export function fakeIpAddress(address: string) {
   try {
     const ip = ipaddr.parse(address)
-    return ip.kind() === "ipv4" && ip.match(ipaddr.parse("198.18.0.0"), 15)
+    return ip instanceof ipaddr.IPv4 && ip.match(ipaddr.IPv4.parse("198.18.0.0"), 15)
   } catch {
     return false
   }

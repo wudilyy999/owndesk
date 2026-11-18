@@ -51,6 +51,7 @@ export type ChangedFile = {
   added: number
   removed: number
   binary?: boolean
+  mode?: string
 }
 
 export type PolicyFinding = { rule: string; path?: string; detail: string }
@@ -68,7 +69,10 @@ export function checkChanges(
   for (const file of files) {
     const paths = [file.path, ...(file.from ? [file.from] : [])]
     for (const item of paths) {
-      if (item.split("/").some((part) => part === ".." || part === ".git"))
+      if (
+        /[\\\x00-\x1f]/.test(item) ||
+        item.split("/").some((part) => part === ".." || part === ".git")
+      )
         findings.push({ rule: "path", path: item, detail: "路径不合法" })
       if (/^db\/migrations\//.test(item))
         findings.push({
@@ -107,6 +111,12 @@ export function checkChanges(
     }
     if (file.binary && file.status !== "D")
       findings.push({ rule: "binary", path: file.path, detail: "不接受二进制文件" })
+    if (file.mode && !["100644", "100755"].includes(file.mode))
+      findings.push({
+        rule: "file-mode",
+        path: file.path,
+        detail: "候选只能包含普通文件，不能添加符号链接或子模块",
+      })
   }
   const lines = files.reduce((sum, file) => sum + file.added + file.removed, 0)
   if (lines > lineLimit)

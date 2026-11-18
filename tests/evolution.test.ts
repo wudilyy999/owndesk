@@ -7,11 +7,54 @@ import {
   scanAddedLines,
   type ChangedFile,
 } from "@/lib/evolution/policy"
-import { labDockerfile, pageText } from "@/lib/evolution/evaluator"
+import { labDockerfile, pageText, regressionSuites } from "@/lib/evolution/evaluator"
 import { reformerBrief } from "@/lib/evolution/runner"
 import type { Improvement } from "@/lib/evolution/store"
+import { streamContainsSecret } from "@/lib/evolution/scanner"
 
-const file = (path: string, status: ChangedFile["status"] = "M", lines = 5): ChangedFile => ({
+test("candidate changes retain core regressions and select the existing full companion UI suite", () => {
+  const core = regressionSuites([])
+  assert(
+    core.includes("g01") && core.includes("agents") && core.includes("companion-memory")
+  )
+  for (const file of [
+    "components/ui/button.tsx",
+    "app/api/companion/life/route.ts",
+    "lib/companion/rules.ts",
+  ])
+    assert.deepEqual(regressionSuites([file]), [...core, "companion-ui"])
+  assert.deepEqual(regressionSuites(["lib/text.ts"]), core)
+})
+
+test("trusted scan matches split UTF-8 bytes and requires the stream to finish successfully", async () => {
+  const secret = "合成-secret-boundary"
+  const bytes = Buffer.from(`prefix:${secret}:suffix`)
+  const chunks = async function* () {
+    for (const byte of bytes) yield Buffer.from([byte])
+  }
+  assert.equal(await streamContainsSecret(chunks(), [secret]), true)
+  assert.equal(await streamContainsSecret(chunks(), ["absent-secret"]), false)
+  const failed = async function* () {
+    yield Buffer.from(secret)
+    throw new Error("Archive copy failed")
+  }
+  await assert.rejects(streamContainsSecret(failed(), [secret]), /Archive copy failed/)
+})
+
+test("trusted scan handles an archive larger than 512 MiB with bounded chunks", async () => {
+  const chunks = async function* () {
+    const block = Buffer.alloc(1024 * 1024, 97)
+    for (let index = 0; index < 513; index++) yield block
+    yield Buffer.from("large-archive-secret")
+  }
+  assert.equal(await streamContainsSecret(chunks(), ["large-archive-secret"]), true)
+})
+
+const file = (
+  path: string,
+  status: ChangedFile["status"] = "M",
+  lines = 5
+): ChangedFile => ({
   path,
   status,
   added: lines,
@@ -63,6 +106,12 @@ test("an empty change, path tricks, binaries and oversized diffs are rejected", 
   assert.ok(rules([{ ...file("app/logo.png", "A"), binary: true }]).includes("binary"))
   assert.deepEqual(rules([file("app/page.tsx", "M", 1501)]), ["size"])
   assert.deepEqual(rules([file("app/page.tsx", "M", 1500)]), [])
+  assert.ok(rules([{ ...file("lib/link", "A"), mode: "120000" }]).includes("file-mode"))
+  assert.ok(
+    rules([{ ...file("lib/submodule", "A"), mode: "160000" }]).includes("file-mode")
+  )
+  assert.ok(rules([file("app/..\\lib/spend.ts")]).includes("path"))
+  assert.ok(rules([file("app/hidden\nname.ts")]).includes("path"))
 })
 
 test("the secret scan finds key shapes and this installation's own secrets in added lines", () => {
@@ -71,7 +120,7 @@ test("the secret scan finds key shapes and this installation's own secrets in ad
     "--- a/lib/x.ts",
     "+++ b/lib/x.ts",
     "@@ -1,0 +10,3 @@",
-    '+const key = "sk-proj-AbCdEfGhIjKlMnOpQrStUvWx1234"',
+    `+const key = "${["sk", "proj", "AbCdEfGhIjKlMnOpQrStUvWx1234"].join("-")}"`,
     "+const fine = 1",
     "+const own = 'installation-secret-value-xyz'",
   ].join("\n")
@@ -96,18 +145,25 @@ test("the secret scan finds key shapes and this installation's own secrets in ad
 })
 
 test("the candidate build cuts the application build step off the network", () => {
-  const trusted = "RUN npm ci\nCOPY . .\nRUN DATABASE_URL=postgresql://build \\\n npm run build\n"
+  const trusted =
+    "RUN npm ci\nCOPY . .\nRUN DATABASE_URL=postgresql://build \\\n npm run build\n"
   assert.equal(
     labDockerfile(trusted),
     "RUN npm ci\nCOPY . .\nRUN --network=none DATABASE_URL=postgresql://build \\\n npm run build\n"
   )
+  const pruned = labDockerfile(`${trusted} && npm prune --omit=dev\n`)
+  assert.match(pruned, /npm prune --omit=dev --offline/)
+  assert.equal(labDockerfile(pruned), pruned)
 })
 
 test("the reviewer reads visible text, form controls and links of a page", () => {
   const text = pageText(
     '<html><script>var s=1</script><body><h1>日记</h1><input type="date" aria-label="按日期搜索"><a href="/companion">聊天</a>&amp;</body></html>'
   )
-  assert.equal(text, "日记 [input type=date aria-label=按日期搜索] [link /companion] 聊天 &")
+  assert.equal(
+    text,
+    "日记 [input type=date aria-label=按日期搜索] [link /companion] 聊天 &"
+  )
 })
 
 test("the reformer brief carries the request, checklist and the previous failures", () => {
@@ -120,9 +176,12 @@ test("the reformer brief carries the request, checklist and the previous failure
     { roundNo: 2, feedback: "The owner wants a clear button" } as never,
     {
       roundNo: 1,
+      claim: "Read components/companion-room.tsx; date controls remain to be implemented",
       evaluation: {
         passed: false,
-        stages: [{ name: "checks", status: "fail", detail: "typecheck 没通过", durationMs: 1 }],
+        stages: [
+          { name: "checks", status: "fail", detail: "typecheck 没通过", durationMs: 1 },
+        ],
         acceptance: [{ item: "日记页顶部有日期选择", status: "fail", note: "没看到" }],
       },
     } as never
@@ -132,4 +191,6 @@ test("the reformer brief carries the request, checklist and the previous failure
   assert.match(brief, /typecheck 没通过/)
   assert.match(brief, /没看到/)
   assert.match(brief, /clear button/)
+  assert.match(brief, /components\/companion-room\.tsx; date controls remain/)
+  assert.match(brief, /not evaluation results/)
 })

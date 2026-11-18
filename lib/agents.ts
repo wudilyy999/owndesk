@@ -7,4 +7,5 @@ export function listAgents() {
     .select()
     .from(agents)
     .where(sql`${agents.model} IS DISTINCT FROM 'fixture/durable-report'`)
+    .orderBy(agents.createdAt, agents.id)
 }
