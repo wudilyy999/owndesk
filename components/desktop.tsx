@@ -168,7 +168,7 @@ export function Desktop({
       {!expanded && state !== "已连接" && (
         <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 px-4 text-center text-sm text-[#f3ede4]/85">
           <MonitorIcon className="size-6 opacity-80" />
-          <p>{state === "未连接" ? "连接服务器上的独立桌面" : state}</p>
+          <p>{state}</p>
           {error && <p role="alert">{error}</p>}
           {enabled && state !== "连接中" && (
             <Button variant="secondary" size="sm" onClick={connect}>
@@ -223,11 +223,6 @@ export function Desktop({
       </div>
       {display}
       {takeover && !expanded && <Demonstration agentId={agentId} screen={screen} />}
-      <p className="text-xs leading-5 text-muted-foreground">
-        {peekSeconds
-          ? "偷看由服务器强制只读，时间到会自动断开。"
-          : "观看连接由服务器强制只读。接管准备完成后，你才能输入；交还会关闭旧连接，并让 Agent 重新观察。"}
-      </p>
       <Dialog
         open={expanded}
         onOpenChange={setExpanded}

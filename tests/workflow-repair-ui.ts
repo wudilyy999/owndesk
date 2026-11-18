@@ -185,7 +185,7 @@ try {
     )
     await page.goto(`${process.env.APP_URL}/?task=${success.taskId}`)
     await page
-      .getByText("修订草稿已保存，独立验证通过后才能启用；原版本保持不变。", {
+      .getByText("修订草稿待验证。", {
         exact: true,
       })
       .waitFor()

@@ -5519,7 +5519,7 @@ try {
             await page.evaluate(() => ({ ...sessionStorage, ...localStorage }))
           ).includes(password)
         )
-        await panel.getByRole("button", { name: "加密保存", exact: true }).click()
+        await panel.getByRole("button", { name: "保存凭据", exact: true }).click()
         await panel.getByText("Vault UI fixture", { exact: true }).waitFor()
         const api = `${process.env.APP_URL}/api/vault`,
           headers = { Origin: process.env.APP_URL! }
@@ -5565,7 +5565,7 @@ try {
         assert.equal(await panel.getByLabel("密码", { exact: true }).inputValue(), "")
         await panel.getByLabel("用户名或邮箱", { exact: true }).fill(username)
         await panel.getByLabel("密码", { exact: true }).fill(replacement)
-        await panel.getByRole("button", { name: "加密保存", exact: true }).click()
+        await panel.getByRole("button", { name: "保存凭据", exact: true }).click()
         await until(
           async () =>
             (await pool.query("SELECT revision FROM vault_items WHERE id=$1", [saved.id]))

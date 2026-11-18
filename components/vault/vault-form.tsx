@@ -128,7 +128,7 @@ export function VaultForm({
   initialLabel = "",
   saveOption = false,
   label: withLabel = true,
-  submitLabel = "加密保存",
+  submitLabel = "保存凭据",
   onSubmit,
   onCancel,
   compact = false,
@@ -263,7 +263,7 @@ export function VaultForm({
         )}
         <span className="ml-auto flex items-center gap-1 font-mono text-[10px] text-faint">
           <LockIcon className="size-3" />
-          服务器加密保存；标签与提示可供 Agent 查看
+          标签和提示可供 Agent 查看
         </span>
       </div>
     </form>

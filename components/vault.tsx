@@ -38,8 +38,7 @@ export function VaultPanel() {
         凭据保险箱
       </h2>
       <p className="text-sm leading-6 text-muted-foreground">
-        账号、身份和支付资料在服务器加密保存。这里只显示标签、脱敏提示和允许站点；编辑时重新输入资料，旧值不会返回网页。验证码由任务安全表单临时提供，卡片不保存
-        CVV。
+        编辑时请重新输入资料。验证码按任务填写，卡片不保存 CVV。
       </p>
       <p className="text-xs leading-5 text-muted-foreground">
         网站账号和验证码可逐次授权填写；身份、支付资料和特殊控件仍可接管操作。填写后的值及登录态可被目标网站和同一工作站代码接触，遮罩无法提供隔离。
@@ -193,7 +192,7 @@ export function VaultPanel() {
                   ...(previous ?? []).filter((row) => row.id !== result.id),
                 ])
                 setForm(null)
-                setMessage("凭据已加密保存。网页和模型只读取脱敏信息。")
+                setMessage("凭据已保存。")
                 return null
               } catch (cause) {
                 return cause instanceof Error ? cause.message : String(cause)

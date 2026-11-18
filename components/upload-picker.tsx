@@ -1,5 +1,6 @@
 "use client"
 import { useId, useState } from "react"
+import { Paperclip } from "lucide-react"
 import type { UploadReference } from "@/lib/uploads"
 
 export function UploadPicker({
@@ -20,16 +21,14 @@ export function UploadPicker({
     [error, setError] = useState("")
   return (
     <div className="space-y-2 text-xs">
-      <label htmlFor={id} className="block">
-        添加文件（PDF、Word、Excel、CSV、图片）
-      </label>
       <input
         id={id}
         type="file"
         multiple
         accept=".pdf,.doc,.docx,.xls,.xlsx,.csv,.jpg,.jpeg,.png,.webp,.gif"
         disabled={disabled || busy || !agentId || files.length >= 8}
-        className="block w-full min-w-0 text-xs"
+        aria-describedby={`${id}-formats`}
+        className="peer sr-only"
         onChange={async (event) => {
           const input = event.currentTarget,
             selected = Array.from(input.files ?? [])
@@ -64,7 +63,22 @@ export function UploadPicker({
           }
         }}
       />
-      {busy && <p>正在上传…</p>}
+      <div className="flex flex-wrap items-center gap-2 peer-focus-visible:[&>label]:ring-2 peer-focus-visible:[&>label]:ring-ring peer-disabled:[&>label]:pointer-events-none peer-disabled:[&>label]:opacity-50">
+        <label
+          htmlFor={id}
+          className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-border bg-surface px-3 py-1.5 text-xs font-medium shadow-2xs transition-colors hover:bg-elevated"
+        >
+          <Paperclip className="size-3.5" aria-hidden="true" />
+          添加文件
+        </label>
+        <span id={`${id}-formats`} className="text-muted-foreground">
+          PDF、Word、Excel、CSV、图片
+        </span>
+        {files.length > 0 && (
+          <span className="text-muted-foreground">已添加 {files.length}/8</span>
+        )}
+      </div>
+      {busy && <p role="status">正在上传…</p>}
       {error && (
         <p role="alert" className="text-destructive">
           {error}

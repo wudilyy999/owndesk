@@ -14,9 +14,9 @@ export function Login() {
       <div className="space-y-6 rounded-2xl border border-border bg-surface p-7 shadow-xs sm:p-8">
         <div>
           <p className="mb-2 text-xs font-medium tracking-wide text-muted-foreground">
-            OwnDesk · 私有工作站
+            OwnDesk
           </p>
-          <h1 className="text-2xl font-semibold tracking-tight">回到你的工作现场</h1>
+          <h1 className="text-2xl font-semibold tracking-tight">登录 OwnDesk</h1>
         </div>
         <form
           className="space-y-4"
@@ -69,9 +69,6 @@ export function Login() {
             {busy ? "正在登录…" : "登录"}
           </Button>
         </form>
-        <p className="border-t border-hairline pt-4 text-xs leading-6 text-muted-foreground">
-          首位拥有者通过部署端命令创建，公开注册始终关闭。
-        </p>
       </div>
     </main>
   )

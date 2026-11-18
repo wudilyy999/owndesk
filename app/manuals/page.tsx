@@ -1,3 +1,4 @@
+import { PageLayout } from "@/components/page-header"
 import { listDemonstrations } from "@/lib/demonstrations"
 import { headers } from "next/headers"
 import { notFound, redirect } from "next/navigation"
@@ -46,19 +47,7 @@ export default async function ManualsPage({
     .filter((agent) => agent.model !== "fixture/durable-report")
     .map(({ id, name }) => ({ id, name }))
   return (
-    <main className="mx-auto max-w-4xl space-y-8 p-5 sm:p-10">
-      <nav className="flex flex-wrap gap-5 text-sm underline underline-offset-4">
-        <Link href="/">返回任务</Link>
-        <Link href="/workflows">固定操作流程</Link>
-        <Link href="/manuals">刷新手册</Link>
-      </nav>
-      <header className="space-y-3">
-        <h1 className="text-2xl font-semibold">操作手册</h1>
-        <p className="max-w-2xl text-sm leading-7 text-muted-foreground">
-          留下成功任务的做法，审阅保存后让 Agent
-          在相关任务中按需参考。每次使用都会重新观察当前电脑；固定、已验证的自动执行流程继续单独保留。
-        </p>
-      </header>
+    <PageLayout title="操作手册">
       {demonstrations
         .filter((row) => row.status === "draft")
         .map((row) => (
@@ -170,6 +159,6 @@ export default async function ManualsPage({
           </article>
         ))}
       </section>
-    </main>
+    </PageLayout>
   )
 }

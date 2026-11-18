@@ -1,5 +1,6 @@
 "use client"
 // BudgetCard/price controls adapted from the pinned MIT upstream components/usage/spend-controls.tsx (MIT).
+import { PageLayout } from "@/components/page-header"
 import { useState } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
@@ -46,16 +47,7 @@ export function Usage({ initial }: { initial: Overview }) {
   const used = Number(data.month.knownCostMicros),
     limit = data.month.budgetMicros
   return (
-    <main className="mx-auto max-w-5xl space-y-8 px-6 py-8">
-      <header>
-        <Link href="/" className="text-sm underline underline-offset-4">
-          返回工作现场
-        </Link>
-        <h1 className="mt-5 text-2xl font-semibold">用量与预算</h1>
-        <p className="mt-3 max-w-2xl text-sm leading-6 text-muted-foreground">
-          每次模型请求分别记账，恢复读取旧回答不重复收费。这里显示本地估算和人工核对，服务商实际账单以其记录为准。
-        </p>
-      </header>
+    <PageLayout title="用量与预算">
       {error && (
         <p role="alert" aria-label="用量错误" className="text-sm text-destructive">
           {error}
@@ -125,7 +117,7 @@ export function Usage({ initial }: { initial: Overview }) {
           </Button>
         </form>
         <p className="text-xs leading-5 text-muted-foreground">
-          按拥有者时区的请求发起月份统计。达到已知费用上限或存在未核对费用时暂停新的付费请求；已在途请求仍可能使费用超过上限。设置月预算时付费请求串行，本地模型继续运行。下月自动重新检查等待任务。
+          费用为估算，以服务商账单为准。预算按你的时区按月统计。达到已知费用上限或存在未核对费用时暂停新的付费请求；已在途请求仍可能使费用超过上限。设置月预算时付费请求串行，本地模型继续运行。下月自动重新检查等待任务。
         </p>
         <p className="text-xs leading-5 text-muted-foreground">
           留空移除本地值后会恢复环境变量预算；彻底停用需移除
@@ -350,6 +342,6 @@ export function Usage({ initial }: { initial: Overview }) {
           </Button>
         )}
       </section>
-    </main>
+    </PageLayout>
   )
 }

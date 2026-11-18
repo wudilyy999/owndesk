@@ -1,8 +1,8 @@
 "use client"
 // Self-improvement (B1): turn it on, follow each improvement, read the lab's report, and
 // adopt / revise / abandon. Only a candidate whose every test passed can be adopted.
+import { PageLayout } from "@/components/page-header"
 import { useEffect, useState } from "react"
-import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { stageNames } from "@/components/improvement-cards"
@@ -63,18 +63,7 @@ export function Improvements({ initial }: { initial: ImprovementOverview }) {
   }
 
   return (
-    <main className="mx-auto max-w-5xl space-y-8 px-6 py-8">
-      <header>
-        <Link href="/" className="text-sm underline underline-offset-4">
-          返回工作现场
-        </Link>
-        <h1 className="mt-5 text-2xl font-semibold">自我改进</h1>
-        <p className="mt-3 max-w-2xl text-sm leading-6 text-muted-foreground">
-          在聊天里说想怎么改她，她会发一张改进提议卡。确认后，实验室在隔离的副本里修改，
-          再由她改不了的评测器跑全套测试和真实实测。全部通过后你点“采用”才换成新版本；
-          新版本一旦不健康会先自动退回旧版本，再在副本里修好重测。
-        </p>
-      </header>
+    <PageLayout title="自我改进">
       {error && (
         <p role="alert" className="text-sm text-destructive">
           {error}
@@ -291,6 +280,6 @@ export function Improvements({ initial }: { initial: ImprovementOverview }) {
           </article>
         )
       })}
-    </main>
+    </PageLayout>
   )
 }

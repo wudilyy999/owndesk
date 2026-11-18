@@ -1,3 +1,4 @@
+import { PageLayout } from "@/components/page-header"
 import { CrossAppWorkflow } from "@/components/cross-app-workflow"
 import { headers } from "next/headers"
 import { notFound, redirect } from "next/navigation"
@@ -41,18 +42,7 @@ export default async function WorkflowsPage({
     source.result?.verification &&
     (source.result.verification as { grade?: string }).grade === "program_checked"
   return (
-    <main className="mx-auto max-w-4xl space-y-8 p-5 sm:p-10">
-      <nav className="flex gap-5 text-sm underline underline-offset-4">
-        <Link href="/">返回任务</Link>
-        <Link href="/workflows">刷新流程</Link>
-        <Link href="/manuals">操作手册</Link>
-      </nav>
-      <header className="space-y-2">
-        <h1 className="text-2xl font-semibold">电脑操作流程</h1>
-        <p className="text-sm text-muted-foreground">
-          从已检查通过的操作中提炼方法，保留参数、步骤和固定检查条件。
-        </p>
-      </header>
+    <PageLayout title="电脑操作流程">
       <CrossAppWorkflow agents={agentRows.map(({ id, name }) => ({ id, name }))} />
       <WorkflowImport />
       {source && (
@@ -184,6 +174,6 @@ export default async function WorkflowsPage({
           </article>
         ))}
       </section>
-    </main>
+    </PageLayout>
   )
 }
