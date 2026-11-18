@@ -1,23 +1,25 @@
 # README showcase notes / README 展示说明
 
-Updated / 更新：2026-11-08
+Updated / 更新：2026-11-18
 
 ## References / 参考项目
 
-The README structure was informed by these repositories. Star counts are a GitHub API snapshot from 2026-11-08; they describe the reference projects, not OwnDesk.
+The README structure was informed by these repositories. Star counts are GitHub API snapshots and describe the reference projects.
 
-以下为本次实际阅读的竞品 README。Star 数量取自 2026-11-08 的 GitHub API，仅用于说明参考项目规模。
+以下为实际阅读过的同类项目 README。Star 数量取自 GitHub API，仅用于说明参考项目规模。
 
-| Project / 项目                                                         | Stars at review / 阅读时 Star | Pattern adopted / 借鉴方式                                                                                                             |
-| ---------------------------------------------------------------------- | ----------------------------: | -------------------------------------------------------------------------------------------------------------------------------------- |
-| [Browser Use](https://github.com/browser-use/browser-use#readme)       |                       120,287 | A short product promise, an early visual example, and concrete task prompts. 一句话定位、前置演示、具体任务。                          |
-| [OpenHands](https://github.com/OpenHands/OpenHands#readme)             |                        92,920 | Product screenshot above the feature list; clear setup paths and linked technical details. 首屏产品截图、清晰安装路径、技术细节下沉。  |
-| [UI-TARS Desktop](https://github.com/bytedance/UI-TARS-desktop#readme) |                        39,570 | English/Chinese entry points and a gallery tied to use cases. 中英文切换、围绕场景组织画廊。                                           |
-| [Agent Zero](https://github.com/agent0ai/agent-zero#readme)            |                        19,793 | Connect desktop capabilities to everyday work; make the first useful prompt easy to find. 将桌面能力写成日常用途，提供第一条任务示例。 |
+| Project / 项目                                                         | 2026-11-08 | 2026-11-18 | Pattern adopted / 借鉴方式                                                                                                             |
+| ---------------------------------------------------------------------- | ---------: | ---------: | -------------------------------------------------------------------------------------------------------------------------------------- |
+| [Hermes Agent](https://github.com/NousResearch/hermes-agent#readme)    |            |    264,346 | Install first, then getting started, a command reference, docs, and contributing. 先安装，再上手路径、命令速查、文档和贡献。           |
+| [Browser Use](https://github.com/browser-use/browser-use#readme)       |    120,287 |    121,384 | A short product promise, an early visual example, and concrete task prompts. 一句话定位、前置演示、具体任务。                          |
+| [OpenHands](https://github.com/OpenHands/OpenHands#readme)             |     92,920 |     93,723 | Product screenshot above the feature list; clear setup paths and linked technical details. 首屏产品截图、清晰安装路径、技术细节下沉。  |
+| [UI-TARS Desktop](https://github.com/bytedance/UI-TARS-desktop#readme) |     39,570 |     39,603 | English/Chinese entry points and a gallery tied to use cases. 中英文切换、围绕场景组织画廊。                                           |
+| [Khoj](https://github.com/khoj-ai/khoj#readme)                         |            |     38,166 | Overview, features with screenshots, self-hosting, and an FAQ. 概览、带截图的能力说明、自托管和常见问题。                              |
+| [Agent Zero](https://github.com/agent0ai/agent-zero#readme)            |     19,793 |     19,911 | Connect desktop capabilities to everyday work; make the first useful prompt easy to find. 将桌面能力写成日常用途，提供第一条任务示例。 |
 
-OwnDesk’s copy emphasizes its own implemented flow: visible computer work, human handoff, downloadable results, and reviewed manuals. Competitor screenshots, artwork, performance claims, and badges were not reused.
+OwnDesk’s copy emphasizes its own implemented flow: visible computer work, human handoff, downloadable results, long-running goals, and self-improvement with rollback. Competitor screenshots, artwork, performance claims, and badges were not reused.
 
-OwnDesk 的文案围绕已有的桌面操作、接管交还、成果下载和手册审阅展开。配图全部来自 OwnDesk，性能数字仅链接本项目已有报告。
+OwnDesk 的文案围绕已有的桌面操作、接管交还、成果下载、长期目标和可回退的自我改进展开。配图全部来自 OwnDesk，性能数字仅链接本项目已有报告。
 
 ## Screenshot provenance / 截图来源
 
@@ -43,3 +45,14 @@ Captured at device scale factor 1.5 and encoded as WebP at quality 90. The sampl
 To refresh the gallery, use a separate source checkout and empty database, create a demo owner and clearly illustrative content, start the web app, and capture the same pages and viewport sizes. Review every image before replacing it, then update the source revision and capture date here.
 
 更新截图时，使用独立源码目录和空数据库，建立演示账号与示例内容，启动网页并按表中尺寸采集。逐张检查后替换图片，同时更新本页的源码版本和采集日期。
+
+## Self-improvement screenshots / 自我改进截图
+
+These two images come from local test instances during the PR #25 acceptance runs. The pages were captured at a 1280 × 900 viewport, cropped to remove the sidebar and empty margins, and saved as WebP. The instances used synthetic data; no credentials or private conversations are visible.
+
+这两张图来自 PR #25 验收时的本机测试实例。页面以 1280 × 900 视口截图，裁掉侧栏和空白后保存为 WebP。测试实例使用合成数据，画面里没有凭据和私人对话。
+
+| Asset / 图片                                              | Captured / 日期 | Page / 页面     | Crop / 裁剪          | What it shows / 展示内容                                                                                                      |
+| --------------------------------------------------------- | --------------- | --------------- | -------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| [improvement-report.webp](images/improvement-report.webp) | 2026-11-18      | `/improvements` | (130, 66, 1150, 880) | A candidate that passed every check, with adopt, revise, and discard actions / 全部检查通过的候选，以及采用、再改改、放弃按钮 |
+| [versions.webp](images/versions.webp)                     | 2026-11-17      | `/versions`     | (130, 66, 1150, 694) | Current and kept versions, with an automatic rollback in the switch history / 当前版本、保留版本和包含自动回退的切换记录      |
