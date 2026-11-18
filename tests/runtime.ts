@@ -9,6 +9,7 @@ import { once } from "node:events"
 import { setTimeout as delay } from "node:timers/promises"
 import pg from "pg"
 import { workstationImage } from "./workstation-image"
+import { legacyProtocolImage } from "./helpers/legacy-protocol-image"
 
 const focus = process.argv[2] ?? "core"
 const paymentRecoveryOnly =
@@ -2888,17 +2889,31 @@ try {
           .returning()
         agents.push(legacy.id)
         const image = env.WORKSTATION_IMAGE
+        const legacyImage = await legacyProtocolImage(image)
         try {
-          env.WORKSTATION_IMAGE = "owndesk-workstation:0.4.0"
+          env.WORKSTATION_IMAGE = legacyImage
           await assert.rejects(ensureWorkstation(legacy.id), /image protocol differs/)
           assert.equal((await workstationHealth(legacy.id)).protocolVersion, 4)
+          const inspected = JSON.parse(
+            (await docker(["inspect", workstationName(legacy.id)])).stdout.toString()
+          )
+          assert.equal(inspected[0].Config.Labels["personal-agent.protocol"], "6")
+          assert.equal(
+            (
+              await pool.query("SELECT count(*)::int AS n FROM tasks WHERE agent_id=$1", [
+                legacy.id,
+              ])
+            ).rows[0].n,
+            0
+          )
         } finally {
           env.WORKSTATION_IMAGE = image
         }
         await docker(["stop", workstationName(legacy.id)])
         checks.push({
           check:
-            "Actual old guest4 image with a new container label is rejected by its real health; no task/model call or secret release",
+            "Controlled protocol-4 desktop image with a current container label is rejected by its actual health response before any task or secret release",
+          image: legacyImage,
           agentId: legacy.id,
         })
         if (
@@ -9727,7 +9742,7 @@ try {
     realModelJudgmentEvaluated: false,
     ...(focus === "routinehandoff"
       ? {
-          guestProtocolVersion: 5,
+          guestProtocolVersion: 6,
           routineDelegationRosterEvaluated: passed,
           routineHandoffTasksEvaluated,
           originalHandoffSuiteRerun: false,
@@ -9737,7 +9752,7 @@ try {
       ? {
           applicationVersion,
           migration,
-          guestProtocolVersion: 5,
+          guestProtocolVersion: 6,
           controlledWebsite: false,
           sequentialHandoffEvaluated: passed,
           handoffTasksEvaluated,
@@ -9748,7 +9763,7 @@ try {
     ...(focus === "vaultfill"
       ? {
           applicationVersion,
-          guestProtocolVersion: 5,
+          guestProtocolVersion: 6,
           workstationImage: process.env.WORKSTATION_IMAGE,
           controlledWebsite: true,
           guestFillEvaluated: passed,
@@ -9758,7 +9773,7 @@ try {
     ...(focus === "identity"
       ? {
           applicationVersion,
-          guestProtocolVersion: 5,
+          guestProtocolVersion: 6,
           workstationImage: process.env.WORKSTATION_IMAGE,
           controlledWebsite: true,
           identityFillEvaluated: passed,
@@ -9770,7 +9785,7 @@ try {
     ...(focus === "payments"
       ? {
           applicationVersion,
-          guestProtocolVersion: 5,
+          guestProtocolVersion: 6,
           workstationImage: process.env.WORKSTATION_IMAGE,
           controlledWebsite: true,
           paymentPreparationEvaluated: passed,
@@ -9782,7 +9797,7 @@ try {
     ...(focus === "paymentdeadline"
       ? {
           applicationVersion,
-          guestProtocolVersion: 5,
+          guestProtocolVersion: 6,
           controlledWebsite: true,
           paymentDeadlineBeforeReleaseVerified: passed,
           paymentTasksEvaluated,
@@ -9792,7 +9807,7 @@ try {
     ...(focus === "paymentsubmit"
       ? {
           applicationVersion,
-          guestProtocolVersion: 5,
+          guestProtocolVersion: 6,
           workstationImage: process.env.WORKSTATION_IMAGE,
           migration,
           controlledWebsite: true,

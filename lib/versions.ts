@@ -2,6 +2,7 @@
 // one-click rollback, and the switch history. Switching itself is done by
 // scripts/updater.mjs in a container started from the current (trusted) image.
 import { execFile } from "node:child_process"
+import { randomBytes } from "node:crypto"
 import { existsSync } from "node:fs"
 import { mkdir, mkdtemp, rm } from "node:fs/promises"
 import os from "node:os"
@@ -201,17 +202,38 @@ export async function listVersions() {
 }
 export type VersionsOverview = Awaited<ReturnType<typeof listVersions>>
 
-// One-click rollback (or forward again) to a kept version. Runs in the worker, which
-// starts the updater from its own image; returns as soon as the updater is started.
-export async function requestSwitch(versionId: string) {
+// One-click rollback (or forward again) to a kept version, or adoption of an improvement
+// candidate that passed every test (B1). Runs in the worker, which starts the updater from
+// its own image; returns as soon as the updater is started.
+const switchContainer = (id: string) => `pa-${env.INSTALL_ID.slice(0, 8)}-updater-${id}`
+
+export async function switchPending(id: string) {
+  const { stdout } = await docker([
+    "ps",
+    "--all",
+    "--quiet",
+    "--filter",
+    `name=^/${switchContainer(id)}$`,
+  ])
+  return !!stdout.toString().trim()
+}
+
+export async function requestSwitch(
+  versionId: string,
+  action: "rollback" | "promote" = "rollback",
+  expectedFrom?: string
+) {
   if (!versionsEnabled())
     throw new HttpError(409, "版本切换只在 Docker 部署（scripts/install.sh）里可用")
   const [target] = await db
     .select()
     .from(agentVersions)
     .where(eq(agentVersions.id, versionId))
-  if (!target || target.status !== "retained")
-    throw new HttpError(409, "只能切换到保留着的版本")
+  if (!target || target.status !== (action === "promote" ? "ready" : "retained"))
+    throw new HttpError(
+      409,
+      action === "promote" ? "只能采用全部测试都通过的版本" : "只能切换到保留着的版本"
+    )
   const [running] = await db
     .select({ id: deployments.id })
     .from(deployments)
@@ -223,12 +245,13 @@ export async function requestSwitch(versionId: string) {
   )
   if (!network) throw new HttpError(500, "找不到内部网络")
   const deploy = env.PA_DEPLOY_DIR!
+  const deploymentId = randomBytes(9).toString("base64url")
   await docker([
     "run",
     "--detach",
     "--rm",
     "--name",
-    `pa-${env.INSTALL_ID.slice(0, 8)}-updater-${Date.now()}`,
+    switchContainer(deploymentId),
     "--label",
     `owndesk.updater=${env.INSTALL_ID}`,
     "--label",
@@ -246,11 +269,14 @@ export async function requestSwitch(versionId: string) {
     "--deploy",
     deploy,
     "--action",
-    "rollback",
+    action,
+    ...(expectedFrom
+      ? ["--expected-from", expectedFrom, "--request-id", deploymentId]
+      : []),
     "--web",
     target.images.web,
     "--worker",
     target.images.worker,
   ])
-  return { started: true }
+  return { started: true as const, deploymentId }
 }

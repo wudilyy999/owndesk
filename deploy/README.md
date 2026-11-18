@@ -112,6 +112,22 @@ format-2 快照在停止新入口、worker 与 guest 写入的窗口覆盖完整
 
 受控演练已核对秘密解密、历史/成果/home、旧票据/现场绑定失效、两类未知调用不自动重做，以及恢复后的实际浏览器登录。测试 Cookie 与现场授权探针有明确的夹具设置，未验证真实模型/真实网站。普通公网 DNS、实际云网络与长期容量继续验收。首版升级仍要求排空旧执行段并明确处理人工等待，不把任意数据库迁移视为可逆。
 
+### 计划重启宿主时保留当前版本
+
+如果刚采用新镜像，健康看守会持续检查 Web 和 worker。宿主重启后，worker 要等本安装的 guest 网络规则恢复才能健康；看守先启动时，可能把这段停机当成新镜像故障。同一个宿主上的旧镜像也依赖这些规则。
+
+1. 维护前先确认没有运行中的版本切换，排空任务和本安装的 guest。用本安装配置中 `INSTALL_ID` 的值查询当前运行的看守，记下返回的容器 ID，再用 `docker stop` 停止这个看守。没有看守时跳过此步。
+
+   ```sh
+   docker ps --filter "label=owndesk.updater=$INSTALL_ID" \
+     --filter label=owndesk.updater.role=watch --quiet
+   ```
+
+2. 重启宿主后，按[第 4 节](#4-初始化并核对-guest-网络)执行 `init` 和 `check`，再启动 worker。确认本安装的 Web 和 worker 均已健康。
+3. 用 `docker start` 启动第 1 步记下的同一个看守，并确认它已运行。计划维护期间看守暂停，恢复后继续自动回退。不要启动历史版本遗留的看守。
+
+如果是非计划重启，先恢复 guest 网络规则，再在版本页核对当前版本和回退记录。已经回退的安装应在服务恢复后再决定是否切回。
+
 ## 7. 实验入口与范围
 
 本轮基础闭环使用 `npm run test:delivery`，复用下方生产 Compose/HTTPS/桌面链路，仅运行单 Agent 的受控交付与实际取消，不重跑已知会被 fake-IP 阻断的普通公网阶段。它使用原隔离规则、核对真实控制面端点被阻断；报告独立写入 `basic-cua-production-attempt.json`（成功另写 `basic-cua-production.json`）。该通过只代表基础生产容器闭环，完整 `deployment-private-attempt.json` 的原失败保持。不要把此入口当成普通公网/真实模型或实际云部署放行。

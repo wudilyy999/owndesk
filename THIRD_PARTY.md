@@ -45,13 +45,14 @@ opened as ordinary web pages; no site code or assets are bundled.
 
 ## Private Linux packaging candidate (0.9.0-dev)
 
-| Image/component                      | Role                                                          | Primary license source for release audit                                       |
-| ------------------------------------ | ------------------------------------------------------------- | ------------------------------------------------------------------------------ |
-| `node:24.20.0-bookworm-slim`         | Web/worker build and runtime                                  | Node.js LICENSE and its bundled dependency notices                             |
-| Docker CLI from `docker:29.7.2-dind` | Trusted worker only; daemon image also used by isolated tests | docker/cli LICENSE and base-image package notices                              |
-| `caddy:2.11.7-alpine`                | HTTPS, SSE and WSS entry                                      | caddyserver/caddy LICENSE and base-image package notices                       |
-| `postgres:16.15-alpine`              | Control/business/auth/DBOS database                           | PostgreSQL License and base-image package notices                              |
-| Debian `iptables` / `iproute2`       | Trusted worker's scoped network initializer/checker           | Installed `/usr/share/doc/<package>/copyright` and individual package licenses |
+| Image/component                           | Role                                                          | Primary license source for release audit                                       |
+| ----------------------------------------- | ------------------------------------------------------------- | ------------------------------------------------------------------------------ |
+| `node:24.20.0-bookworm-slim`              | Web/worker build and runtime                                  | Node.js LICENSE and its bundled dependency notices                             |
+| Docker CLI from `docker:29.7.2-dind`      | Trusted worker only; daemon image also used by isolated tests | docker/cli LICENSE and base-image package notices                              |
+| Docker Buildx v0.36.1 from the same image | Trusted worker's candidate builds                             | Apache-2.0; `licenses/docker-buildx/LICENSE`                                   |
+| `caddy:2.11.7-alpine`                     | HTTPS, SSE and WSS entry                                      | caddyserver/caddy LICENSE and base-image package notices                       |
+| `postgres:16.15-alpine`                   | Control/business/auth/DBOS database                           | PostgreSQL License and base-image package notices                              |
+| Debian `iptables` / `iproute2`            | Trusted worker's scoped network initializer/checker           | Installed `/usr/share/doc/<package>/copyright` and individual package licenses |
 
 Primary texts to include in the release audit:
 
@@ -128,3 +129,12 @@ Wayland Portal/PipeWire runtime and UI are not vendored.
 Package LICENSE files remain in their npm distributions. See
 `docs/review-hardening.md` for the design-only references; no third-party
 implementation source was copied into the endpoint policy.
+
+## Improvement lab secret scanner
+
+The trusted worker includes the unmodified Gitleaks 8.30.1 executable from
+`ghcr.io/gitleaks/gitleaks:v8.30.1` (gitleaks/gitleaks, MIT, Copyright Zachary Rice).
+Its license is retained in `licenses/gitleaks/LICENSE`. The independently written
+adapter runs its built-in rules with full redaction and ignores candidate allow
+comments and configuration files. Gitleaks is an external tool; npm dependencies
+remain unchanged.

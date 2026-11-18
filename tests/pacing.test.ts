@@ -1,9 +1,43 @@
 import assert from "node:assert/strict"
 import test from "node:test"
-import { playbackSchedule, typingDelay } from "@/lib/companion/pacing"
+import { playbackSchedule, realSleep, typingDelay } from "@/lib/companion/pacing"
 import { splitBubbles } from "@/lib/companion/chat"
 
 const mid = () => 0.5
+
+test("playback waits for its deadline after an early timer or backward clock adjustment", async (t) => {
+  let now = 1000
+  const timers: { callback: () => void; ms: number }[] = []
+  t.mock.method(Date, "now", () => now)
+  t.mock.method(globalThis, "setTimeout", (callback: () => void, ms: number) => {
+    timers.push({ callback, ms })
+    return 1
+  })
+  let finished = false
+  const wait = realSleep(100).then(() => {
+    finished = true
+  })
+  assert.equal(timers[0].ms, 100)
+  now = 1099
+  timers.shift()!.callback()
+  await Promise.resolve()
+  await Promise.resolve()
+  assert.equal(finished, false, "an early timer cannot reveal a future bubble")
+  assert.equal(timers[0].ms, 1)
+  now = 1000
+  timers.shift()!.callback()
+  await Promise.resolve()
+  assert.equal(finished, false, "a backward wall clock must extend the wait")
+  assert.equal(timers[0].ms, 100)
+  now = 1100
+  timers.shift()!.callback()
+  await wait
+  assert.equal(finished, true)
+  assert.equal(timers.length, 0)
+  await realSleep(0)
+  await realSleep(-1)
+  assert.equal(timers.length, 0, "already due bubbles need no timer")
+})
 
 test("typing delay grows with length, has jitter, and is zero when switched off", () => {
   assert.equal(typingDelay("好", "off", mid), 0)

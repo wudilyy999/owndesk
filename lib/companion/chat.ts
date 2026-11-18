@@ -39,6 +39,8 @@ import { rhythmAt } from "./rules"
 import { ensureCompanion } from "./store"
 import type { ObjectiveProposal } from "./objectives"
 import { controlObjective, objectiveBrief } from "@/lib/objectives"
+import type { ImprovementProposal } from "@/lib/evolution/improvements"
+import { evolutionEnabled } from "@/lib/evolution/store"
 
 const HISTORY = 30
 const MAX_BUBBLES = 4
@@ -116,7 +118,11 @@ export function historyMessages(
           ? `（我提出了一个任务，等你确认：${(row.metadata as { goal?: string }).goal}）`
           : row.kind === "objective_proposal"
             ? `（我提出了一个长期目标，等你确认：${row.content}）`
-            : row.content,
+            : row.kind === "improvement_proposal"
+              ? `（我提出了一个改进，等你确认：${row.content}）`
+              : row.kind === "improvement_report"
+                ? `（改进「${row.content}」全部测试通过，报告已发给你）`
+                : row.content,
     }
   })
 }
@@ -146,6 +152,7 @@ const REDOABLE_KINDS = new Set([
   "memory_merge",
   "errand_proposal",
   "objective_proposal",
+  "improvement_proposal",
 ])
 
 // The latest turn (her last user message and what she answered) is the only one that can be
@@ -486,6 +493,8 @@ export async function companionChat(
     })()
     const proposals: string[] = []
     const objectiveProposals: ObjectiveProposal[] = []
+    const improvementProposals: ImprovementProposal[] = []
+    const improving = await evolutionEnabled()
     const candidates: { memoryId: string; note: string }[] = []
     // Redoing a message must not record the same thing twice: notes are read-only then
     const readOnly = redo === "regenerate"
@@ -603,6 +612,42 @@ export async function companionChat(
           return { status: "已发给对方，等对方在界面里确认后才会开始" }
         },
       }),
+      ...(improving
+        ? {
+            propose_improvement: tool({
+              description:
+                "对方希望改变你这个软件本身的功能、界面或行为（需要改代码才能做到）时用。先判断能不能不改代码：改说话方式/人设用设置，记住偏好用记忆，定时提醒用定时任务，固定的电脑操作用操作手册，这些不要用本工具。确实要改代码时，写清对方想要什么（现在怎样、希望怎样）和 2~6 条能在网页上实际检查的验收清单，发给对方确认。上限不填就不限。",
+              inputSchema: z.object({
+                title: z.string().trim().min(1).max(60),
+                request: z.string().trim().min(1).max(4000),
+                checklist: z.array(z.string().trim().min(1).max(300)).min(1).max(12),
+                maxCostUsd: z.number().positive().max(100000).optional(),
+                maxRounds: z.number().int().min(1).max(100000).optional(),
+                deadlineAt: z.iso.datetime({ offset: true }).optional(),
+              }),
+              execute: async (draft) => {
+                improvementProposals.push({
+                  title: draft.title,
+                  request: draft.request,
+                  checklist: draft.checklist,
+                  budget: {
+                    roundMaxSteps: 40,
+                    ...(draft.maxCostUsd !== undefined
+                      ? { maxCostMicros: Math.round(draft.maxCostUsd * 1_000_000) }
+                      : {}),
+                    ...(draft.maxRounds !== undefined
+                      ? { maxRounds: draft.maxRounds }
+                      : {}),
+                    ...(draft.deadlineAt !== undefined
+                      ? { deadlineAt: draft.deadlineAt }
+                      : {}),
+                  },
+                })
+                return { status: "改进提议卡已发给对方，确认后才会开始" }
+              },
+            }),
+          }
+        : {}),
       manage_objective: tool({
         description:
           "查看、暂停或停止对方的长期目标。对方问目标进展时用 list；要暂停或停止时先 list 拿到 id。继续、改上限请对方到长期目标页操作。",
@@ -753,6 +798,14 @@ export async function companionChat(
       rows.push({
         role: "assistant",
         kind: "objective_proposal",
+        content: proposal.title,
+        channel,
+        metadata: { proposal, status: "pending", sourceMessageId: user.id },
+      })
+    for (const proposal of improvementProposals)
+      rows.push({
+        role: "assistant",
+        kind: "improvement_proposal",
         content: proposal.title,
         channel,
         metadata: { proposal, status: "pending", sourceMessageId: user.id },

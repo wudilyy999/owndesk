@@ -1225,7 +1225,7 @@ try {
     migration: JSON.parse(await readFile("db/migrations/meta/_journal.json", "utf8"))
       .entries.at(-1)
       .tag.split("_")[0],
-    guestProtocolVersion: 5,
+    guestProtocolVersion: 6,
     focus,
     taskCounts,
     actualTasks: taskCounts.reduce((sum, row) => sum + row.count, 0),

@@ -43,8 +43,8 @@ services:
         SOURCE_REVISION: ${PA_SOURCE_REVISION:-unknown}
     environment: *application
     volumes:
-      - artifacts:/app/data/artifacts:ro
-    networks: [control]
+      - artifacts:/app/data/artifacts
+    networks: [control, outbound]
     depends_on:
       postgres: { condition: service_healthy }
     read_only: true

@@ -148,8 +148,9 @@ async function registerVersion(webRef, workerRef) {
     [newId(), label, revision, webId, workerId, JSON.stringify(images)]
   )
 }
-async function runningVersion() {
+async function runningVersion(requireContainers = false) {
   const [web, worker] = [await serviceContainer("web"), await serviceContainer("worker")]
+  if (requireContainers && (!web || !worker)) return null
   const refs =
     web && worker
       ? [
@@ -509,6 +510,18 @@ async function start() {
     options.web && options.worker,
     "--web and --worker image references are required"
   )
+  const expectedFrom = options["expected-from"]
+  const requestId = options["request-id"]
+  assert(!requestId || /^[a-zA-Z0-9_-]{12}$/.test(requestId), "Invalid request ID")
+  if (
+    expectedFrom &&
+    !(await one("SELECT id FROM agent_versions WHERE id=$1 AND status='active'", [
+      expectedFrom,
+    ]))
+  ) {
+    log("FAILED: the active version changed since the candidate was selected")
+    return 1
+  }
   if (options.action === "promote") {
     // Snapshot first (insurance), then migrate with the *new* worker image while the
     // old version keeps serving. Migrations are additive, so the old image can still
@@ -527,7 +540,11 @@ async function start() {
     }
     log("migrations applied with the new worker image")
   }
-  const from = await runningVersion()
+  const from = await runningVersion(!!expectedFrom)
+  if (!from || (expectedFrom && from.id !== expectedFrom)) {
+    log("FAILED: the running version changed since the candidate was selected")
+    return 1
+  }
   const to = await registerVersion(options.web, options.worker)
   if (from.id === to.id) {
     log(`${to.label} is already running`)
@@ -541,9 +558,16 @@ async function start() {
   try {
     dep = await one(
       `INSERT INTO deployments (id,from_version_id,to_version_id,action,status,phase,started_at,updated_at)
-       VALUES ($1,$2,$3,$4,'running','switching',now(),now()) RETURNING *`,
-      [newId(), from.id, to.id, options.action]
+       SELECT $1,$2,$3,$4,'running','switching',now(),now()
+       WHERE $5::text IS NULL OR EXISTS
+         (SELECT 1 FROM agent_versions WHERE id=$5 AND status='active' FOR UPDATE)
+       RETURNING *`,
+      [requestId ?? newId(), from.id, to.id, options.action, expectedFrom ?? null]
     )
+    if (!dep) {
+      log("FAILED: the active version changed before the switch could start")
+      return 1
+    }
   } catch (error) {
     if (error.code === "23505") {
       log(
