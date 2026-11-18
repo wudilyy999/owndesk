@@ -6,9 +6,8 @@
 
 ### Your AI. A desk of its own.
 
-Give it a task. Watch it work. Keep the know-how.
-
-A self-hosted personal agent with a real Linux desktop, live human handoff, and reusable operation manuals.
+A self-hosted personal agent with its own Linux computer.<br>
+It chats with you, works on a real desktop, keeps long-running goals moving, and improves itself in an isolated lab.
 
 [![MIT License](https://img.shields.io/badge/License-MIT-AF5128?style=flat-square)](LICENSE)
 [![Stage: Alpha](https://img.shields.io/badge/Stage-Alpha-D49A50?style=flat-square)](#project-status)
@@ -17,42 +16,86 @@ A self-hosted personal agent with a real Linux desktop, live human handoff, and 
 
 **English** · [简体中文](README.zh-CN.md)
 
-[Quick start](#quick-start) · [Screenshots](#a-look-inside) · [What you can do](#start-with-something-useful) · [Documentation](#documentation)
+[Quick start](#quick-start) · [Self-improvement](#self-improvement-with-automatic-rollback) · [Screenshots](#see-it-in-action) · [Roadmap](docs/ROADMAP.md) · [Documentation](#documentation)
 
 </div>
 
 ![OwnDesk task workspace with a conversation, a completed reply, and a downloadable Markdown brief](docs/images/workspace.webp)
 
-OwnDesk gives everyday work a place to happen. Ask it to browse a website, organize files, or prepare a brief. Follow along in its desktop, take over when you need to sign in, and hand control back when you are ready. Turn a successful task into a manual you can review and use again.
+Give OwnDesk a task in plain language. It opens a browser, works with files and desktop apps, and hands back something you can download. You can watch its screen, take over for a login, and hand control back. Bigger goals run in rounds until they are done.
 
-## Why OwnDesk
+When you want OwnDesk itself to change, describe the change in chat. It builds and tests a new version in an isolated copy, and you decide whether to adopt it. If the new version fails its health checks, OwnDesk switches back to the previous image and keeps your tasks and files.
 
-|                                       | What that means for you                                                                                                                           |
-| ------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **A computer you can see**            | A persistent Linux workspace with Chromium, a file manager, a terminal, and desktop apps. Watch its live screen while a task runs.                |
-| **A handoff that feels natural**      | Take over the same desktop for a login or a tricky step. Leave a note, hand it back, and the agent observes the updated screen before continuing. |
-| **Work that leaves something useful** | Download the files it produces, revisit the conversation, and ask for a follow-up. Tasks keep their execution records and results.                |
-| **Know-how worth keeping**            | Generate an operation manual from a successful task, review its steps, and save it for related work. Export it as `SKILL.md`.                     |
-| **A more personal assistant**         | Chat, share images, and keep preferences in editable memory. Review, change, or remove what it remembers.                                         |
-| **Your setup, your choice**           | Run on your own machine or server, connect your preferred model, and manage schedules, usage, and budgets in one place.                           |
+## Highlights
 
-## Start with something useful
+|                                            | What you get                                                                                                                                                   |
+| ------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **A computer you can watch and take over** | A persistent Linux desktop with Chromium, a file manager, a terminal, and office apps. Watch the live screen, take control for a login, then hand it back.     |
+| **From chat to finished files**            | Agree on a task in chat, attach images or documents, add instructions while it runs, and download the results from the same conversation.                      |
+| **Goals that run for days**                | Set a goal such as “fill in three months of expenses.” It works in rounds, reports progress, and stops at your limits or the monthly budget.                   |
+| **Self-improvement with rollback**         | Ask for a small feature in chat. A candidate is built and tested in an isolated lab, and you adopt it from a report. A failing version is rolled back for you. |
+| **Memory, manuals, and routines**          | Editable memory, reviewed operation manuals (exportable as `SKILL.md`), scheduled and event-triggered routines, MCP apps, and Google Mail and Calendar.        |
+| **Your models, your server**               | Bring your own model. Use OwnDesk in the browser, as an installable web app, or through Telegram, QQ, and WeChat adapters.                                     |
 
-Try these prompts after connecting a model:
+## Try these first
+
+After connecting a model, try one of these:
 
 | You want to…                  | Ask OwnDesk…                                                                                                                   |
 | ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
 | **Catch up on a topic**       | “Read this public webpage, summarize three key points, keep the source link, and give me a downloadable `brief.md`.”           |
 | **Tidy a workspace**          | “Organize the files in this workstation folder into documents, images, and archives. Keep the filenames and check the result.” |
 | **Work through a login**      | “Open this dashboard. Ask me to take over when you reach the login, then continue after I hand it back.”                       |
-| **Improve a deliverable**     | “Shorten the brief from our previous task to one page and keep the source links.”                                              |
+| **Keep a goal moving**        | “Build `expenses.csv` for the last three months, one month per round, and stop when all three months are in.”                  |
 | **Repeat a familiar process** | “Use my saved research-brief manual to prepare a new brief on this topic.”                                                     |
+| **Improve OwnDesk itself**    | “On the versions page, add a sentence explaining that a rollback keeps tasks and files.”                                       |
 
 After a useful task, choose **生成操作手册** (Generate operation manual), review the draft, and save the steps for next time.
 
-## A look inside
+## Self-improvement with automatic rollback
 
-Screenshots show the running application’s current Chinese interface with illustrative demo content. [Capture details and sources](docs/README-SHOWCASE.md).
+Self-improvement is off by default. Turn it on from **自我改进** (Self-improvement, `/improvements`) in the sidebar, then describe the change in chat.
+
+```mermaid
+flowchart LR
+    A[Request in chat] --> B[Proposal card<br/>you confirm]
+    B --> C[Isolated lab<br/>edits a copy]
+    C --> D[Evaluation]
+    D -->|fails| C
+    D -->|passes| E[Report<br/>adopt, revise, or discard]
+    E -->|adopt| F[Switch images<br/>health checks]
+    F -->|healthy| G[New version in use]
+    F -->|3 failed checks| H[Previous image restored<br/>tasks and files kept]
+    H --> I[Debug round in the lab]
+    I --> D
+```
+
+<table>
+  <tr>
+    <td width="50%" valign="top">
+      <strong>Review a tested candidate</strong><br>
+      Each check is listed in the report. Adopt, ask for another round, or discard it.<br><br>
+      <a href="docs/images/improvement-report.webp"><img src="docs/images/improvement-report.webp" alt="OwnDesk self-improvement page with a candidate that passed scope, test, build, environment, live, and checklist checks" width="100%"></a>
+    </td>
+    <td width="50%" valign="top">
+      <strong>Switch versions in one click</strong><br>
+      Kept versions and every switch, including automatic rollbacks, are on the versions page.<br><br>
+      <a href="docs/images/versions.webp"><img src="docs/images/versions.webp" alt="OwnDesk versions page with the current version, kept versions, and an automatic rollback in the switch history" width="100%"></a>
+    </td>
+  </tr>
+</table>
+
+- **Lab.** The candidate starts from the source bundled in the running image. The lab container has no internet access, no Docker socket, and no environment secrets; model calls go through a metered gateway.
+- **Evaluation.** Scope and secret checks, automated tests, image build, a candidate environment with synthetic data and fresh keys, live checks, and your acceptance checklist. The **采用** (Adopt) button appears only after every check passes.
+- **Adoption.** The updater keeps the old images, takes a database snapshot, and starts the new version. Health checks run every 10 seconds, and a watcher keeps checking after the switch.
+- **Rollback.** Three failed checks in a row bring back the previous web and worker images. The database, uploads, deliverables, and version history stay in place. Running tasks resume from their checkpoints, and pending confirmations remain.
+- **Repair.** Once the old version is healthy, a debug round fixes the candidate in the lab. The fix goes through the full evaluation again and waits for you to adopt it.
+
+The first version can change `app/`, `components/`, `lib/`, and `worker/`, and add new tests. Evaluation code, deployment scripts, desktop control, database schema, dependencies, authentication and secrets, budgets, and network controls are protected; a diff is limited to 1,500 lines. Self-improvement and version switching need the [Docker Compose deployment](#deploy-on-a-linux-server). Read the [self-improvement guide](docs/design/self-evolution-manual.md) (Chinese) for the full flow.
+
+## See it in action
+
+Screenshots show the running application’s Chinese interface with illustrative demo content. [Capture details and sources](docs/README-SHOWCASE.md).
 
 <table>
   <tr>
@@ -88,7 +131,7 @@ Open OwnDesk in a mobile browser to chat and manage your assistant. The web app 
 
 ### Run locally from source
 
-You will need **Node.js 24.20.0** (see [`.nvmrc`](.nvmrc)), **Docker running Linux containers**, and an **empty PostgreSQL 16 database**. Allow space for a full desktop image; the server guide recommends 4 vCPU, 8 GB RAM, and 40 GB+ SSD. On Windows, WSL2 provides a Linux environment for these services.
+You will need **Node.js 24.20.0** (see [`.nvmrc`](.nvmrc)), **Docker running Linux containers**, and an **empty PostgreSQL 16 database**. Allow space for a full desktop image. On Windows, WSL2 provides a Linux environment for these services. A source run covers tasks, chat, goals, and manuals; version switching and self-improvement need the server deployment below.
 
 **1. Get OwnDesk.**
 
@@ -153,13 +196,18 @@ npm run dev
 
 **5. Open [localhost:6797](http://localhost:6797).** Sign in, open **模型与 Agent 设置** (Model & Agent settings), configure a provider and default model, then select **新对话** (New conversation) and try a prompt above. In a task’s execution details, you can view the desktop, take control, and download its output.
 
-### Put it on your own server
+### Deploy on a Linux server
 
-For an always-on workspace, follow the [self-hosting overview](docs/self-host.md) and [Linux deployment guide](deploy/README.md), including guest networking and the single-owner setup. They cover Compose, HTTPS, and persistent storage. [Cloudflare Tunnel](docs/cloudflare-tunnel.md) provides an access route for machines without a public IP; [backup and recovery](deploy/BACKUP.md) covers an existing installation.
+For an always-on assistant with version switching and self-improvement, use Docker Compose on a dedicated Linux host: 4 vCPU, 8 GB RAM, and 40 GB+ SSD, with rootful Docker, Compose v2, iptables, and `br_netfilter`.
+
+Follow sections 2 to 5 of the [Linux deployment guide](deploy/README.md): generate the configuration, build the images, [initialize the guest network](deploy/README.md#4-初始化并核对-guest-网络), and start the database, owner account, and services. The [self-hosting overview](docs/self-host.md) covers HTTPS, including [Cloudflare Tunnel](docs/cloudflare-tunnel.md) for machines without a public IP. [Upgrades and rollback](docs/upgrade.md) and [backup and recovery](deploy/BACKUP.md) cover running installations.
+
+> [!NOTE]
+> `scripts/install.sh` currently skips the guest network setup and passes the owner file to `docker compose run` with an unsupported flag. Use the manual steps until it is fixed. No GitHub release or GHCR images are published yet, so images are built from source.
 
 ### Bring your own model
 
-Provider integrations include **OpenAI, Anthropic, Google, xAI, DeepSeek, Mistral, Groq, OpenRouter, Ollama, LM Studio**, and **custom OpenAI-compatible endpoints**. Configure the model and credentials through settings. Choose a model with tool calling and image input for desktop tasks.
+Provider integrations include **OpenAI, Anthropic, Google, xAI, DeepSeek, Mistral, Groq, OpenRouter, Ollama, LM Studio**, and **custom OpenAI-compatible endpoints**. Configure the model and credentials in settings. Choose a model with tool calling and image input for desktop tasks.
 
 Task records and workstation files live in your installation. Your selected model provider receives the context needed for a task, which may include text, screenshots, and application controls.
 
@@ -167,37 +215,75 @@ Task records and workstation files live in your installation. Your selected mode
 
 ```mermaid
 flowchart LR
-    U[You] --> W[Web app]
-    T[Telegram / scheduled routines] --> Q
-    W --> Q[PostgreSQL + DBOS]
-    Q --> A[Worker + your model]
-    A --> D[Linux desktop in Docker]
-    D --> F[Files and task results]
-    D -. Live view and handoff .-> W
-    F --> W
+    U[You] --> W[Web app and PWA]
+    CH[Telegram, QQ, WeChat] --> Q
+    W --> Q[(PostgreSQL + DBOS)]
+    Q --> K[Worker]
+    K --> M[Your model]
+    K --> D[Linux desktop in Docker]
+    D -. live view and handoff .-> W
+    K --> L[Improvement lab, offline]
+    L --> S[Candidate stack, synthetic data]
+    S --> R[Report and adoption]
+    R --> UP[Updater and watcher]
+    UP -->|switch or roll back| W
+    UP -->|switch or roll back| K
 ```
 
-The web app handles conversations, settings, and viewing. The worker runs tasks and accesses Docker. The desktop combines browser DOM, screenshots and keyboard/mouse input, plus Linux accessibility controls where available. Its home folder and browser profile persist across tasks.
+The web app handles conversations, settings, and viewing. The worker runs tasks and is the only service with Docker access. The desktop combines browser DOM, screenshots, keyboard and mouse input, and Linux accessibility controls where available. Its home folder and browser profile persist across tasks.
 
-Model decisions, actions, and results are recorded separately, so the worker can resume from saved progress after a restart. Scheduled routines use the same task queue. A successful task can produce a reviewed manual that a future task loads as guidance.
+Model decisions, actions, and results are recorded separately, so the worker resumes from saved progress after a restart. Routines and goal rounds use the same task queue. Every image carries its own source code, which the lab uses as the starting point for a candidate. The updater runs from the old worker image, so a broken new version cannot block its own rollback.
 
 ## Project status
 
-**Alpha, focused on a useful personal agent for one owner.** The current source includes desktop control, handoff, downloadable results, companion chat and memory, chat-to-task continuity with instructions during execution, document and image uploads, scheduled routines, manuals, and a subset of Agent Zero plugin tools. Experimental verified workflows currently cover a limited Thunar directory task family. See [development status](docs/STATUS.md) for validation scope and deployment history.
+**Alpha, built for one owner on one machine.** Everything below is merged into `main`; the status column shows how far each part has been checked.
 
-The [delivery roadmap](docs/DELIVERY-ROADMAP.md) tracks chat continuity, task-time memory retrieval, document uploads, MCP/OAuth app connections, conversational automation, learning from recorded demonstrations, and broader workflow reuse across browser and office apps. Each milestone links its implementation and validation progress.
+| Area                                                          | Status                                                                                |
+| ------------------------------------------------------------- | ------------------------------------------------------------------------------------- |
+| Desktop tasks, handoff, downloads, manuals                    | Checked with real models; see the evidence below                                      |
+| Chat-to-task continuity, memory recall, file uploads          | Merged with database and browser integration tests                                    |
+| MCP apps, Google Mail and Calendar                            | Checked with local MCP/OAuth servers and mocked Google responses                      |
+| Routines, change watches, webhooks, teaching by demonstration | Merged with integration tests                                                         |
+| Cross-app workflows                                           | Limited templates for the browser, Writer, Calc, Mousepad, and Thunar                 |
+| Long-running goals                                            | Merged, including a live run with a real model                                        |
+| Version switching, automatic rollback, self-improvement       | Merged; real adoption, delayed crash, rollback, repair, and readoption tested locally |
+| Telegram                                                      | Tested with a real bot                                                                |
+| QQ and WeChat                                                 | Protocol tests against fake services; real platform accounts not yet tested           |
+| Web push                                                      | Tested in Chrome; iOS Safari and Firefox not yet tested on devices                    |
+| 4 vCPU / 8 GB                                                 | No out-of-memory in tests, but candidate builds come close to the memory limit        |
+| Releases                                                      | No GitHub release or GHCR images yet                                                  |
+
+```mermaid
+flowchart LR
+    subgraph shipped[Shipped]
+        F[Desktop agent, handoff,<br/>companion, channels] --> S7[Seven core abilities]
+        S7 --> A1[A1 Long-running goals]
+        A1 --> B0[B0 Versions and rollback]
+        B0 --> B1[B1 Self-improvement v1]
+    end
+    subgraph upcoming[Next]
+        A2[A2 Scheduled goals,<br/>goal cards in channels]
+        B2[B2 Try before adopting,<br/>desktop changes, additive migrations]
+        B3[B3 Merge official upgrades,<br/>lineage page]
+    end
+    B1 --> A2 --> B2 --> B3
+    B3 -.-> B4[B4 Share improvements, optional]
+```
+
+The [roadmap](docs/ROADMAP.md) lists acceptance criteria for each stage, release work, and known gaps. [Development status](docs/STATUS.md) keeps the detailed validation history.
 
 <details>
 <summary><strong>Execution evidence you can inspect</strong></summary>
 
-| Recorded check                                                 | What it established                                                                                                                                                   |
-| -------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| [Context continuity](docs/evidence/context-continuity.json)    | One real-model desktop task completed with 45 GUI actions and 13 context compressions; files, font settings, and the final window were independently checked.         |
-| [Manual generation and reuse](docs/evidence/manuals-live.json) | A real model generated a manual draft, the owner saved it, and a later task loaded it for directory navigation. The report retains the failed missing-directory case. |
-| [Native desktop controls](docs/AT-SPI-MIGRATION.md)            | Nine native-control tools and eleven migration requirements were checked, including desktop actions and worker recovery with controlled model responses.              |
-| [Workflow packages](docs/WORKFLOW-PACKAGES.md)                 | A bounded Thunar directory workflow was revalidated and reused in an independent installation on the same host, architecture, and image.                              |
+| Recorded check                                                                 | What it established                                                                                                                                                                                                                        |
+| ------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| [Context continuity](docs/evidence/context-continuity.json)                    | One real-model desktop task completed with 45 GUI actions and 13 context compressions; files, font settings, and the final window were independently checked.                                                                              |
+| [Manual generation and reuse](docs/evidence/manuals-live.json)                 | A real model generated a manual draft, the owner saved it, and a later task loaded it for directory navigation. The report retains the failed missing-directory case.                                                                      |
+| [Native desktop controls](docs/AT-SPI-MIGRATION.md)                            | Nine native-control tools and eleven migration requirements were checked, including desktop actions and worker recovery with controlled model responses.                                                                                   |
+| [Workflow packages](docs/WORKFLOW-PACKAGES.md)                                 | A bounded Thunar directory workflow was revalidated and reused in an independent installation on the same host, architecture, and image.                                                                                                   |
+| [Self-improvement and rollback](https://github.com/wudilyy999/owndesk/pull/25) | A candidate crashing after startup was rolled back in about 22 seconds, repaired by a real model, retested, and adopted again. A separate rollback kept four files byte-identical, resumed a running task, and kept pending confirmations. |
 
-These records describe individual scenarios and their limits; screenshots above illustrate the interface. Deployment checks and open work remain in the linked reports.
+These records describe individual scenarios and their limits; screenshots illustrate the interface.
 
 </details>
 
@@ -205,14 +291,27 @@ These records describe individual scenarios and their limits; screenshots above 
 
 Most detailed guides are currently in Chinese.
 
-| Get things done                                                 | Understand and extend                                    |
-| --------------------------------------------------------------- | -------------------------------------------------------- |
-| [First task](docs/QUICKSTART.md)                                | [Architecture](docs/design/详细设计.md)                  |
-| [Operation manuals](docs/MANUALS.md)                            | [Context and memory](docs/CONTEXT.md)                    |
-| [Telegram, QQ, and WeChat channels](docs/channels.md)           | [Linux native controls](docs/AT-SPI-MIGRATION.md)        |
-| [Mobile notifications](docs/push.md)                            | [Plugin compatibility](docs/AGENT-ZERO-COMPATIBILITY.md) |
-| [Self-hosting](docs/self-host.md) · [Upgrades](docs/upgrade.md) | [Workflow packages](docs/WORKFLOW-PACKAGES.md)           |
-| [Backup and recovery](deploy/BACKUP.md)                         | [Development setup](docs/DEVELOPMENT-TRANSFER.md)        |
+| Use OwnDesk                                                        | Run it                                         | Build on it                                                                      |
+| ------------------------------------------------------------------ | ---------------------------------------------- | -------------------------------------------------------------------------------- |
+| [First task](docs/QUICKSTART.md)                                   | [Self-hosting](docs/self-host.md)              | [Architecture](docs/design/详细设计.md)                                          |
+| [Operation manuals](docs/MANUALS.md)                               | [Linux deployment](deploy/README.md)           | [Goals and self-improvement design](docs/design/goal-and-self-evolution-plan.md) |
+| [Goals and self-improvement](docs/design/self-evolution-manual.md) | [Upgrades and rollback](docs/upgrade.md)       | [Context and memory](docs/CONTEXT.md)                                            |
+| [Telegram, QQ, and WeChat](docs/channels.md)                       | [Backup and recovery](deploy/BACKUP.md)        | [Workflow packages](docs/WORKFLOW-PACKAGES.md)                                   |
+| [Mobile notifications](docs/push.md)                               | [Cloudflare Tunnel](docs/cloudflare-tunnel.md) | [Linux native controls](docs/AT-SPI-MIGRATION.md)                                |
+| [Roadmap](docs/ROADMAP.md)                                         | [Development status](docs/STATUS.md)           | [Development setup](docs/DEVELOPMENT-TRANSFER.md)                                |
+
+<details>
+<summary><strong>FAQ</strong></summary>
+
+**Does a rollback lose data?** A rollback swaps only the web and worker images. The database, uploads, deliverables, and version history stay as they are, including anything created after the switch. Database snapshots from each switch are kept for manual restores; see [upgrades](docs/upgrade.md).
+
+**What can self-improvement change?** Interface, chat behavior, companion features, notifications, and routines in `app/`, `components/`, `lib/`, and `worker/`. Changes to the desktop, database schema, or dependencies are planned for stage B2.
+
+**Can I run it on Windows or macOS?** A source run works through WSL2 or Docker Desktop. The server deployment, with version switching and self-improvement, needs a Linux host with rootful Docker.
+
+**Which model should I use?** Any configured provider works for chat. Desktop tasks need tool calling and image input. Local models run through Ollama or LM Studio.
+
+</details>
 
 ## Contributing
 

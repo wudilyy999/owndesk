@@ -1,7 +1,7 @@
 {
   "name": "owndesk",
   "version": "0.1.0",
-  "description": "Self-hosted personal computer agent with a live desktop, human handoff and reusable manuals.",
+  "description": "Self-hosted personal agent with its own Linux desktop, human handoff, long-running goals and self-improvement with automatic rollback.",
   "license": "MIT",
   "private": true,
   "type": "module",
