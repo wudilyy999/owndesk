@@ -62,7 +62,8 @@ export type Improvement = {
     versionId: string
     roundNo: number
     at: string
-    outcome?: "healthy" | "auto_rolled_back" | "failed"
+    deploymentId?: string
+    outcome?: "healthy" | "auto_rolled_back" | "failed" | "not_started"
     reason?: string
   }
   createdAt: string

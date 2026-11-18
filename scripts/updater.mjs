@@ -148,8 +148,9 @@ async function registerVersion(webRef, workerRef) {
     [newId(), label, revision, webId, workerId, JSON.stringify(images)]
   )
 }
-async function runningVersion() {
+async function runningVersion(requireContainers = false) {
   const [web, worker] = [await serviceContainer("web"), await serviceContainer("worker")]
+  if (requireContainers && (!web || !worker)) return null
   const refs =
     web && worker
       ? [
@@ -510,6 +511,8 @@ async function start() {
     "--web and --worker image references are required"
   )
   const expectedFrom = options["expected-from"]
+  const requestId = options["request-id"]
+  assert(!requestId || /^[a-zA-Z0-9_-]{12}$/.test(requestId), "Invalid request ID")
   if (
     expectedFrom &&
     !(await one("SELECT id FROM agent_versions WHERE id=$1 AND status='active'", [
@@ -537,8 +540,8 @@ async function start() {
     }
     log("migrations applied with the new worker image")
   }
-  const from = await runningVersion()
-  if (expectedFrom && from.id !== expectedFrom) {
+  const from = await runningVersion(!!expectedFrom)
+  if (!from || (expectedFrom && from.id !== expectedFrom)) {
     log("FAILED: the running version changed since the candidate was selected")
     return 1
   }
@@ -556,9 +559,10 @@ async function start() {
     dep = await one(
       `INSERT INTO deployments (id,from_version_id,to_version_id,action,status,phase,started_at,updated_at)
        SELECT $1,$2,$3,$4,'running','switching',now(),now()
-       WHERE $5::text IS NULL OR EXISTS (SELECT 1 FROM agent_versions WHERE id=$5 AND status='active')
+       WHERE $5::text IS NULL OR EXISTS
+         (SELECT 1 FROM agent_versions WHERE id=$5 AND status='active' FOR UPDATE)
        RETURNING *`,
-      [newId(), from.id, to.id, options.action, expectedFrom ?? null]
+      [requestId ?? newId(), from.id, to.id, options.action, expectedFrom ?? null]
     )
     if (!dep) {
       log("FAILED: the active version changed before the switch could start")

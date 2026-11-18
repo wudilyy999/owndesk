@@ -522,6 +522,14 @@ try {
     `INSERT INTO deployments(id,from_version_id,to_version_id,action,status,reason,related_id,health_log,started_at,updated_at,finished_at) VALUES($1,$2,$3,'promote','rolled_back','Synthetic delayed failure',$4,'[]',now(),now(),now())`,
     [promotion, previousVersion, version, rollback]
   )
+  await writeImprovement({
+    ...stableImprovement,
+    adoption: { ...stableImprovement.adoption!, deploymentId: promotion },
+  })
+  await pool.query(
+    `INSERT INTO deployments(id,from_version_id,to_version_id,action,status,reason,health_log,started_at,updated_at,finished_at) VALUES($1,$2,$3,'promote','failed','Unrelated attempt','[]',now()+interval '1 second',now(),now())`,
+    [randomUUID(), previousVersion, version]
+  )
   await pool.query("UPDATE objectives SET status='paused' WHERE id=$1", [
     lastRound.objective.id,
   ])
@@ -621,7 +629,7 @@ try {
     adoption: { versionId: version, roundNo: 1, at },
   })
   await pool.query(
-    "UPDATE deployments SET status='failed',from_version_id=NULL,related_id=NULL WHERE id=$1",
+    "UPDATE deployments SET status='failed',from_version_id=NULL,related_id=NULL,started_at=now()+interval '2 seconds' WHERE id=$1",
     [promotion]
   )
   await watchAdoptions()

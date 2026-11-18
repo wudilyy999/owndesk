@@ -23,7 +23,7 @@ import {
   type Improvement,
 } from "@/lib/evolution/store"
 import { createObjective } from "@/lib/objectives"
-import { importSource, requestSwitch } from "@/lib/versions"
+import { importSource, requestSwitch, switchPending } from "@/lib/versions"
 
 export const improvementProposalSchema = z.object({
   title: z.string().trim().min(1).max(60),
@@ -217,14 +217,19 @@ export async function adoptImprovement(ownerId: string, objectiveId: string) {
   ).some(Boolean)
   if (!currentIsBase)
     throw new HttpError(409, "当前版本已更新，请基于当前版本重新发起改进后再采用")
-  await requestSwitch(candidate.versionId, "promote", active.id)
-  await updateImprovement(objectiveId, (value) => {
+  const versionId = candidate.versionId
+  await updateImprovement(objectiveId, async (value) => {
+    const current = latest(value)
+    if (
+      value.status !== "ready" ||
+      current?.versionId !== versionId ||
+      current.roundNo !== candidate.roundNo
+    )
+      throw new HttpError(409, "改进状态已变化，请刷新后再试")
+    const at = new Date().toISOString()
+    const { deploymentId } = await requestSwitch(versionId, "promote", active.id)
     value.status = "adopting"
-    value.adoption = {
-      versionId: candidate.versionId!,
-      roundNo: candidate.roundNo,
-      at: new Date().toISOString(),
-    }
+    value.adoption = { versionId, roundNo: candidate.roundNo, at, deploymentId }
   })
   return { started: true }
 }
@@ -297,23 +302,43 @@ export async function watchAdoptions() {
     const improvement = JSON.parse(value) as Improvement
     const adoption = improvement.adoption
     if (!adoption) continue
-    const {
-      rows: [deployment],
-    } = await pool.query<{
-      status: string
-      reason: string | null
-      health_log: unknown[]
-      rollback_status: string | null
-      rollback_reason: string | null
-    }>(
-      `SELECT d.status,d.reason,d.health_log,r.status AS rollback_status,r.reason AS rollback_reason
+    const lookup = async () =>
+      (
+        await pool.query<{
+          status: string
+          reason: string | null
+          health_log: unknown[]
+          rollback_status: string | null
+          rollback_reason: string | null
+        }>(
+          `SELECT d.status,d.reason,d.health_log,r.status AS rollback_status,r.reason AS rollback_reason
        FROM deployments d LEFT JOIN deployments r ON r.id=d.related_id
         AND r.action='auto_rollback' AND r.related_id=d.id
         AND r.from_version_id=d.to_version_id AND r.to_version_id=d.from_version_id
        WHERE d.to_version_id=$1 AND d.action='promote'
-       AND d.started_at >= $2::timestamptz - interval '1 minute' ORDER BY d.started_at DESC LIMIT 1`,
-      [adoption.versionId, adoption.at]
-    )
+       AND CASE WHEN $3::text IS NOT NULL THEN d.id=$3
+           ELSE d.started_at >= $2::timestamptz - interval '1 minute' END
+       ORDER BY d.started_at DESC LIMIT 1`,
+          [adoption.versionId, adoption.at, adoption.deploymentId ?? null]
+        )
+      ).rows[0]
+    let deployment = await lookup()
+    if (!deployment && improvement.status === "adopting" && adoption.deploymentId) {
+      if (await switchPending(adoption.deploymentId)) continue
+      // The switch may have recorded a deployment and exited since the first lookup.
+      deployment = await lookup()
+      if (!deployment) {
+        await updateImprovement(improvement.objectiveId, (item) => {
+          if (
+            item.status !== "adopting" ||
+            item.adoption?.deploymentId !== adoption.deploymentId
+          )
+            return
+          item.status = "ready"
+          item.adoption = { ...adoption, outcome: "not_started" }
+        })
+      }
+    }
     if (!deployment) continue
     // B0 marks the promotion rolled_back before it starts restoring the old images.
     // Only the related rollback's healthy result proves recovery finished.

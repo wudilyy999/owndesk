@@ -144,6 +144,11 @@ export function Improvements({ initial }: { initial: ImprovementOverview }) {
                 采用后新版本出了问题，已自动退回旧版本：{item.adoption.reason}
               </p>
             )}
+            {item.adoption?.outcome === "not_started" && (
+              <p className="text-sm text-destructive">
+                这次采用没有开始，候选仍然保留。请确认当前版本后重试。
+              </p>
+            )}
             {item.adoption?.outcome === "failed" && (
               <p className="text-sm text-destructive">
                 旧版本恢复尚未完成，改进已暂停：{item.adoption.reason}
