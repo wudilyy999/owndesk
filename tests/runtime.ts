@@ -1124,7 +1124,7 @@ PY`,
           question: "Ready to apply updated preferences?",
         })
       } else if (index === 6) {
-        assert.doesNotMatch(body.messages[0].content, /Recent note 70/)
+        assert.doesNotMatch(body.messages[0].content, /Recent note 70 /)
         assert.match(body.messages[0].content, /Current report preferences/)
         answer(res, index, "recall_memory", { topic: "Reports", page: 1 })
       } else if (index === 7) {
@@ -9008,7 +9008,7 @@ try {
             [oldId, agentId, summaryId]
           )
           await pool.query(
-            "INSERT INTO memories(id,agent_id,summary_id,content,created_at,updated_at) SELECT gen_random_uuid()::text,$1,$2,'Recent note '||n,now()+n*interval '1 second',now()+n*interval '1 second' FROM generate_series(1,70) n",
+            "INSERT INTO memories(id,agent_id,summary_id,content,created_at,updated_at) SELECT gen_random_uuid()::text,$1,$2,'Recent note '||n||' '||repeat('x',280),now()+n*interval '1 second',now()+n*interval '1 second' FROM generate_series(1,70) n",
             [agentId, summaryId]
           )
         }
@@ -9025,7 +9025,7 @@ try {
         [summaryId]
       )
       await pool.query(
-        "DELETE FROM memories WHERE agent_id=$1 AND content='Recent note 70'",
+        "DELETE FROM memories WHERE agent_id=$1 AND content LIKE 'Recent note 70 %'",
         [run.agentId]
       )
       await respondToRequest(ownerId, request.id, "approve", request.payloadVersion, {
@@ -9052,7 +9052,7 @@ try {
       )
       checks.push({
         check:
-          "Real task recalls note beyond initial 30 through topic pages, writes its value, resumes after worker restart with edited summary/deleted recent note and delivers updated recalled value",
+          "Real task recalls a note beyond the initial memory allowance through topic pages, writes its value, resumes after worker restart with edited summary/deleted recent note and delivers updated recalled value",
         taskId: run.taskId,
       })
     }

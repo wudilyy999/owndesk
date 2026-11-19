@@ -58,7 +58,8 @@ if (process.argv[2] === "--resume") {
     INSTALL_ID: randomUUID(),
     MASTER_KEY: randomBytes(32).toString("hex"),
     BETTER_AUTH_SECRET: randomUUID(),
-    PA_CONTEXT_WINDOW_TOKENS: "32768",
+    // The 43 task tool schemas alone take about 14k tokens
+    PA_CONTEXT_WINDOW_TOKENS: "49152",
     PATH: `${directory}/bin:${process.env.PATH}`,
   })
   const checks: string[] = continuation?.checks ?? []
@@ -78,7 +79,9 @@ if (process.argv[2] === "--resume") {
           message.content.includes("Summarize the supplied historical")
       )
       requests.push({ compaction, mode, messages: body.messages })
-      if (mode === "context-limit") {
+      const refuseOnce = mode === "context-limit-once" && !compaction
+      if (refuseOnce) mode = "success"
+      if (mode === "context-limit" || refuseOnce) {
         response.writeHead(400, { "content-type": "application/json" }).end(
           JSON.stringify({
             error: {
@@ -476,36 +479,23 @@ process.stdout.write(JSON.stringify({ready:true,protocolVersion:6,mode:'agent',e
             ],
           }
         )
-      mode = "context-limit"
+      // One refusal below the local trigger: compact once and rebuild the same step
+      mode = "context-limit-once"
       const beforeReject = requests.length
-      await assert.rejects(
-        () => decide(rejected.taskId, 1, 1, rejectedHistory, 1),
-        /ContextWindowExceeded/
-      )
-      assert(
-        !requests.at(-1)!.compaction,
-        "The controlled real API rejection happened below the local trigger"
-      )
-      await assert.rejects(
-        () => decide(rejected.taskId, 1, 1, rejectedHistory, 1),
-        /previous model request failed/
-      )
-      assert.equal(requests.length, beforeReject + 1)
-      // Controlled consent-state fixture only; it never resolves a real owner's request.
-      await pool.query(
-        "UPDATE task_model_decisions SET status='retryable' WHERE task_id=$1 AND decision_no=1",
-        [rejected.taskId]
-      )
-      mode = "success"
       assert.equal(
         (await decide(rejected.taskId, 1, 1, rejectedHistory, 1)).kind,
         "compacted"
       )
-      assert(requests.at(-1)!.compaction)
+      assert.deepEqual(
+        requests.slice(beforeReject).map((request) => request.compaction),
+        [false, true],
+        "The controlled real API rejection happened below the local trigger, then one compaction"
+      )
       assert.equal(
         (await decide(rejected.taskId, 1, 1, rejectedHistory, 1)).kind,
         "decision"
       )
+      assert(!requests.at(-1)!.compaction)
       const receipts = (
         await pool.query(
           "SELECT decision_no,status,cost_micros FROM task_model_attempts WHERE task_id=$1 ORDER BY id",
@@ -521,8 +511,25 @@ process.stdout.write(JSON.stringify({ready:true,protocolVersion:6,mode:'agent',e
         ]
       )
       assert.equal(receipts[0].cost_micros, null)
+      // A refusal that compaction cannot fix stops for the owner instead of looping
+      const stubborn = await makeTask()
+      mode = "context-limit"
+      const beforeStubborn = requests.length
+      await assert.rejects(
+        () => decide(stubborn.taskId, 1, 1, rejectedHistory, 1),
+        /ContextWindowExceeded/
+      )
+      await assert.rejects(
+        () => decide(stubborn.taskId, 1, 1, rejectedHistory, 1),
+        /previous model request failed/
+      )
+      assert.deepEqual(
+        requests.slice(beforeStubborn).map((request) => request.compaction),
+        [false, true]
+      )
+      mode = "success"
       checks.push(
-        "Explicit upstream context rejection preserves unknown billing and blocks retries; controlled consent forces compaction below the local trigger before continuation"
+        "Upstream context rejection keeps unknown billing, compacts once automatically and rebuilds the same step; a repeated rejection stops without more requests"
       )
 
       const cancelled = await makeTask()

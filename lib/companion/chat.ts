@@ -2,7 +2,7 @@ import { chatRoutineSchema, manageChatRoutine } from "./routines"
 import { ownedUploads } from "@/lib/uploads"
 // Light chat path: one model call per message, no durable task, no workstation.
 // Errands are only proposed here; the person confirms them in the UI (lib/companion/errands.ts).
-import { streamText, tool, isStepCount, type LanguageModel, type ModelMessage } from "ai"
+import { streamText, tool, isStepCount, type LanguageModel } from "ai"
 import { and, desc, eq, inArray, isNull, sql } from "drizzle-orm"
 import { z } from "zod"
 import { db } from "@/db"
@@ -22,6 +22,7 @@ import { callCost, findPrice, toMicros, type Price } from "@/lib/providers/prici
 import {
   createModel,
   getProviderCredentials,
+  modelContextWindow,
   resolveModelSpec,
 } from "@/lib/providers/registry"
 import { parseModelSpec } from "@/lib/providers/catalog"
@@ -34,16 +35,23 @@ import { decideMemoryOps } from "./memory-update"
 import { getImage, readImage, seeImage } from "./images"
 import { buildCompanionPrompt } from "./persona"
 import { queueCoview } from "./coview"
-import { playbackSchedule, realSleep, visibleMessage } from "./pacing"
+import { playbackSchedule, realSleep } from "./pacing"
 import { rhythmAt } from "./rules"
 import { ensureCompanion } from "./store"
 import type { ObjectiveProposal } from "./objectives"
 import { controlObjective, objectiveBrief } from "@/lib/objectives"
 import type { ImprovementProposal } from "@/lib/evolution/improvements"
 import { evolutionEnabled } from "@/lib/evolution/store"
+import { estimateContextTokens, isContextWindowError } from "@/lib/agent/context"
+import { buildChatContext, historyMessages, summaryMessage } from "./context"
 
-const HISTORY = 30
+export { historyMessages } from "./context"
+
 const MAX_BUBBLES = 4
+const MAX_STEPS = 4
+// The last model step may only answer: tools stay defined but cannot be called (as OpenCode does)
+const FINAL_STEP =
+  "（这是你这次回复的最后一步：不能再调用工具。根据上面的工具结果，直接用聊天语气回复对方；没办成的事要如实说。）"
 
 export type ChatEvent =
   | { type: "user"; message: CompanionMessage }
@@ -66,6 +74,8 @@ export type ChatDeps = {
   playback?: boolean
   sleep?: (ms: number) => Promise<void>
   random?: () => number
+  // Model window used to decide when older chat is summarized (tests use a small one)
+  contextWindow?: number
 }
 
 export const MAX_REDO = 3
@@ -78,53 +88,6 @@ export function splitBubbles(text: string) {
     .filter(Boolean)
   if (parts.length <= MAX_BUBBLES) return parts
   return [...parts.slice(0, MAX_BUBBLES - 1), parts.slice(MAX_BUBBLES - 1).join("\n\n")]
-}
-
-// Pictures only reach the model in the turn they were sent; later turns keep her one-line
-// description of them (`pictures`: image id → description)
-export function historyMessages(
-  rows: CompanionMessage[],
-  pictures: Map<string, string | null> = new Map(),
-  current?: { id: string; image: Buffer | null }
-): ModelMessage[] {
-  return rows.map((row): ModelMessage => {
-    const imageId = (row.metadata as { imageId?: string } | null)?.imageId
-    if (row.role === "user" && imageId) {
-      if (current?.id === row.id && current.image)
-        return {
-          role: "user",
-          content: [
-            { type: "text", text: row.content || "（发来一张图片）" },
-            {
-              type: "image",
-              image: new Uint8Array(current.image),
-              mediaType: "image/jpeg",
-            },
-          ],
-        }
-      const description = pictures.get(imageId)
-      const note =
-        current?.id === row.id
-          ? "（发来一张图片，但你这次看不到内容）"
-          : description
-            ? `（发来一张图片：${description}）`
-            : "（发来一张图片，内容没看清）"
-      return { role: "user", content: [row.content, note].filter(Boolean).join("\n") }
-    }
-    return {
-      role: row.role,
-      content:
-        row.kind === "errand_proposal"
-          ? `（我提出了一个任务，等你确认：${(row.metadata as { goal?: string }).goal}）`
-          : row.kind === "objective_proposal"
-            ? `（我提出了一个长期目标，等你确认：${row.content}）`
-            : row.kind === "improvement_proposal"
-              ? `（我提出了一个改进，等你确认：${row.content}）`
-              : row.kind === "improvement_report"
-                ? `（改进「${row.content}」全部测试通过，报告已发给你）`
-                : row.content,
-    }
-  })
 }
 
 type NewMessage = Pick<
@@ -242,6 +205,9 @@ export async function companionChat(
     // A picture the person sent with this message (lib/companion/images.ts)
     imageId?: string
     attachmentIds?: string[]
+    // A channel delivery id: a retried delivery continues the same turn instead of adding
+    // the message again
+    sourceKey?: string
   },
   deps: ChatDeps = {},
   emit: (event: ChatEvent) => void = () => {}
@@ -274,7 +240,33 @@ export async function companionChat(
   if (redo !== "regenerate" && !input.text.trim() && !image && !attachments.length)
     throw new HttpError(400, "说点什么，或者发张图片")
   let user: CompanionMessage
+  const [delivered] =
+    input.sourceKey && !redo
+      ? await db
+          .select()
+          .from(companionMessages)
+          .where(
+            and(
+              eq(companionMessages.agentId, input.agentId),
+              eq(companionMessages.role, "user"),
+              sql`${companionMessages.metadata}->>'sourceKey' = ${input.sourceKey}`
+            )
+          )
+          .limit(1)
+      : []
+  if (delivered && (delivered.metadata as { answered?: boolean } | null)?.answered) {
+    // The reply was saved before the delivery was retried: hand back the same reply
+    const replies = await repliesTo(input.agentId, delivered)
+    return { user: delivered, replies, schedule: replies.map(() => 0) }
+  }
+  if ((delivered?.metadata as { effects?: boolean } | null)?.effects)
+    // The earlier attempt stopped after a tool changed something: never run it twice
+    throw new HttpError(
+      409,
+      "上一次处理这条消息时中断了，已经办的事保留着，没有重复执行；请看看记录后再发新消息。"
+    )
   if (round && redo === "regenerate") user = round.user
+  else if (delivered) user = delivered
   else {
     ;[user] = await insertMessages(
       input.agentId,
@@ -285,6 +277,7 @@ export async function companionChat(
           content: input.text,
           channel,
           metadata: {
+            ...(input.sourceKey ? { sourceKey: input.sourceKey } : {}),
             ...(image ? { imageId: image.id } : {}),
             ...(attachments.length
               ? { attachmentIds: attachments.map((file) => file.id), attachments }
@@ -353,6 +346,19 @@ export async function companionChat(
         ? findPrice(spec, { custom: await getCustomPrices() })
         : null
   let hiddenNow = false
+  // Set once a tool changed something; the turn is then never run again (no double writes).
+  // The mark is saved on the message, so a retried channel delivery sees it after a crash too.
+  let wrote = false
+  const markWrote = async () => {
+    if (wrote) return
+    wrote = true
+    await db
+      .update(companionMessages)
+      .set({
+        metadata: sql`coalesce(${companionMessages.metadata}, '{}'::jsonb) || '{"effects":true}'::jsonb`,
+      })
+      .where(eq(companionMessages.id, user.id))
+  }
   try {
     if (!spec) throw new HttpError(409, "先在设置里配置模型服务和模型")
     const block = monthlyBlock(await monthlyUsage(input.ownerId), price)
@@ -432,7 +438,7 @@ export async function companionChat(
     await hide()
     hiddenNow = true
     emit({ type: "typing", on: true })
-    const [memory, activities, recent] = await Promise.all([
+    const [memory, activities] = await Promise.all([
       memoryView(input.agentId),
       db
         .select()
@@ -440,16 +446,8 @@ export async function companionChat(
         .where(eq(lifeActivities.agentId, input.agentId))
         .orderBy(desc(lifeActivities.createdAt))
         .limit(8),
-      db
-        .select()
-        .from(companionMessages)
-        .where(
-          and(eq(companionMessages.agentId, input.agentId), visibleMessage(new Date()))
-        )
-        .orderBy(desc(companionMessages.createdAt), desc(companionMessages.id))
-        .limit(HISTORY),
     ])
-    const system = buildCompanionPrompt({
+    const promptContext = {
       name: agent.name,
       persona: companion.persona,
       mode: companion.mode,
@@ -482,7 +480,8 @@ export async function companionChat(
           timeZone: companion.timeZone,
         }).format(a.createdAt),
       })),
-    })
+    } satisfies Parameters<typeof buildCompanionPrompt>[0]
+    const system = buildCompanionPrompt(promptContext)
 
     // The same low effort for the memory call, whatever the chat setting says
     const memoryOptions = (() => {
@@ -506,6 +505,7 @@ export async function companionChat(
         inputSchema: chatRoutineSchema,
         execute: async (command, options) => {
           if (readOnly && command.action !== "list") return frozen
+          if (command.action !== "list") await markWrote()
           return manageChatRoutine(
             input.ownerId,
             input.agentId,
@@ -520,6 +520,7 @@ export async function companionChat(
         inputSchema: z.object({ note: z.string().trim().min(1).max(500) }),
         execute: async ({ note }) => {
           if (readOnly) return frozen
+          await markWrote()
           const done = await rememberDecided(input.agentId, note, {
             // With a face or an ID in the picture nothing is kept without the person's say-so
             guarded,
@@ -664,6 +665,7 @@ export async function companionChat(
             .from(objectives)
             .where(and(eq(objectives.id, id), eq(objectives.agentId, input.agentId)))
           if (!owned) return { error: "没有这个目标" }
+          await markWrote()
           try {
             await controlObjective(input.ownerId, id, action)
             return { status: action === "pause" ? "已暂停" : "已停止" }
@@ -675,57 +677,76 @@ export async function companionChat(
       }),
     }
 
-    const started = Date.now()
-    const pictureIds = recent.flatMap((row) => {
-      const found = (row.metadata as { imageId?: string } | null)?.imageId
-      return found ? [found] : []
-    })
-    const pictures = new Map<string, string | null>()
-    if (pictureIds.length)
-      for (const row of await db
-        .select({ id: companionImages.id, description: companionImages.description })
-        .from(companionImages)
-        .where(
-          and(
-            eq(companionImages.agentId, input.agentId),
-            inArray(companionImages.id, pictureIds)
-          )
-        ))
-        pictures.set(row.id, row.description)
-    const history = historyMessages(
-      recent.reverse().map((message) => {
-        const files = (message.metadata as { attachments?: unknown[] } | null)
-          ?.attachments
-        return files?.length
-          ? {
-              ...message,
-              content: `${message.content}\n附件：${JSON.stringify(files)}。文件内容需确认办事后在工作站读取。`,
-            }
-          : message
-      }),
-      pictures,
-      {
-        id: user.id,
-        image: picture,
-      }
+    // Tool schemas and the picture share the window with the prompt and the history
+    const toolTokens = estimateContextTokens(
+      Object.entries(tools).map(([name, item]) => ({
+        name,
+        description: item.description,
+        schema: z.toJSONSchema(item.inputSchema as z.ZodType),
+      }))
     )
+    const contextFor = (force: boolean) =>
+      buildChatContext({
+        agentId: input.agentId,
+        name: agent.name,
+        timeZone: companion.timeZone,
+        now: new Date(),
+        currentUserId: user.id,
+        window: deps.contextWindow ?? modelContextWindow(activeSpec),
+        fixedTokens: (summary, gap) =>
+          estimateContextTokens([system, summaryMessage(summary, gap)]) +
+          toolTokens +
+          (picture ? 8192 : 0),
+        model,
+        providerOptions: memoryOptions,
+        onUsage: (usage, durationMs) =>
+          recordUsage(input.agentId, activeSpec, activePrice, usage, durationMs),
+        force,
+      })
+    let context = await contextFor(false)
+    const viewOf = (view: typeof context) => {
+      const earlier = summaryMessage(view.summary, view.gap)
+      return {
+        system,
+        messages: [
+          ...(earlier ? [earlier] : []),
+          ...historyMessages(view.rows, view.pictures, { id: user.id, image: picture }),
+        ],
+      }
+    }
+
     async function runStream(
       activeModel: LanguageModel,
       activeSpec: string,
       activePrice: Price | null
     ) {
+      const started = Date.now()
+      const view = viewOf(context)
+      // Cards collected by a failed attempt are not sent twice
+      proposals.length = 0
+      objectiveProposals.length = 0
+      improvementProposals.length = 0
+      // streamText reports a failed request as "no output"; keep the provider's own error
+      let failure: unknown = null
       const result = streamText({
         model: activeModel,
         providerOptions: optionsFor(activeSpec),
-        system,
-        messages: history,
+        system: view.system,
+        messages: view.messages,
         tools,
-        stopWhen: isStepCount(4),
+        stopWhen: isStepCount(MAX_STEPS),
+        prepareStep: ({ stepNumber, messages }) =>
+          stepNumber === MAX_STEPS - 1
+            ? {
+                toolChoice: "none" as const,
+                messages: [...messages, { role: "user" as const, content: FINAL_STEP }],
+              }
+            : {},
         maxOutputTokens: 1200,
         maxRetries: 1,
         abortSignal: AbortSignal.timeout(240_000),
         onError: ({ error }) => {
-          throw error
+          failure ??= error
         },
       })
       let text = ""
@@ -736,46 +757,60 @@ export async function companionChat(
           emitted = true
           emit({ type: "delta", text: delta })
         }
+        const usage = await result.totalUsage
+        if (failure) throw failure
+        await recordUsage(
+          input.agentId,
+          activeSpec,
+          activePrice,
+          usage,
+          Date.now() - started
+        )
       } catch (error) {
-        ;(error as { __emitted?: boolean }).__emitted = emitted
-        throw error
+        const cause = (failure ?? error) as Error & { __emitted?: boolean }
+        if (cause && typeof cause === "object") cause.__emitted = emitted
+        throw cause
       }
-      await recordUsage(
-        input.agentId,
-        activeSpec,
-        activePrice,
-        await result.totalUsage,
-        Date.now() - started
-      )
       return text
     }
+    // Sent again only when nothing reached the person and no tool changed anything
+    const untouched = (error: unknown) =>
+      !(error as { __emitted?: boolean }).__emitted && !wrote
     let text = ""
     try {
       text = await runStream(model, activeSpec, activePrice)
     } catch (error) {
-      const emitted = !!(error as { __emitted?: boolean }).__emitted
-      const canFallback =
-        !deps.model &&
-        !emitted &&
-        fallbackSpec &&
-        fallbackSpec !== activeSpec &&
-        isRetriableModelError(error)
-      if (!canFallback) throw error
-      console.error(
-        `chat on ${activeSpec} failed before any reply (${(error as Error).message}); trying ${fallbackSpec}`
-      )
-      const parsed = parseModelSpec(fallbackSpec)
-      if (!parsed) throw error
-      model = await createModel(
-        fallbackSpec,
-        await getProviderCredentials(parsed.provider)
-      )
-      activeSpec = fallbackSpec
-      spec = fallbackSpec
-      activePrice = findPrice(activeSpec, { custom: await getCustomPrices() })
-      price = activePrice
-      providerOptions = optionsFor(activeSpec)
-      text = await runStream(model, activeSpec, activePrice)
+      if (isContextWindowError(error) && untouched(error)) {
+        // Too long after all: summarize harder once and send the turn again (a second refusal stands)
+        console.error(
+          `chat on ${activeSpec} exceeded the context window; summarizing older chat`
+        )
+        context = await contextFor(true)
+        text = await runStream(model, activeSpec, activePrice)
+      } else {
+        const canFallback =
+          !deps.model &&
+          untouched(error) &&
+          fallbackSpec &&
+          fallbackSpec !== activeSpec &&
+          isRetriableModelError(error)
+        if (!canFallback) throw error
+        console.error(
+          `chat on ${activeSpec} failed before any reply (${(error as Error).message}); trying ${fallbackSpec}`
+        )
+        const parsed = parseModelSpec(fallbackSpec)
+        if (!parsed) throw error
+        model = await createModel(
+          fallbackSpec,
+          await getProviderCredentials(parsed.provider)
+        )
+        activeSpec = fallbackSpec
+        spec = fallbackSpec
+        activePrice = findPrice(activeSpec, { custom: await getCustomPrices() })
+        price = activePrice
+        providerOptions = optionsFor(activeSpec)
+        text = await runStream(model, activeSpec, activePrice)
+      }
     }
 
     const bubbles = splitBubbles(text)
@@ -828,6 +863,13 @@ export async function companionChat(
     for (const [index, row] of rows.entries())
       row.revealAt = schedule[index] ? new Date(base.getTime() + schedule[index]) : null
     const replies = rows.length ? await insertMessages(input.agentId, rows, base) : []
+    if (input.sourceKey)
+      await db
+        .update(companionMessages)
+        .set({
+          metadata: sql`coalesce(${companionMessages.metadata}, '{}'::jsonb) || '{"answered":true}'::jsonb`,
+        })
+        .where(eq(companionMessages.id, user.id))
     await dropCandidates(input.agentId, round?.replies ?? [])
 
     if (deps.playback && schedule.some((ms) => ms > 0)) {
@@ -845,11 +887,40 @@ export async function companionChat(
     return { user, replies, schedule }
   } catch (error) {
     // The old answer comes back if there is no new one (budget, provider error, ...)
-    if (hiddenNow) await undo()
-    else if (round && redo === "edit")
+    // After a tool changed something the message stays: it is what the change came from
+    if (hiddenNow && !wrote) await undo()
+    else if (round && redo === "edit" && !wrote)
       await db.delete(companionMessages).where(eq(companionMessages.id, user.id))
+    if (wrote && !(error instanceof HttpError)) {
+      // A tool already changed something: running the turn again could do it twice
+      console.error("Companion chat failed after a tool changed something", error)
+      throw new HttpError(
+        502,
+        "回复中途出错了。这条消息里已经办的事（比如记下的内容、改的计划）都保留了，没有重复执行；可以看看记录后再接着说。"
+      )
+    }
     throw error
   }
+}
+
+// What she answered to one message: her rows after it, up to the person's next message
+async function repliesTo(agentId: string, user: CompanionMessage) {
+  const rows = await db
+    .select()
+    .from(companionMessages)
+    .where(
+      and(
+        eq(companionMessages.agentId, agentId),
+        isNull(companionMessages.supersededAt),
+        sql`(${companionMessages.createdAt}, ${companionMessages.id}) > (${user.createdAt}, ${user.id})`
+      )
+    )
+    .orderBy(companionMessages.createdAt, companionMessages.id)
+    .limit(20)
+  const next = rows.findIndex((row) => row.role === "user")
+  return (next === -1 ? rows : rows.slice(0, next)).filter(
+    (row) => row.role === "assistant"
+  )
 }
 
 // Candidate notes she proposed in a turn that was redone no longer apply
