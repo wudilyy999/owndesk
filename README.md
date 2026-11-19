@@ -20,7 +20,7 @@ It chats with you, works on a real desktop, keeps long-running goals moving, and
 
 </div>
 
-![OwnDesk task workspace with a conversation, a completed reply, and a downloadable Markdown brief](docs/images/workspace.webp)
+![OwnDesk task workspace with navigation, a completed task, execution records, and a downloadable CSV](docs/images/workspace.webp)
 
 Give OwnDesk a task in plain language. It opens a browser, works with files and desktop apps, and hands back something you can download. You can watch its screen, take over for a login, and hand control back. Bigger goals run in rounds until they are done.
 
@@ -48,9 +48,9 @@ After connecting a model, try one of these:
 | **Work through a login**      | “Open this dashboard. Ask me to take over when you reach the login, then continue after I hand it back.”                       |
 | **Keep a goal moving**        | “Build `expenses.csv` for the last three months, one month per round, and stop when all three months are in.”                  |
 | **Repeat a familiar process** | “Use my saved research-brief manual to prepare a new brief on this topic.”                                                     |
-| **Improve OwnDesk itself**    | “On the versions page, add a sentence explaining that a rollback keeps tasks and files.”                                       |
+| **Review a version change**   | “Open the versions page and show me the retained versions and rollback history.”                                               |
 
-After a useful task, choose **生成操作手册** (Generate operation manual), review the draft, and save the steps for next time.
+After a useful task, choose **生成操作手册** (Generate operation manual), review the draft, and save the steps for next time. Use the sidebar on the workspace or **页面导航** (Page navigation) on settings pages to move between chat, goals, improvements, versions, manuals, and workflows.
 
 ## Self-improvement with automatic rollback
 
@@ -119,10 +119,10 @@ Screenshots show the running application’s Chinese interface with illustrative
 <details>
 <summary><strong>On your phone, too</strong></summary>
 
-Open OwnDesk in a mobile browser to chat and manage your assistant. The web app also supports installation to your home screen; see the [notification guide](docs/push.md).
+Open OwnDesk in a mobile browser to chat, submit tasks, inspect results, and manage your assistant. The workspace uses a compact drawer on small screens; see the [notification guide](docs/push.md) for installation and notifications.
 
 <p align="center">
-  <img src="docs/images/mobile.webp" alt="OwnDesk companion chat at a 390-pixel mobile viewport" width="320">
+  <img src="docs/images/workspace-mobile.webp" alt="OwnDesk task workspace at a 390-pixel mobile viewport" width="320">
 </p>
 
 </details>
@@ -236,7 +236,7 @@ Model decisions, actions, and results are recorded separately, so the worker res
 
 ## Project status
 
-**Alpha, built for one owner on one machine.** Everything below is merged into `main`; the status column shows how far each part has been checked.
+**Alpha, built for one owner on one machine.** Everything below is merged into `main`; the status column shows how far each part has been checked. The latest frontend refresh aligns the workspace, page navigation, mobile layout, and delivery inputs.
 
 | Area                                                          | Status                                                                                |
 | ------------------------------------------------------------- | ------------------------------------------------------------------------------------- |
