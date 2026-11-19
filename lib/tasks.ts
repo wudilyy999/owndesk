@@ -371,7 +371,7 @@ export async function submitTask(ownerId: string, source: string, raw: TaskInput
       threadTurn = count.rows[0].next
       const past = (
         await client.query<ConversationTurn>(
-          "SELECT id,goal,status,result,error FROM tasks WHERE thread_id=$1 AND owner_id=$2 ORDER BY thread_turn DESC LIMIT 50",
+          "SELECT id,goal,status,result,error FROM tasks WHERE thread_id=$1 AND owner_id=$2 ORDER BY thread_turn DESC LIMIT 200",
           [threadId, ownerId]
         )
       ).rows.reverse()

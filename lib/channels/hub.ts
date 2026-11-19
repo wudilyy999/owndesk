@@ -362,6 +362,7 @@ export async function processInbound(
           : inbound.text,
         channel: link.channel,
         awayDigest: held.slice(-FOLDED_LIMIT).map((item) => item.text),
+        sourceKey: `${inbound.channel}:${inbound.id}`,
       },
       deps,
       undefined

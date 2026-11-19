@@ -1,10 +1,14 @@
 import assert from "node:assert/strict"
 import { test } from "node:test"
-import { conversationContext, CONVERSATION_CONTEXT_CHARS } from "@/lib/thread-context"
+import {
+  conversationContext,
+  CONVERSATION_CONTEXT_CHARS,
+  CONVERSATION_SHORT_CHARS,
+} from "@/lib/thread-context"
 import { threadToMarkdown, exportFilename } from "@/lib/export"
 
-test("Conversation snapshots preserve complete recent pairs, record omissions and carry artifact provenance without old tool calls", () => {
-  const turns = Array.from({ length: 10 }, (_, index) => ({
+test("Conversation snapshots keep recent pairs complete, shorten older ones before omitting, and carry artifact provenance without old tool calls", () => {
+  const turns = Array.from({ length: 40 }, (_, index) => ({
     id: String(index),
     goal: `question-${index}:` + "x".repeat(10000),
     status: "completed",
@@ -12,15 +16,18 @@ test("Conversation snapshots preserve complete recent pairs, record omissions an
     result: { summary: `reply-${index}:` + "y".repeat(10000), files: [] },
   }))
   const snapshot = conversationContext(turns)
-  assert.equal(snapshot.omittedConversationTurns, 7)
-  assert.equal(snapshot.conversation.length, 6)
-  assert.match(snapshot.conversation[0].content, /question-7:/)
+  const complete = snapshot.conversation.slice(-6)
+  assert.match(complete[0].content, /question-37:/)
+  assert(complete.every((message) => message.content.length > 10000))
+  assert.equal(snapshot.shortenedConversationTurns, 19)
+  assert.equal(snapshot.omittedConversationTurns, 18)
+  assert.match(snapshot.conversation[0].content, /^question-18:.*\[shortened\]/s)
   assert(
     snapshot.conversation.reduce((total, message) => total + message.content.length, 0) <=
-      CONVERSATION_CONTEXT_CHARS
+      CONVERSATION_CONTEXT_CHARS + CONVERSATION_SHORT_CHARS
   )
-  turns[9].result.summary = "later mutation"
-  assert.match(snapshot.conversation.at(-1)!.content, /reply-9:/)
+  turns[39].result.summary = "later mutation"
+  assert.match(snapshot.conversation.at(-1)!.content, /reply-39:/)
   const outcome = conversationContext([
     {
       id: "cancelled",

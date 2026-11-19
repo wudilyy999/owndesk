@@ -232,7 +232,7 @@ flowchart LR
 
 The web app handles conversations, settings, and viewing. The worker runs tasks and is the only service with Docker access. The desktop combines browser DOM, screenshots, keyboard and mouse input, and Linux accessibility controls where available. Its home folder and browser profile persist across tasks.
 
-Model decisions, actions, and results are recorded separately, so the worker resumes from saved progress after a restart. Routines and goal rounds use the same task queue. Every image carries its own source code, which the lab uses as the starting point for a candidate. The updater runs from the old worker image, so a broken new version cannot block its own rollback.
+Model decisions, actions, and results are recorded separately, so the worker resumes from saved progress after a restart. Long chats and long tasks work the way Codex and OpenCode do: when the model window fills, older turns are folded into a summary and the recent turns stay word for word, so nothing is cut off at a fixed message count. Routines and goal rounds use the same task queue. Every image carries its own source code, which the lab uses as the starting point for a candidate. The updater runs from the old worker image, so a broken new version cannot block its own rollback.
 
 ## Project status
 

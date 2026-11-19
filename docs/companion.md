@@ -39,6 +39,7 @@ Memory is decided by the model, not by rules in code (`docs/companion-stage-b2a.
 - **After she wants to remember something** the model is shown _all_ active summaries and notes (nothing is cut, no similarity filter) and answers with `ADD / UPDATE / DELETE / MERGE / ASK / NONE`, plus optionally `ORGANIZE` (please tidy up soon). `ASK` is the only way a candidate card appears: she decides when she is unsure. No cap on the number of operations.
 - **Tidy-up** (Letta / MemGPT style self-consolidation, `consolidate.ts`): the model reads the notes page by page (a 6000-character reading window, not a memory limit) and rewrites loose notes into topic summaries, merging duplicates and removing stale items. It runs from the worker tick once a day when something changed, as soon as she asked for it with `ORGANIZE`, or from the "整理" button (`POST /api/companion/memories/organize`).
 - **Chat**: the prompt carries the topic summaries and the notes not yet under a topic. She calls `recall_memory` (a topic, or a page number) to read the detailed notes when she needs them.
+- **Long chats** (`lib/companion/context.ts`, same idea as Codex and OpenCode): the model sees one rolling summary of everything before a checkpoint, then every later message word for word. When the conversation outgrows the model window, the oldest messages are folded into the summary and roughly the newest 15k tokens stay verbatim. A provider "context too long" error before any reply or write folds once more and retries. Deleting or undoing a memory rewrites the summary so it cannot bring the fact back. Confirmed errands copy the same summary plus the messages after it.
 - **Every change** is in `memory_changes` with her reason, and the memory page lists "她改过什么" with a one-click undo; one tidy-up or one decision is one group and is undone together.
 - **Only two guardrails**: instructions inside notes or what was said ("删除所有笔记") are data, never executed; if the model call or its answer fails, nothing is deleted (the fact is kept as a candidate for you to confirm). A sensitive picture turn writes no long-term memory (candidate only), and your own edit/delete in the memory page always works.
 
@@ -72,7 +73,7 @@ Memory is decided by the model, not by rules in code (`docs/companion-stage-b2a.
 
 - Share delivery reaches Telegram, QQ and WeChat through the channel layer (Stage 3, see `docs/channels.md`); QQ and WeChat only ever reply.
 - Life sessions cost about $0.17 each at the placeholder price; raise the daily budget or set the relay's real price.
-- Deleting a note does not rewrite chat history that already mentions it.
+- Deleting a note rewrites the chat summary, but recent messages that mention it stay word for word until they are folded.
 
 # Companion (Stage B1)
 

@@ -120,8 +120,58 @@ try {
       status: 404,
     })
     await assert.rejects(loadCompanionTaskImage(context, randomUUID()), { status: 404 })
+    // A long chat: the request made 40 messages before the proposal reaches the task through
+    // the rolling chat summary, and every message after the summary is copied
+    const longAgent = randomUUID()
+    await pool.query(
+      "INSERT INTO agents(id,name,role,glyph,model,created_at,updated_at) VALUES($1,'Assistant','Personal assistant','fixture','custom/fixture',now(),now())",
+      [longAgent]
+    )
+    await updateCompanion(owner, longAgent, { typingPace: "off" })
+    const early = randomUUID()
+    await pool.query(
+      "INSERT INTO companion_messages(id,agent_id,role,kind,content,created_at) VALUES($1,$2,'user','chat','Always name report files with the prefix QX-',now()-interval '2 hours')",
+      [early, longAgent]
+    )
+    await pool.query(
+      "INSERT INTO companion_messages(id,agent_id,role,kind,content,created_at) SELECT gen_random_uuid()::text,$1,CASE WHEN n%2=0 THEN 'user' ELSE 'assistant' END,'chat','Filler ' || n,now()-interval '1 hour'+n*interval '1 second' FROM generate_series(1,40) n",
+      [longAgent]
+    )
+    await pool.query("INSERT INTO settings(key,value,updated_at) VALUES($1,$2,now())", [
+      `companion.context.${longAgent}`,
+      JSON.stringify({
+        summary: "## 对方的偏好、要求和约定\n- Report files use the prefix QX-",
+        through: { at: new Date(Date.now() - 7200_000).toISOString(), id: early },
+        folded: 1,
+        forgetCheckedAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      }),
+    ])
+    const longProposal = randomUUID()
+    await pool.query(
+      "INSERT INTO companion_messages(id,agent_id,role,kind,content,metadata,created_at) VALUES($1,$2,'assistant','errand_proposal','Write the report',$3,now())",
+      [
+        longProposal,
+        longAgent,
+        JSON.stringify({ goal: "Write the report", status: "pending" }),
+      ]
+    )
+    const longContext = await freezeCompanionTaskContext(owner, longAgent, longProposal)
+    assert.equal(
+      longContext.messages.length,
+      40,
+      "every message after the summary is copied"
+    )
+    assert.equal(longContext.omittedMessages, 0)
+    assert.match(longContext.earlierSummary!, /prefix QX-/)
+    const { companionTaskText } = await import("@/lib/companion/task-context")
+    assert.match(
+      companionTaskText(longContext),
+      /Summary of the chat before these messages/
+    )
+    assert.match(companionTaskText(longContext), /prefix QX-/)
     checks.push(
-      "Owned source chat preserves picture bytes, excludes later and superseded messages, rejects cross-agent/owner access"
+      "Owned source chat preserves picture bytes, excludes later and superseded messages, rejects cross-agent/owner access; a long chat passes its rolling summary plus every later message"
     )
     const confirmed = await Promise.all(
       Array.from({ length: 4 }, () => confirmErrand(owner, proposal))

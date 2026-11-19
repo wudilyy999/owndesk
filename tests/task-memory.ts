@@ -59,8 +59,12 @@ try {
       [randomUUID(), agent, randomUUID(), other]
     )
     const context = await taskMemoryContext(agent)
-    assert.equal(context.memories.length, 30)
-    assert(!context.memories.join().includes("Old preference"))
+    assert.equal(context.memories.length, 71, "every note fits the allowance here")
+    assert(
+      context.memories.join().includes("Old preference"),
+      "old notes are not cut by age"
+    )
+    assert.match(context.memorySummary, /Reports: Report preferences/)
     const prompt = buildInstructions(
       { instructions: "", ...context },
       new Date().toISOString()
@@ -79,7 +83,7 @@ try {
     ])
       assert(!Object.hasOwn(toolsForTask(config), "recall_memory"))
     checks.push(
-      "Bounded initial memory carries topic summaries; recall available in ordinary/desktop tasks with correct mode scope"
+      "Initial memory carries every topic summary and every note that fits (not just the newest 30); recall available in ordinary/desktop tasks with correct mode scope"
     )
     for (const topic of [undefined, "Reports"]) {
       const first = await recallNotes(agent, { topic, page: 1 })
@@ -147,6 +151,19 @@ try {
       "INSERT INTO memories(id,agent_id,kind,topic,content,created_at) SELECT gen_random_uuid()::text,$1,'summary','Topic '||n,'Topic detail '||n,now() FROM generate_series(1,35) n",
       [agent]
     )
+    const all = await taskMemoryContext(agent)
+    for (let n = 1; n <= 35; n++)
+      assert(
+        all.memorySummary.includes(`Topic ${n}: Topic detail ${n}`),
+        `topic ${n} in prompt`
+      )
+    await pool.query(
+      "INSERT INTO memories(id,agent_id,content,created_at) SELECT gen_random_uuid()::text,$1,'Bulk note ' || n || ' ' || repeat('x', 400),now() FROM generate_series(1,60) n",
+      [agent]
+    )
+    const crowded = await taskMemoryContext(agent)
+    assert(crowded.memories.join("\n").length <= 12000 + crowded.memories.length)
+    assert.match(crowded.memorySummary, /Not shown here .*notes/)
     const overview = await recallNotes(agent, { summaries: true })
     assert("pages" in overview)
     assert.equal(overview.pages, 3)

@@ -161,7 +161,7 @@ export async function seeImage(
         role: "user",
         content: [
           { type: "text", text: "请按要求输出 JSON。" },
-          { type: "image", image: new Uint8Array(data), mediaType: "image/jpeg" },
+          { type: "file", data: new Uint8Array(data), mediaType: "image/jpeg" },
         ],
       },
     ],

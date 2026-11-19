@@ -277,7 +277,7 @@ export const userTools = {
 export const memoryTools = {
   recall_memory: tool({
     description:
-      "Read this agent's current active memories, including notes older than the initial 30. Set summaries=true to browse topic summaries; use topic for its detailed notes or omit it to page through all notes. Pages start at 1. Follow pages until the relevant details are found. Latest reads supersede historical snapshots.",
+      "Read this agent's current active memories, including notes not shown in the prompt. Set summaries=true to browse topic summaries; use topic for its detailed notes or omit it to page through all notes. Pages start at 1. Follow pages until the relevant details are found. Latest reads supersede historical snapshots.",
     inputSchema: z.object({
       topic: z.string().trim().max(40).optional(),
       page: z.number().int().min(1).optional(),

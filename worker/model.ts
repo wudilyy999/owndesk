@@ -190,10 +190,30 @@ export async function decide(
     throw new Error(
       "Pinned/recent context exceeds the reserved window after available compaction; reduce the input or increase its configured window"
     )
-  return requestDecision(taskId, segmentNo, decisionNo, view, undefined, {
-    estimatedInput: rawEstimate,
-    through: checkpoint?.through ?? 0,
-  })
+  try {
+    return await requestDecision(taskId, segmentNo, decisionNo, view, undefined, {
+      estimatedInput: rawEstimate,
+      through: checkpoint?.through ?? 0,
+    })
+  } catch (error) {
+    // The provider refused the context before answering: compact once and rebuild the same step
+    // (OpenCode's overflow rule). The refused attempt keeps its unknown cost; a refusal after
+    // this compaction, or a failed compaction, stops for the owner as before.
+    if (
+      error instanceof ModelRequestError &&
+      error.message.startsWith("ContextWindowExceeded:") &&
+      !forceCompaction &&
+      saved?.decision_no !== -decisionNo
+    ) {
+      const retried = await pool.query(
+        "UPDATE task_model_decisions SET status='retryable' WHERE task_id=$1 AND segment_no=$2 AND decision_no=$3 AND status='failed' AND error LIKE 'ContextWindowExceeded:%'",
+        [taskId, segmentNo, decisionNo]
+      )
+      if (retried.rowCount)
+        return decide(taskId, segmentNo, decisionNo, history, goalIndex)
+    }
+    throw error
+  }
 }
 
 async function requestDecision(
