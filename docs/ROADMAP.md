@@ -1,6 +1,6 @@
 # OwnDesk 路线图
 
-更新：2026-11-18
+更新：2026-11-19
 
 OwnDesk 先做好一个人、一台机器上的个人 Agent。这里记录已经合并的阶段、接下来的顺序，以及每个阶段做完的标准。阶段设计见[长期目标与自我改进设计](design/goal-and-self-evolution-plan.md)，详细验证历史见[开发状态](STATUS.md)。
 
@@ -35,6 +35,7 @@ flowchart LR
 | 11-13          | [#23](https://github.com/wudilyy999/owndesk/pull/23) | A1 长期目标：目标页、多轮推进、确认卡、暂停/停止、连续失败自动暂停                    |
 | 11-14          | [#24](https://github.com/wudilyy999/owndesk/pull/24) | B0 版本底座：更新器、保留版本、健康检测、自动回退、版本页                             |
 | 11-18          | [#25](https://github.com/wudilyy999/owndesk/pull/25) | B1 自我改进首版：隔离实验室、评测、报告、采用、自动回退和修复轮次                     |
+| 11-18          | [#27](https://github.com/wudilyy999/owndesk/pull/27) | 前端整理：删除重复架构文案，统一工作区、页面导航、移动端布局和交付输入                |
 
 11-08 七项能力的逐项实现和检查记录保留在[交付记录](DELIVERY-ROADMAP.md)，那份文件现在作为历史日志。
 
