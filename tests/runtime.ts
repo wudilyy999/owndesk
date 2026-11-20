@@ -51,6 +51,8 @@ assert(
   `Unknown runtime check: ${focus}`
 )
 process.loadEnvFile(".env")
+// This case exercises paging past the initial memory allowance, even on hosts with larger windows.
+if (focus === "memoryrecall") process.env.PA_CONTEXT_WINDOW_TOKENS = "49152"
 // Every runtime case exercises the current controller protocol; the main .env may intentionally pin an older deployment.
 process.env.WORKSTATION_IMAGE = workstationImage
 const database = `agent_runtime_${randomUUID().replaceAll("-", "")}`
