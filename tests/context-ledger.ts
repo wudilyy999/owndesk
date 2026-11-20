@@ -405,6 +405,56 @@ process.stdout.write(JSON.stringify({ready:true,protocolVersion:6,mode:'agent',e
       } finally {
         admissionClient.release()
       }
+      const forgottenTask = await makeTask()
+      const { executeMemoryTool } = await import("@/worker/memory")
+      const secretNote = "Retired code: CLOCK-MOSS-092"
+      const recorded = await executeMemoryTool(
+        forgottenTask.taskId,
+        1,
+        1,
+        "memory_write",
+        { note: secretNote },
+        7
+      )
+      const noteId = (recorded.output as { id: string }).id
+      await executeMemoryTool(
+        forgottenTask.taskId,
+        1,
+        2,
+        "memory_forget",
+        { id: noteId },
+        7
+      )
+      await executeMemoryTool(
+        forgottenTask.taskId,
+        1,
+        2,
+        "memory_forget",
+        { id: noteId },
+        7
+      )
+      assert.deepEqual(
+        (
+          await pool.query(
+            "SELECT op FROM memory_changes WHERE memory_id=$1 ORDER BY created_at,id",
+            [noteId]
+          )
+        ).rows.map((r) => r.op),
+        ["add", "delete"]
+      )
+      const frozen: ModelMessage[] = [
+        { role: "system", content: `old frozen life note: ${secretNote}` },
+        { role: "assistant", content: "Earlier errand used CLOCK-MOSS-092" },
+        { role: "user", content: "Use the current file naming convention" },
+      ]
+      const pendingWire = requests.length
+      assert.equal((await decide(forgottenTask.taskId, 1, 1, frozen, 2)).kind, "decision")
+      assert.equal(requests.length, pendingWire + 1)
+      assert(!JSON.stringify(requests.at(-1)?.messages).includes("CLOCK-MOSS-092"))
+      assert(JSON.stringify(requests.at(-1)?.messages).includes("current file naming"))
+      checks.push(
+        "Task memory removal commits one shared change record despite replay; released fact is absent from the next provider request including frozen context"
+      )
       mode = "failed"
       const failed = await makeTask()
       await assert.rejects(

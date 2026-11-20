@@ -1,3 +1,4 @@
+import { withdrawnMemory } from "@/lib/companion/forgotten"
 import { sealHistory, type Continuation } from "@/lib/continuation"
 import { generateText, type ModelMessage } from "ai"
 import { db, pool } from "@/db"
@@ -42,7 +43,7 @@ export type Decision = {
     missing: boolean
   }
   costMicros: number | null
-  compaction?: { through: number; continuation?: Continuation }
+  compaction?: { through: number; continuation?: Continuation; memoryRevision?: string }
   context?: { estimatedInput: number; through: number }
   finishReason?: string
 }
@@ -87,12 +88,55 @@ export async function decide(
   if (compactionAttempt && ["pending", "failed"].includes(compactionAttempt.status))
     return requestDecision(taskId, segmentNo, -decisionNo, [])
   const [task] = await db.select().from(tasks).where(eq(tasks.id, taskId))
-  const saved = (
+  const removed = await withdrawnMemory(task.agentId)
+  const savedReceipt = (
     await pool.query<{ decision_no: number; result: Decision }>(
       "SELECT decision_no,result FROM task_model_decisions WHERE task_id=$1 AND segment_no=$2 AND status='succeeded' AND result->'compaction' IS NOT NULL ORDER BY decision_no ASC LIMIT 1",
       [taskId, segmentNo]
     )
   ).rows[0]
+  const saved =
+    (savedReceipt?.result.compaction?.memoryRevision ?? "") === removed.revision
+      ? savedReceipt
+      : undefined
+  history = removed.messages(history)
+  const scope = task.configSnapshot.continuation
+  if (
+    (task.configSnapshot.historyPrivacy ?? "") !== removed.revision &&
+    scope?.after &&
+    history[1]?.role === "assistant"
+  )
+    history[1] = {
+      role: "assistant",
+      content: "[old thread summary withheld after a memory change]",
+    }
+  const source = task.configSnapshot.companionContext
+  if (source?.windowed && removed.ids.size) {
+    const start =
+      1 +
+      (task.configSnapshot.conversation?.length ?? 0) +
+      (source.earlierSummary ? 1 : 0)
+    for (const [i, m] of source.messages.entries())
+      if (removed.ids.has(m.id) && start + i < goalIndex)
+        history[start + i] = { role: m.role, content: "[removed source message]" }
+  }
+  if (source?.earlierSummary && (source.memoryRevision ?? "") !== removed.revision) {
+    if (source.windowed) {
+      const i = 1 + (task.configSnapshot.conversation?.length ?? 0)
+      if (history[i]?.role === "assistant")
+        history[i] = {
+          role: "assistant",
+          content: "[old source chat summary withheld after a memory change]",
+        }
+    } else if (typeof history[goalIndex]?.content === "string") {
+      history[goalIndex] = {
+        role: "user",
+        content: String(history[goalIndex].content).split(
+          "\n\nSource chat for this confirmed task"
+        )[0],
+      }
+    }
+  }
   const checkpoint: ContextCheckpoint | undefined = saved
     ? {
         through: saved.result.compaction!.through,
@@ -161,6 +205,8 @@ export async function decide(
     forceCompaction ||
     compactionAttempt?.status === "retryable"
   ) {
+    if (savedReceipt && !saved && savedReceipt.decision_no === -decisionNo)
+      return { kind: "compacted", more: true }
     if (saved?.decision_no === -decisionNo && estimatedInput > inputLimit && planFold())
       return { kind: "compacted", more: true }
     if (saved?.decision_no !== -decisionNo) {
@@ -181,6 +227,7 @@ export async function decide(
         const scope = task.configSnapshot.continuation
         const shareable =
           scope &&
+          (task.configSnapshot.historyPrivacy ?? "") === removed.revision &&
           segmentNo === 1 &&
           task.configSnapshot.conversation &&
           goalIndex === 1 + task.configSnapshot.conversation.length
@@ -199,6 +246,7 @@ export async function decide(
           plan.messages,
           {
             through: plan.through,
+            memoryRevision: removed.revision,
             ...(shareable ? { continuation: shareable } : {}),
           }
         )
@@ -262,7 +310,7 @@ async function requestDecision(
   segmentNo: number,
   decisionNo: number,
   history: ModelMessage[],
-  compaction?: { through: number; continuation?: Continuation },
+  compaction?: { through: number; continuation?: Continuation; memoryRevision?: string },
   context?: Decision["context"]
 ): Promise<Decision | { kind: "request"; requestId: string } | { kind: "capacity" }> {
   const key = [taskId, segmentNo, decisionNo]
@@ -401,8 +449,9 @@ async function requestDecision(
   let decision: Decision
   try {
     decision = await trackActivity(taskId, async (signal) => {
+      const removed = await withdrawnMemory(task.agentId)
       const safeHistory = JSON.parse(
-        JSON.stringify(history, (_, value) =>
+        JSON.stringify(removed.messages(history), (_, value) =>
           typeof value === "string" ? redact(value) : value
         )
       ) as ModelMessage[]

@@ -1,3 +1,4 @@
+import { withdrawnMemory } from "@/lib/companion/forgotten"
 import { continuationAtAdmission } from "@/lib/continuation"
 import { randomUUID } from "node:crypto"
 import { isDeepStrictEqual } from "node:util"
@@ -83,6 +84,7 @@ export async function submitTask(ownerId: string, source: string, raw: TaskInput
     input.timeZone,
     !input.workflowExecution || input.workflowExecution.allowRepair === true
   )
+  config.historyPrivacy = (await withdrawnMemory(agent.id)).revision
   if (input.desktopCoordinateMode)
     config.desktopCoordinateMode = input.desktopCoordinateMode
   if (input.companionProposalId) {

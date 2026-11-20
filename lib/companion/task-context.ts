@@ -1,11 +1,13 @@
+import { withdrawnMemory } from "./forgotten"
 import { pool } from "@/db"
 import { HttpError } from "@/lib/errors"
 import { getImage, readImage } from "./images"
-import { forgottenSince, readCheckpoint, redactSecrets } from "./context"
+import { readCheckpoint, redactSecrets } from "./context"
 
 export type CompanionTaskContext = {
   proposalId: string
   agentId: string
+  memoryRevision?: string
   windowed?: true
   omittedMessages: number
   // The rolling summary of the chat before the copied messages (./context.ts)
@@ -36,10 +38,11 @@ export async function freezeCompanionTaskContext(
     [proposalId, agentId, ownerId, checkpoint?.through.id ?? null]
   )
   if (!proposal) throw new HttpError(404, "Companion proposal not found")
+  const removed = await withdrawnMemory(agentId)
   const usable =
     checkpoint &&
     proposal.checkpointAt &&
-    !(await forgottenSince(agentId, checkpoint.forgetCheckedAt)).length
+    (checkpoint.memoryRevision ?? "") === removed.revision
       ? checkpoint
       : null
   const messages: CompanionTaskContext["messages"] = []
@@ -63,7 +66,11 @@ export async function freezeCompanionTaskContext(
       [agentId, proposal.at, proposal.id, at, id]
     )
     for (const row of page.rows) {
-      messages.push({ id: row.id, role: row.role, content: row.content })
+      if (removed.ids.has(row.id)) {
+        messages.push({ id: row.id, role: row.role, content: "[removed source message]" })
+        continue
+      }
+      messages.push({ id: row.id, role: row.role, content: removed.text(row.content) })
       for (const attachment of row.attachment_ids ?? []) attachmentIds.add(attachment)
       if (
         row.role === "user" &&
@@ -71,7 +78,11 @@ export async function freezeCompanionTaskContext(
         !images.some((image) => image.id === row.image_id)
       ) {
         const image = await getImage(agentId, row.image_id)
-        if (image) images.push({ id: image.id, description: image.description })
+        if (image)
+          images.push({
+            id: image.id,
+            description: image.description && removed.text(image.description),
+          })
       }
     }
     if (page.rows.length < 200) break
@@ -84,6 +95,7 @@ export async function freezeCompanionTaskContext(
     agentId,
     omittedMessages: 0,
     windowed: true,
+    memoryRevision: removed.revision,
     ...(usable ? { earlierSummary: redactSecrets(usable.summary) } : {}),
     messages,
     ...(attachmentIds.size ? { attachmentIds: [...attachmentIds] } : {}),
@@ -94,6 +106,14 @@ export async function freezeCompanionTaskContext(
 export async function loadCompanionTaskImage(context: CompanionTaskContext, id: string) {
   if (!context.images.some((image) => image.id === id))
     throw new HttpError(404, "Image is not attached to this task")
+  const removed = await withdrawnMemory(context.agentId)
+  if (removed.ids.size) {
+    const { rowCount } = await pool.query(
+      "SELECT 1 FROM companion_messages WHERE agent_id=$1 AND id=ANY($2::text[]) AND metadata->>'imageId'=$3 LIMIT 1",
+      [context.agentId, [...removed.ids], id]
+    )
+    if (rowCount) return { available: false, error: "This source message was withdrawn" }
+  }
   const image = await getImage(context.agentId, id)
   const bytes = image ? await readImage(image) : null
   if (!bytes)

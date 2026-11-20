@@ -226,25 +226,20 @@ try {
       { ownerId, agentId, text: "我们聊点别的" },
       {
         model: model(forget, {
-          summary: (prompt) =>
-            prompt.includes("已删除的记忆")
-              ? "## 对方的偏好、要求和约定\n- 对方叫阿青\n\n## 重要细节\n- （无）"
-              : "## 重要细节\n- 暗号是蓝鲸42",
+          summary: () =>
+            "## 对方的偏好、要求和约定\n- 对方叫阿青\n\n## 重要细节\n- （无）",
         }),
         price,
         contextWindow: 32_768,
       }
     )
-    const rewrite = forget.find((call) => call.kind === "summary")
-    assert(rewrite, "the summary is rewritten after a deletion")
-    assert.match(rewrite.prompt, /已删除的记忆/)
-    assert.match(rewrite.prompt, /暗号是蓝鲸42/)
-    const forgetChat = forget.find((call) => call.kind === "chat")!.prompt
-    assert.match(forgetChat, /对方叫阿青/)
-    assert.doesNotMatch(
-      forgetChat.split("我们聊点别的")[0].split("前情提要")[1] ?? "",
-      /蓝鲸42[^呀]/
+    assert(
+      forget.some((c) => c.kind === "summary"),
+      "invalidated checkpoint rebuilt from permitted source"
     )
+    assert(forget.some((c) => c.kind === "chat" && c.prompt.includes("阿青")))
+    for (const c of forget)
+      assert.doesNotMatch(c.prompt, /蓝鲸42/, `forgotten literal reached ${c.kind}`)
     assert.doesNotMatch((await readCheckpoint(agentId)).checkpoint!.summary, /蓝鲸42/)
     // A failed rewrite holds the old summary back instead of using it
     const note2 = await addNote(agentId, "对方叫阿青", "user", "active")
@@ -257,10 +252,7 @@ try {
       { ownerId, agentId, text: "嗯" },
       { model: broken, price, contextWindow: 32_768 }
     )
-    assert.doesNotMatch(
-      held.find((call) => call.kind === "chat")!.prompt.split("前情提要")[1] ?? "",
-      /对方叫阿青/
-    )
+    for (const c of held) assert.doesNotMatch(c.prompt, /阿青|蓝鲸42/)
     checks.push(
       "Deleting a memory rewrites the summary without it; when the rewrite fails the old summary is held back"
     )

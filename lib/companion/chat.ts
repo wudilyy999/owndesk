@@ -1,3 +1,4 @@
+import { withdrawnMemory } from "./forgotten"
 import { promptMemory } from "@/lib/task-memory"
 import { chatRoutineSchema, manageChatRoutine } from "./routines"
 import { ownedUploads } from "@/lib/uploads"
@@ -554,6 +555,7 @@ export async function companionChat(
             decide: async (fact, view) => {
               const started = Date.now()
               const decision = await decideMemoryOps(model, fact, view, {
+                projectText: async () => (await withdrawnMemory(input.agentId)).text,
                 context: user.content,
                 window: deps.contextWindow ?? modelContextWindow(activeSpec),
                 beforeCall: async () => {
@@ -793,8 +795,10 @@ export async function companionChat(
               413,
               "当前消息和本轮工具结果超过模型窗口，请缩短本次输入。"
             )
+          const removed = await withdrawnMemory(input.agentId)
           return {
-            messages: projected,
+            system: removed.text(view.system),
+            messages: removed.messages(projected),
             ...(final ? { toolChoice: "none" as const } : {}),
           }
         },

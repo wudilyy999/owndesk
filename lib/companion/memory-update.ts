@@ -202,6 +202,7 @@ export type MemoryDecision = { ops: MemoryOp[] | null; usage?: Usage }
 
 const OUTPUT = 4000
 type CallOptions = {
+  projectText?: () => Promise<(s: string) => string>
   window?: number
   beforeCall?: () => Promise<void>
   onReadUsage?: (usage: Usage, elapsed: number) => Promise<void>
@@ -224,6 +225,7 @@ async function ask(
   allowed: OpKind[],
   options: CallOptions
 ): Promise<MemoryDecision> {
+  if (options.projectText) user = (await options.projectText())(user)
   if (!fits(system, user, options)) return { ops: null }
   await options.beforeCall?.()
   try {
@@ -275,7 +277,15 @@ async function lookup(
   async function visit(start: number, end: number): Promise<boolean> {
     if (start === end) return true
     const rows = records.slice(start, end)
-    const user = JSON.stringify({ query, records: rows })
+    const redact = options.projectText ? await options.projectText() : (s: string) => s
+    const user = JSON.stringify({
+      query: redact(query),
+      records: rows.map((r) => ({
+        ...r,
+        content: redact(r.content),
+        ...("topic" in r ? { topic: redact(r.topic as string) } : {}),
+      })),
+    })
     if (!fits(LOOKUP, user, options)) {
       if (end - start === 1) return false
       const mid = start + Math.floor((end - start) / 2)

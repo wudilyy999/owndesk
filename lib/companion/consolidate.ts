@@ -1,3 +1,4 @@
+import { withdrawnMemory } from "./forgotten"
 // Her tidy-up. Now and then she reads through her notes and rewrites the loose ones into topic
 // summaries ("关于你" blocks such as 饮食习惯, 工作近况), merges duplicates and removes what no longer
 // holds. The model decides all of it (./memory-update.ts, `decideOrganizing`); this file only feeds
@@ -119,6 +120,7 @@ export async function organizeMemory(
         }
         const started = Date.now()
         const decision = await decideOrganizing(m, view, page, {
+          projectText: async () => (await withdrawnMemory(agentId)).text,
           providerOptions,
           window: modelContextWindow(activeSpec),
           beforeCall: async () => {

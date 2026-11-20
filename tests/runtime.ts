@@ -1166,6 +1166,11 @@ PY`,
       }
       if (index === 4) {
         assert(resultFor("call-3").forgotten)
+        assert(
+          !JSON.stringify(body.messages).includes(
+            "Remembered then deliberately forgotten fixture"
+          )
+        )
         answer(res, index, "memory_write", {
           note: "Future tasks use three Chinese bullet points fixture",
         })

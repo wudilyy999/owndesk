@@ -44,14 +44,36 @@ export async function memoryView(
   agentId: string,
   store: MemoryStore = db
 ): Promise<MemoryView> {
-  const rows = await listNotes(agentId, "active", store)
+  // A topic may paraphrase a note; literal filtering alone cannot make its old text safe.
+  // Hold the whole derived topic out of model views until it is rebuilt. Owner UI and undo
+  // still read the canonical record through listNotes.
+  const rows = await store
+    .select()
+    .from(memories)
+    .where(
+      and(
+        eq(memories.agentId, agentId),
+        eq(memories.status, "active"),
+        sql`(${memories.kind}<>'summary' OR NOT EXISTS (
+    SELECT 1 FROM memory_changes c WHERE c.agent_id=${memories.agentId} AND
+      ((c.undone_at IS NULL AND c.before->>'summaryId'=${memories.id} AND c.op IN ('update','delete') AND c.origin<>'organize' AND c.created_at>=${memories.updatedAt}) OR
+       (c.undone_at IS NOT NULL AND c.after->>'summaryId'=${memories.id} AND c.op IN ('add','update') AND c.undone_at>=${memories.updatedAt}))))`
+      )
+    )
+    .orderBy(desc(memories.updatedAt), desc(memories.id))
+  const summaries = rows
+    .filter((r) => r.kind === "summary")
+    .map((r) => ({ id: r.id, topic: r.topic ?? "", content: r.content }))
+  const visible = new Set(summaries.map((r) => r.id))
   return {
-    summaries: rows
-      .filter((row) => row.kind === "summary")
-      .map((row) => ({ id: row.id, topic: row.topic ?? "", content: row.content })),
+    summaries,
     notes: rows
-      .filter((row) => row.kind === "note")
-      .map((row) => ({ id: row.id, content: row.content, summaryId: row.summaryId })),
+      .filter((r) => r.kind === "note")
+      .map((r) => ({
+        id: r.id,
+        content: r.content,
+        summaryId: r.summaryId && visible.has(r.summaryId) ? r.summaryId : null,
+      })),
   }
 }
 
