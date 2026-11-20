@@ -6,7 +6,7 @@ import os from "node:os"
 import path from "node:path"
 import { docker, dockerRaw } from "@/lib/docker"
 import { env } from "@/lib/env"
-import { archive, git, gitText } from "@/lib/evolution/repo"
+import { archive, git, gitText, commitTree } from "@/lib/evolution/repo"
 
 export const LAB_LABEL = "owndesk.lab"
 const prefix = () => `pa-${env.INSTALL_ID.slice(0, 8)}`
@@ -197,6 +197,20 @@ export async function exportTree(lab: LabContainer, target: string) {
     )
     child.stdin!.end(result.stdout)
   })
+}
+
+export async function captureLabCommit(
+  lab: LabContainer,
+  parent: string,
+  taskId: string
+) {
+  const tree = await mkdtemp(path.join(os.tmpdir(), "owndesk-lab-checkpoint-"))
+  try {
+    await exportTree(lab, tree)
+    return await commitTree(tree, parent, `history/${taskId}`, "Completed reformer turn")
+  } finally {
+    await rm(tree, { recursive: true, force: true })
+  }
 }
 
 export async function removeLabContainers() {

@@ -67,14 +67,18 @@ export async function executeMemoryTool(
       const id = randomUUID(),
         content = String(input.note)
       await client.query(
-        "INSERT INTO memories(id,agent_id,content,created_at) VALUES($1,$2,$3,now())",
-        [id, task.agent_id, content]
+        `WITH note AS (INSERT INTO memories(id,agent_id,content,created_at) VALUES($1,$2,$3,now()) RETURNING *)
+         INSERT INTO memory_changes(id,agent_id,memory_id,op,actor,origin,after,created_at)
+         SELECT $4,agent_id,id,'add','model','task',jsonb_build_object('content',content,'source',source,'status',status,'createdAt',created_at,'kind',kind),now() FROM note`,
+        [id, task.agent_id, content, randomUUID()]
       )
       result = { ok: true, output: { id, saved: content } }
     } else {
       const removed = await client.query(
-        "DELETE FROM memories WHERE id=$1 AND agent_id=$2 RETURNING id",
-        [input.id, task.agent_id]
+        `WITH removed AS (DELETE FROM memories WHERE id=$1 AND agent_id=$2 RETURNING *)
+         INSERT INTO memory_changes(id,agent_id,memory_id,op,actor,origin,before,created_at)
+         SELECT $3,agent_id,id,'delete','model','task',jsonb_build_object('content',content,'source',source,'status',status,'createdAt',created_at,'kind',kind,'topic',topic,'summaryId',summary_id,'covers',ARRAY(SELECT m.id FROM memories m WHERE m.summary_id=removed.id ORDER BY m.created_at,m.id)),now() FROM removed RETURNING memory_id`,
+        [input.id, task.agent_id, randomUUID()]
       )
       result = removed.rowCount
         ? { ok: true, output: { forgotten: input.id } }

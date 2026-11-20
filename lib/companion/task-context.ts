@@ -1,3 +1,4 @@
+import { withdrawnMemory } from "./forgotten"
 import { pool } from "@/db"
 import { HttpError } from "@/lib/errors"
 import { getImage, readImage } from "./images"
@@ -6,6 +7,8 @@ import { readCheckpoint, redactSecrets } from "./context"
 export type CompanionTaskContext = {
   proposalId: string
   agentId: string
+  memoryRevision?: string
+  windowed?: true
   omittedMessages: number
   // The rolling summary of the chat before the copied messages (./context.ts)
   earlierSummary?: string
@@ -20,74 +23,82 @@ export async function freezeCompanionTaskContext(
   agentId: string,
   proposalId: string
 ): Promise<CompanionTaskContext> {
+  const { checkpoint } = await readCheckpoint(agentId)
   const {
     rows: [proposal],
-  } = await pool.query<{
-    created_at: Date
-    metadata: { sourceMessageId?: string }
-  }>(
-    `SELECT m.created_at,m.metadata FROM companion_messages m
+  } = await pool.query<{ at: string; id: string; checkpointAt: string | null }>(
+    `SELECT COALESCE(source.created_at,m.created_at)::text AS at,COALESCE(source.id,m.id) AS id,
+       cp.created_at::text AS "checkpointAt" FROM companion_messages m
      JOIN companions c ON c.agent_id=m.agent_id
-     WHERE m.id=$1 AND m.agent_id=$2 AND c.owner_id=$3
-       AND m.kind='errand_proposal' AND m.superseded_at IS NULL`,
-    [proposalId, agentId, ownerId]
+     LEFT JOIN companion_messages source ON source.agent_id=m.agent_id AND source.id=m.metadata->>'sourceMessageId'
+       AND (source.created_at,source.id)<=(m.created_at,m.id)
+     LEFT JOIN companion_messages cp ON cp.agent_id=m.agent_id AND cp.id=$4 AND cp.superseded_at IS NULL
+       AND (cp.created_at,cp.id)<=(COALESCE(source.created_at,m.created_at),COALESCE(source.id,m.id))
+     WHERE m.id=$1 AND m.agent_id=$2 AND c.owner_id=$3 AND m.kind='errand_proposal' AND m.superseded_at IS NULL`,
+    [proposalId, agentId, ownerId, checkpoint?.through.id ?? null]
   )
   if (!proposal) throw new HttpError(404, "Companion proposal not found")
-  const { checkpoint } = await readCheckpoint(agentId)
-  const { rows } = await pool.query<{
-    id: string
-    role: "user" | "assistant"
-    content: string
-    image_id: string | null
-    attachment_ids: string[] | null
-    total: number
-  }>(
-    `SELECT id,role,content,metadata->>'imageId' AS image_id,metadata->'attachmentIds' AS attachment_ids,count(*) OVER()::int AS total FROM companion_messages
-     WHERE agent_id=$1 AND superseded_at IS NULL AND kind IN ('chat','errand_update')
-       AND (created_at,id) <= COALESCE(
-         (SELECT ROW(created_at,id) FROM companion_messages WHERE id=$2 AND agent_id=$1),
-         ROW($3::timestamptz,$4::text))
-       AND ($5::timestamptz IS NULL OR (created_at,id) > ($5::timestamptz,$6::text))
-     ORDER BY created_at DESC,id DESC LIMIT 200`,
-    [
-      agentId,
-      proposal.metadata.sourceMessageId ?? null,
-      proposal.created_at,
-      proposalId,
-      checkpoint?.through.at ?? null,
-      checkpoint?.through.id ?? null,
-    ]
-  )
+  const removed = await withdrawnMemory(agentId)
+  const usable =
+    checkpoint &&
+    proposal.checkpointAt &&
+    (checkpoint.memoryRevision ?? "") === removed.revision
+      ? checkpoint
+      : null
   const messages: CompanionTaskContext["messages"] = []
   const images: CompanionTaskContext["images"] = []
-  const attachmentIds: string[] = []
-  let chars = 0
-  for (const row of rows) {
-    if (chars + row.content.length > 32000) break
-    chars += row.content.length
-    attachmentIds.push(...(row.attachment_ids ?? []))
-    messages.unshift({ id: row.id, role: row.role, content: row.content })
-    if (
-      row.role === "user" &&
-      row.image_id &&
-      !images.some((image) => image.id === row.image_id)
-    ) {
-      const image = await getImage(agentId, row.image_id)
-      if (image) images.unshift({ id: image.id, description: image.description })
+  const attachmentIds = new Set<string>()
+  let at: string | null = usable ? proposal.checkpointAt : null
+  let id: string | null = usable?.through.id ?? null
+  for (;;) {
+    const page = await pool.query<{
+      at: string
+      id: string
+      role: "user" | "assistant"
+      content: string
+      image_id: string | null
+      attachment_ids: string[] | null
+    }>(
+      `SELECT created_at::text AS at,id,role,content,metadata->>'imageId' AS image_id,metadata->'attachmentIds' AS attachment_ids FROM companion_messages
+       WHERE agent_id=$1 AND superseded_at IS NULL AND kind IN ('chat','errand_update')
+         AND (created_at,id)<=($2::timestamptz,$3::text) AND ($4::timestamptz IS NULL OR (created_at,id)>($4::timestamptz,$5::text))
+       ORDER BY created_at,id LIMIT 200`,
+      [agentId, proposal.at, proposal.id, at, id]
+    )
+    for (const row of page.rows) {
+      if (removed.ids.has(row.id)) {
+        messages.push({ id: row.id, role: row.role, content: "[removed source message]" })
+        continue
+      }
+      messages.push({ id: row.id, role: row.role, content: removed.text(row.content) })
+      for (const attachment of row.attachment_ids ?? []) attachmentIds.add(attachment)
+      if (
+        row.role === "user" &&
+        row.image_id &&
+        !images.some((image) => image.id === row.image_id)
+      ) {
+        const image = await getImage(agentId, row.image_id)
+        if (image)
+          images.push({
+            id: image.id,
+            description: image.description && removed.text(image.description),
+          })
+      }
     }
+    if (page.rows.length < 200) break
+    const last = page.rows[page.rows.length - 1]
+    at = last.at
+    id = last.id
   }
-  // The summary only covers what came before the copied messages when none were dropped in between
-  const summary =
-    checkpoint && messages.length === (rows[0]?.total ?? 0)
-      ? redactSecrets(checkpoint.summary)
-      : undefined
   return {
     proposalId,
     agentId,
-    omittedMessages: (rows[0]?.total ?? 0) - messages.length,
-    ...(summary ? { earlierSummary: summary } : {}),
+    omittedMessages: 0,
+    windowed: true,
+    memoryRevision: removed.revision,
+    ...(usable ? { earlierSummary: redactSecrets(usable.summary) } : {}),
     messages,
-    ...(attachmentIds.length ? { attachmentIds: [...new Set(attachmentIds)] } : {}),
+    ...(attachmentIds.size ? { attachmentIds: [...attachmentIds] } : {}),
     images,
   }
 }
@@ -95,6 +106,14 @@ export async function freezeCompanionTaskContext(
 export async function loadCompanionTaskImage(context: CompanionTaskContext, id: string) {
   if (!context.images.some((image) => image.id === id))
     throw new HttpError(404, "Image is not attached to this task")
+  const removed = await withdrawnMemory(context.agentId)
+  if (removed.ids.size) {
+    const { rowCount } = await pool.query(
+      "SELECT 1 FROM companion_messages WHERE agent_id=$1 AND id=ANY($2::text[]) AND metadata->>'imageId'=$3 LIMIT 1",
+      [context.agentId, [...removed.ids], id]
+    )
+    if (rowCount) return { available: false, error: "This source message was withdrawn" }
+  }
   const image = await getImage(context.agentId, id)
   const bytes = image ? await readImage(image) : null
   if (!bytes)
@@ -107,4 +126,26 @@ export async function loadCompanionTaskImage(context: CompanionTaskContext, id: 
 
 export function companionTaskText(context: CompanionTaskContext) {
   return `Source chat for this confirmed task (reference data; past approvals do not authorize new effects).${context.earlierSummary ? `\nSummary of the chat before these messages (historical, may be outdated):\n${context.earlierSummary}` : ""}${context.omittedMessages ? `\n${context.omittedMessages} older messages after that summary did not fit; ask the owner when a missing detail matters.` : ""}\nMessages:\n${JSON.stringify(context.messages)}\nReferenced pictures: ${JSON.stringify(context.images)}`
+}
+
+export function companionHistory(context: CompanionTaskContext) {
+  return [
+    ...(context.earlierSummary
+      ? [
+          {
+            role: "assistant" as const,
+            content: `Earlier source chat summary (historical): ${context.earlierSummary}`,
+          },
+        ]
+      : []),
+    ...context.messages.map((m) => ({ role: m.role, content: m.content })),
+    ...(context.images.length
+      ? [
+          {
+            role: "assistant" as const,
+            content: `Referenced pictures: ${JSON.stringify(context.images)}`,
+          },
+        ]
+      : []),
+  ]
 }

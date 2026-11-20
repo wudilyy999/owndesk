@@ -226,3 +226,52 @@ test("decideOrganizing shows the page number and the current summaries", async (
   assert.match(seen[0], /第 2 页，共 3 页/)
   assert.match(seen[0], /饮食习惯/)
 })
+
+test("overflow memory lookup reads every page before updating an older note; unreadable pages cannot authorize changes", async () => {
+  const full: MemoryView = {
+    summaries: [],
+    notes: Array.from({ length: 160 }, (_, i) => ({
+      id: `note-${i}`,
+      content: `${i}: ${"资料".repeat(60)}`,
+    })),
+  }
+  const seenIds: string[] = []
+  let billedReads = 0,
+    edits = 0
+  const model = decides(new MockLanguageModelV3(), (seen) => {
+    const messages = JSON.parse(seen.prompt)
+    const user = messages.at(-1).content[0].text
+    if (user.startsWith("{")) {
+      const page = JSON.parse(user).records as { id: string }[]
+      seenIds.push(...page.map((r) => r.id))
+      return JSON.stringify({
+        ids: page.filter((r) => r.id === "note-159").map((r) => r.id),
+      })
+    }
+    edits++
+    assert.deepEqual(seen.notes, [full.notes[159].content])
+    return '{"ops":[{"op":"UPDATE","id":"1","text":"Corrected"}]}'
+  })
+  const decision = await decideMemoryOps(model, "Correct the older record", full, {
+    window: 8000,
+    onReadUsage: async () => {
+      billedReads++
+    },
+  })
+  assert.deepEqual(
+    seenIds,
+    full.notes.map((r) => r.id)
+  )
+  assert(billedReads > 1)
+  assert.equal(edits, 1)
+  assert.deepEqual(decision.ops, [
+    { op: "UPDATE", id: "note-159", text: "Corrected", reason: null },
+  ])
+  const incomplete = await decideMemoryOps(
+    decides(new MockLanguageModelV3(), '{"ids":["not-on-this-page"]}'),
+    "correction",
+    full,
+    { window: 8000 }
+  )
+  assert.equal(incomplete.ops, null)
+})

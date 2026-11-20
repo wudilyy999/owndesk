@@ -983,7 +983,12 @@ test("Chinese history is locally reprojected to fit the summary request and tool
   const plan = planContextCompaction(history, history.length, undefined, 20000)
   assert(plan)
   assert(estimateContextTokens(plan.messages) <= 20000)
-  assert(JSON.stringify(plan.messages).includes("trimmed"))
+  assert(plan.more)
+  const transcript = JSON.parse(String(plan.messages[1].content)).transcript
+  assert.deepEqual(
+    transcript.map((m: ModelMessage) => m.content),
+    history.slice(1, plan.through).map((m) => m.content)
+  )
   const batch: ModelMessage[] = [
     {
       role: "assistant",

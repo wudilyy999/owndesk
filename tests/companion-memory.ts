@@ -589,6 +589,50 @@ try {
   assert.equal(failed.memoryOrganizeRequested, false, "claimed even though it failed")
   assert.equal((await db.select().from(memories)).length > 0, true, "nothing was lost")
 
+  const stale = await memory.addNote(agentId, "old data", "user", "active")
+  const edit = async () =>
+    memory.updateNote(agentId, stale.id, "owner correction", {
+      actor: "user",
+      origin: "memory",
+    })
+  const staleDecision = await memory.rememberDecided(agentId, "new fact", {
+    guarded: false,
+    origin: "test",
+    decide: async () => {
+      await edit()
+      return {
+        ops: [{ op: "DELETE", id: stale.id, reason: "decision based on old text" }],
+      }
+    },
+  })
+  assert.equal(staleDecision.fellBack, true)
+  assert.equal((await all()).find((n) => n.id === stale.id)?.content, "owner correction")
+  assert.equal(staleDecision.candidate?.status, "candidate")
+  const hiddenSource = await memory.addNote(agentId, "饮料：旧配方", "user", "active")
+  const derived = await memory.saveSummary(
+    agentId,
+    {
+      id: null,
+      topic: "饮料测试",
+      content: "不可从字面推断的旧主题别称",
+      covers: [hiddenSource.id],
+    },
+    { actor: "model", origin: "organize" }
+  )
+  await memory.deleteNote(agentId, hiddenSource.id, { actor: "user", origin: "memory" })
+  assert(!(await memory.memoryView(agentId)).summaries.some((r) => r.id === derived.id))
+  assert(
+    (await memory.listNotes(agentId)).some((r) => r.id === derived.id),
+    "original topic stays on the owner memory page"
+  )
+  const deletion = (await memory.listChanges(agentId)).find(
+    (c) => c.memoryId === hiddenSource.id && c.op === "delete"
+  )!
+  await memory.undoChange(agentId, deletion.id)
+  assert(
+    (await memory.memoryView(agentId)).summaries.some((r) => r.id === derived.id),
+    "undo restores the topic to the allowed model view"
+  )
   await closeDurableClient()
   await pool.end()
   console.log("companion memory (agent-driven) integration passed")

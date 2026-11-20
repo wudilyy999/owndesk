@@ -1,3 +1,4 @@
+import { withdrawnMemory } from "./forgotten"
 // Her tidy-up. Now and then she reads through her notes and rewrites the loose ones into topic
 // summaries ("关于你" blocks such as 饮食习惯, 工作近况), merges duplicates and removes what no longer
 // holds. The model decides all of it (./memory-update.ts, `decideOrganizing`); this file only feeds
@@ -15,6 +16,7 @@ import { findPrice, type Price } from "@/lib/providers/pricing"
 import {
   createModel,
   getProviderCredentials,
+  modelContextWindow,
   resolveModelSpec,
 } from "@/lib/providers/registry"
 import { createModelWithFallback, withModelFallback } from "@/lib/providers/fallback"
@@ -23,6 +25,7 @@ import { getSetting } from "@/lib/config"
 import { getCustomPrices, monthlyBlock, monthlyUsage } from "@/lib/spend"
 import { recordUsage } from "./chat"
 import {
+  applyToCurrentMemory,
   deleteNote,
   mergeNotes,
   memoryView,
@@ -104,16 +107,39 @@ export async function organizeMemory(
     ? { model: null, spec: "", price: null, providerOptions: undefined }
     : await modelFor(agentId, companion.ownerId, deps)
   const fallbackSpec = (await getSetting("model.fallback"))?.trim() || null
-  const decide =
+  const decide: NonNullable<OrganizeDeps["decide"]> =
     deps.decide ??
     (async (view: MemoryView, page: { index: number; total: number }) => {
-      // Injected test/fixture models must not go through provider createModel.
-      if (!spec || deps.model)
-        return decideOrganizing(model!, view, page, { providerOptions })
+      const run = async (m: LanguageModel, activeSpec: string) => {
+        const actualPrice =
+          activeSpec === spec
+            ? price
+            : findPrice(activeSpec, { custom: await getCustomPrices() })
+        const record = async (usage: Usage, ms: number) => {
+          await recordUsage(agentId, activeSpec, actualPrice, usage, ms)
+        }
+        const started = Date.now()
+        const decision = await decideOrganizing(m, view, page, {
+          projectText: async () => (await withdrawnMemory(agentId)).text,
+          providerOptions,
+          window: modelContextWindow(activeSpec),
+          beforeCall: async () => {
+            const blocked = monthlyBlock(
+              await monthlyUsage(companion.ownerId),
+              actualPrice
+            )
+            if (blocked) throw new HttpError(402, blocked)
+          },
+          onReadUsage: record,
+        })
+        if (decision.usage) await record(decision.usage, Date.now() - started)
+        return { ops: decision.ops }
+      }
+      if (!spec || deps.model) return run(model!, spec)
       const { result } = await withModelFallback({
         primarySpec: spec,
         fallbackSpec: fallbackSpec && fallbackSpec !== spec ? fallbackSpec : null,
-        run: async (m) => decideOrganizing(m, view, page, { providerOptions }),
+        run,
       })
       return result
     })
@@ -151,30 +177,34 @@ export async function organizeMemory(
       result.failedPages++
       continue
     }
-    for (const op of decision.ops) {
-      try {
-        if (op.op === "UPDATE") {
-          await updateNote(agentId, op.id, op.text, info(op.reason))
-          result.changes++
-        } else if (op.op === "DELETE") {
-          await deleteNote(agentId, op.id, info(op.reason))
-          result.changes++
-        } else if (op.op === "MERGE") {
-          await mergeNotes(agentId, op.ids, op.text, info(op.reason))
-          result.changes++
-        } else if (op.op === "SUMMARIZE") {
-          await saveSummary(
-            agentId,
-            { id: op.id, topic: op.topic, content: op.text, covers: op.ids },
-            info(op.reason)
-          )
-          result.changes++
+    const ops = decision.ops
+    const current = await applyToCurrentMemory(agentId, now, async (store) => {
+      for (const op of ops) {
+        try {
+          if (op.op === "UPDATE") {
+            await updateNote(agentId, op.id, op.text, { ...info(op.reason), store })
+            result.changes++
+          } else if (op.op === "DELETE") {
+            await deleteNote(agentId, op.id, { ...info(op.reason), store })
+            result.changes++
+          } else if (op.op === "MERGE") {
+            await mergeNotes(agentId, op.ids, op.text, { ...info(op.reason), store })
+            result.changes++
+          } else if (op.op === "SUMMARIZE") {
+            await saveSummary(
+              agentId,
+              { id: op.id, topic: op.topic, content: op.text, covers: op.ids },
+              { ...info(op.reason), store }
+            )
+            result.changes++
+          }
+        } catch (error) {
+          // A note that vanished meanwhile: skip it
+          if (!(error instanceof HttpError)) throw error
         }
-      } catch (error) {
-        // A note that vanished meanwhile: skip it
-        if (!(error instanceof HttpError)) throw error
       }
-    }
+    })
+    if (!current) result.failedPages++
   }
   if (result.changes) result.groupId = groupId
   return result

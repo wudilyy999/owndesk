@@ -170,6 +170,31 @@ try {
       /Summary of the chat before these messages/
     )
     assert.match(companionTaskText(longContext), /prefix QX-/)
+    // The foreground chat has advanced since the card: even its summary must obey the proposal cursor.
+    const future = randomUUID()
+    await pool.query(
+      "INSERT INTO companion_messages(id,agent_id,role,kind,content,created_at) VALUES($1,$2,'user','chat','FUTURE-PRIVATE',now()+interval '1 second')",
+      [future, longAgent]
+    )
+    await pool.query("UPDATE settings SET value=$2 WHERE key=$1", [
+      `companion.context.${longAgent}`,
+      JSON.stringify({
+        summary: "FUTURE-PRIVATE",
+        through: { at: new Date().toISOString(), id: future },
+        folded: 42,
+        forgetCheckedAt: new Date().toISOString(),
+      }),
+    ])
+    await pool.query(
+      "INSERT INTO companion_messages(id,agent_id,role,kind,content,created_at) SELECT gen_random_uuid()::text,$1,'user','chat',repeat('page',250), now()-interval '5 minutes' FROM generate_series(1,205)",
+      [longAgent]
+    )
+    const delayed = await freezeCompanionTaskContext(owner, longAgent, longProposal)
+    assert.equal(delayed.earlierSummary, undefined)
+    assert.equal(delayed.messages.length, 246)
+    assert.equal(delayed.messages[0].id, early)
+    assert(!JSON.stringify(delayed).includes("FUTURE-PRIVATE"))
+
     checks.push(
       "Owned source chat preserves picture bytes, excludes later and superseded messages, rejects cross-agent/owner access; a long chat passes its rolling summary plus every later message"
     )
@@ -518,6 +543,11 @@ try {
       { status: 409 }
     )
     assert.equal((await appendTaskSupplement(owner, taskId, input)).reused, true)
+    await pool.query(
+      `INSERT INTO tasks(id,owner_id,agent_id,thread_id,thread_turn,source,request_key,request_payload,goal,status,completion_contract,config_snapshot,budget,created_at,updated_at)
+      SELECT gen_random_uuid()::text,owner_id,agent_id,thread_id,n,'test','history-'||n,'{}','Continue '||n,'completed',completion_contract,'{}',budget,now(),now() FROM tasks CROSS JOIN generate_series(2,205) AS n WHERE id=$1`,
+      [taskId]
+    )
     const follow = await submitTask(owner, "test", {
       agentId: agent,
       threadId: task.threadId!,
@@ -529,6 +559,8 @@ try {
     const followConfig = (
       await pool.query("SELECT config_snapshot FROM tasks WHERE id=$1", [follow.taskId])
     ).rows[0].config_snapshot
+    assert.equal(followConfig.conversation.length, 410)
+    assert.equal(followConfig.conversation.at(-2).content, "Continue 205")
     assert.match(
       JSON.stringify(followConfig.conversation),
       /Also save the total as a CSV/

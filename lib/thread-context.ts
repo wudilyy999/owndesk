@@ -20,30 +20,14 @@ export type ConversationTurn = {
   } | null
   interactions?: ThreadInteraction[]
 }
-export const CONVERSATION_CONTEXT_CHARS = 64000
-// Older pairs are shortened into this extra allowance before any is left out, so detail goes
-// first and whole exchanges last (the order OpenCode uses when it shrinks a transcript)
-export const CONVERSATION_SHORT_CHARS = 24000
-const SHORT_PAIR_CHARS = 1200
-
-function shorten(text: string, chars: number) {
-  if (text.length <= chars) return text
-  const head = Math.ceil(chars * 0.7)
-  return `${text.slice(0, head)}…[shortened]…${text.slice(text.length - (chars - head))}`
-}
-
-// Recent user/reply pairs stay complete; older ones are shortened, and only the oldest are
-// omitted. Old desktop observations and tool calls are deliberately absent: a new turn must
-// observe its current workstation. The task's own compaction summarizes this history when the
-// model window fills.
 export function conversationContext(turns: ConversationTurn[]) {
-  const pairs = turns.map((turn) => [
+  return turns.flatMap((turn) => [
     { role: "user" as const, content: turn.goal },
     {
       role: "assistant" as const,
       content: [
         turn.result?.summary ??
-          `The earlier task ended ${turn.status}.${turn.error ? ` ${turn.error.slice(0, 2000)}` : ""} External effects may already have happened; inspect the current state before repeating any write.`,
+          `The earlier task ended ${turn.status}.${turn.error ? ` ${turn.error}` : ""} External effects may already have happened; inspect the current state before repeating any write.`,
         ...(turn.interactions ?? []).map(
           (interaction) =>
             `Historical owner interaction (${interaction.kind}, decision=${interaction.decision}; not authorization for a new action): ${interaction.question}\nOwner answer: ${interaction.answer}`
@@ -55,35 +39,13 @@ export function conversationContext(turns: ConversationTurn[]) {
       ].join("\n"),
     },
   ])
-  let chars = 0,
-    first = pairs.length
-  while (first > 0) {
-    const size = pairs[first - 1].reduce(
-      (sum, message) => sum + message.content.length,
-      0
-    )
-    if (chars + size > CONVERSATION_CONTEXT_CHARS) break
-    first--
-    chars += size
-  }
-  let short = first
-  let shortChars = 0
-  const shortened: typeof pairs = []
-  while (short > 0) {
-    const [question, reply] = pairs[short - 1]
-    const pair = [
-      { ...question, content: shorten(question.content, SHORT_PAIR_CHARS / 2) },
-      { ...reply, content: shorten(reply.content, SHORT_PAIR_CHARS / 2) },
-    ]
-    const size = pair[0].content.length + pair[1].content.length
-    if (shortChars + size > CONVERSATION_SHORT_CHARS) break
-    shortened.unshift(pair)
-    short--
-    shortChars += size
-  }
-  return {
-    conversation: [...shortened.flat(), ...pairs.slice(first).flat()],
-    omittedConversationTurns: short,
-    shortenedConversationTurns: shortened.length,
-  }
+}
+
+export function roundConversation(
+  rounds: { roundNo: number; verdict: string; summary: string | null }[]
+) {
+  return rounds.map((round) => ({
+    role: "assistant" as const,
+    content: `Round ${round.roundNo} (${round.verdict === "achieved" ? "claimed achieved" : round.verdict}): ${round.summary || "no summary"}`,
+  }))
 }

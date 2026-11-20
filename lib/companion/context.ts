@@ -1,22 +1,23 @@
+import { withdrawnMemory } from "./forgotten"
 import { redactSecrets } from "@/lib/redact-secrets"
 // Long-chat context, following Codex and OpenCode: every message stays in companion_messages; the
 // model sees a rolling summary of everything up to a checkpoint plus every later message verbatim.
 // When that no longer fits the model window, the oldest messages are folded into the summary and
-// about the newest KEEP_TOKENS of conversation stay word for word. Ideas only; no code copied.
+// the newest complete turns stay word for word. Ideas only; no code copied.
 import { generateText, type LanguageModel, type ModelMessage } from "ai"
 import { and, asc, eq, inArray, isNull, sql } from "drizzle-orm"
 import { db, pool } from "@/db"
 import { companionImages, companionMessages, type CompanionMessage } from "@/db/schema"
-import { estimateContextTokens, exceedsInputBudget } from "@/lib/agent/context"
+import {
+  estimateContextTokens,
+  exceedsInputBudget,
+  inputBudget,
+  fittingPrefix,
+  recentHistoryStart,
+} from "@/lib/agent/context"
 
-export const KEEP_TOKENS = 15_000
 const SUMMARY_CHARS = 10_000
 const SUMMARY_OUTPUT_TOKENS = 3_000
-const LINE_CHARS = 6_000
-// Older lines are shortened down to this before a backlog is split over several summary calls
-const MIN_LINE_CHARS = 240
-// Summary calls one turn may make; a very long backlog is caught up over the next turns
-const MAX_FOLDS = 3
 
 export type ChatCheckpoint = {
   summary: string
@@ -24,6 +25,7 @@ export type ChatCheckpoint = {
   through: { at: string; id: string }
   folded: number
   // Memory deletions up to this moment are already reflected in the summary
+  memoryRevision?: string
   forgetCheckedAt: string
   updatedAt: string
 }
@@ -40,7 +42,7 @@ export type ChatContext = {
 // Reserve the same output allowance that the chat request actually sends.
 export const CHAT_REPLY_TOKENS = 1200
 export function chatBudget(window: number) {
-  return window - CHAT_REPLY_TOKENS
+  return inputBudget(window, CHAT_REPLY_TOKENS)
 }
 
 const settingKey = (agentId: string) => `companion.context.${agentId}`
@@ -197,29 +199,6 @@ async function messagesAfter(agentId: string, through: ChatCheckpoint["through"]
     .orderBy(asc(companionMessages.createdAt), asc(companionMessages.id))
 }
 
-// Notes deleted because the person wanted them gone, and remembered facts the person undid: a
-// summary must not bring them back. Merges and tidy-ups also delete rows but keep the fact in
-// another note, so they do not count.
-export async function forgottenSince(agentId: string, since: string | null) {
-  const { rows } = await pool.query<{ content: string }>(
-    `SELECT content FROM (
-       SELECT d.before->>'content' AS content, d.created_at AS at FROM memory_changes d
-       WHERE d.agent_id=$1 AND d.op='delete' AND d.undone_at IS NULL
-         AND ($2::timestamptz IS NULL OR d.created_at > $2::timestamptz)
-         AND COALESCE(d.before->>'kind','note')='note' AND d.before->>'status'='active'
-         AND d.origin<>'organize'
-         AND (d.group_id IS NULL OR NOT EXISTS (
-           SELECT 1 FROM memory_changes u WHERE u.group_id=d.group_id AND u.op='update'))
-       UNION ALL
-       SELECT a.after->>'content', a.undone_at FROM memory_changes a
-       WHERE a.agent_id=$1 AND a.op='add' AND a.undone_at IS NOT NULL
-         AND ($2::timestamptz IS NULL OR a.undone_at > $2::timestamptz)
-     ) forgotten WHERE content IS NOT NULL ORDER BY at DESC LIMIT 50`,
-    [agentId, since]
-  )
-  return rows.map((row) => row.content.slice(0, 300)).filter(Boolean)
-}
-
 export { redactSecrets } from "@/lib/redact-secrets"
 
 export const SUMMARY_TEMPLATE = `## 对方的近况与情绪
@@ -244,7 +223,7 @@ const SUMMARY_RULES = `规则：
 - 不适用的小节写“（无）”。用对方使用的语言，每条一行，简短；只写聊天里出现过的事实。
 - 人名、日期、时间、地点、数字、链接、文件名原样保留。“明天”“下周”这类说法按聊天时间换算成具体日期。
 - 新的内容覆盖旧的：已解决的问题、已回答的提问、已改变的偏好要更新或删掉；没解决的保留。
-- 对方要求忘掉的事，以及“已删除的记忆”里列出的事，不要写进摘要。
+- 不要补写已经移除的内容。
 - 不写密码、验证码、证件号、银行卡号、API Key。
 - 卡片和确认只记状态；以前的确认不代表以后的授权。
 - 不要继续聊天，不要调用工具，只输出按模板填写的摘要。`
@@ -256,7 +235,6 @@ export type SummaryInput = {
   name: string
   previous: string | null
   transcript: string
-  forgotten: string[]
 }
 
 export function summaryRequest(input: SummaryInput) {
@@ -268,9 +246,6 @@ export function summaryRequest(input: SummaryInput) {
     input.transcript
       ? `<聊天记录>\n${input.transcript}\n</聊天记录>`
       : "这次没有新的聊天记录，只需按下面的删除要求改写旧摘要。",
-    input.forgotten.length
-      ? `<已删除的记忆>\n${input.forgotten.map((item) => `- ${item}`).join("\n")}\n</已删除的记忆>`
-      : "",
     `按这个格式输出：\n${SUMMARY_TEMPLATE}`,
     SUMMARY_RULES,
   ]
@@ -286,11 +261,13 @@ export async function summarizeChat(
   input: SummaryInput,
   options: {
     providerOptions?: Record<string, Record<string, string>>
+    beforeSummary?: () => Promise<void>
     onUsage?: (usage: SummaryUsage, durationMs: number) => Promise<void>
   } = {}
 ) {
   const messages: ModelMessage[] = [{ role: "user", content: summaryRequest(input) }]
   for (let attempt = 0; attempt < 2; attempt++) {
+    await options.beforeSummary?.()
     const started = Date.now()
     const result = await generateText({
       model,
@@ -321,26 +298,12 @@ export async function summarizeChat(
   throw new Error("The chat summary did not follow the template")
 }
 
-// Keeps the start and the end of a long message
-function clip(text: string, chars: number) {
-  if (text.length <= chars) return text
-  const head = Math.ceil(chars * 0.7)
-  return `${text.slice(0, head)}……${text.slice(text.length - (chars - head))}`
-}
-
-// The transcript for one summary call: as many of the oldest lines as fit in `room` tokens,
-// shortening each line first (detail goes before whole messages do)
 export function fitTranscript(lines: string[], room: number) {
-  const fits = (items: string[]) => estimateContextTokens(items.join("\n")) <= room
-  if (fits(lines)) return { text: lines.join("\n"), count: lines.length }
-  for (let chars = LINE_CHARS; chars >= MIN_LINE_CHARS; chars = Math.floor(chars / 2)) {
-    const short = lines.map((line) => clip(line, chars))
-    if (fits(short)) return { text: short.join("\n"), count: lines.length }
-  }
-  const short = lines.map((line) => clip(line, MIN_LINE_CHARS))
-  let count = short.length
-  while (count > 1 && !fits(short.slice(0, count))) count = Math.ceil(count / 2)
-  return { text: short.slice(0, count).join("\n"), count }
+  const count = fittingPrefix(
+    lines.length,
+    (n) => estimateContextTokens(lines.slice(0, n).join("\n")) <= room
+  )
+  return { text: lines.slice(0, count).join("\n"), count }
 }
 
 function transcriptLine(
@@ -359,7 +322,7 @@ function transcriptLine(
     timeZone,
   }).format(row.createdAt)
   const [message] = historyMessages([row], pictures)
-  return `[${at}] ${row.role === "user" ? "对方" : name}：${clip(String(message.content), LINE_CHARS)}`
+  return `[${at}] ${row.role === "user" ? "对方" : name}：${String(message.content)}`
 }
 
 export type BuildChatContext = {
@@ -375,6 +338,7 @@ export type BuildChatContext = {
   model: LanguageModel
   providerOptions?: Record<string, Record<string, string>>
   onUsage?: (usage: SummaryUsage, durationMs: number) => Promise<void>
+  beforeSummary?: () => Promise<void>
   // The provider rejected the last request as too long: fold once even below the estimate
   force?: boolean
 }
@@ -382,27 +346,52 @@ export type BuildChatContext = {
 export async function buildChatContext(input: BuildChatContext): Promise<ChatContext> {
   let { raw, checkpoint } = await readCheckpoint(input.agentId)
   const ceiling = chatBudget(input.window)
-  // About 15k tokens stay verbatim, less on small windows, half after the provider refused
-  const keep = Math.floor(Math.min(KEEP_TOKENS, ceiling * 0.3) * (input.force ? 0.5 : 1))
   let folded = 0
   let failed = false
-  let summaryUsable = true
   let mustFold = !!input.force
 
-  for (let pass = 0; ; pass++) {
-    const rows = await messagesAfter(input.agentId, checkpoint?.through ?? null)
+  for (;;) {
+    const removed = await withdrawnMemory(input.agentId)
+    if (checkpoint && (checkpoint.memoryRevision ?? "") !== removed.revision) {
+      const deleted = await pool.query("DELETE FROM settings WHERE key=$1 AND value=$2", [
+        settingKey(input.agentId),
+        raw,
+      ])
+      if (!deleted.rowCount) {
+        ;({ raw, checkpoint } = await readCheckpoint(input.agentId))
+        continue
+      }
+      checkpoint = null
+      raw = null
+    }
+    const rows = (await messagesAfter(input.agentId, checkpoint?.through ?? null)).map(
+      (r) => {
+        if (removed.ids.has(r.id))
+          return { ...r, metadata: null, content: "[removed source message]" }
+        if (!removed.revision) return r
+        return {
+          ...r,
+          content: removed.text(r.content),
+          metadata: r.metadata
+            ? JSON.parse(
+                JSON.stringify(r.metadata, (_, v) =>
+                  typeof v === "string" ? removed.text(v) : v
+                )
+              )
+            : r.metadata,
+        }
+      }
+    )
     const pictures = await picturesFor(input.agentId, rows)
+    for (const [id, description] of pictures)
+      if (description) pictures.set(id, removed.text(description))
     const shown = (row: CompanionMessage) => !row.revealAt || row.revealAt <= input.now
     const tokens = rows.map((row) =>
       shown(row) ? estimateContextTokens(historyMessages([row], pictures)) : 0
     )
-    const summary = summaryUsable ? (checkpoint?.summary ?? null) : null
+    const summary = checkpoint?.summary ?? null
     const total = input.fixedTokens(summary, 0) + tokens.reduce((sum, n) => sum + n, 0)
     const checkedAt = new Date().toISOString()
-    const forgotten = checkpoint
-      ? await forgottenSince(input.agentId, checkpoint.forgetCheckedAt)
-      : []
-
     // Only revealed messages before this turn may be folded: the turn can still be redone, and a
     // bubble still being typed must not be skipped by the checkpoint
     const hidden = rows.findIndex((row) => !shown(row))
@@ -412,16 +401,9 @@ export async function buildChatContext(input: BuildChatContext): Promise<ChatCon
       current === -1 ? rows.length : current
     )
     let cut = 0
-    if (
-      !failed &&
-      pass < MAX_FOLDS &&
-      limit > 0 &&
-      (exceedsInputBudget(total, ceiling) || mustFold)
-    ) {
+    if (!failed && limit > 0 && (exceedsInputBudget(total, ceiling) || mustFold)) {
       // Keep about `keep` tokens of the newest messages, starting at one of the person's messages
-      let kept = 0
-      cut = rows.length
-      while (cut > 0 && kept < keep) kept += tokens[--cut]
+      cut = recentHistoryStart(tokens, ceiling - input.fixedTokens(summary, 0), mustFold)
       let start = cut
       while (start > 0 && rows[start]?.role !== "user") start--
       if (start === 0) {
@@ -431,9 +413,7 @@ export async function buildChatContext(input: BuildChatContext): Promise<ChatCon
       cut = Math.min(start, limit)
     }
     mustFold = false
-    const rewrite =
-      !failed && pass < MAX_FOLDS && checkpoint !== null && forgotten.length > 0
-    if (cut > 0 || rewrite) {
+    if (cut > 0) {
       const lines = rows
         .slice(0, cut)
         .map((row) => transcriptLine(row, pictures, input.name, input.timeZone))
@@ -446,23 +426,40 @@ export async function buildChatContext(input: BuildChatContext): Promise<ChatCon
       const transcript = fitTranscript(lines, room)
       const take = transcript.count
       try {
+        if (cut && !take)
+          throw new Error(
+            "A historical chat message exceeds the summary input window; keeping the previous cursor"
+          )
         const next = await summarizeChat(
           input.model,
           {
             name: input.name,
             previous: checkpoint?.summary ?? null,
             transcript: transcript.text,
-            forgotten: checkpoint ? forgotten : await forgottenSince(input.agentId, null),
           },
-          { providerOptions: input.providerOptions, onUsage: input.onUsage }
+          {
+            providerOptions: input.providerOptions,
+            onUsage: input.onUsage,
+            beforeSummary: input.beforeSummary,
+          }
         )
+        if (
+          take &&
+          input.fixedTokens(next, 0) >=
+            input.fixedTokens(summary, 0) +
+              tokens.slice(0, take).reduce((n, t) => n + t, 0)
+        )
+          throw new Error(
+            "The summary did not reduce the request; keeping the previous cursor"
+          )
         const last = take ? rows[take - 1] : null
         const updated: ChatCheckpoint = {
-          summary: next,
+          summary: removed.text(next),
           through: last
             ? { at: last.createdAt.toISOString(), id: last.id }
             : checkpoint!.through,
           folded: (checkpoint?.folded ?? 0) + take,
+          memoryRevision: removed.revision,
           forgetCheckedAt: checkedAt,
           updatedAt: new Date().toISOString(),
         }
@@ -471,7 +468,6 @@ export async function buildChatContext(input: BuildChatContext): Promise<ChatCon
           raw = written
           checkpoint = updated
           folded += take
-          summaryUsable = true
         } else {
           // Another turn moved the checkpoint meanwhile: continue from theirs
           ;({ raw, checkpoint } = await readCheckpoint(input.agentId))
@@ -479,8 +475,6 @@ export async function buildChatContext(input: BuildChatContext): Promise<ChatCon
       } catch (error) {
         console.error("Companion chat summary failed", (error as Error).message)
         failed = true
-        // A summary that may still hold something the person asked to forget is not used
-        if (forgotten.length) summaryUsable = false
       }
       continue
     }

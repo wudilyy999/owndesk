@@ -161,8 +161,8 @@ try {
       "INSERT INTO memories(id,agent_id,content,created_at) SELECT gen_random_uuid()::text,$1,'Bulk note ' || n || ' ' || repeat('x', 400),now() FROM generate_series(1,60) n",
       [agent]
     )
-    const crowded = await taskMemoryContext(agent)
-    assert(crowded.memories.join("\n").length <= 12000 + crowded.memories.length)
+    const crowded = await taskMemoryContext(agent, 20000)
+    assert(crowded.memories.length < 60)
     assert.match(crowded.memorySummary, /Not shown here .*notes/)
     const overview = await recallNotes(agent, { summaries: true })
     assert("pages" in overview)

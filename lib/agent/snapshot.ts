@@ -37,7 +37,9 @@ export async function agentSnapshot(
       throw new HttpError(409, "The selected model provider is not configured")
   }
   const memory =
-    runtime === "agent" ? await taskMemoryContext(agent.id) : { memories: [] }
+    runtime === "agent"
+      ? await taskMemoryContext(agent.id, modelContextWindow(model))
+      : { memories: [] }
   const [owner] =
     runtime === "agent"
       ? await db.select().from(owners).where(eq(owners.userId, ownerId))

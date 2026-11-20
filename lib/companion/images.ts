@@ -1,10 +1,15 @@
+import {
+  DEFAULT_CONTEXT_LIMITS,
+  estimateContextTokens,
+  inputBudget,
+} from "@/lib/agent/context"
 // Pictures the person sends her. Checked, shrunk and re-encoded on the server (so metadata such as
 // GPS and the original bytes are gone), stored privately under the artifact directory, shown to
 // the model once, and deleted after RETENTION_DAYS. Afterwards only a one-line description stays.
 import { randomUUID } from "node:crypto"
 import { mkdir, readFile, unlink, writeFile } from "node:fs/promises"
 import path from "node:path"
-import { generateText, type LanguageModel } from "ai"
+import { generateText, type LanguageModel, type ModelMessage } from "ai"
 import { and, eq, isNotNull, lt } from "drizzle-orm"
 import sharp from "sharp"
 import { z } from "zod"
@@ -151,20 +156,29 @@ export function parseSeen(text: string) {
 export async function seeImage(
   model: LanguageModel,
   data: Buffer,
-  options: { providerOptions?: Record<string, Record<string, string>> } = {}
+  options: {
+    window?: number
+    providerOptions?: Record<string, Record<string, string>>
+  } = {}
 ) {
+  const messages: ModelMessage[] = [
+    {
+      role: "user",
+      content: [
+        { type: "text", text: "请按要求输出 JSON。" },
+        { type: "file", data: new Uint8Array(data), mediaType: "image/jpeg" },
+      ],
+    },
+  ]
+  if (
+    estimateContextTokens([{ role: "system", content: SEE_PROMPT }, ...messages]) >
+    inputBudget(options.window ?? DEFAULT_CONTEXT_LIMITS.window, 600)
+  )
+    throw new Error("The picture exceeds the vision model input budget")
   const result = await generateText({
     model,
     system: SEE_PROMPT,
-    messages: [
-      {
-        role: "user",
-        content: [
-          { type: "text", text: "请按要求输出 JSON。" },
-          { type: "file", data: new Uint8Array(data), mediaType: "image/jpeg" },
-        ],
-      },
-    ],
+    messages,
     providerOptions: options.providerOptions,
     maxOutputTokens: 600,
     maxRetries: 1,

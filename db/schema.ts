@@ -760,6 +760,7 @@ export type SegmentSnapshot = {
       path: string
       verification: Record<string, unknown>
     }[]
+    windowedAnswers?: true
     answers: { question: string; answer: string }[]
   }
 }
@@ -799,6 +800,8 @@ export const tasks = pgTable(
       role?: string
       timeZone?: string
       conversation?: { role: "user" | "assistant"; content: string }[]
+      historyPrivacy?: string
+      continuation?: import("@/lib/continuation").Continuation
       omittedConversationTurns?: number
       contextWindowTokens?: number
       connections?: import("@/lib/connection-schema").ConnectionReference[]

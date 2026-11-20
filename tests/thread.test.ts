@@ -1,33 +1,20 @@
 import assert from "node:assert/strict"
 import { test } from "node:test"
-import {
-  conversationContext,
-  CONVERSATION_CONTEXT_CHARS,
-  CONVERSATION_SHORT_CHARS,
-} from "@/lib/thread-context"
+import { conversationContext } from "@/lib/thread-context"
 import { threadToMarkdown, exportFilename } from "@/lib/export"
 
-test("Conversation snapshots keep recent pairs complete, shorten older ones before omitting, and carry artifact provenance without old tool calls", () => {
-  const turns = Array.from({ length: 40 }, (_, index) => ({
-    id: String(index),
-    goal: `question-${index}:` + "x".repeat(10000),
+test("History before the current task remains verbatim until the shared window overflows", () => {
+  const turns = Array.from({ length: 205 }, (_, i) => ({
+    id: String(i),
+    goal: `question-${i}`,
     status: "completed",
     error: null,
-    result: { summary: `reply-${index}:` + "y".repeat(10000), files: [] },
+    result: { summary: `reply-${i}:` + "y".repeat(1000) },
   }))
-  const snapshot = conversationContext(turns)
-  const complete = snapshot.conversation.slice(-6)
-  assert.match(complete[0].content, /question-37:/)
-  assert(complete.every((message) => message.content.length > 10000))
-  assert.equal(snapshot.shortenedConversationTurns, 19)
-  assert.equal(snapshot.omittedConversationTurns, 18)
-  assert.match(snapshot.conversation[0].content, /^question-18:.*\[shortened\]/s)
-  assert(
-    snapshot.conversation.reduce((total, message) => total + message.content.length, 0) <=
-      CONVERSATION_CONTEXT_CHARS + CONVERSATION_SHORT_CHARS
-  )
-  turns[39].result.summary = "later mutation"
-  assert.match(snapshot.conversation.at(-1)!.content, /reply-39:/)
+  const messages = conversationContext(turns)
+  assert.equal(messages.length, 410)
+  assert.equal(messages[1].content, turns[0].result.summary)
+  assert.equal(messages.at(-1)?.content, turns[204].result.summary)
   const outcome = conversationContext([
     {
       id: "cancelled",
@@ -54,16 +41,10 @@ test("Conversation snapshots keep recent pairs complete, shorten older ones befo
       },
     },
   ])
-  assert.match(outcome.conversation[1].content, /ended cancelled/)
-  assert.match(
-    outcome.conversation[1].content,
-    /inspect the current state before repeating any write/
-  )
-  assert.match(
-    outcome.conversation[3].content,
-    /workstation path=\/home\/agent\/report.csv/
-  )
-  assert.match(outcome.conversation[3].content, /Re-check the current file/)
+  assert.match(outcome[1].content, /ended cancelled/)
+  assert.match(outcome[1].content, /inspect the current state before repeating any write/)
+  assert.match(outcome[3].content, /workstation path=\/home\/agent\/report.csv/)
+  assert.match(outcome[3].content, /Re-check the current file/)
 })
 
 test("Reused thread export keeps user/reply text and tool failures without invented cost", () => {

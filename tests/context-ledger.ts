@@ -63,22 +63,34 @@ if (process.argv[2] === "--resume") {
     PATH: `${directory}/bin:${process.env.PATH}`,
   })
   const checks: string[] = continuation?.checks ?? []
-  const requests: { compaction: boolean; mode: string; messages: any[] }[] = []
+  const requests: {
+    compaction: boolean
+    mode: string
+    model: string
+    messages: any[]
+  }[] = []
   let mode = "success",
     passed = false
   const server = createServer((request, response) => {
     void (async () => {
       assert.equal(request.url, "/v1/chat/completions")
       let raw = ""
+      request.setEncoding("utf8")
       for await (const chunk of request) raw += chunk
       const body = JSON.parse(raw)
-      assert.equal(body.model, "context-fixture")
+      assert(["context-fixture", "smaller-fixture"].includes(body.model))
       const compaction = body.messages.some(
         (message: any) =>
           message.role === "system" &&
           message.content.includes("Summarize the supplied historical")
       )
-      requests.push({ compaction, mode, messages: body.messages })
+      requests.push({ compaction, mode, model: body.model, messages: body.messages })
+      if (mode === "primary-unavailable" && body.model === "context-fixture") {
+        response
+          .writeHead(503, { "content-type": "application/json" })
+          .end(JSON.stringify({ error: { message: "controlled primary outage" } }))
+        return
+      }
       const refuseOnce = mode === "context-limit-once" && !compaction
       if (refuseOnce) mode = "success"
       if (mode === "context-limit" || refuseOnce) {
@@ -311,6 +323,149 @@ process.stdout.write(JSON.stringify({ready:true,protocolVersion:6,mode:'agent',e
         "Real SDK compaction, durable checkpoint, fresh-process continuation, pinned owner input, original attempt pricing and zero-request replay"
       )
 
+      const backlog = await makeTask()
+      const backlogHistory: ModelMessage[] = [
+        { role: "system", content: "History fixture" },
+      ]
+      for (let i = 0; i < 110; i++)
+        backlogHistory.push(
+          { role: "user", content: `[question-${i}] ${"旧记录".repeat(450)}` },
+          { role: "assistant", content: `[reply-${i}]` }
+        )
+      backlogHistory.push({
+        role: "user",
+        content: "Current owner correction must stay verbatim.",
+      })
+      const threadId = randomUUID()
+      await pool.query(
+        "INSERT INTO threads(id,agent_id,created_at,active_at) VALUES($1,$2,now(),now())",
+        [threadId, backlog.agentId]
+      )
+      const admissionClient = await pool.connect()
+      const { continuationAtAdmission } = await import("@/lib/continuation")
+      const priorTurns = backlogHistory.slice(1, -1) as {
+        role: "user" | "assistant"
+        content: string
+      }[]
+      const admission = async (turns = priorTurns, agent = backlog.agentId) =>
+        continuationAtAdmission(
+          admissionClient,
+          "context-owner",
+          agent,
+          "thread",
+          threadId,
+          turns
+        )
+      try {
+        await pool.query(
+          "UPDATE tasks SET thread_id=$2,config_snapshot=config_snapshot || $3::jsonb WHERE id=$1",
+          [backlog.taskId, threadId, JSON.stringify(await admission())]
+        )
+        const beforeBacklog = requests.length
+        let no = 1
+        for (let n = 0; n < 20; n++) {
+          const outcome = await decide(
+            backlog.taskId,
+            1,
+            no,
+            backlogHistory,
+            backlogHistory.length - 1
+          )
+          if (outcome.kind === "decision") break
+          assert.equal(outcome.kind, "compacted")
+          if (outcome.more) no++
+        }
+        const batches = requests.slice(beforeBacklog)
+        assert(batches.filter((r) => r.compaction).length >= 2)
+        assert.equal(batches.at(-1)?.compaction, false)
+        const sent = batches
+          .filter((r) => r.compaction)
+          .flatMap((r) =>
+            JSON.parse(
+              r.messages.find((m: any) => m.role === "user").content
+            ).transcript.map((m: any) => m.content)
+          )
+        assert.deepEqual(
+          sent,
+          backlogHistory.slice(1, sent.length + 1).map((m) => m.content)
+        )
+        assert(JSON.stringify(batches.at(-1)?.messages).includes("[reply-109]"))
+        assert(
+          JSON.stringify(batches.at(-1)?.messages).includes(
+            "Current owner correction must stay verbatim."
+          )
+        )
+        checks.push(
+          "Oversized thread: consecutive independently billed compactions cover full original pairs once; final request keeps recent replies and owner correction verbatim"
+        )
+
+        const nextTask = await admission()
+        assert.equal(nextTask.continuation.after, sent.length)
+        assert.equal(nextTask.conversation[0].role, "assistant")
+        assert.deepEqual(nextTask.conversation.slice(1), priorTurns.slice(sent.length))
+        assert(
+          (await admission([{ role: "user", content: "edited" }, ...priorTurns.slice(1)]))
+            .continuation.after === 0
+        )
+        assert((await admission(priorTurns, randomUUID())).continuation.after === 0)
+        assert(
+          !JSON.stringify(batches.filter((r) => r.compaction)).includes(
+            "Current owner correction must stay verbatim."
+          )
+        )
+      } finally {
+        admissionClient.release()
+      }
+      const forgottenTask = await makeTask()
+      const { executeMemoryTool } = await import("@/worker/memory")
+      const secretNote = "Retired code: CLOCK-MOSS-092"
+      const recorded = await executeMemoryTool(
+        forgottenTask.taskId,
+        1,
+        1,
+        "memory_write",
+        { note: secretNote },
+        7
+      )
+      const noteId = (recorded.output as { id: string }).id
+      await executeMemoryTool(
+        forgottenTask.taskId,
+        1,
+        2,
+        "memory_forget",
+        { id: noteId },
+        7
+      )
+      await executeMemoryTool(
+        forgottenTask.taskId,
+        1,
+        2,
+        "memory_forget",
+        { id: noteId },
+        7
+      )
+      assert.deepEqual(
+        (
+          await pool.query(
+            "SELECT op FROM memory_changes WHERE memory_id=$1 ORDER BY created_at,id",
+            [noteId]
+          )
+        ).rows.map((r) => r.op),
+        ["add", "delete"]
+      )
+      const frozen: ModelMessage[] = [
+        { role: "system", content: `old frozen life note: ${secretNote}` },
+        { role: "assistant", content: "Earlier errand used CLOCK-MOSS-092" },
+        { role: "user", content: "Use the current file naming convention" },
+      ]
+      const pendingWire = requests.length
+      assert.equal((await decide(forgottenTask.taskId, 1, 1, frozen, 2)).kind, "decision")
+      assert.equal(requests.length, pendingWire + 1)
+      assert(!JSON.stringify(requests.at(-1)?.messages).includes("CLOCK-MOSS-092"))
+      assert(JSON.stringify(requests.at(-1)?.messages).includes("current file naming"))
+      checks.push(
+        "Task memory removal commits one shared change record despite replay; released fact is absent from the next provider request including frozen context"
+      )
       mode = "failed"
       const failed = await makeTask()
       await assert.rejects(
@@ -576,6 +731,85 @@ process.stdout.write(JSON.stringify({ready:true,protocolVersion:6,mode:'agent',e
       assert.equal(requests.length, beforeCancel)
       checks.push(
         "Cancellation blocks both summary and ordinary model requests before dispatch"
+      )
+    }
+    if (!continuation) {
+      // The primary was frozen with a larger window. The fallback uses the actual
+      // registered window, which needs a fold for `history`, but not for a short turn.
+      await setSettings([{ key: "model.fallback", value: "custom/smaller-fixture" }])
+      await setCustomPrice("custom/smaller-fixture", { input: 2, output: 2 })
+      const fixture = await makeTask()
+      await pool.query(
+        "UPDATE tasks SET config_snapshot=jsonb_set(config_snapshot,'{contextWindowTokens}','120000') WHERE id=$1",
+        [fixture.taskId]
+      )
+      const wire = requests.length
+      mode = "primary-unavailable"
+      assert.equal((await decide(fixture.taskId, 1, 1, history, 1)).kind, "compacted")
+      const file = path.join(directory, "fallback-restart.json")
+      await writeFile(file, JSON.stringify({ taskId: fixture.taskId, history }))
+      const restart = spawn(
+        process.execPath,
+        ["--import", "tsx", "tests/context-ledger.ts", "--resume", file],
+        { stdio: "inherit" }
+      )
+      assert.equal((await once(restart, "exit"))[0], 0)
+      assert.equal(
+        JSON.parse(await readFile(file + ".result.json", "utf8")).kind,
+        "decision"
+      )
+      assert.deepEqual(
+        requests.slice(wire).map((r) => [r.model, r.compaction]),
+        [
+          ["context-fixture", false],
+          ["smaller-fixture", true],
+          ["smaller-fixture", false],
+        ]
+      )
+      const resumedView = JSON.stringify(requests.at(-1)!.messages)
+      assert(resumedView.includes("Historical continuation summary"))
+      assert(resumedView.length < JSON.stringify(requests[wire].messages).length)
+      assert(JSON.stringify(requests.at(-1)!.messages).includes("do not send any email"))
+      const billed = await pool.query(
+        "SELECT model,status,price_snapshot,cost_micros FROM task_model_attempts WHERE task_id=$1 ORDER BY started_at",
+        [fixture.taskId]
+      )
+      assert.deepEqual(
+        billed.rows.map((r) => [r.model, r.status]),
+        [
+          ["custom/context-fixture", "unknown"],
+          ["custom/smaller-fixture", "succeeded"],
+          ["custom/smaller-fixture", "succeeded"],
+        ]
+      )
+      assert.deepEqual(
+        billed.rows.map((r) => r.price_snapshot.price.input),
+        [1, 2, 2]
+      )
+      assert.equal(billed.rows[0].cost_micros, null)
+      assert(billed.rows.slice(1).every((r) => Number(r.cost_micros) > 0))
+      const short = await makeTask()
+      const shortStart = requests.length
+      assert.equal(
+        (await decide(short.taskId, 1, 1, history.slice(0, 2), 1)).kind,
+        "decision"
+      )
+      mode = "success"
+      assert.equal(
+        (await decide(short.taskId, 1, 2, history.slice(0, 2), 1)).kind,
+        "decision"
+      )
+      assert.deepEqual(
+        requests.slice(shortStart).map((r) => [r.model, r.compaction]),
+        [
+          ["context-fixture", false],
+          ["smaller-fixture", false],
+          ["context-fixture", false],
+        ]
+      )
+      await setSettings([{ key: "model.fallback", value: null }])
+      checks.push(
+        "A failed primary gets a separate attempt; the smaller fallback folds only on overflow, resumes its route after process restart, and a short fallback does not summarize"
       )
     }
     assert.equal(JSON.stringify(history), rawHistory)

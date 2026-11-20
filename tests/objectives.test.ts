@@ -1,3 +1,4 @@
+import { roundConversation } from "@/lib/thread-context"
 import assert from "node:assert/strict"
 import test from "node:test"
 import { z } from "zod"
@@ -103,7 +104,7 @@ test("a round's allowance never exceeds what the owner's limits leave", () => {
   assert.equal(task.objectiveRound?.roundNo, 1)
 })
 
-test("the round brief carries the objective, criteria, check and bounded history", () => {
+test("the round brief carries the objective, criteria and check; all earlier reports are independently compressible", () => {
   const previous = Array.from({ length: 12 }, (_, index) => ({
     roundNo: index + 1,
     verdict: "progress",
@@ -124,17 +125,18 @@ test("the round brief carries the objective, criteria, check and bounded history
       },
     },
     13,
-    40,
-    previous
+    40
   )
   assert.match(goal, /round 13/)
   assert.match(goal, /Q3 的数据/)
   assert.match(goal, /每个月一行/)
   assert.match(goal, /\/home\/agent\/q3\.csv with columns month, total and at least 3/)
   assert.match(goal, /owner confirms/)
-  assert.match(goal, /Round 12/)
-  assert.doesNotMatch(goal, /Round 4 /)
-  assert(goal.length < 16000)
+  assert.doesNotMatch(goal, /Round 12/)
+  const history = roundConversation(previous)
+  assert.equal(history.length, 12)
+  assert.equal(history[0].content, `Round 1 (progress): ${previous[0].summary}`)
+  assert.equal(history.at(-1)?.content, `Round 12 (progress): ${previous[11].summary}`)
   assert(taskInputSchema.safeParse({ agentId: "a", goal, clientRequestId: "k" }).success)
   assert.match(
     roundGoal(
@@ -145,8 +147,7 @@ test("the round brief carries the objective, criteria, check and bounded history
         completionContract: { requireHumanReview: false },
       },
       1,
-      5,
-      []
+      5
     ),
     /first round/
   )

@@ -1,3 +1,5 @@
+import { withdrawnMemory } from "./forgotten"
+import { promptMemory } from "@/lib/task-memory"
 import { chatRoutineSchema, manageChatRoutine } from "./routines"
 import { ownedUploads } from "@/lib/uploads"
 // Light chat path: one model call per message, no durable task, no workstation.
@@ -45,6 +47,7 @@ import { evolutionEnabled } from "@/lib/evolution/store"
 import {
   compactContext,
   estimateContextTokens,
+  fittingPrefix,
   isContextWindowError,
 } from "@/lib/agent/context"
 import {
@@ -413,7 +416,10 @@ export async function companionChat(
         try {
           if (image.description === null) {
             const lookedAt = Date.now()
-            const looked = await seeImage(model, data, { providerOptions })
+            const looked = await seeImage(model, data, {
+              providerOptions,
+              window: deps.contextWindow ?? modelContextWindow(activeSpec),
+            })
             await recordUsage(
               input.agentId,
               activeSpec,
@@ -444,18 +450,23 @@ export async function companionChat(
     const link =
       redo === "regenerate"
         ? null
-        : await queueCoview(input.agentId, user.content, now, deps.linkCheck)
+        : await queueCoview(input.agentId, user.content, now, deps.linkCheck, user.id)
     await hide()
     hiddenNow = true
     emit({ type: "typing", on: true })
-    const [memory, activities] = await Promise.all([
+    const [storedMemory, activities] = await Promise.all([
       memoryView(input.agentId),
       db
-        .select()
+        .select({
+          title: lifeActivities.title,
+          kind: lifeActivities.kind,
+          summary: lifeActivities.summary,
+          url: lifeActivities.url,
+          createdAt: lifeActivities.createdAt,
+        })
         .from(lifeActivities)
         .where(eq(lifeActivities.agentId, input.agentId))
-        .orderBy(desc(lifeActivities.createdAt))
-        .limit(8),
+        .orderBy(desc(lifeActivities.createdAt), desc(lifeActivities.id)),
     ])
     const promptContext = {
       name: agent.name,
@@ -474,10 +485,8 @@ export async function companionChat(
             : guarded
               ? "sensitive"
               : "seen",
-      summaries: memory.summaries,
-      // Notes she has not sorted into a topic yet; the sorted ones she can read with recall_memory
-      memories: memory.notes.filter((note) => !note.summaryId),
-      recentLife: activities.reverse().map((a) => ({
+      memories: [],
+      recentLife: activities.map((a) => ({
         kind: a.kind,
         title: a.title,
         summary: a.summary,
@@ -491,7 +500,26 @@ export async function companionChat(
         }).format(a.createdAt),
       })),
     } satisfies Parameters<typeof buildCompanionPrompt>[0]
-    const system = buildCompanionPrompt(promptContext)
+    const systemFor = (spec: string) => {
+      const selected = promptMemory(
+        storedMemory,
+        chatBudget(deps.contextWindow ?? modelContextWindow(spec))
+      )
+      const count = fittingPrefix(
+        promptContext.recentLife.length,
+        (n) =>
+          estimateContextTokens(promptContext.recentLife.slice(0, n)) <=
+          chatBudget(deps.contextWindow ?? modelContextWindow(spec)) / 10
+      )
+      return buildCompanionPrompt({
+        ...promptContext,
+        recentLife: promptContext.recentLife.slice(0, count).reverse(),
+        summaries: selected.summaries,
+        memories: selected.notes,
+        omittedMemory: selected.omittedSummaries + selected.omittedNotes,
+      })
+    }
+    let system = systemFor(activeSpec)
 
     // The same low effort for the memory call, whatever the chat setting says
     const memoryOptions = () => {
@@ -540,7 +568,19 @@ export async function companionChat(
             decide: async (fact, view) => {
               const started = Date.now()
               const decision = await decideMemoryOps(model, fact, view, {
+                projectText: async () => (await withdrawnMemory(input.agentId)).text,
                 context: user.content,
+                window: deps.contextWindow ?? modelContextWindow(activeSpec),
+                beforeCall: async () => {
+                  const blocked = monthlyBlock(
+                    await monthlyUsage(input.ownerId),
+                    activePrice
+                  )
+                  if (blocked) throw new HttpError(402, blocked)
+                },
+                onReadUsage: async (usage, ms) => {
+                  await recordUsage(input.agentId, activeSpec, activePrice, usage, ms)
+                },
                 providerOptions: memoryOptions(),
               })
               if (decision.usage)
@@ -710,6 +750,10 @@ export async function companionChat(
           (picture ? 8192 : 0),
         model,
         providerOptions: memoryOptions(),
+        beforeSummary: async () => {
+          const block = monthlyBlock(await monthlyUsage(input.ownerId), activePrice)
+          if (block) throw new HttpError(402, block)
+        },
         onUsage: (usage, durationMs) =>
           recordUsage(input.agentId, activeSpec, activePrice, usage, durationMs),
         force,
@@ -764,8 +808,10 @@ export async function companionChat(
               413,
               "当前消息和本轮工具结果超过模型窗口，请缩短本次输入。"
             )
+          const removed = await withdrawnMemory(input.agentId)
           return {
-            messages: projected,
+            system: removed.text(view.system),
+            messages: removed.messages(projected),
             ...(final ? { toolChoice: "none" as const } : {}),
           }
         },
@@ -836,6 +882,7 @@ export async function companionChat(
         activePrice = findPrice(activeSpec, { custom: await getCustomPrices() })
         price = activePrice
         providerOptions = optionsFor(activeSpec)
+        system = systemFor(activeSpec)
         context = await contextFor(false)
         text = await runStream(model, activeSpec, activePrice)
       }

@@ -466,7 +466,7 @@ try {
   const open = async () => true
   const linked = promptSpy()
   await companionChat(
-    { ownerId, agentId, text: "你看这个 https://example.com/post/1" },
+    { ownerId, agentId, text: "只看作者对价格的解释 https://example.com/post/1" },
     { model: linked.model, price, now: nextDay, linkCheck: open }
   )
   assert.match(linked.seen.prompt, /还没有点开/)
@@ -489,6 +489,15 @@ try {
   })
   const [coviewTask] = await startCoviews(nextDay)
   assert.ok(coviewTask)
+  assert.deepEqual(
+    (
+      await pool.query(
+        "SELECT config_snapshot->'conversation' AS source FROM tasks WHERE id=$1",
+        [coviewTask]
+      )
+    ).rows[0].source,
+    [{ role: "user", content: "只看作者对价格的解释 https://example.com/post/1" }]
+  )
   assert.deepEqual(await startCoviews(nextDay), [], "one session per request")
   const config = await pool.query(
     "SELECT config_snapshot->'lifeSession'->'coview' AS coview, config_snapshot->'lifeSession'->>'prompt' AS prompt FROM tasks WHERE id=$1",

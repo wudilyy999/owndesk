@@ -92,8 +92,6 @@ export async function executeDelegate(
         task.ownerId,
         task.configSnapshot.timeZone
       )
-      config.conversation = task.configSnapshot.conversation
-      config.omittedConversationTurns = task.configSnapshot.omittedConversationTurns
       const { files } = await trackActivity(task.id, () =>
         collectArtifacts(task.id, segmentNo, actionNo, task.agentId, input.files, {
           requireHumanReview: false,
@@ -101,10 +99,10 @@ export async function executeDelegate(
       )
       const answers = (
         await pool.query<{ question: string; answer: string }>(
-          "SELECT payload->>'question' AS question,response->>'answer' AS answer FROM task_requests WHERE task_id=$1 AND status='resolved' AND payload->>'purpose'='question' AND response->>'answer' IS NOT NULL ORDER BY resolved_at DESC LIMIT 20",
+          "SELECT payload->>'question' AS question,response->>'answer' AS answer FROM task_requests WHERE task_id=$1 AND status='resolved' AND payload->>'purpose'='question' AND response->>'answer' IS NOT NULL ORDER BY resolved_at,id",
           [task.id]
         )
-      ).rows.reverse()
+      ).rows
       prepared = {
         config,
         handoff: {
@@ -114,6 +112,7 @@ export async function executeDelegate(
           input,
           files,
           answers,
+          windowedAnswers: true,
         },
       }
       const client = await pool.connect()

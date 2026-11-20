@@ -1,3 +1,4 @@
+import { UnknownLabTurn } from "./journal"
 // Improvement rounds (B1). An improvement is an A1 objective whose rounds are run by the lab
 // instead of the ordinary task runtime: each round is still a task row (so cost, limits,
 // pause/stop and the round history all work as for any objective), driven here in the worker.
@@ -19,13 +20,14 @@ import { docker } from "@/lib/docker"
 import { evaluate } from "@/lib/evolution/evaluator"
 import {
   ensureLabImage,
+  captureLabCommit,
   exportTree,
   loadCommit,
   startLab,
   stopLab,
 } from "@/lib/evolution/lab"
 import { LabBudgetError } from "@/lib/evolution/meter"
-import { runReformer } from "@/lib/evolution/reformer"
+import { reformerJournal, runReformer } from "@/lib/evolution/reformer"
 import { changedFiles, commitTree, evolutionDir, git } from "@/lib/evolution/repo"
 import {
   IMPROVEMENT_PREFIX,
@@ -142,6 +144,10 @@ export async function resumeImprovementRounds() {
       [row.task_id]
     )
     if (pending.rowCount || unresolved.rowCount) {
+      await pool.query(
+        "UPDATE objectives SET status='paused',status_reason=$2,updated_at=now() WHERE id=$1 AND status='active'",
+        [row.objective_id, "重启前有模型请求缺少回执，需先核对。"]
+      )
       await finishTask(row.task_id, {
         status: "completed",
         achieved: false,
@@ -324,9 +330,10 @@ async function runRound(objectiveId: string, roundNo: number, taskId: string) {
     const labImage = await ensureLabImage(trusted, (line) => log(`lab image: ${line}`))
     const key = roundKey(objectiveId, roundNo)
     if (candidate.phase === "reforming") {
+      const journal = await reformerJournal(taskId, candidate.parent)
       const lab = await startLab(labImage, key)
+      let preserve = false
       try {
-        await loadCommit(lab, candidate.parent)
         const result = await runReformer({
           objective: current,
           taskId,
@@ -334,6 +341,10 @@ async function runRound(objectiveId: string, roundNo: number, taskId: string) {
           lab,
           brief: reformerBrief(improvement, candidate, previous),
           rules: await rulesExcerpt(trusted),
+          parent: candidate.parent,
+          journal,
+          restore: (commit) => loadCommit(lab, commit),
+          capture: (previous) => captureLabCommit(lab, previous, taskId),
           log,
         })
         if (await cancelled(objectiveId, taskId))
@@ -372,8 +383,13 @@ async function runRound(objectiveId: string, roundNo: number, taskId: string) {
         } finally {
           await rm(tree, { recursive: true, force: true })
         }
+      } catch (error) {
+        const reason = journal.interrupted(error)
+        preserve = reason instanceof UnknownLabTurn
+        throw reason
       } finally {
-        await stopLab(lab)
+        if (preserve) await docker(["stop", lab.name]).catch(() => undefined)
+        else await stopLab(lab)
       }
     }
     if (candidate.phase === "evaluating") {
@@ -435,6 +451,11 @@ async function runRound(objectiveId: string, roundNo: number, taskId: string) {
             .join("、")}），接着改下一版。`,
     })
   } catch (error) {
+    if (error instanceof UnknownLabTurn)
+      await pool.query(
+        "UPDATE objectives SET status='paused',status_reason=$2,updated_at=now() WHERE id=$1 AND status='active'",
+        [objectiveId, error.message]
+      )
     log(`round error: ${error instanceof Error ? error.stack : String(error)}`)
     if (error instanceof LabBudgetError)
       return finishTask(taskId, {

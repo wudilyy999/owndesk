@@ -51,6 +51,8 @@ assert(
   `Unknown runtime check: ${focus}`
 )
 process.loadEnvFile(".env")
+// This case exercises paging past the initial memory allowance, even on hosts with larger windows.
+if (focus === "memoryrecall") process.env.PA_CONTEXT_WINDOW_TOKENS = "49152"
 // Every runtime case exercises the current controller protocol; the main .env may intentionally pin an older deployment.
 process.env.WORKSTATION_IMAGE = workstationImage
 const database = `agent_runtime_${randomUUID().replaceAll("-", "")}`
@@ -195,8 +197,10 @@ const modelServer = createServer((req, res) => {
     const index = scenario.calls.length
     if (scenario.kind.startsWith("objective_")) {
       // Each round is its own task; the round number and this round's calls come from the request
-      const prompt = JSON.stringify(latestPrompt.content)
-      const roundNo = Number(/round (\d+)\./.exec(prompt)![1])
+      const roundNo = Number(
+        /round (\d+)\./.exec(JSON.stringify(latestPrompt.content))![1]
+      )
+      const prompt = JSON.stringify(body.messages)
       const calls = body.messages.flatMap((message: any) => message.tool_calls ?? [])
       const results = body.messages.filter((message: any) => message.role === "tool")
       scenario.observed = { ...(scenario.observed ?? {}), [roundNo]: prompt }
@@ -1164,6 +1168,11 @@ PY`,
       }
       if (index === 4) {
         assert(resultFor("call-3").forgotten)
+        assert(
+          !JSON.stringify(body.messages).includes(
+            "Remembered then deliberately forgotten fixture"
+          )
+        )
         answer(res, index, "memory_write", {
           note: "Future tasks use three Chinese bullet points fixture",
         })
@@ -2110,6 +2119,11 @@ try {
       const target = await recipient(),
         busy = await busyTarget(target),
         normal = await begin("normal", target)
+      await pool.query(
+        `INSERT INTO task_requests(id,task_id,agent_id,segment_no,kind,payload,response,status,created_at,resolved_at)
+        SELECT gen_random_uuid()::text,$1,$2,1,'approval',jsonb_build_object('purpose','question','question','earlier question '||n),jsonb_build_object('answer','HANDOFF-ANSWER-'||n),'resolved',now(),now()-interval '1 hour'+n*interval '1 second' FROM generate_series(1,25)n`,
+        [normal.taskId, normal.agentId]
+      )
       const denied = await executeDelegate(
         normal.sourceTask,
         1,
@@ -2170,6 +2184,12 @@ try {
           [normal.taskId]
         )
       ).rows[0].payload
+      assert.equal(
+        prepared.config.conversation,
+        undefined,
+        "recipient does not inherit source agent's private thread"
+      )
+      assert.equal(prepared.handoff.answers.length, 26)
       const replay = await executeDelegate(
         normal.sourceTask,
         1,
@@ -2233,6 +2253,16 @@ try {
       )!
       assert.equal(targetCall.model, "runtime-fixture")
       const messages = JSON.stringify(targetCall.messages)
+      assert(
+        targetCall.messages.some(
+          (m: any) => m.role === "user" && m.content === "HANDOFF-ANSWER-1"
+        )
+      )
+      assert(
+        targetCall.messages.some(
+          (m: any) => m.role === "user" && m.content === "HANDOFF-ANSWER-25"
+        )
+      )
       assert(
         messages.includes("recipient-standing-order-before-freeze") &&
           messages.includes("Use CSV")
@@ -7016,6 +7046,33 @@ try {
           "Long-running objective runs round after round on the existing task runtime; progress rounds skip the final CSV check, an early achieved claim with one row is refused, the corrected CSV is accepted, the next round sees earlier summaries",
       })
 
+      const old = scenarioFor("objective_long_history")
+      // Insert a frozen pre-existing objective and twelve finished rounds atomically so the
+      // dispatcher can never admit round 1 in the gap between fixture writes.
+      const longId = randomUUID()
+      await pool.query(
+        `WITH seeded AS (
+        INSERT INTO objectives(id,owner_id,agent_id,title,objective,done_criteria,completion_contract,budget,status,created_at,updated_at)
+        VALUES ($1,$2,$3,'Long history',$4,'Finish this round','{"requireHumanReview":false}','{"roundMaxSteps":5}','active',now(),now()) RETURNING id)
+        INSERT INTO objective_rounds(id,objective_id,round_no,input,verdict,summary,started_at,finished_at)
+        SELECT gen_random_uuid()::text,seeded.id,n,'{}','progress',CASE WHEN n=1 THEN repeat('x',600)||'FIRST-ROUND-CONSTRAINT' WHEN n=12 THEN 'LATEST-CORRECTION' ELSE 'progress' END,now(),now() FROM seeded CROSS JOIN generate_series(1,12) n`,
+        [longId, ownerId, objectiveAgent.id, old.text]
+      )
+      await drive(
+        async () => (await objectiveRow(longId)).status === "achieved",
+        "long objective reached round thirteen"
+      )
+      const wire = old.scenario.calls[0].messages
+      const wireIndex = (token: string) =>
+        wire.findIndex((m: any) => JSON.stringify(m.content).includes(token))
+      assert(wireIndex("FIRST-ROUND-CONSTRAINT") >= 0)
+      assert(wireIndex("LATEST-CORRECTION") > wireIndex("FIRST-ROUND-CONSTRAINT"))
+      assert(wireIndex("round 13.") > wireIndex("LATEST-CORRECTION"))
+      checks.push({
+        check:
+          "Thirteen-round objective sends the complete first report and latest correction as separate historical messages preceding the current goal",
+      })
+
       // B. A round's step allowance ends the round (no budget card); maxRounds stops it
       const steps = scenarioFor("objective_steps")
       const b = await createObjective(ownerId, {
@@ -7250,7 +7307,7 @@ try {
       const listed = await listObjectives(ownerId)
       assert.deepEqual(
         new Set(listed.map((row) => row.id)),
-        new Set([a.id, b.id, c.id, d.id, f.id, e.id])
+        new Set([a.id, b.id, c.id, d.id, f.id, e.id, longId])
       )
       checks.push({
         check:

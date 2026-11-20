@@ -91,7 +91,8 @@ export async function queueCoview(
   agentId: string,
   text: string,
   now = new Date(),
-  check = linkIsOpenable
+  check = linkIsOpenable,
+  messageId?: string
 ): Promise<CoviewOffer | null> {
   const url = extractLink(text)
   if (!url) return null
@@ -106,7 +107,10 @@ export async function queueCoview(
       )
     )
   if (recent.count >= DAILY_LIMIT) return { url, queued: false }
-  await db.insert(coviewRequests).values({ agentId, url, createdAt: now })
+  await db
+    .insert(coviewRequests)
+    .values({ ...(messageId ? { id: messageId } : {}), agentId, url, createdAt: now })
+    .onConflictDoNothing()
   return { url, queued: true }
 }
 

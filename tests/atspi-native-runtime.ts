@@ -167,15 +167,23 @@ const model = createServer((req, res) => {
           decoded.find((p: any) => p.type === "text" && p.text.startsWith("{")).text
         )
       : decoded
-    const step = steps++
+    const turn = steps++
+    // Three real captures exercise eviction on the model wire, before any human handoff.
+    const step = turn - (cancelTail || recoveryTail ? 0 : 3)
     requests.push({
       step,
       toolResultName: previous?.name,
       output,
-      images: (serialized.match(/data:image\/jpeg;base64,/g) ?? []).length,
+      images: (serialized.match(/data:image\/[a-z0-9.+-]+;base64,/gi) ?? []).length,
     })
+    // A resumed workspace may have a new boot and window ID. Rediscover them
+    // before using controls, including in the full path that first pressed Home.
+    const recoveryStep = step - (recoveryTail ? 0 : 1)
     let tool: string, args: Record<string, unknown>
-    if (step === 0) {
+    if (step < 0) {
+      tool = "screen_capture"
+      args = {}
+    } else if (step === 0) {
       tool = "desktop_open_application"
       args = { application: "Thunar" }
     } else if (step === 1) {
@@ -203,60 +211,24 @@ const model = createServer((req, res) => {
       tool = "ask_user"
       args = { question: "本机固定响应取消尾段：已完成原生焦点操作，等待取消。" }
     } else if (step === 3 && recoveryTail) {
-      assert(output.tree && output.elements?.length && output.observationId)
+      assert(output.elements?.length && output.observationId)
+      assert.equal(
+        output.tree,
+        undefined,
+        "the native tree is not duplicated on the model wire"
+      )
       tool = "ask_user"
       args = { question: "本机固定响应恢复尾段：确认冷重建后重新发现窗口。" }
-    } else if (step === 4 && recoveryTail) {
-      tool = "desktop_open_application"
-      args = { application: "Thunar" }
-    } else if (step === 5 && recoveryTail) {
-      tool = "desktop_list_windows"
-      args = {}
-    } else if (step === 6 && recoveryTail) {
-      const fresh = output.windows.find((w: any) => w.name?.includes("Thunar"))
-      assert(fresh)
-      windowId = fresh.window_id
-      tool = "desktop_get_window_state"
-      args = { window_id: windowId, max_depth: 12, max_nodes: 500 }
-    } else if (step === 7 && recoveryTail) {
-      const location = output.elements.find(
-        (e: any) => e.states?.includes("editable") && e.text === "/home/agent/"
-      )
-      assert(location)
-      tool = "desktop_element_action"
-      args = {
-        observationId: output.observationId,
-        element_index: location.element_index,
-        operation: "focus",
-        dispatch: "foreground",
-      }
-    } else if (step === 8 && recoveryTail) {
-      assert.equal(output.focus_verified, true)
-      const location = output.elements.find(
-        (e: any) => e.states?.includes("editable") && e.text === "/home/agent/"
-      )
-      assert(location)
-      tool = "desktop_ax_action"
-      args = {
-        observationId: output.observationId,
-        path: location.path,
-        operation: "set_value",
-        value: "/tmp",
-        submit: true,
-        dispatch: "foreground",
-      }
-    } else if (step === 9 && recoveryTail) {
-      assert.equal(output.effect, "dispatched")
-      tool = "desktop_get_window_state"
-      args = { window_id: windowId, max_depth: 12, max_nodes: 500 }
-    } else if (step === 10 && recoveryTail) {
-      assert(output.window.title.includes("tmp - Thunar"))
-      assert(output.elements.some((e: any) => e.text === "/tmp/"))
-      tool = "complete_task"
-      args = { summary: "冷重建后已重新发现原生窗口，完成 /tmp 导航。", files: [] }
     } else if (step === 3) {
-      assert(output.tree && output.elements?.length && output.observationId)
-      const home = output.elements.find((e: any) => e.name === "Home")
+      assert(output.elements?.length && output.observationId)
+      assert.equal(
+        output.tree,
+        undefined,
+        "the native tree is not duplicated on the model wire"
+      )
+      const home = output.elements.find(
+        (e: any) => e.role === "button" && ["Home", "主文件夹"].includes(e.name)
+      )
       assert(home)
       tool = "desktop_element_action"
       args = {
@@ -264,18 +236,27 @@ const model = createServer((req, res) => {
         window_id: windowId,
         element_index: home.element_index,
       }
-    } else if (step === 4) {
+    } else if (step === 4 && !recoveryTail) {
       assert.equal(output.effect, "dispatched")
       tool = "ask_user"
       args = { question: "本机固定响应验收：确认恢复后继续原生操作。" }
-    } else if (step === 5) {
+    } else if (recoveryStep === 4) {
+      tool = "desktop_open_application"
+      args = { application: "Thunar" }
+    } else if (recoveryStep === 5) {
+      tool = "desktop_list_windows"
+      args = {}
+    } else if (recoveryStep === 6) {
+      const fresh = output.windows.find((w: any) => w.name?.includes("Thunar"))
+      assert(fresh)
+      windowId = fresh.window_id
       tool = "desktop_get_window_state"
       args = { window_id: windowId, max_depth: 12, max_nodes: 500 }
-    } else if (step === 6) {
+    } else if (recoveryStep === 7) {
       const location = output.elements.find(
         (e: any) => e.states?.includes("editable") && e.text === "/home/agent/"
       )
-      assert(location, JSON.stringify(output))
+      assert(location)
       tool = "desktop_element_action"
       args = {
         observationId: output.observationId,
@@ -283,7 +264,7 @@ const model = createServer((req, res) => {
         operation: "focus",
         dispatch: "foreground",
       }
-    } else if (step === 7) {
+    } else if (recoveryStep === 8) {
       assert.equal(output.focus_verified, true)
       const location = output.elements.find(
         (e: any) => e.states?.includes("editable") && e.text === "/home/agent/"
@@ -298,23 +279,20 @@ const model = createServer((req, res) => {
         submit: true,
         dispatch: "foreground",
       }
-    } else if (step === 8) {
+    } else if (recoveryStep === 9) {
       assert.equal(output.effect, "dispatched")
       tool = "desktop_get_window_state"
       args = { window_id: windowId, max_depth: 12, max_nodes: 500 }
     } else {
-      assert.equal(step, 9)
+      assert.equal(recoveryStep, 10)
       assert(output.window.title.includes("tmp - Thunar"))
       assert(output.elements.some((e: any) => e.text === "/tmp/"))
       tool = "complete_task"
-      args = {
-        summary: "原生操作及恢复后已导航到 /tmp，核对当前原生状态和截图。",
-        files: [],
-      }
+      args = { summary: "冷重建后已重新发现原生窗口，完成 /tmp 导航。", files: [] }
     }
     res.writeHead(200, { "Content-Type": "application/json" }).end(
       JSON.stringify({
-        id: `native-${step}`,
+        id: `native-${turn}`,
         object: "chat.completion",
         created: Math.floor(Date.now() / 1000),
         model: "native-fixture",
@@ -327,7 +305,7 @@ const model = createServer((req, res) => {
               content: null,
               tool_calls: [
                 {
-                  id: `native-call-${step}`,
+                  id: `native-call-${turn}`,
                   type: "function",
                   function: { name: tool, arguments: JSON.stringify(args) },
                 },
@@ -431,7 +409,12 @@ try {
     after.filter((a: any) => a.kind === "desktop_element_action").length,
     recoveryTail || cancelTail ? 1 : 2
   )
-  assert.equal(steps, cancelTail ? 5 : recoveryTail ? 11 : 10)
+  assert.equal(steps, cancelTail ? 5 : recoveryTail ? 11 : 15)
+  if (!cancelTail && !recoveryTail)
+    assert.deepEqual(
+      requests.slice(1, 4).map((r) => r.images),
+      [1, 2, 2]
+    )
   assert.deepEqual(errors, [])
   assert(requests.every((r) => r.images <= 2))
   await writeFile(path.join(directory, "actions.json"), JSON.stringify(after, null, 2))

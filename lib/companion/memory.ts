@@ -1,3 +1,4 @@
+import { isDeepStrictEqual } from "node:util"
 // Memory notes are plain rows the person can read, edit and delete. The model looks after them:
 // when she wants to remember something it decides what happens to the notes (./memory-update.ts),
 // and now and then she tidies them into topic summaries (./consolidate.ts). Every change the
@@ -7,6 +8,7 @@ import { randomUUID } from "node:crypto"
 import { and, asc, desc, eq, inArray, isNull, notInArray, sql } from "drizzle-orm"
 import { db } from "@/db"
 import {
+  agents,
   companionMessages,
   companions,
   memories,
@@ -18,8 +20,14 @@ import {
 import { HttpError } from "@/lib/errors"
 import type { MemoryOp, MemoryView } from "./memory-update"
 
-export async function listNotes(agentId: string, status?: "active" | "candidate") {
-  return db
+type MemoryStore = Pick<typeof db, "select" | "insert" | "update" | "delete">
+
+export async function listNotes(
+  agentId: string,
+  status?: "active" | "candidate",
+  store: MemoryStore = db
+) {
+  return store
     .select()
     .from(memories)
     .where(
@@ -32,16 +40,66 @@ export async function listNotes(agentId: string, status?: "active" | "candidate"
 
 // Everything she knows about the person: the topic summaries and every active note. Nothing is
 // cut: what she cannot fit into a prompt she reads page by page.
-export async function memoryView(agentId: string): Promise<MemoryView> {
-  const rows = await listNotes(agentId, "active")
+export async function memoryView(
+  agentId: string,
+  store: MemoryStore = db
+): Promise<MemoryView> {
+  // A topic may paraphrase a note; literal filtering alone cannot make its old text safe.
+  // Hold the whole derived topic out of model views until it is rebuilt. Owner UI and undo
+  // still read the canonical record through listNotes.
+  const rows = await store
+    .select()
+    .from(memories)
+    .where(
+      and(
+        eq(memories.agentId, agentId),
+        eq(memories.status, "active"),
+        sql`(${memories.kind}<>'summary' OR NOT EXISTS (
+    SELECT 1 FROM memory_changes c WHERE c.agent_id=${memories.agentId} AND
+      ((c.undone_at IS NULL AND c.before->>'summaryId'=${memories.id} AND c.op IN ('update','delete') AND c.origin<>'organize' AND c.created_at>=${memories.updatedAt}) OR
+       (c.undone_at IS NOT NULL AND c.after->>'summaryId'=${memories.id} AND c.op IN ('add','update') AND c.undone_at>=${memories.updatedAt}))))`
+      )
+    )
+    .orderBy(desc(memories.updatedAt), desc(memories.id))
+  const summaries = rows
+    .filter((r) => r.kind === "summary")
+    .map((r) => ({ id: r.id, topic: r.topic ?? "", content: r.content }))
+  const visible = new Set(summaries.map((r) => r.id))
   return {
-    summaries: rows
-      .filter((row) => row.kind === "summary")
-      .map((row) => ({ id: row.id, topic: row.topic ?? "", content: row.content })),
+    summaries,
     notes: rows
-      .filter((row) => row.kind === "note")
-      .map((row) => ({ id: row.id, content: row.content, summaryId: row.summaryId })),
+      .filter((r) => r.kind === "note")
+      .map((r) => ({
+        id: r.id,
+        content: r.content,
+        summaryId: r.summaryId && visible.has(r.summaryId) ? r.summaryId : null,
+      })),
   }
+}
+
+// The model runs outside the transaction. Re-read under locks immediately before applying
+// its answer so an owner edit, approval or another tidy-up always wins over a stale read.
+export async function applyToCurrentMemory(
+  agentId: string,
+  read: MemoryView,
+  apply: (store: MemoryStore) => Promise<void>
+) {
+  return db.transaction(async (tx) => {
+    await tx
+      .select({ id: agents.id })
+      .from(agents)
+      .where(eq(agents.id, agentId))
+      .for("update")
+    await tx
+      .select({ id: memories.id })
+      .from(memories)
+      .where(eq(memories.agentId, agentId))
+      .orderBy(memories.id)
+      .for("update")
+    if (!isDeepStrictEqual(read, await memoryView(agentId, tx))) return false
+    await apply(tx)
+    return true
+  })
 }
 
 // How much text one page holds. This is a reading window (what fits comfortably in one model
@@ -117,8 +175,12 @@ export async function recallNotes(
 const unsorted = (view: MemoryView) => view.notes.filter((note) => !note.summaryId).length
 
 // The chat card for a candidate follows the note: accepted or dismissed
-async function settleCard(memoryId: string, status: "accepted" | "dismissed") {
-  await db
+async function settleCard(
+  memoryId: string,
+  status: "accepted" | "dismissed",
+  store: MemoryStore = db
+) {
+  await store
     .update(companionMessages)
     .set({
       metadata: sql`${companionMessages.metadata} || ${JSON.stringify({ status })}::jsonb`,
@@ -132,6 +194,7 @@ async function settleCard(memoryId: string, status: "accepted" | "dismissed") {
 }
 
 export type ChangeInfo = {
+  store?: MemoryStore
   actor: "model" | "user"
   origin: string
   reason?: string | null
@@ -141,7 +204,10 @@ export type ChangeInfo = {
   groupId?: string | null
 }
 
-const snapshot = async (note: Memory): Promise<MemorySnapshot> => ({
+const snapshot = async (
+  note: Memory,
+  store: MemoryStore = db
+): Promise<MemorySnapshot> => ({
   content: note.content,
   status: note.status,
   source: note.source,
@@ -149,12 +215,12 @@ const snapshot = async (note: Memory): Promise<MemorySnapshot> => ({
   kind: note.kind,
   topic: note.topic,
   summaryId: note.summaryId,
-  ...(note.kind === "summary" ? { covers: await coveredBy(note.id) } : {}),
+  ...(note.kind === "summary" ? { covers: await coveredBy(note.id, store) } : {}),
 })
 
-async function coveredBy(summaryId: string) {
+async function coveredBy(summaryId: string, store: MemoryStore = db) {
   return (
-    await db
+    await store
       .select({ id: memories.id })
       .from(memories)
       .where(eq(memories.summaryId, summaryId))
@@ -170,7 +236,7 @@ async function logChange(
   after: MemorySnapshot | null,
   info: ChangeInfo
 ) {
-  const [row] = await db
+  const [row] = await (info?.store ?? db)
     .insert(memoryChanges)
     .values({
       agentId,
@@ -197,7 +263,7 @@ export async function addNote(
   status: "active" | "candidate" = "active",
   info?: ChangeInfo
 ) {
-  const [existing] = await db
+  const [existing] = await (info?.store ?? db)
     .select()
     .from(memories)
     .where(
@@ -208,11 +274,19 @@ export async function addNote(
       )
     )
   if (existing) return existing
-  const [note] = await db
+  const [note] = await (info?.store ?? db)
     .insert(memories)
     .values({ agentId, content, source, status })
     .returning()
-  if (info) await logChange(agentId, note.id, "add", null, await snapshot(note), info)
+  if (info)
+    await logChange(
+      agentId,
+      note.id,
+      "add",
+      null,
+      await snapshot(note, info?.store),
+      info
+    )
   return note
 }
 
@@ -222,35 +296,42 @@ export async function updateNote(
   content: string,
   info?: ChangeInfo
 ) {
-  const [before] = await db
+  const [before] = await (info?.store ?? db)
     .select()
     .from(memories)
     .where(and(eq(memories.agentId, agentId), eq(memories.id, id)))
   if (!before) throw new HttpError(404, "Note not found for this agent")
-  const beforeSnapshot = await snapshot(before)
-  const [note] = await db
+  const beforeSnapshot = await snapshot(before, info?.store)
+  const [note] = await (info?.store ?? db)
     .update(memories)
     .set({ content, updatedAt: new Date() })
     .where(and(eq(memories.agentId, agentId), eq(memories.id, id)))
     .returning()
   if (info && before.content !== note.content)
-    await logChange(agentId, id, "update", beforeSnapshot, await snapshot(note), info)
+    await logChange(
+      agentId,
+      id,
+      "update",
+      beforeSnapshot,
+      await snapshot(note, info?.store),
+      info
+    )
   return note
 }
 
 export async function deleteNote(agentId: string, id: string, info?: ChangeInfo) {
-  const [before] = await db
+  const [before] = await (info?.store ?? db)
     .select()
     .from(memories)
     .where(and(eq(memories.agentId, agentId), eq(memories.id, id)))
   if (!before) throw new HttpError(404, "Note not found for this agent")
-  const beforeSnapshot = await snapshot(before)
-  const [removed] = await db
+  const beforeSnapshot = await snapshot(before, info?.store)
+  const [removed] = await (info?.store ?? db)
     .delete(memories)
     .where(and(eq(memories.agentId, agentId), eq(memories.id, id)))
     .returning()
   if (!removed) throw new HttpError(404, "Note not found for this agent")
-  await settleCard(id, "dismissed")
+  await settleCard(id, "dismissed", info?.store)
   if (info) await logChange(agentId, id, "delete", beforeSnapshot, null, info)
   return { id: removed.id }
 }
@@ -263,7 +344,7 @@ export async function mergeNotes(
   content: string,
   info: ChangeInfo
 ) {
-  const found = await db
+  const found = await (info?.store ?? db)
     .select()
     .from(memories)
     .where(
@@ -281,7 +362,10 @@ export async function mergeNotes(
   const summaryId = found.find((note) => note.summaryId)?.summaryId ?? null
   const updated = await updateNote(agentId, keep, content, grouped)
   if (!updated.summaryId && summaryId)
-    await db.update(memories).set({ summaryId }).where(eq(memories.id, keep))
+    await (info?.store ?? db)
+      .update(memories)
+      .set({ summaryId })
+      .where(eq(memories.id, keep))
   for (const note of found)
     if (note.id !== keep) await deleteNote(agentId, note.id, grouped)
   return { id: keep, removed: found.filter((note) => note.id !== keep).map((n) => n.id) }
@@ -295,7 +379,7 @@ export async function saveSummary(
   info: ChangeInfo
 ) {
   const [byId] = input.id
-    ? await db
+    ? await (info?.store ?? db)
         .select()
         .from(memories)
         .where(
@@ -308,7 +392,7 @@ export async function saveSummary(
     : []
   const [byTopic] = byId
     ? []
-    : await db
+    : await (info?.store ?? db)
         .select()
         .from(memories)
         .where(
@@ -319,7 +403,7 @@ export async function saveSummary(
           )
         )
   const existing = byId ?? byTopic
-  const covers = await db
+  const covers = await (info?.store ?? db)
     .select({ id: memories.id })
     .from(memories)
     .where(
@@ -330,7 +414,7 @@ export async function saveSummary(
       )
     )
   if (!existing) {
-    const [created] = await db
+    const [created] = await (info?.store ?? db)
       .insert(memories)
       .values({
         agentId,
@@ -341,7 +425,7 @@ export async function saveSummary(
       })
       .returning()
     if (covers.length)
-      await db
+      await (info?.store ?? db)
         .update(memories)
         .set({ summaryId: created.id })
         .where(
@@ -350,12 +434,19 @@ export async function saveSummary(
             covers.map((row) => row.id)
           )
         )
-    await logChange(agentId, created.id, "add", null, await snapshot(created), info)
+    await logChange(
+      agentId,
+      created.id,
+      "add",
+      null,
+      await snapshot(created, info?.store),
+      info
+    )
     return created
   }
-  const before = await snapshot(existing)
+  const before = await snapshot(existing, info?.store)
   if (covers.length)
-    await db
+    await (info?.store ?? db)
       .update(memories)
       .set({ summaryId: existing.id })
       .where(
@@ -364,12 +455,12 @@ export async function saveSummary(
           covers.map((row) => row.id)
         )
       )
-  const [saved] = await db
+  const [saved] = await (info?.store ?? db)
     .update(memories)
     .set({ content: input.content, topic: input.topic, updatedAt: new Date() })
     .where(eq(memories.id, existing.id))
     .returning()
-  const after = await snapshot(saved)
+  const after = await snapshot(saved, info?.store)
   const same =
     before.content === after.content &&
     before.topic === after.topic &&
@@ -456,9 +547,14 @@ export async function rememberDecided(
     fellBack: false,
     organize: false,
   }
-  const asCandidate = async (text: string, reason?: string | null) => {
+  const asCandidate = async (
+    text: string,
+    reason?: string | null,
+    store?: MemoryStore
+  ) => {
     const note = await addNote(agentId, text, "agent", "candidate", {
       actor: "model",
+      store,
       origin: options.origin,
       reason: reason ?? "待确认",
       messageId: options.messageId,
@@ -480,83 +576,91 @@ export async function rememberDecided(
     await asCandidate(fact)
     return done
   }
-  const edits = ops.filter((op) => !["NONE", "ASK", "ORGANIZE"].includes(op.op))
-  const group = randomUUID()
-  const info = (reason?: string | null): ChangeInfo => ({
-    actor: "model",
-    origin: options.origin,
-    reason: reason ?? null,
-    messageId: options.messageId,
-    sourceText: options.sourceText,
-    groupId: edits.length > 1 ? group : null,
-  })
-  const text = new Map<string, string>([
-    ...view.notes.map((note) => [note.id, note.content] as const),
-    ...view.summaries.map((summary) => [summary.id, summary.content] as const),
-  ])
-  for (const op of ops) {
-    try {
-      if (op.op === "ADD") {
-        const before = done.changes.length
-        const note = await addNote(agentId, op.text, "agent", "active", info())
-        if (note.content === op.text && note.status === "active")
-          done.changes.push({
-            op: "add",
-            id: note.id,
-            before: null,
-            after: note.content,
-            reason: null,
-          })
-        else if (before === done.changes.length) done.known = true
-      } else if (op.op === "UPDATE") {
-        const note = await updateNote(agentId, op.id, op.text, info(op.reason))
-        if (text.get(op.id) !== note.content)
-          done.changes.push({
-            op: "update",
-            id: note.id,
-            before: text.get(op.id) ?? null,
-            after: note.content,
-            reason: op.reason,
-          })
-      } else if (op.op === "DELETE") {
-        await deleteNote(agentId, op.id, info(op.reason))
-        done.changes.push({
-          op: "delete",
-          id: op.id,
-          before: text.get(op.id) ?? null,
-          after: null,
-          reason: op.reason,
-        })
-      } else if (op.op === "MERGE") {
-        const merged = await mergeNotes(agentId, op.ids, op.text, info(op.reason))
-        done.changes.push({
-          op: "update",
-          id: merged.id,
-          before: text.get(merged.id) ?? null,
-          after: op.text,
-          reason: op.reason,
-        })
-        for (const id of merged.removed)
+  const current = await applyToCurrentMemory(agentId, view, async (store) => {
+    const edits = ops.filter((op) => !["NONE", "ASK", "ORGANIZE"].includes(op.op))
+    const group = randomUUID()
+    const info = (reason?: string | null): ChangeInfo => ({
+      store,
+      actor: "model",
+      origin: options.origin,
+      reason: reason ?? null,
+      messageId: options.messageId,
+      sourceText: options.sourceText,
+      groupId: edits.length > 1 ? group : null,
+    })
+    const text = new Map<string, string>([
+      ...view.notes.map((note) => [note.id, note.content] as const),
+      ...view.summaries.map((summary) => [summary.id, summary.content] as const),
+    ])
+    for (const op of ops) {
+      try {
+        if (op.op === "ADD") {
+          const before = done.changes.length
+          const note = await addNote(agentId, op.text, "agent", "active", info())
+          if (note.content === op.text && note.status === "active")
+            done.changes.push({
+              op: "add",
+              id: note.id,
+              before: null,
+              after: note.content,
+              reason: null,
+            })
+          else if (before === done.changes.length) done.known = true
+        } else if (op.op === "UPDATE") {
+          const note = await updateNote(agentId, op.id, op.text, info(op.reason))
+          if (text.get(op.id) !== note.content)
+            done.changes.push({
+              op: "update",
+              id: note.id,
+              before: text.get(op.id) ?? null,
+              after: note.content,
+              reason: op.reason,
+            })
+        } else if (op.op === "DELETE") {
+          await deleteNote(agentId, op.id, info(op.reason))
           done.changes.push({
             op: "delete",
-            id,
-            before: text.get(id) ?? null,
+            id: op.id,
+            before: text.get(op.id) ?? null,
             after: null,
             reason: op.reason,
           })
-      } else if (op.op === "ASK") {
-        await asCandidate(op.text, op.reason)
-      } else if (op.op === "ORGANIZE") {
-        done.organize = true
-        await db
-          .update(companions)
-          .set({ memoryOrganizeRequested: true })
-          .where(eq(companions.agentId, agentId))
+        } else if (op.op === "MERGE") {
+          const merged = await mergeNotes(agentId, op.ids, op.text, info(op.reason))
+          done.changes.push({
+            op: "update",
+            id: merged.id,
+            before: text.get(merged.id) ?? null,
+            after: op.text,
+            reason: op.reason,
+          })
+          for (const id of merged.removed)
+            done.changes.push({
+              op: "delete",
+              id,
+              before: text.get(id) ?? null,
+              after: null,
+              reason: op.reason,
+            })
+        } else if (op.op === "ASK") {
+          await asCandidate(op.text, op.reason, store)
+        } else if (op.op === "ORGANIZE") {
+          done.organize = true
+          await store
+            .update(companions)
+            .set({ memoryOrganizeRequested: true })
+            .where(eq(companions.agentId, agentId))
+        }
+      } catch (error) {
+        // A note that vanished meanwhile: skip it, never make up for it with another change
+        if (!(error instanceof HttpError)) throw error
       }
-    } catch (error) {
-      // A note that vanished meanwhile: skip it, never make up for it with another change
-      if (!(error instanceof HttpError)) throw error
     }
+  })
+  if (!current) {
+    done.fellBack = true
+    await asCandidate(fact)
+    return done
   }
   if (!done.changes.length && !done.candidate) done.known = true
   return done

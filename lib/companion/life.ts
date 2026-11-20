@@ -11,11 +11,16 @@ import {
   type Companion,
 } from "@/db/schema"
 import { findPrice } from "@/lib/providers/pricing"
-import { resolveModelSpec } from "@/lib/providers/registry"
+import { modelContextWindow, resolveModelSpec } from "@/lib/providers/registry"
 import { getCustomPrices } from "@/lib/spend"
 import { requestCancellation } from "@/lib/task-control"
 import { submitTask } from "@/lib/tasks"
-import { memoryView } from "./memory"
+import {
+  DEFAULT_CONTEXT_LIMITS,
+  estimateContextTokens,
+  fittingPrefix,
+  inputBudget,
+} from "@/lib/agent/context"
 import { decideShare, dueLifeSlots, lifeBudgetForSession, rhythmAt } from "./rules"
 
 export async function lifeSpentToday(agentId: string, timeZone: string, now: Date) {
@@ -32,27 +37,33 @@ export async function lifeSpentToday(agentId: string, timeZone: string, now: Dat
 
 // Prompt ideas: SillyTavern-style character fields drive what she is curious about; recent
 // log titles stop repeats; notes about the person shape what she might want to tell them.
-export async function lifePrompt(companion: Companion, name: string, now: Date) {
+export async function lifePrompt(
+  companion: Companion,
+  name: string,
+  now: Date,
+  room: number
+) {
   const recent = await db
-    .select()
+    .select({ title: lifeActivities.title })
     .from(lifeActivities)
     .where(eq(lifeActivities.agentId, companion.agentId))
-    .orderBy(desc(lifeActivities.createdAt))
-    .limit(12)
-  const memory = await memoryView(companion.agentId)
-  const notes = [
-    ...memory.summaries.map((s) => ({ content: `${s.topic}：${s.content}` })),
-    ...memory.notes.filter((n) => !n.summaryId),
-  ]
-  return `你是${name}。${companion.persona.background}
+    .orderBy(desc(lifeActivities.createdAt), desc(lifeActivities.id))
+  const base = `你是${name}。${companion.persona.background}
 性格：${companion.persona.personality}；兴趣：${companion.persona.interests}。
 现在是你自己的时间（${now.toISOString()}），没人在等你回复。像平时一样用自己的电脑：随便逛逛感兴趣的网站，读一两篇文章或看看新闻，也可以把想法写几句日记，存到 /home/agent/Life/diary/ 下（文件名用日期）。
 每做完一件事，用 life_log 记下真实的标题、一两句你自己的感受和真实网址。如果有哪件事你真想告诉对方，用 life_share 写一句像发微信一样的话（带上真实链接）。没有就不分享，不要硬凑。
 
 最近做过的事（别重复）：
-${recent.map((a) => `- ${a.title}`).join("\n") || "（还没有）"}
-你记得的关于对方的事（可以让分享更贴心，但不要在日记或分享里写出隐私细节）：
-${notes.map((n) => `- ${n.content}`).join("\n") || "（还没有）"}`
+`
+  // Admission accepts an 8k-character pinned brief. Memory is refreshed by the worker.
+  const titles = recent.map((a) => `- ${a.title}`)
+  const count = fittingPrefix(
+    titles.length,
+    (n) =>
+      base.length + titles.slice(0, n).join("\n").length <= 8000 &&
+      estimateContextTokens(titles.slice(0, n)) <= room / 10
+  )
+  return base + (count ? titles.slice(0, count).join("\n") : "（无可附带的记录）")
 }
 
 // Starts at most one session per companion per slot (the request key makes retries harmless).
@@ -117,7 +128,14 @@ export async function startLifeSessions(now = new Date()) {
       timeZone: companion.timeZone,
       completionContract: { requireHumanReview: false },
       budget,
-      lifeSession: { prompt: await lifePrompt(companion, name, now) },
+      lifeSession: {
+        prompt: await lifePrompt(
+          companion,
+          name,
+          now,
+          inputBudget(modelContextWindow(spec), DEFAULT_CONTEXT_LIMITS.output)
+        ),
+      },
     })
     started.push(result.taskId)
   }
