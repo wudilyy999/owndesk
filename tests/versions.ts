@@ -133,7 +133,7 @@ async function derived(tag: string, from: string, dockerfile: string) {
 }
 
 const revisionA = process.env.B0_REVISION ?? (await git(["rev-parse", "HEAD"]))
-const revisionB = await fixtureRevision(revisionA)
+const revisionB = process.env.B0_TARGET_REVISION ?? (await fixtureRevision(revisionA))
 await buildRevision(revisionA, "b0-a")
 await buildRevision(revisionB, "b0-b")
 // Web that answers every request with 500: never healthy.
@@ -611,15 +611,50 @@ ${script}`,
       `${action} to ${to} settles`,
       300000
     )
+  const taskKey = randomUUID(),
+    fileKey = randomUUID(),
+    threadKey = randomUUID(),
+    supplementKey = randomUUID()
+  await psql(`INSERT INTO threads(id,agent_id,active_at,created_at) VALUES ('${threadKey}','b0-marker',now(),now());
+    INSERT INTO tasks(id,agent_id,owner_id,source,request_key,request_payload,thread_id,thread_turn,goal,status,completion_contract,config_snapshot,budget,created_at,updated_at)
+    SELECT '${taskKey}','b0-marker',user_id,'test','${taskKey}','{}','${threadKey}',1,'continue the original report','waiting_user','{}','{"runtime":"agent","memories":[],"instructions":"","model":"custom/fixture","conversation":[{"role":"user","content":"original constraint"}],"historyPrivacy":""}','{}',now(),now() FROM owners LIMIT 1;
+    INSERT INTO artifacts(id,task_id,name,storage_path,media_type,size,verification,created_at) VALUES ('${fileKey}','${taskKey}','report.txt','${taskKey}/report.txt','text/plain',${marker.length},'{}',now())`)
+  await compose([
+    "exec",
+    "-T",
+    "worker",
+    "node",
+    "-e",
+    `const f=require('node:fs');const d=process.env.ARTIFACT_DIR+'/${taskKey}';f.mkdirSync(d,{recursive:true});f.writeFileSync(d+'/report.txt','${marker}')`,
+  ])
   let response = await switchTo(versionA.id)
   assert.equal(response.status, 202, JSON.stringify(response))
   assert.equal((await settle("rollback", versionA.id))[2], "healthy")
   await expectRunning(ids.webA, ids.workerA, "one-click to A")
+  const afterDowngrade = await web(
+    `const f=await fetch(base+'/api/artifacts/${fileKey}',{headers});const r=await fetch(base+'/api/tasks/${taskKey}/supplements',{method:'POST',headers,body:JSON.stringify({text:'keep the previous report',clientRequestId:'${supplementKey}'})});console.log(JSON.stringify({file:f.status,content:await f.text(),accepted:r.status}))`
+  )
+  assert.deepEqual(afterDowngrade, { file: 200, content: marker, accepted: 201 })
   await until(async () => (await watcher()) !== "", "watcher after one-click switch")
   response = await switchTo(versionB.id)
   assert.equal(response.status, 202, JSON.stringify(response))
   assert.equal((await settle("rollback", versionB.id))[2], "healthy")
   await expectRunning(ids.webB, ids.workerB, "one-click back to B")
+  assert.equal(
+    await psql(
+      `SELECT count(*) FROM task_events WHERE task_id='${taskKey}' AND type='owner_supplement' AND payload->>'text'='keep the previous report'`
+    ),
+    "1"
+  )
+  assert.equal(
+    await psql(
+      `SELECT config_snapshot->'conversation'->0->>'content' FROM tasks WHERE id='${taskKey}' AND thread_id='${threadKey}'`
+    ),
+    "original constraint"
+  )
+  pass(
+    "The previous image reads the same task artifact byte for byte and accepts a supplement on the existing task; the next upgrade preserves its thread and original instructions"
+  )
   pass("One-click switch to A and back to B from the web API: both healthy; data intact")
 
   // 6. Updater killed mid-switch, then `upgrade.sh --resume` converges.

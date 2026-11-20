@@ -760,6 +760,7 @@ export type SegmentSnapshot = {
       path: string
       verification: Record<string, unknown>
     }[]
+    windowedAnswers?: true
     answers: { question: string; answer: string }[]
   }
 }

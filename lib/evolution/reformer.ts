@@ -1,3 +1,5 @@
+import { openLabJournal } from "./journal"
+import type { ContextCheckpoint } from "@/lib/agent/context"
 import { readResult, readResultTool } from "@/lib/agent/read-result"
 import { labContext } from "./context"
 // The reformer: a model working on the candidate copy inside the lab container. Its model
@@ -216,6 +218,14 @@ export function reformerSystem(rules: string) {
     .join("\n")
 }
 
+export const reformerJournal = (taskId: string, parent: string) =>
+  openLabJournal<{
+    commit: string
+    failures: number
+    progress: string[]
+    finished?: ReformerResult
+  }>(taskId, "reformer", parent)
+
 export async function runReformer(input: {
   objective: Objective
   taskId: string
@@ -223,6 +233,10 @@ export async function runReformer(input: {
   lab: LabContainer
   brief: string
   rules: string
+  parent: string
+  journal: Awaited<ReturnType<typeof reformerJournal>>
+  restore: (commit: string) => Promise<void>
+  capture: (previous: string) => Promise<string>
   maxTurns?: number
   log?: (line: string) => void
 }): Promise<ReformerResult> {
@@ -236,16 +250,27 @@ export async function runReformer(input: {
           },
         }
       : undefined
-  const messages: ModelMessage[] = [{ role: "user", content: input.brief }]
-  const progress: string[] = []
+  const journal = input.journal
+  let commit = journal.last?.state.commit ?? input.parent
+  await input.restore(commit)
+  if (journal.last?.state.finished) return journal.last.state.finished
+  const resume: { checkpoint?: ContextCheckpoint } = {
+    checkpoint: journal.last?.checkpoint,
+  }
+  const messages: ModelMessage[] = [
+    { role: "user", content: input.brief },
+    ...journal.messages,
+  ]
+  const progress: string[] = journal.last?.state.progress ?? []
   const notes = () =>
     progress.length
       ? `\nRecent tool outcomes; continue from these files:\n${progress.slice(-12).join("\n").slice(-1800)}`
       : ""
-  let typecheckFailures = 0
+  let typecheckFailures = journal.last?.state.failures ?? 0
   const maxTurns = input.maxTurns ?? input.objective.budget.roundMaxSteps
   const request = labContext({
     taskId: input.taskId,
+    resume,
     spec: input.spec,
     segment: SEGMENT.reformer,
     model,
@@ -256,18 +281,36 @@ export async function runReformer(input: {
     system: (remainingSteps) =>
       `${reformerSystem(input.rules)}\nAfter this request, ${remainingSteps} model requests remain in this round, shared with the candidate's chat and independent acceptance review. Use the relevant files you have already found, implement the smallest complete change, run the checks and finish promptly so the reviewer can use the remaining allowance.`,
   })
-  for (let turn = 1; turn <= maxTurns; turn++) {
+  for (let turn = journal.turn; turn <= maxTurns; turn++) {
+    await journal.begin()
+    const from = messages.length
+    let dirty = false
+    const save = async (finished?: ReformerResult) => {
+      if (dirty) commit = await input.capture(commit)
+      await journal.seal({
+        messages: messages.slice(from),
+        checkpoint: resume.checkpoint,
+        state: {
+          commit,
+          failures: typecheckFailures,
+          progress: progress.slice(-12),
+          finished,
+        },
+      })
+    }
     let result
     try {
       result = await request(messages)
     } catch (error) {
       if (!(error instanceof LabBudgetError)) throw error
-      return {
+      const stopped: ReformerResult = {
         summary: error.message + notes(),
         turns: turn - 1,
         finished: false,
         end: error.end,
       }
+      await save(stopped)
+      return stopped
     }
     messages.push(...(result.response.messages as ModelMessage[]))
     if (!result.toolCalls.length) {
@@ -275,17 +318,23 @@ export async function runReformer(input: {
         role: "user",
         content: "Use a tool. Call finish when the change is done.",
       })
+      await save()
       continue
     }
     const results: ModelMessage = { role: "tool", content: [] }
     for (const call of result.toolCalls) {
       const args = call.input as Record<string, unknown>
+      if (["write_file", "edit_file", "run_check", "finish"].includes(call.toolName))
+        dirty = true
       if (call.toolName === "finish") {
         const summary = String(args.summary ?? "").slice(0, 2000)
         const check = await runTool(input.lab, "run_check", { kind: "typecheck" })
         input.log?.(`turn ${turn}: finish (typecheck ${check.ok ? "ok" : "failed"})`)
-        if (check.ok || typecheckFailures >= 2)
-          return { summary, turns: turn, finished: true }
+        if (check.ok || typecheckFailures >= 2) {
+          const finished = { summary, turns: turn, finished: true }
+          await save(finished)
+          return finished
+        }
         typecheckFailures++
         results.content.push({
           type: "tool-result",
@@ -326,6 +375,7 @@ export async function runReformer(input: {
       })
     }
     if ((results.content as unknown[]).length) messages.push(results)
+    await save()
   }
   return {
     summary: "改造者用完了这一轮的步数，没有说完成" + notes(),

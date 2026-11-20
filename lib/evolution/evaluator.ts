@@ -1,3 +1,6 @@
+import { openLabJournal, UnknownLabTurn } from "./journal"
+import type { ContextCheckpoint } from "@/lib/agent/context"
+import { stat as artifactStat } from "node:fs/promises"
 import { labContext } from "./context"
 // The evaluator (trusted): its code and the frozen tests come from the running version,
 // never from the candidate. Stages: 0 policy, 1 build, 2 checks, 3 candidate stack with the
@@ -62,7 +65,7 @@ async function timed(
   try {
     return { name, ...(await run()), durationMs: Date.now() - start }
   } catch (error) {
-    if (error instanceof LabBudgetError) throw error
+    if (error instanceof LabBudgetError || error instanceof UnknownLabTurn) throw error
     return {
       name,
       status: "fail",
@@ -894,11 +897,35 @@ export async function reviewAcceptance(input: {
   changed: string[]
   objective: () => Promise<Objective>
   taskId: string
+  commit?: string
   spec: string
   log: Log
   onBlocked?: (reason: string, end: "steps" | "cost") => Promise<void>
 }): Promise<AcceptanceResult[]> {
   if (!input.checklist.length) return []
+  const secrets = [
+    input.stack.login.password,
+    input.stack.gateway.token,
+    input.session.cookie,
+    ...input.session.cookie.split(";").map((c) => c.split("=").slice(1).join("=").trim()),
+    ...Object.entries(input.stack.testEnvironment)
+      .filter(([k]) => /PASSWORD|SECRET|KEY|TOKEN|DATABASE_URL/i.test(k))
+      .map(([, v]) => v),
+  ].filter((v) => v && v.length > 3)
+  const journal = await openLabJournal<{ verdicts: [number, AcceptanceResult][] }>(
+    input.taskId,
+    "reviewer",
+    JSON.stringify([
+      input.commit ?? input.stack.key,
+      input.request,
+      input.checklist,
+      input.changed,
+    ]),
+    secrets
+  )
+  const resume: { checkpoint?: ContextCheckpoint } = {
+    checkpoint: journal.last?.checkpoint,
+  }
   const review = await startReviewBrowser(input.stack)
   try {
     const context = await review.browser.newContext({
@@ -990,6 +1017,29 @@ export async function reviewAcceptance(input: {
           }
         : undefined
     const verdicts = new Map<number, AcceptanceResult>()
+    for (const [n, v] of journal.last?.state.verdicts ?? []) {
+      if (input.checklist[n - 1] !== v.item) continue
+      if (v.status === "pass") {
+        const id = v.screenshot?.match(/^\/api\/artifacts\/([a-f0-9-]+)$/i)?.[1]
+        if (!id) continue
+        const {
+          rows: [artifact],
+        } = await pool.query<{ size: number; storage_path: string }>(
+          "SELECT size,storage_path FROM artifacts WHERE id=$1 AND task_id=$2 AND verification->>'source'='trusted-improvement-review'",
+          [id, input.taskId]
+        )
+        if (
+          !artifact ||
+          artifact.storage_path !== path.join(input.taskId, `review-${id}.png`)
+        )
+          continue
+        const file = await artifactStat(
+          path.join(artifactDir, artifact.storage_path)
+        ).catch(() => null)
+        if (!file?.isFile() || file.size !== Number(artifact.size)) continue
+      }
+      verdicts.set(n, v)
+    }
     let blocked: string | undefined
     const messages: ModelMessage[] = [
       {
@@ -1002,10 +1052,13 @@ export async function reviewAcceptance(input: {
         ].join("\n\n"),
       },
     ]
+    messages.push(...journal.messages)
+    let reopened = !!journal.last
     const request = labContext({
       taskId: input.taskId,
       spec: input.spec,
       segment: SEGMENT.reviewer,
+      resume,
       model,
       providerOptions,
       tools: reviewerTools,
@@ -1013,16 +1066,21 @@ export async function reviewAcceptance(input: {
       timeout: 240000,
     })
     while (verdicts.size < input.checklist.length) {
-      // Keep the latest two screenshots in model context; the artifact archive retains all.
-      let kept = 0
-      for (const message of [...messages].reverse()) {
-        if (message.role !== "tool") continue
-        for (const part of [...message.content].reverse())
-          if (part.type === "tool-result" && part.output.type === "content")
-            part.output.value = part.output.value.filter(
-              (item) => item.type !== "image-data" || ++kept <= 2
-            )
+      await journal.begin()
+      const from = messages.length
+      if (reopened) {
+        messages.push({
+          role: "user",
+          content: `Reviewer resumed on a fresh browser and synthetic stack. Prior observations are historical. Confirmed checklist items: ${[...verdicts.keys()].join(", ") || "none"}. Observe before using controls; do not replay earlier actions merely because the browser restarted.`,
+        })
+        reopened = false
       }
+      const save = () =>
+        journal.seal({
+          messages: messages.slice(from),
+          checkpoint: resume.checkpoint,
+          state: { verdicts: [...verdicts] },
+        })
       let result
       try {
         result = await request(messages)
@@ -1030,6 +1088,7 @@ export async function reviewAcceptance(input: {
         if (!(error instanceof LabBudgetError) || !input.onBlocked) throw error
         blocked = error.message
         await input.onBlocked(error.message, error.end)
+        await save()
         break
       }
       messages.push(...(result.response.messages as ModelMessage[]))
@@ -1039,6 +1098,7 @@ export async function reviewAcceptance(input: {
           content:
             "Use a browser tool to check the checklist, then record each verdict with the verdict tool.",
         })
+        await save()
         continue
       }
       const reply: ModelMessage = { role: "tool", content: [] }
@@ -1047,6 +1107,8 @@ export async function reviewAcceptance(input: {
         let output = ""
         let observation: Awaited<ReturnType<typeof observe>> | undefined
         try {
+          if (["click", "fill"].includes(call.toolName) && !screenshot)
+            throw new Error("先在当前浏览器打开页面并观察控件，再操作。")
           if (call.toolName === "verdict") {
             const value = (
               reviewerTools.verdict.inputSchema as unknown as z.ZodType<
@@ -1133,6 +1195,7 @@ export async function reviewAcceptance(input: {
         })
       }
       if ((reply.content as unknown[]).length) messages.push(reply)
+      await save()
     }
     return input.checklist.map(
       (item, index) =>
@@ -1142,6 +1205,8 @@ export async function reviewAcceptance(input: {
           note: blocked ? `验收尚未完成：${blocked}` : "检查员没有给出结论",
         }
     )
+  } catch (error) {
+    throw journal.interrupted(error)
   } finally {
     await review.close()
   }
@@ -1337,6 +1402,7 @@ export async function evaluate(input: EvaluateInput) {
           changed,
           objective: input.objective,
           taskId: input.taskId,
+          commit: input.commit,
           spec: input.spec,
           log: input.log,
           onBlocked: input.onBlocked,

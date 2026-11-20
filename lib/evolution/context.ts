@@ -27,6 +27,7 @@ export function labContext<T extends ToolSet>(input: {
   providerOptions?: Parameters<typeof generateText>[0]["providerOptions"]
   output: number
   timeout: number
+  resume?: { checkpoint?: ContextCheckpoint }
   system?: (remaining: number) => string
 }) {
   const schemas = Object.entries(input.tools).map(([name, t]) => ({
@@ -37,7 +38,7 @@ export function labContext<T extends ToolSet>(input: {
   const window = modelContextWindow(input.spec)
   const output = Math.min(input.output, Math.floor(window / 2))
   const limit = inputBudget(window, output)
-  let checkpoint: ContextCheckpoint | undefined
+  let checkpoint: ContextCheckpoint | undefined = input.resume?.checkpoint
   const project = (history: ModelMessage[], cp = checkpoint) =>
     forProvider(input.spec, compactContext(contextMessages(history, 0, cp)))
   const size = (messages: ModelMessage[]) =>
@@ -136,6 +137,7 @@ export function labContext<T extends ToolSet>(input: {
           "Lab summary did not reduce the input; keeping the previous cursor"
         )
       checkpoint = next
+      if (input.resume) input.resume.checkpoint = next
       if (!exceedsInputBudget(size(messages), limit)) return call()
       if (!plan.more)
         throw new Error("Lab context still exceeds the model window after compaction")

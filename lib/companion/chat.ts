@@ -47,6 +47,7 @@ import { evolutionEnabled } from "@/lib/evolution/store"
 import {
   compactContext,
   estimateContextTokens,
+  fittingPrefix,
   isContextWindowError,
 } from "@/lib/agent/context"
 import {
@@ -456,11 +457,16 @@ export async function companionChat(
     const [storedMemory, activities] = await Promise.all([
       memoryView(input.agentId),
       db
-        .select()
+        .select({
+          title: lifeActivities.title,
+          kind: lifeActivities.kind,
+          summary: lifeActivities.summary,
+          url: lifeActivities.url,
+          createdAt: lifeActivities.createdAt,
+        })
         .from(lifeActivities)
         .where(eq(lifeActivities.agentId, input.agentId))
-        .orderBy(desc(lifeActivities.createdAt))
-        .limit(8),
+        .orderBy(desc(lifeActivities.createdAt), desc(lifeActivities.id)),
     ])
     const promptContext = {
       name: agent.name,
@@ -480,7 +486,7 @@ export async function companionChat(
               ? "sensitive"
               : "seen",
       memories: [],
-      recentLife: activities.reverse().map((a) => ({
+      recentLife: activities.map((a) => ({
         kind: a.kind,
         title: a.title,
         summary: a.summary,
@@ -499,8 +505,15 @@ export async function companionChat(
         storedMemory,
         chatBudget(deps.contextWindow ?? modelContextWindow(spec))
       )
+      const count = fittingPrefix(
+        promptContext.recentLife.length,
+        (n) =>
+          estimateContextTokens(promptContext.recentLife.slice(0, n)) <=
+          chatBudget(deps.contextWindow ?? modelContextWindow(spec)) / 10
+      )
       return buildCompanionPrompt({
         ...promptContext,
+        recentLife: promptContext.recentLife.slice(0, count).reverse(),
         summaries: selected.summaries,
         memories: selected.notes,
         omittedMemory: selected.omittedSummaries + selected.omittedNotes,

@@ -827,6 +827,42 @@ try {
       } finally {
         await review.close()
       }
+      await setSetting("provider.custom.apiKey", upstreamKey)
+      const { reviewAcceptance } = await import("@/lib/evolution/evaluator")
+      const t = await taskFor()
+      const candidate = {
+        key,
+        network,
+        containers: { web },
+        appUrl: "http://web:6797",
+        webUrl: "http://web:6797",
+        login: { email: "synthetic", password: randomUUID() },
+        gateway: { token: randomUUID() },
+        testEnvironment: {},
+      } as CandidateStack
+      const session = new CandidateSession(candidate)
+      session.cookie = "fixture=" + randomUUID()
+      const settings = {
+        stack: candidate,
+        session,
+        checklist: ["Check the rendered page"],
+        request: "Check the synthetic page",
+        changed: [],
+        objective: async () => t.objective,
+        taskId: t.taskId,
+        spec,
+        log: () => {},
+      }
+      reviewTurn = 0
+      const first = await reviewAcceptance(settings)
+      assert.equal(first[0].status, "pass")
+      assert(first[0].screenshot)
+      const calls = upstreamCalls
+      assert.deepEqual(await reviewAcceptance(settings), first)
+      assert.equal(upstreamCalls, calls)
+      pass(
+        "new browser and reviewer instance restore a confirmed checklist result with its actual screenshot and no repeated model request"
+      )
     } finally {
       await dockerRaw(["rm", "-f", web])
       await dockerRaw(["network", "rm", network])
@@ -977,6 +1013,24 @@ try {
         spec,
         log,
       })
+      const afterReview = upstreamCalls
+      const restoredVerdicts = await reviewAcceptance({
+        stack,
+        session: core.session,
+        checklist: ["伴侣页面可在真实浏览器打开并显示测试聊天"],
+        request: "验证独立评审的完整模型工具循环与截图归档",
+        changed: [],
+        objective: current,
+        taskId: fixture.taskId,
+        spec,
+        log,
+      })
+      assert.deepEqual(restoredVerdicts, acceptance)
+      assert.equal(
+        upstreamCalls,
+        afterReview,
+        "a new reviewer instance reuses its verified artifact and does not repeat the UI action or model request"
+      )
       assert.equal(acceptance[0].status, "pass")
       assert(acceptance[0].screenshot)
       pass(

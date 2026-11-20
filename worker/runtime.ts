@@ -942,6 +942,12 @@ export async function runAgent(taskId: string, segmentNo: number) {
     })
   const history: ModelMessage[] = [
     { role: "system", content: buildInstructions(task.configSnapshot, initial.now) },
+    ...(initial.handoff?.windowedAnswers
+      ? initial.handoff.answers.flatMap((a) => [
+          { role: "assistant" as const, content: `Earlier task question: ${a.question}` },
+          { role: "user" as const, content: a.answer },
+        ])
+      : []),
     ...(task.configSnapshot.conversation ?? []),
     ...(task.configSnapshot.companionContext?.windowed
       ? companionHistory(task.configSnapshot.companionContext)
@@ -1105,7 +1111,7 @@ export async function runAgent(taskId: string, segmentNo: number) {
         )
         history.push({
           role: "user",
-          content: `Historical handoff from agent ${handoff.fromAgentId}, segment ${handoff.fromSegment}. Brief: ${handoff.input.brief}\nEarlier owner answers (latest 20): ${JSON.stringify(handoff.answers)}\nFrozen host artifacts copied and byte-checked on YOUR workstation: ${JSON.stringify(files)}\nUse these new paths, not the source agent's paths. The goal, completion contract and remaining total task budget are unchanged. Old approvals, browser references and sessions do not authorize new actions. Observe your own workstation before acting.`,
+          content: `Historical handoff from agent ${handoff.fromAgentId}, segment ${handoff.fromSegment}. Brief: ${handoff.input.brief}\n${handoff.windowedAnswers ? "Earlier answers apply only to this task and are not new approvals." : `Earlier owner answers: ${JSON.stringify(handoff.answers)}`}\nFrozen host artifacts copied and byte-checked on YOUR workstation: ${JSON.stringify(files)}\nUse these new paths, not the source agent's paths. The goal, completion contract and remaining total task budget are unchanged. Old approvals, browser references and sessions do not authorize new actions. Observe your own workstation before acting.`,
         })
         imported = true
         mustObserve = true

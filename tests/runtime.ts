@@ -2117,6 +2117,11 @@ try {
       const target = await recipient(),
         busy = await busyTarget(target),
         normal = await begin("normal", target)
+      await pool.query(
+        `INSERT INTO task_requests(id,task_id,agent_id,segment_no,kind,payload,response,status,created_at,resolved_at)
+        SELECT gen_random_uuid()::text,$1,$2,1,'approval',jsonb_build_object('purpose','question','question','earlier question '||n),jsonb_build_object('answer','HANDOFF-ANSWER-'||n),'resolved',now(),now()-interval '1 hour'+n*interval '1 second' FROM generate_series(1,25)n`,
+        [normal.taskId, normal.agentId]
+      )
       const denied = await executeDelegate(
         normal.sourceTask,
         1,
@@ -2177,6 +2182,12 @@ try {
           [normal.taskId]
         )
       ).rows[0].payload
+      assert.equal(
+        prepared.config.conversation,
+        undefined,
+        "recipient does not inherit source agent's private thread"
+      )
+      assert.equal(prepared.handoff.answers.length, 26)
       const replay = await executeDelegate(
         normal.sourceTask,
         1,
@@ -2240,6 +2251,16 @@ try {
       )!
       assert.equal(targetCall.model, "runtime-fixture")
       const messages = JSON.stringify(targetCall.messages)
+      assert(
+        targetCall.messages.some(
+          (m: any) => m.role === "user" && m.content === "HANDOFF-ANSWER-1"
+        )
+      )
+      assert(
+        targetCall.messages.some(
+          (m: any) => m.role === "user" && m.content === "HANDOFF-ANSWER-25"
+        )
+      )
       assert(
         messages.includes("recipient-standing-order-before-freeze") &&
           messages.includes("Use CSV")
