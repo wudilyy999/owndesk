@@ -195,8 +195,10 @@ const modelServer = createServer((req, res) => {
     const index = scenario.calls.length
     if (scenario.kind.startsWith("objective_")) {
       // Each round is its own task; the round number and this round's calls come from the request
-      const prompt = JSON.stringify(latestPrompt.content)
-      const roundNo = Number(/round (\d+)\./.exec(prompt)![1])
+      const roundNo = Number(
+        /round (\d+)\./.exec(JSON.stringify(latestPrompt.content))![1]
+      )
+      const prompt = JSON.stringify(body.messages)
       const calls = body.messages.flatMap((message: any) => message.tool_calls ?? [])
       const results = body.messages.filter((message: any) => message.role === "tool")
       scenario.observed = { ...(scenario.observed ?? {}), [roundNo]: prompt }
@@ -7016,6 +7018,33 @@ try {
           "Long-running objective runs round after round on the existing task runtime; progress rounds skip the final CSV check, an early achieved claim with one row is refused, the corrected CSV is accepted, the next round sees earlier summaries",
       })
 
+      const old = scenarioFor("objective_long_history")
+      // Insert a frozen pre-existing objective and twelve finished rounds atomically so the
+      // dispatcher can never admit round 1 in the gap between fixture writes.
+      const longId = randomUUID()
+      await pool.query(
+        `WITH seeded AS (
+        INSERT INTO objectives(id,owner_id,agent_id,title,objective,done_criteria,completion_contract,budget,status,created_at,updated_at)
+        VALUES ($1,$2,$3,'Long history',$4,'Finish this round','{"requireHumanReview":false}','{"roundMaxSteps":5}','active',now(),now()) RETURNING id)
+        INSERT INTO objective_rounds(id,objective_id,round_no,input,verdict,summary,started_at,finished_at)
+        SELECT gen_random_uuid()::text,seeded.id,n,'{}','progress',CASE WHEN n=1 THEN repeat('x',600)||'FIRST-ROUND-CONSTRAINT' WHEN n=12 THEN 'LATEST-CORRECTION' ELSE 'progress' END,now(),now() FROM seeded CROSS JOIN generate_series(1,12) n`,
+        [longId, ownerId, objectiveAgent.id, old.text]
+      )
+      await drive(
+        async () => (await objectiveRow(longId)).status === "achieved",
+        "long objective reached round thirteen"
+      )
+      const wire = old.scenario.calls[0].messages
+      const wireIndex = (token: string) =>
+        wire.findIndex((m: any) => JSON.stringify(m.content).includes(token))
+      assert(wireIndex("FIRST-ROUND-CONSTRAINT") >= 0)
+      assert(wireIndex("LATEST-CORRECTION") > wireIndex("FIRST-ROUND-CONSTRAINT"))
+      assert(wireIndex("round 13.") > wireIndex("LATEST-CORRECTION"))
+      checks.push({
+        check:
+          "Thirteen-round objective sends the complete first report and latest correction as separate historical messages preceding the current goal",
+      })
+
       // B. A round's step allowance ends the round (no budget card); maxRounds stops it
       const steps = scenarioFor("objective_steps")
       const b = await createObjective(ownerId, {
@@ -7250,7 +7279,7 @@ try {
       const listed = await listObjectives(ownerId)
       assert.deepEqual(
         new Set(listed.map((row) => row.id)),
-        new Set([a.id, b.id, c.id, d.id, f.id, e.id])
+        new Set([a.id, b.id, c.id, d.id, f.id, e.id, longId])
       )
       checks.push({
         check:

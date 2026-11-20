@@ -589,6 +589,25 @@ try {
   assert.equal(failed.memoryOrganizeRequested, false, "claimed even though it failed")
   assert.equal((await db.select().from(memories)).length > 0, true, "nothing was lost")
 
+  const stale = await memory.addNote(agentId, "old data", "user", "active")
+  const edit = async () =>
+    memory.updateNote(agentId, stale.id, "owner correction", {
+      actor: "user",
+      origin: "memory",
+    })
+  const staleDecision = await memory.rememberDecided(agentId, "new fact", {
+    guarded: false,
+    origin: "test",
+    decide: async () => {
+      await edit()
+      return {
+        ops: [{ op: "DELETE", id: stale.id, reason: "decision based on old text" }],
+      }
+    },
+  })
+  assert.equal(staleDecision.fellBack, true)
+  assert.equal((await all()).find((n) => n.id === stale.id)?.content, "owner correction")
+  assert.equal(staleDecision.candidate?.status, "candidate")
   await closeDurableClient()
   await pool.end()
   console.log("companion memory (agent-driven) integration passed")

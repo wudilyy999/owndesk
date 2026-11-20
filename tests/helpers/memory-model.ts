@@ -39,7 +39,7 @@ export function parseSeen(options: {
     fact: /她想记的新信息：(.*)$/m.exec(user)?.[1] ?? "",
     summaries: lines(/已有总结：/, /^S\d+\. (.*)$/gm),
     notes: lines(
-      /(?:全部笔记|这一页笔记)[^\n]*：/,
+      /(?:全部笔记|相关笔记|这一页笔记)[^\n]*：/,
       /^\d+\. (.*?)(?:（已归入 S\d+）)?$/gm
     ),
     prompt: JSON.stringify(options.prompt),

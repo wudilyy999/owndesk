@@ -747,6 +747,31 @@ export type ContextCheckpoint = { through: number; summary: string }
 export type ContextLimits = { window: number; output: number }
 export const DEFAULT_CONTEXT_LIMITS: ContextLimits = { window: 65536, output: 8192 }
 
+export function inputBudget(window: number, output: number, providerLimit = Infinity) {
+  return Math.max(0, Math.min(window - output, providerLimit))
+}
+
+// Largest consecutive prefix whose complete entries fit a request. Never advertise a cursor
+// past text the summarizer did not see. The caller supplies legal turn/tool-batch boundaries.
+export function fittingPrefix(length: number, fits: (count: number) => boolean) {
+  let lo = 0,
+    hi = length
+  while (lo < hi) {
+    const mid = lo + Math.ceil((hi - lo) / 2)
+    if (fits(mid)) lo = mid
+    else hi = mid - 1
+  }
+  return lo
+}
+
+export function recentHistoryStart(costs: number[], available: number, forced = false) {
+  const keep = Math.max(0, Math.min(15_000, available * 0.3)) * (forced ? 0.5 : 1)
+  let start = costs.length,
+    kept = 0
+  while (start > 0 && kept < keep) kept += costs[--start]
+  return start
+}
+
 export function exceedsInputBudget(estimated: number, inputLimit: number) {
   return estimated > inputLimit
 }
@@ -995,36 +1020,52 @@ export function planContextCompaction(
   history: ModelMessage[],
   goalIndex: number,
   checkpoint: ContextCheckpoint | undefined,
-  sourceTokenLimit: number
+  sourceTokenLimit: number,
+  historyRoom?: number
 ) {
   const assistants = history.flatMap((message, index) =>
     message.role === "assistant" ? [index] : []
   )
-  const latestCut = assistants.at(-2) ?? history.length
+  let latestCut = assistants.at(-2) ?? history.length
+  if (historyRoom !== undefined) {
+    const costs = history.map((m, i) =>
+      m.role === "system" ||
+      (i >= goalIndex && m.role === "user" && !isScreenshotMessage(m))
+        ? 0
+        : estimateContextTokens(m)
+    )
+    latestCut = Math.min(latestCut, recentHistoryStart(costs, historyRoom))
+  }
+  if (latestCut <= goalIndex && history[latestCut - 1]?.role === "user") latestCut--
+  const start = checkpoint?.through ?? 0
   const pending = new Set<string>()
-  let through = checkpoint?.through ?? 0
-  for (let index = 0; index < latestCut; index++) {
-    const message = history[index]
+  const cuts: number[] = []
+  for (let i = 0; i < latestCut; i++) {
+    const message = history[i]
     if (Array.isArray(message.content))
       for (const part of message.content) {
         if (part.type === "tool-call") pending.add(part.toolCallId)
         if (part.type === "tool-result") pending.delete(part.toolCallId)
       }
-    if (!pending.size && index + 1 > through) through = index + 1
-  }
-  if (through <= (checkpoint?.through ?? 0)) return null
-  const source = history
-    .slice(checkpoint?.through ?? 0, through)
-    .filter(
-      (message, index) =>
-        message.role !== "system" &&
-        !(
-          message.role === "user" &&
-          !isScreenshotMessage(message) &&
-          index + (checkpoint?.through ?? 0) >= goalIndex
-        )
+    if (
+      !pending.size &&
+      i + 1 > start &&
+      !(i < goalIndex && message.role === "user" && history[i + 1]?.role === "assistant")
     )
-    .map((message) => ({
+      cuts.push(i + 1)
+  }
+  if (!cuts.length) return null
+  const through = cuts[cuts.length - 1]
+  const source = history
+    .slice(start, through)
+    .map((message, index) => ({ message, index: index + start }))
+    .filter(
+      ({ message, index }) =>
+        message.role !== "system" &&
+        !(message.role === "user" && !isScreenshotMessage(message) && index >= goalIndex)
+    )
+    .map(({ message, index }) => ({
+      index,
       ...message,
       content: Array.isArray(message.content)
         ? message.content.filter(
@@ -1033,11 +1074,8 @@ export function planContextCompaction(
         : message.content,
     }))
   if (!source.length) return null
-  let perMessage = Math.min(
-    4000,
-    Math.floor((sourceTokenLimit * 3 - 15000) / source.length)
-  )
-  while (perMessage >= 200) {
+  const perMessage = 4000
+  const build = (end: number) => {
     const messages: ModelMessage[] = [
       { role: "system", content: COMPACTION_INSTRUCTIONS },
       {
@@ -1048,40 +1086,47 @@ export function planContextCompaction(
             .slice(goalIndex)
             .filter((message) => message.role === "user" && !isScreenshotMessage(message))
             .map((message) => message.content),
-          transcript: source.map((message) => ({
-            role: message.role,
-            content:
-              typeof message.content === "string"
-                ? clipText(message.content, perMessage)
-                : message.content.map((part) => {
-                    const limit = Math.floor(perMessage / message.content.length)
-                    if (part.type === "tool-result")
-                      return {
-                        type: part.type,
-                        toolName: part.toolName,
-                        toolCallId: part.toolCallId,
-                        output: compactionOutput(part.output, limit),
-                      }
-                    if (part.type === "tool-call")
-                      return {
-                        type: part.type,
-                        toolName: part.toolName,
-                        toolCallId: part.toolCallId,
-                        input: projectJson(part.input, limit),
-                      }
-                    if (part.type === "text")
-                      return { type: part.type, text: clipText(part.text, limit) }
-                    return { type: part.type, omitted: "Historical media omitted" }
-                  }),
-          })),
+          transcript: source
+            .filter((m) => m.index < end)
+            .map((message) => ({
+              role: message.role,
+              content:
+                typeof message.content === "string"
+                  ? message.content
+                  : message.content.map((part) => {
+                      const limit = Math.floor(perMessage / message.content.length)
+                      if (part.type === "tool-result")
+                        return {
+                          type: part.type,
+                          toolName: part.toolName,
+                          toolCallId: part.toolCallId,
+                          output: compactionOutput(part.output, limit),
+                        }
+                      if (part.type === "tool-call")
+                        return {
+                          type: part.type,
+                          toolName: part.toolName,
+                          toolCallId: part.toolCallId,
+                          input: projectJson(part.input, limit),
+                        }
+                      if (part.type === "text")
+                        return { type: part.type, text: part.text }
+                      return { type: part.type, omitted: "Historical media omitted" }
+                    }),
+            })),
         }),
       },
     ]
-    const tokens = estimateContextTokens(messages)
-    if (tokens <= sourceTokenLimit) return { through, messages }
-    perMessage = Math.floor(((perMessage * sourceTokenLimit) / tokens) * 0.9)
+    return messages
   }
-  throw new Error(
-    "Historical transcript is too large for one safe compaction request; inspect the audit and reduce the input"
+  const count = fittingPrefix(
+    cuts.length,
+    (n) => estimateContextTokens(build(cuts[n - 1])) <= sourceTokenLimit
   )
+  if (!count || source[0].index >= cuts[count - 1])
+    throw new Error(
+      "The first complete historical turn and required instructions exceed the summary input window; the context cursor is unchanged"
+    )
+  const end = cuts[count - 1]
+  return { through: end, messages: build(end), more: end < through }
 }

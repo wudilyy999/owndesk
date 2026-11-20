@@ -1,3 +1,4 @@
+import { promptMemory } from "@/lib/task-memory"
 import { chatRoutineSchema, manageChatRoutine } from "./routines"
 import { ownedUploads } from "@/lib/uploads"
 // Light chat path: one model call per message, no durable task, no workstation.
@@ -448,7 +449,7 @@ export async function companionChat(
     await hide()
     hiddenNow = true
     emit({ type: "typing", on: true })
-    const [memory, activities] = await Promise.all([
+    const [storedMemory, activities] = await Promise.all([
       memoryView(input.agentId),
       db
         .select()
@@ -474,9 +475,7 @@ export async function companionChat(
             : guarded
               ? "sensitive"
               : "seen",
-      summaries: memory.summaries,
-      // Notes she has not sorted into a topic yet; the sorted ones she can read with recall_memory
-      memories: memory.notes.filter((note) => !note.summaryId),
+      memories: [],
       recentLife: activities.reverse().map((a) => ({
         kind: a.kind,
         title: a.title,
@@ -491,7 +490,19 @@ export async function companionChat(
         }).format(a.createdAt),
       })),
     } satisfies Parameters<typeof buildCompanionPrompt>[0]
-    const system = buildCompanionPrompt(promptContext)
+    const systemFor = (spec: string) => {
+      const selected = promptMemory(
+        storedMemory,
+        chatBudget(deps.contextWindow ?? modelContextWindow(spec))
+      )
+      return buildCompanionPrompt({
+        ...promptContext,
+        summaries: selected.summaries,
+        memories: selected.notes,
+        omittedMemory: selected.omittedSummaries + selected.omittedNotes,
+      })
+    }
+    let system = systemFor(activeSpec)
 
     // The same low effort for the memory call, whatever the chat setting says
     const memoryOptions = () => {
@@ -541,6 +552,17 @@ export async function companionChat(
               const started = Date.now()
               const decision = await decideMemoryOps(model, fact, view, {
                 context: user.content,
+                window: deps.contextWindow ?? modelContextWindow(activeSpec),
+                beforeCall: async () => {
+                  const blocked = monthlyBlock(
+                    await monthlyUsage(input.ownerId),
+                    activePrice
+                  )
+                  if (blocked) throw new HttpError(402, blocked)
+                },
+                onReadUsage: async (usage, ms) => {
+                  await recordUsage(input.agentId, activeSpec, activePrice, usage, ms)
+                },
                 providerOptions: memoryOptions(),
               })
               if (decision.usage)
@@ -710,6 +732,10 @@ export async function companionChat(
           (picture ? 8192 : 0),
         model,
         providerOptions: memoryOptions(),
+        beforeSummary: async () => {
+          const block = monthlyBlock(await monthlyUsage(input.ownerId), activePrice)
+          if (block) throw new HttpError(402, block)
+        },
         onUsage: (usage, durationMs) =>
           recordUsage(input.agentId, activeSpec, activePrice, usage, durationMs),
         force,
@@ -836,6 +862,7 @@ export async function companionChat(
         activePrice = findPrice(activeSpec, { custom: await getCustomPrices() })
         price = activePrice
         providerOptions = optionsFor(activeSpec)
+        system = systemFor(activeSpec)
         context = await contextFor(false)
         text = await runStream(model, activeSpec, activePrice)
       }

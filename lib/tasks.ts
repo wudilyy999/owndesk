@@ -1,3 +1,4 @@
+import { continuationAtAdmission } from "@/lib/continuation"
 import { randomUUID } from "node:crypto"
 import { isDeepStrictEqual } from "node:util"
 import { and, desc, eq, sql } from "drizzle-orm"
@@ -35,6 +36,7 @@ import { requestCancellation } from "@/lib/task-control"
 import { appendEventInTransaction } from "@/lib/task-events"
 import {
   conversationContext,
+  roundConversation,
   type ConversationTurn,
   type ThreadInteraction,
 } from "@/lib/thread-context"
@@ -369,55 +371,86 @@ export async function submitTask(ownerId: string, source: string, raw: TaskInput
         [threadId]
       )
       threadTurn = count.rows[0].next
-      const past = (
-        await client.query<ConversationTurn>(
-          "SELECT id,goal,status,result,error FROM tasks WHERE thread_id=$1 AND owner_id=$2 ORDER BY thread_turn DESC LIMIT 200",
-          [threadId, ownerId]
+      config.conversation = []
+      let after = 0
+      while (after < threadTurn - 1) {
+        const { rows: past } = await client.query<ConversationTurn & { turnNo: number }>(
+          `SELECT id,goal,status,result,error,thread_turn AS "turnNo" FROM tasks
+           WHERE thread_id=$1 AND owner_id=$2 AND thread_turn>$3 AND thread_turn<$4
+           ORDER BY thread_turn LIMIT 200`,
+          [threadId, ownerId, after, threadTurn]
         )
-      ).rows.reverse()
-      const interactions = await client.query<{ taskId: string } & ThreadInteraction>(
-        `SELECT task_id AS "taskId",kind,decision,
+        if (!past.length) break
+        after = past[past.length - 1].turnNo
+        const interactions = await client.query<{ taskId: string } & ThreadInteraction>(
+          `SELECT task_id AS "taskId",kind,decision,
         COALESCE(payload->>'question',payload->>'reason',payload->>'message',payload->>'summary','') AS question,
         COALESCE(response->>'answer',response->>'note','') AS answer FROM task_requests
         WHERE task_id=ANY($1::text[]) AND status='resolved' ORDER BY resolved_at,id`,
-        [past.map((turn) => turn.id)]
-      )
-      const supplements = await client.query<{ taskId: string; text: string }>(
-        "SELECT task_id AS \"taskId\",payload->>'text' AS text FROM task_events WHERE task_id=ANY($1::text[]) AND type='owner_supplement' ORDER BY seq",
-        [past.map((turn) => turn.id)]
-      )
-      const uploadedFiles = await client.query<{ taskId: string; file: unknown }>(
-        `SELECT task_id AS "taskId",payload->'file' AS file FROM task_events WHERE task_id=ANY($1::text[]) AND type='upload_imported' ORDER BY seq`,
-        [past.map((turn) => turn.id)]
-      )
-      for (const turn of past) {
-        turn.interactions = interactions.rows.filter(
-          (interaction) => interaction.taskId === turn.id
+          [past.map((turn) => turn.id)]
         )
-        turn.interactions.push(
-          ...uploadedFiles.rows
-            .filter((file) => file.taskId === turn.id)
-            .map((file) => ({
-              kind: "owner_attachment",
-              decision: "imported",
-              question:
-                "Historical uploaded file (inspect its current contents before use)",
-              answer: JSON.stringify(file.file),
-            })),
-          ...supplements.rows
-            .filter((note) => note.taskId === turn.id)
-            .map((note) => ({
-              kind: "owner_supplement",
-              decision: "sent",
-              question: "Owner's additional instruction",
-              answer: note.text,
-            }))
+        const supplements = await client.query<{ taskId: string; text: string }>(
+          "SELECT task_id AS \"taskId\",payload->>'text' AS text FROM task_events WHERE task_id=ANY($1::text[]) AND type='owner_supplement' ORDER BY seq",
+          [past.map((turn) => turn.id)]
+        )
+        const uploadedFiles = await client.query<{ taskId: string; file: unknown }>(
+          `SELECT task_id AS "taskId",payload->'file' AS file FROM task_events WHERE task_id=ANY($1::text[]) AND type='upload_imported' ORDER BY seq`,
+          [past.map((turn) => turn.id)]
+        )
+        for (const turn of past) {
+          turn.interactions = interactions.rows.filter(
+            (interaction) => interaction.taskId === turn.id
+          )
+          turn.interactions.push(
+            ...uploadedFiles.rows
+              .filter((file) => file.taskId === turn.id)
+              .map((file) => ({
+                kind: "owner_attachment",
+                decision: "imported",
+                question:
+                  "Historical uploaded file (inspect its current contents before use)",
+                answer: JSON.stringify(file.file),
+              })),
+            ...supplements.rows
+              .filter((note) => note.taskId === turn.id)
+              .map((note) => ({
+                kind: "owner_supplement",
+                decision: "sent",
+                question: "Owner's additional instruction",
+                answer: note.text,
+              }))
+          )
+        }
+        config.conversation.push(...conversationContext(past))
+      }
+      if (input.objectiveRound) {
+        const { rows } = await client.query<
+          Parameters<typeof roundConversation>[0][number]
+        >(
+          `SELECT round_no AS "roundNo",verdict,summary FROM objective_rounds
+           WHERE objective_id=$1 AND round_no<$2 AND verdict IS NOT NULL ORDER BY round_no`,
+          [input.objectiveRound.objectiveId, input.objectiveRound.roundNo]
+        )
+        config.conversation = config.conversation.concat(roundConversation(rows))
+      }
+      if (
+        !config.companionContext &&
+        !input.workflowCompilation &&
+        !input.manualCompilation &&
+        !input.workflowExecution
+      ) {
+        Object.assign(
+          config,
+          await continuationAtAdmission(
+            client,
+            ownerId,
+            agent.id,
+            input.objectiveRound ? "objective" : "thread",
+            input.objectiveRound?.objectiveId ?? threadId,
+            config.conversation
+          )
         )
       }
-      const context = conversationContext(past)
-      config.conversation = context.conversation
-      config.omittedConversationTurns =
-        context.omittedConversationTurns + threadTurn - 1 - past.length
       await client.query(
         "UPDATE tasks SET thread_id=$2,thread_turn=$3,config_snapshot=$4 WHERE id=$1",
         [taskId, threadId, threadTurn, JSON.stringify(config)]

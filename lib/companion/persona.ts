@@ -82,6 +82,7 @@ export type PromptContext = {
   // or cannot see it
   image?: "seen" | "sensitive" | "unseen"
   // Her topic summaries ("饮食习惯", "工作近况") and the notes not sorted into one yet
+  omittedMemory?: number
   summaries?: { topic: string; content: string }[]
   memories: { id: string; content: string }[]
   recentLife: {
@@ -164,6 +165,9 @@ export function buildCompanionPrompt(ctx: PromptContext) {
   const loose = ctx.memories.map((m) => `- ${m.content}`).join("\n")
   const notes =
     [
+      ctx.omittedMemory
+        ? `还有 ${ctx.omittedMemory} 条未展开，需要时用 recall_memory 翻阅。`
+        : "",
       topics && `关于对方，按主题：\n${topics}`,
       loose && `${topics ? "还没归进主题的零散记忆" : "你记得的"}：\n${loose}`,
     ]

@@ -799,6 +799,7 @@ export const tasks = pgTable(
       role?: string
       timeZone?: string
       conversation?: { role: "user" | "assistant"; content: string }[]
+      continuation?: import("@/lib/continuation").Continuation
       omittedConversationTurns?: number
       contextWindowTokens?: number
       connections?: import("@/lib/connection-schema").ConnectionReference[]

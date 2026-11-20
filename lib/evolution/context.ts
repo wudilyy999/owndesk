@@ -8,6 +8,7 @@ import {
   contextMessages,
   estimateContextTokens,
   exceedsInputBudget,
+  inputBudget,
   forProvider,
   isContextWindowError,
   planContextCompaction,
@@ -35,7 +36,7 @@ export function labContext<T extends ToolSet>(input: {
   }))
   const window = modelContextWindow(input.spec)
   const output = Math.min(input.output, Math.floor(window / 2))
-  const limit = window - output
+  const limit = inputBudget(window, output)
   let checkpoint: ContextCheckpoint | undefined
   const project = (history: ModelMessage[], cp = checkpoint) =>
     forProvider(input.spec, compactContext(contextMessages(history, 0, cp)))
@@ -87,39 +88,57 @@ export function labContext<T extends ToolSet>(input: {
           abortSignal: AbortSignal.timeout(input.timeout),
         })
       )
+    let refused = false
     if (!exceedsInputBudget(size(messages), limit)) {
       try {
         return await call()
       } catch (error) {
         if (!isContextWindowError(error)) throw error
+        refused = true
       }
     }
-    const plan = planContextCompaction(history, 0, checkpoint, window - 4096)
-    if (!plan || size(project(history, { through: plan.through, summary: "" })) >= limit)
-      throw new Error(
-        "Current lab inputs exceed the model window; no useful history can be folded"
+    for (;;) {
+      const before = size(messages)
+      const plan = planContextCompaction(
+        history,
+        0,
+        checkpoint,
+        window - 4096,
+        refused ? 0 : limit - size([])
       )
-    const summary = await metered(() =>
-      generateText({
-        model: input.model,
-        providerOptions: input.providerOptions,
-        instructions: plan.messages.filter((m) => m.role === "system"),
-        messages: plan.messages.filter((m) => m.role !== "system"),
-        maxRetries: 0,
-        maxOutputTokens: Math.min(4096, output),
-        abortSignal: AbortSignal.timeout(input.timeout),
-      })
-    )
-    const next = {
-      through: plan.through,
-      summary: redactSecrets(
-        validateContextSummary(summary.text, summary.toolCalls, summary.finishReason)
-      ),
+      if (
+        !plan ||
+        size(project(history, { through: plan.through, summary: "" })) >= before
+      )
+        throw new Error(
+          "Current lab inputs exceed the model window; no useful history can be folded"
+        )
+      const summary = await metered(() =>
+        generateText({
+          model: input.model,
+          providerOptions: input.providerOptions,
+          instructions: plan.messages.filter((m) => m.role === "system"),
+          messages: plan.messages.filter((m) => m.role !== "system"),
+          maxRetries: 0,
+          maxOutputTokens: Math.min(4096, output),
+          abortSignal: AbortSignal.timeout(input.timeout),
+        })
+      )
+      const next = {
+        through: plan.through,
+        summary: redactSecrets(
+          validateContextSummary(summary.text, summary.toolCalls, summary.finishReason)
+        ),
+      }
+      messages = project(history, next)
+      if (size(messages) >= before)
+        throw new Error(
+          "Lab summary did not reduce the input; keeping the previous cursor"
+        )
+      checkpoint = next
+      if (!exceedsInputBudget(size(messages), limit)) return call()
+      if (!plan.more)
+        throw new Error("Lab context still exceeds the model window after compaction")
     }
-    messages = project(history, next)
-    if (exceedsInputBudget(size(messages), limit))
-      throw new Error("Lab context still exceeds the model window after compaction")
-    checkpoint = next
-    return call()
   }
 }

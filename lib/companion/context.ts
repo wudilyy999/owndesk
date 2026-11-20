@@ -2,21 +2,21 @@ import { redactSecrets } from "@/lib/redact-secrets"
 // Long-chat context, following Codex and OpenCode: every message stays in companion_messages; the
 // model sees a rolling summary of everything up to a checkpoint plus every later message verbatim.
 // When that no longer fits the model window, the oldest messages are folded into the summary and
-// about the newest KEEP_TOKENS of conversation stay word for word. Ideas only; no code copied.
+// the newest complete turns stay word for word. Ideas only; no code copied.
 import { generateText, type LanguageModel, type ModelMessage } from "ai"
 import { and, asc, eq, inArray, isNull, sql } from "drizzle-orm"
 import { db, pool } from "@/db"
 import { companionImages, companionMessages, type CompanionMessage } from "@/db/schema"
-import { estimateContextTokens, exceedsInputBudget } from "@/lib/agent/context"
+import {
+  estimateContextTokens,
+  exceedsInputBudget,
+  inputBudget,
+  fittingPrefix,
+  recentHistoryStart,
+} from "@/lib/agent/context"
 
-export const KEEP_TOKENS = 15_000
 const SUMMARY_CHARS = 10_000
 const SUMMARY_OUTPUT_TOKENS = 3_000
-const LINE_CHARS = 6_000
-// Older lines are shortened down to this before a backlog is split over several summary calls
-const MIN_LINE_CHARS = 240
-// Summary calls one turn may make; a very long backlog is caught up over the next turns
-const MAX_FOLDS = 3
 
 export type ChatCheckpoint = {
   summary: string
@@ -40,7 +40,7 @@ export type ChatContext = {
 // Reserve the same output allowance that the chat request actually sends.
 export const CHAT_REPLY_TOKENS = 1200
 export function chatBudget(window: number) {
-  return window - CHAT_REPLY_TOKENS
+  return inputBudget(window, CHAT_REPLY_TOKENS)
 }
 
 const settingKey = (agentId: string) => `companion.context.${agentId}`
@@ -286,11 +286,13 @@ export async function summarizeChat(
   input: SummaryInput,
   options: {
     providerOptions?: Record<string, Record<string, string>>
+    beforeSummary?: () => Promise<void>
     onUsage?: (usage: SummaryUsage, durationMs: number) => Promise<void>
   } = {}
 ) {
   const messages: ModelMessage[] = [{ role: "user", content: summaryRequest(input) }]
   for (let attempt = 0; attempt < 2; attempt++) {
+    await options.beforeSummary?.()
     const started = Date.now()
     const result = await generateText({
       model,
@@ -321,26 +323,12 @@ export async function summarizeChat(
   throw new Error("The chat summary did not follow the template")
 }
 
-// Keeps the start and the end of a long message
-function clip(text: string, chars: number) {
-  if (text.length <= chars) return text
-  const head = Math.ceil(chars * 0.7)
-  return `${text.slice(0, head)}……${text.slice(text.length - (chars - head))}`
-}
-
-// The transcript for one summary call: as many of the oldest lines as fit in `room` tokens,
-// shortening each line first (detail goes before whole messages do)
 export function fitTranscript(lines: string[], room: number) {
-  const fits = (items: string[]) => estimateContextTokens(items.join("\n")) <= room
-  if (fits(lines)) return { text: lines.join("\n"), count: lines.length }
-  for (let chars = LINE_CHARS; chars >= MIN_LINE_CHARS; chars = Math.floor(chars / 2)) {
-    const short = lines.map((line) => clip(line, chars))
-    if (fits(short)) return { text: short.join("\n"), count: lines.length }
-  }
-  const short = lines.map((line) => clip(line, MIN_LINE_CHARS))
-  let count = short.length
-  while (count > 1 && !fits(short.slice(0, count))) count = Math.ceil(count / 2)
-  return { text: short.slice(0, count).join("\n"), count }
+  const count = fittingPrefix(
+    lines.length,
+    (n) => estimateContextTokens(lines.slice(0, n).join("\n")) <= room
+  )
+  return { text: lines.slice(0, count).join("\n"), count }
 }
 
 function transcriptLine(
@@ -359,7 +347,7 @@ function transcriptLine(
     timeZone,
   }).format(row.createdAt)
   const [message] = historyMessages([row], pictures)
-  return `[${at}] ${row.role === "user" ? "对方" : name}：${clip(String(message.content), LINE_CHARS)}`
+  return `[${at}] ${row.role === "user" ? "对方" : name}：${String(message.content)}`
 }
 
 export type BuildChatContext = {
@@ -375,6 +363,7 @@ export type BuildChatContext = {
   model: LanguageModel
   providerOptions?: Record<string, Record<string, string>>
   onUsage?: (usage: SummaryUsage, durationMs: number) => Promise<void>
+  beforeSummary?: () => Promise<void>
   // The provider rejected the last request as too long: fold once even below the estimate
   force?: boolean
 }
@@ -382,14 +371,12 @@ export type BuildChatContext = {
 export async function buildChatContext(input: BuildChatContext): Promise<ChatContext> {
   let { raw, checkpoint } = await readCheckpoint(input.agentId)
   const ceiling = chatBudget(input.window)
-  // About 15k tokens stay verbatim, less on small windows, half after the provider refused
-  const keep = Math.floor(Math.min(KEEP_TOKENS, ceiling * 0.3) * (input.force ? 0.5 : 1))
   let folded = 0
   let failed = false
   let summaryUsable = true
   let mustFold = !!input.force
 
-  for (let pass = 0; ; pass++) {
+  for (;;) {
     const rows = await messagesAfter(input.agentId, checkpoint?.through ?? null)
     const pictures = await picturesFor(input.agentId, rows)
     const shown = (row: CompanionMessage) => !row.revealAt || row.revealAt <= input.now
@@ -412,16 +399,9 @@ export async function buildChatContext(input: BuildChatContext): Promise<ChatCon
       current === -1 ? rows.length : current
     )
     let cut = 0
-    if (
-      !failed &&
-      pass < MAX_FOLDS &&
-      limit > 0 &&
-      (exceedsInputBudget(total, ceiling) || mustFold)
-    ) {
+    if (!failed && limit > 0 && (exceedsInputBudget(total, ceiling) || mustFold)) {
       // Keep about `keep` tokens of the newest messages, starting at one of the person's messages
-      let kept = 0
-      cut = rows.length
-      while (cut > 0 && kept < keep) kept += tokens[--cut]
+      cut = recentHistoryStart(tokens, ceiling - input.fixedTokens(summary, 0), mustFold)
       let start = cut
       while (start > 0 && rows[start]?.role !== "user") start--
       if (start === 0) {
@@ -431,8 +411,7 @@ export async function buildChatContext(input: BuildChatContext): Promise<ChatCon
       cut = Math.min(start, limit)
     }
     mustFold = false
-    const rewrite =
-      !failed && pass < MAX_FOLDS && checkpoint !== null && forgotten.length > 0
+    const rewrite = !failed && checkpoint !== null && forgotten.length > 0
     if (cut > 0 || rewrite) {
       const lines = rows
         .slice(0, cut)
@@ -446,6 +425,10 @@ export async function buildChatContext(input: BuildChatContext): Promise<ChatCon
       const transcript = fitTranscript(lines, room)
       const take = transcript.count
       try {
+        if (cut && !take)
+          throw new Error(
+            "A historical chat message exceeds the summary input window; keeping the previous cursor"
+          )
         const next = await summarizeChat(
           input.model,
           {
@@ -454,8 +437,22 @@ export async function buildChatContext(input: BuildChatContext): Promise<ChatCon
             transcript: transcript.text,
             forgotten: checkpoint ? forgotten : await forgottenSince(input.agentId, null),
           },
-          { providerOptions: input.providerOptions, onUsage: input.onUsage }
+          {
+            providerOptions: input.providerOptions,
+            onUsage: input.onUsage,
+            beforeSummary: input.beforeSummary,
+          }
         )
+        if (
+          take &&
+          !rewrite &&
+          input.fixedTokens(next, 0) >=
+            input.fixedTokens(summary, 0) +
+              tokens.slice(0, take).reduce((n, t) => n + t, 0)
+        )
+          throw new Error(
+            "The summary did not reduce the request; keeping the previous cursor"
+          )
         const last = take ? rows[take - 1] : null
         const updated: ChatCheckpoint = {
           summary: next,

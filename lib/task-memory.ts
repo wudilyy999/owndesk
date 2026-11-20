@@ -1,46 +1,57 @@
 import { memoryView } from "@/lib/companion/memory"
 
-// Like the chat prompt: every topic summary first, then the notes not sorted into a topic, then
-// the newest sorted notes while room is left. Whatever does not fit is counted, never silently
-// dropped, and stays readable through recall_memory. Initial snapshot and each decision share it.
-export const MEMORY_SUMMARY_CHARS = 16_000
-export const MEMORY_NOTE_CHARS = 12_000
+import type { MemoryView } from "@/lib/companion/memory-update"
+import {
+  DEFAULT_CONTEXT_LIMITS,
+  estimateContextTokens,
+  fittingPrefix,
+  inputBudget,
+} from "@/lib/agent/context"
 
-export async function taskMemoryContext(agentId: string) {
-  const view = await memoryView(agentId)
-  const summaries: string[] = []
-  let chars = 0
-  for (const summary of view.summaries) {
-    const line = `- [${summary.id}] ${summary.topic}: ${summary.content}`
-    if (chars + line.length > MEMORY_SUMMARY_CHARS) break
-    summaries.push(line)
-    chars += line.length
-  }
-  const notes: string[] = []
-  chars = 0
-  const ordered = [
-    ...view.notes.filter((note) => !note.summaryId),
-    ...view.notes.filter((note) => note.summaryId),
+// Long-term records remain individually addressable. This is the initial reading allowance;
+// omitted entries are still available from recall_memory without overwriting any history.
+export function promptMemory(view: MemoryView, room: number, includeGrouped = false) {
+  const allowance = Math.max(0, Math.floor(room / 5))
+  const first = fittingPrefix(
+    view.summaries.length,
+    (n) => estimateContextTokens(view.summaries.slice(0, n)) <= allowance
+  )
+  const summaries = view.summaries.slice(0, first)
+  const notes = [
+    ...view.notes.filter((n) => !n.summaryId),
+    ...(includeGrouped ? view.notes.filter((n) => n.summaryId) : []),
   ]
-  for (const note of ordered) {
-    const line = `- [${note.id}] ${note.content}`
-    // Stop at the first note that does not fit, so the prompt keeps a contiguous newest run
-    if (chars + line.length > MEMORY_NOTE_CHARS) break
-    notes.push(line)
-    chars += line.length
+  const count = fittingPrefix(
+    notes.length,
+    (n) => estimateContextTokens([summaries, notes.slice(0, n)]) <= allowance
+  )
+  return {
+    summaries,
+    notes: notes.slice(0, count),
+    omittedSummaries: view.summaries.length - first,
+    omittedNotes: notes.length - count,
   }
+}
+
+export async function taskMemoryContext(
+  agentId: string,
+  window = DEFAULT_CONTEXT_LIMITS.window
+) {
+  const read = promptMemory(
+    await memoryView(agentId),
+    inputBudget(window, DEFAULT_CONTEXT_LIMITS.output),
+    true
+  )
   const missing = [
-    view.summaries.length > summaries.length
-      ? `${view.summaries.length - summaries.length} topic summaries`
-      : "",
-    view.notes.length > notes.length ? `${view.notes.length - notes.length} notes` : "",
+    read.omittedSummaries && `${read.omittedSummaries} topic summaries`,
+    read.omittedNotes && `${read.omittedNotes} notes`,
   ].filter(Boolean)
   return {
-    memories: notes,
+    memories: read.notes.map((n) => `- [${n.id}] ${n.content}`),
     memorySummary: [
-      summaries.join("\n"),
+      ...read.summaries.map((s) => `- [${s.id}] ${s.topic}: ${s.content}`),
       missing.length
-        ? `Not shown here (read them with recall_memory when relevant): ${missing.join(", ")}.`
+        ? `Not shown here (outside the memory reading allowance): ${missing.join(", ")}.`
         : "",
     ]
       .filter(Boolean)

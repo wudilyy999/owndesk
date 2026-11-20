@@ -70,6 +70,7 @@ if (process.argv[2] === "--resume") {
     void (async () => {
       assert.equal(request.url, "/v1/chat/completions")
       let raw = ""
+      request.setEncoding("utf8")
       for await (const chunk of request) raw += chunk
       const body = JSON.parse(raw)
       assert.equal(body.model, "context-fixture")
@@ -311,6 +312,99 @@ process.stdout.write(JSON.stringify({ready:true,protocolVersion:6,mode:'agent',e
         "Real SDK compaction, durable checkpoint, fresh-process continuation, pinned owner input, original attempt pricing and zero-request replay"
       )
 
+      const backlog = await makeTask()
+      const backlogHistory: ModelMessage[] = [
+        { role: "system", content: "History fixture" },
+      ]
+      for (let i = 0; i < 110; i++)
+        backlogHistory.push(
+          { role: "user", content: `[question-${i}] ${"旧记录".repeat(450)}` },
+          { role: "assistant", content: `[reply-${i}]` }
+        )
+      backlogHistory.push({
+        role: "user",
+        content: "Current owner correction must stay verbatim.",
+      })
+      const threadId = randomUUID()
+      await pool.query(
+        "INSERT INTO threads(id,agent_id,created_at,active_at) VALUES($1,$2,now(),now())",
+        [threadId, backlog.agentId]
+      )
+      const admissionClient = await pool.connect()
+      const { continuationAtAdmission } = await import("@/lib/continuation")
+      const priorTurns = backlogHistory.slice(1, -1) as {
+        role: "user" | "assistant"
+        content: string
+      }[]
+      const admission = async (turns = priorTurns, agent = backlog.agentId) =>
+        continuationAtAdmission(
+          admissionClient,
+          "context-owner",
+          agent,
+          "thread",
+          threadId,
+          turns
+        )
+      try {
+        await pool.query(
+          "UPDATE tasks SET thread_id=$2,config_snapshot=config_snapshot || $3::jsonb WHERE id=$1",
+          [backlog.taskId, threadId, JSON.stringify(await admission())]
+        )
+        const beforeBacklog = requests.length
+        let no = 1
+        for (let n = 0; n < 20; n++) {
+          const outcome = await decide(
+            backlog.taskId,
+            1,
+            no,
+            backlogHistory,
+            backlogHistory.length - 1
+          )
+          if (outcome.kind === "decision") break
+          assert.equal(outcome.kind, "compacted")
+          if (outcome.more) no++
+        }
+        const batches = requests.slice(beforeBacklog)
+        assert(batches.filter((r) => r.compaction).length >= 2)
+        assert.equal(batches.at(-1)?.compaction, false)
+        const sent = batches
+          .filter((r) => r.compaction)
+          .flatMap((r) =>
+            JSON.parse(
+              r.messages.find((m: any) => m.role === "user").content
+            ).transcript.map((m: any) => m.content)
+          )
+        assert.deepEqual(
+          sent,
+          backlogHistory.slice(1, sent.length + 1).map((m) => m.content)
+        )
+        assert(JSON.stringify(batches.at(-1)?.messages).includes("[reply-109]"))
+        assert(
+          JSON.stringify(batches.at(-1)?.messages).includes(
+            "Current owner correction must stay verbatim."
+          )
+        )
+        checks.push(
+          "Oversized thread: consecutive independently billed compactions cover full original pairs once; final request keeps recent replies and owner correction verbatim"
+        )
+
+        const nextTask = await admission()
+        assert.equal(nextTask.continuation.after, sent.length)
+        assert.equal(nextTask.conversation[0].role, "assistant")
+        assert.deepEqual(nextTask.conversation.slice(1), priorTurns.slice(sent.length))
+        assert(
+          (await admission([{ role: "user", content: "edited" }, ...priorTurns.slice(1)]))
+            .continuation.after === 0
+        )
+        assert((await admission(priorTurns, randomUUID())).continuation.after === 0)
+        assert(
+          !JSON.stringify(batches.filter((r) => r.compaction)).includes(
+            "Current owner correction must stay verbatim."
+          )
+        )
+      } finally {
+        admissionClient.release()
+      }
       mode = "failed"
       const failed = await makeTask()
       await assert.rejects(

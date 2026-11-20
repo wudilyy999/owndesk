@@ -33,8 +33,6 @@ export const OBJECTIVE_SOURCE = "objective"
 // Rounds in a row that failed or were cancelled outside the owner's stop before it pauses
 export const OBJECTIVE_MAX_FAILURES = 3
 const TASK_COST_CAP = 100_000_000
-const HISTORY_ROUNDS = 8
-const ROUND_SUMMARY_CHARS = 500
 
 export type ObjectiveUsage = {
   rounds: number
@@ -114,25 +112,13 @@ export function roundBudget(budget: ObjectiveBudget, usage: ObjectiveUsage) {
       }
 }
 
-type RoundNote = { roundNo: number; verdict: string | null; summary: string | null }
-
-const verdictText: Record<string, string> = {
-  progress: "progress",
-  achieved: "claimed achieved",
-  steps: "ran out of steps",
-  cost: "ran out of cost allowance",
-  failed: "failed",
-  cancelled: "cancelled",
-}
-
 export function roundGoal(
   objective: Pick<
     Objective,
     "title" | "objective" | "doneCriteria" | "completionContract"
   >,
   roundNo: number,
-  roundSteps: number,
-  previous: RoundNote[]
+  roundSteps: number
 ) {
   const contract = objective.completionContract
   const check = [
@@ -141,21 +127,14 @@ export function roundGoal(
     contract.directoryTree && `the directory ${contract.directoryTree.root} is checked`,
     contract.requireHumanReview && "the owner confirms the result",
   ].filter(Boolean)
-  const history = previous
-    .slice(-HISTORY_ROUNDS)
-    .reverse()
-    .map(
-      (round) =>
-        `- Round ${round.roundNo} (${verdictText[round.verdict ?? ""] ?? "unfinished"}): ${(round.summary ?? "").replace(/\s+/g, " ").slice(0, ROUND_SUMMARY_CHARS) || "no summary"}`
-    )
   return [
     `Long-running objective "${objective.title}", round ${roundNo}.`,
     `Objective:\n${objective.objective}`,
     `Done when:\n${objective.doneCriteria || "(the owner gave no separate criteria; judge from the objective)"}`,
     check.length ? `When you report it achieved: ${check.join("; ")}.` : "",
-    history.length
-      ? `Earlier rounds (latest first):\n${history.join("\n")}`
-      : "This is the first round.",
+    roundNo === 1
+      ? "This is the first round."
+      : "Earlier round reports are historical context.",
     'Files you made in earlier rounds are still in your workstation. Make concrete progress in this round, then call complete_task with objective.status="progress" and a summary of what you did and what remains, or with objective.status="achieved" only when the whole objective is verifiably done, delivering the evidence files.',
     `This round allows at most ${roundSteps} steps; if they run out, the round ends and the next round continues from your notes.`,
   ]
@@ -532,21 +511,18 @@ async function nextRound(objective: Objective, now: Date) {
   // Improvement rounds run in the lab, not on her workstation; one improvement at a time
   if (isImprovement(objective) ? await labBusy() : await agentBusy(objective.agentId))
     return null
-  const previous = await db
-    .select({
-      roundNo: objectiveRounds.roundNo,
-      verdict: objectiveRounds.verdict,
-      summary: objectiveRounds.summary,
-    })
+  const [last] = await db
+    .select({ roundNo: objectiveRounds.roundNo })
     .from(objectiveRounds)
     .where(eq(objectiveRounds.objectiveId, objective.id))
-    .orderBy(objectiveRounds.roundNo)
-  const roundNo = (previous.at(-1)?.roundNo ?? 0) + 1
+    .orderBy(desc(objectiveRounds.roundNo))
+    .limit(1)
+  const roundNo = (last?.roundNo ?? 0) + 1
   const budget = roundBudget(objective.budget, usage)
   const timeZone = await companionTimeZone(objective.agentId)
   const input: ObjectiveRoundInput = {
     agentId: objective.agentId,
-    goal: roundGoal(objective, roundNo, budget.maxSteps, previous),
+    goal: roundGoal(objective, roundNo, budget.maxSteps),
     clientRequestId: `objective:${objective.id}:${roundNo}`,
     objectiveRound: { objectiveId: objective.id, roundNo },
     completionContract: objective.completionContract,

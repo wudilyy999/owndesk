@@ -1,3 +1,4 @@
+import { sealHistory, type Continuation } from "@/lib/continuation"
 import { generateText, type ModelMessage } from "ai"
 import { db, pool } from "@/db"
 import { tasks } from "@/db/schema"
@@ -12,6 +13,7 @@ import { getCustomPrices, monthlyUsage, monthlyBlock } from "@/lib/spend"
 import {
   prepareModelContext,
   exceedsInputBudget,
+  inputBudget,
   contextMessages,
   planContextCompaction,
   estimateContextTokens,
@@ -40,7 +42,7 @@ export type Decision = {
     missing: boolean
   }
   costMicros: number | null
-  compaction?: { through: number }
+  compaction?: { through: number; continuation?: Continuation }
   context?: { estimatedInput: number; through: number }
   finishReason?: string
 }
@@ -65,7 +67,7 @@ export async function decide(
   | Decision
   | { kind: "request"; requestId: string }
   | { kind: "capacity" }
-  | { kind: "compacted" }
+  | { kind: "compacted"; more?: boolean }
 > {
   const prior = (
     await pool.query<{ status: string; error: string | null }>(
@@ -123,10 +125,21 @@ export async function decide(
       task.configSnapshot.contextWindowTokens ??
       modelContextWindow(task.configSnapshot.model),
   }
-  const inputLimit = limits.window - limits.output
+  const inputLimit = inputBudget(limits.window, limits.output)
   const estimate = (view: ModelMessage[]) =>
     schemaTokens +
     estimateContextTokens(prepareModelContext(task.configSnapshot.model, view, session))
+  const historyRoom =
+    inputLimit -
+    estimate(history.filter((m, i) => m.role === "system" || i === goalIndex))
+  const planFold = () =>
+    planContextCompaction(
+      history,
+      goalIndex,
+      checkpoint,
+      inputLimit - 2048,
+      forceCompaction ? 0 : historyRoom
+    )
   const view = contextMessages(history, goalIndex, checkpoint)
   let estimatedInput = estimate(view)
   const rawEstimate = estimatedInput
@@ -148,13 +161,10 @@ export async function decide(
     forceCompaction ||
     compactionAttempt?.status === "retryable"
   ) {
+    if (saved?.decision_no === -decisionNo && estimatedInput > inputLimit && planFold())
+      return { kind: "compacted", more: true }
     if (saved?.decision_no !== -decisionNo) {
-      const plan = planContextCompaction(
-        history,
-        goalIndex,
-        checkpoint,
-        inputLimit - 2048
-      )
+      const plan = planFold()
       const projected = plan
         ? estimate(
             contextMessages(history, goalIndex, {
@@ -163,7 +173,25 @@ export async function decide(
             })
           )
         : Infinity
-      if (plan && projected <= inputLimit && projected < estimatedInput - 1024) {
+      if (
+        plan &&
+        (projected <= inputLimit || plan.more) &&
+        projected < estimatedInput - 1024
+      ) {
+        const scope = task.configSnapshot.continuation
+        const shareable =
+          scope &&
+          segmentNo === 1 &&
+          task.configSnapshot.conversation &&
+          goalIndex === 1 + task.configSnapshot.conversation.length
+            ? sealHistory(scope, task.configSnapshot.conversation, plan.through)
+            : null
+        if (shareable) {
+          // Reusable history may not learn this task's goal or later supplements.
+          const payload = JSON.parse(String(plan.messages[1].content))
+          payload.currentTask = []
+          plan.messages[1] = { role: "user", content: JSON.stringify(payload) }
+        }
         const compacted = await requestDecision(
           taskId,
           segmentNo,
@@ -171,11 +199,23 @@ export async function decide(
           plan.messages,
           {
             through: plan.through,
+            ...(shareable ? { continuation: shareable } : {}),
           }
         )
         if (compacted.kind !== "decision") return compacted
         validateContextSummary(compacted.text, compacted.calls, compacted.finishReason)
-        return { kind: "compacted" } // Re-enter the existing step/cost/control gates before the next request.
+        return {
+          kind: "compacted",
+          ...(plan.more &&
+          estimate(
+            contextMessages(history, goalIndex, {
+              through: plan.through,
+              summary: compacted.text,
+            })
+          ) > inputLimit
+            ? { more: true }
+            : {}),
+        } // Re-enter the existing step/cost/control gates before the next request.
       }
       if (compactionAttempt?.status === "retryable")
         throw new Error(
@@ -222,7 +262,7 @@ async function requestDecision(
   segmentNo: number,
   decisionNo: number,
   history: ModelMessage[],
-  compaction?: { through: number },
+  compaction?: { through: number; continuation?: Continuation },
   context?: Decision["context"]
 ): Promise<Decision | { kind: "request"; requestId: string } | { kind: "capacity" }> {
   const key = [taskId, segmentNo, decisionNo]
