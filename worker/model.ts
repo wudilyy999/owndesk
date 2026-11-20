@@ -11,6 +11,7 @@ import { callCost, findPrice, toMicros, type Price } from "@/lib/providers/prici
 import { getCustomPrices, monthlyUsage, monthlyBlock } from "@/lib/spend"
 import {
   prepareModelContext,
+  exceedsInputBudget,
   contextMessages,
   planContextCompaction,
   estimateContextTokens,
@@ -143,7 +144,7 @@ export async function decide(
       estimatedInput * Math.max(1, last.usage.input / last.context.estimatedInput)
     )
   if (
-    estimatedInput >= Math.floor(inputLimit * 0.8) ||
+    exceedsInputBudget(estimatedInput, inputLimit) ||
     forceCompaction ||
     compactionAttempt?.status === "retryable"
   ) {

@@ -1,3 +1,4 @@
+import { redactSecrets } from "@/lib/redact-secrets"
 // Long-chat context, following Codex and OpenCode: every message stays in companion_messages; the
 // model sees a rolling summary of everything up to a checkpoint plus every later message verbatim.
 // When that no longer fits the model window, the oldest messages are folded into the summary and
@@ -6,7 +7,7 @@ import { generateText, type LanguageModel, type ModelMessage } from "ai"
 import { and, asc, eq, inArray, isNull, sql } from "drizzle-orm"
 import { db, pool } from "@/db"
 import { companionImages, companionMessages, type CompanionMessage } from "@/db/schema"
-import { estimateContextTokens } from "@/lib/agent/context"
+import { estimateContextTokens, exceedsInputBudget } from "@/lib/agent/context"
 
 export const KEEP_TOKENS = 15_000
 const SUMMARY_CHARS = 10_000
@@ -36,9 +37,10 @@ export type ChatContext = {
   folded: number
 }
 
-// Room kept for her reply and tool steps: 15% of the window, and at least 16k on larger windows
+// Reserve the same output allowance that the chat request actually sends.
+export const CHAT_REPLY_TOKENS = 1200
 export function chatBudget(window: number) {
-  return window - Math.max(Math.floor(window * 0.15), window >= 32_000 ? 16_000 : 0)
+  return window - CHAT_REPLY_TOKENS
 }
 
 const settingKey = (agentId: string) => `companion.context.${agentId}`
@@ -218,23 +220,7 @@ export async function forgottenSince(agentId: string, since: string | null) {
   return rows.map((row) => row.content.slice(0, 300)).filter(Boolean)
 }
 
-const SECRET_PATTERNS = [
-  /-----BEGIN [A-Z ]*PRIVATE KEY-----[\s\S]*?-----END [A-Z ]*PRIVATE KEY-----/g,
-  /\b(?:AKIA|ASIA)[A-Z0-9]{16}\b/g,
-  /\b(?:ghp|gho|ghu|ghs|ghr)_[A-Za-z0-9]{36,}\b/g,
-  /\bgithub_pat_[A-Za-z0-9_]{60,}\b/g,
-  /\bsk-[A-Za-z0-9_-]{20,}\b/g,
-  /\bAIza[0-9A-Za-z_-]{35}\b/g,
-  /\bxox[abpors]-[A-Za-z0-9-]{10,}\b/g,
-  /\b\d{8,10}:AA[A-Za-z0-9_-]{33}\b/g,
-]
-
-export function redactSecrets(text: string) {
-  return SECRET_PATTERNS.reduce(
-    (value, pattern) => value.replace(pattern, "[已隐去的密钥]"),
-    text
-  )
-}
+export { redactSecrets } from "@/lib/redact-secrets"
 
 export const SUMMARY_TEMPLATE = `## 对方的近况与情绪
 - （最近在忙什么、状态和心情）
@@ -426,7 +412,12 @@ export async function buildChatContext(input: BuildChatContext): Promise<ChatCon
       current === -1 ? rows.length : current
     )
     let cut = 0
-    if (!failed && pass < MAX_FOLDS && limit > 0 && (total > ceiling || mustFold)) {
+    if (
+      !failed &&
+      pass < MAX_FOLDS &&
+      limit > 0 &&
+      (exceedsInputBudget(total, ceiling) || mustFold)
+    ) {
       // Keep about `keep` tokens of the newest messages, starting at one of the person's messages
       let kept = 0
       cut = rows.length

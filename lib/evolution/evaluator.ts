@@ -1,3 +1,4 @@
+import { labContext } from "./context"
 // The evaluator (trusted): its code and the frozen tests come from the running version,
 // never from the candidate. Stages: 0 policy, 1 build, 2 checks, 3 candidate stack with the
 // sanitized snapshot, 4 real end-to-end (core checks + the owner's acceptance checklist,
@@ -7,7 +8,7 @@ import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises"
 import os from "node:os"
 import path from "node:path"
 import { setTimeout as delay } from "node:timers/promises"
-import { generateText, tool, type ModelMessage } from "ai"
+import { tool, type ModelMessage } from "ai"
 import { z } from "zod"
 import type { Objective } from "@/db/schema"
 import { pool } from "@/db"
@@ -24,12 +25,7 @@ import {
   stopLab,
   LAB_LABEL,
 } from "@/lib/evolution/lab"
-import {
-  beginAttempt,
-  finishAttempt,
-  LabBudgetError,
-  SEGMENT,
-} from "@/lib/evolution/meter"
+import { LabBudgetError, SEGMENT } from "@/lib/evolution/meter"
 import { addedLines, checkChanges, scanAddedLines } from "@/lib/evolution/policy"
 import { changedFiles, extract, git, patch } from "@/lib/evolution/repo"
 import { sanitizedSeed } from "@/lib/evolution/snapshot"
@@ -980,7 +976,7 @@ export async function reviewAcceptance(input: {
       screenshot = `/api/artifacts/${id}`
       return {
         image,
-        text: `${page.url()}\n${content.slice(0, 12000)}\nControls: ${JSON.stringify(controls)}`,
+        text: `Evidence: ${screenshot}\n${page.url()}\n${content.slice(0, 12000)}\nControls: ${JSON.stringify(controls)}`,
       }
     }
     const model = await createModel(input.spec)
@@ -1006,6 +1002,16 @@ export async function reviewAcceptance(input: {
         ].join("\n\n"),
       },
     ]
+    const request = labContext({
+      taskId: input.taskId,
+      spec: input.spec,
+      segment: SEGMENT.reviewer,
+      model,
+      providerOptions,
+      tools: reviewerTools,
+      output: 8192,
+      timeout: 240000,
+    })
     while (verdicts.size < input.checklist.length) {
       // Keep the latest two screenshots in model context; the artifact archive retains all.
       let kept = 0
@@ -1017,43 +1023,15 @@ export async function reviewAcceptance(input: {
               (item) => item.type !== "image-data" || ++kept <= 2
             )
       }
-      let receipt
+      let result
       try {
-        receipt = await beginAttempt(input.taskId, SEGMENT.reviewer, input.spec)
+        result = await request(messages)
       } catch (error) {
         if (!(error instanceof LabBudgetError) || !input.onBlocked) throw error
         blocked = error.message
         await input.onBlocked(error.message, error.end)
         break
       }
-      const { id: attempt, price } = receipt
-      let result
-      try {
-        result = await generateText({
-          model,
-          providerOptions,
-          messages,
-          tools: reviewerTools,
-          toolChoice: "auto",
-          maxRetries: 0,
-          abortSignal: AbortSignal.timeout(240000),
-        })
-      } catch (error) {
-        await finishAttempt(attempt, price, null, String(error))
-        throw error
-      }
-      const usage = result.totalUsage
-      await finishAttempt(
-        attempt,
-        price,
-        usage.inputTokens === undefined || usage.outputTokens === undefined
-          ? null
-          : {
-              input: usage.inputTokens,
-              output: usage.outputTokens,
-              cached: usage.inputTokenDetails?.cacheReadTokens ?? 0,
-            }
-      )
       messages.push(...(result.response.messages as ModelMessage[]))
       if (!result.toolCalls.length) {
         messages.push({

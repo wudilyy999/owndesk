@@ -3,8 +3,6 @@ import type { FilePart, ModelMessage, ToolResultPart } from "ai"
 import { parseModelSpec } from "@/lib/providers/catalog"
 
 const IMAGES_KEPT = 2
-const OUTPUTS_KEPT = 6
-const STUB_CHARS = 600
 const OUTPUT_CHARS = 12000
 
 type ToolOutput = ToolResultPart["output"]
@@ -324,8 +322,8 @@ function projectObservation(binding: Record<string, any>, limit: number) {
   return projected
 }
 
-function shrink(output: ToolOutput, imageIndex: number, keepFull: boolean): ToolOutput {
-  const limit = keepFull ? OUTPUT_CHARS : STUB_CHARS
+function shrink(output: ToolOutput, imageIndex: number): ToolOutput {
+  const limit = OUTPUT_CHARS
   switch (output.type) {
     case "text":
     case "error-text":
@@ -342,7 +340,6 @@ function shrink(output: ToolOutput, imageIndex: number, keepFull: boolean): Tool
       return {
         ...output,
         value:
-          keepFull &&
           output.value &&
           typeof output.value === "object" &&
           Array.isArray((output.value as Record<string, unknown>).elements)
@@ -359,7 +356,7 @@ function shrink(output: ToolOutput, imageIndex: number, keepFull: boolean): Tool
         .join("\n")
       const value: ContentPart[] = [{ type: "text", text: clipText(text, limit) }]
       const binding = imageBinding(output)
-      if (binding && Array.isArray(binding.elements) && keepFull) {
+      if (binding && Array.isArray(binding.elements)) {
         value[0] = {
           type: "text",
           text: JSON.stringify(projectObservation(binding, limit)),
@@ -426,17 +423,21 @@ export function compactContext(
   current?: { epoch: number; bootId: string | null }
 ): ModelMessage[] {
   let images = 0
-  let outputs = 0
-  const totalOutputs = input.reduce(
-    (sum, message) =>
-      sum +
-      (Array.isArray(message.content)
-        ? message.content.filter((part) => part.type === "tool-result").length
-        : 0),
-    0
-  )
-  // Compact in batches so earlier text prefixes stay unchanged between boundaries.
-  const recentOutputs = OUTPUTS_KEPT + (totalOutputs % OUTPUTS_KEPT)
+  // Only identical, successful read receipts can stand in for each other. Compare before
+  // clipping: two different file versions may have identical previews.
+  const calls = new Map<string, string>()
+  const reads = new Map<string, { receipt: string; id: string }>()
+  for (const message of input) {
+    if (message.role !== "assistant" || !Array.isArray(message.content)) continue
+    for (const part of message.content)
+      if (
+        part.type === "tool-call" &&
+        ["fs_read", "read_file", "recall_memory"].includes(part.toolName)
+      )
+        calls.set(part.toolCallId, JSON.stringify([part.toolName, part.input]))
+  }
+  const observations = new Map<string, { body: string; id: string }>()
+  let sawObservation = false
   return input
     .slice()
     .reverse()
@@ -450,11 +451,30 @@ export function compactContext(
         const valid =
           !current ||
           (binding.epoch === current.epoch && binding.bootId === current.bootId)
-        if (valid && images++ < IMAGES_KEPT) return message
-        return {
-          ...message,
-          content: [{ type: "text" as const, text: "[Earlier screenshot omitted.]" }],
-        }
+        if (typeof message.content === "string") return message
+        const content = message.content
+          .slice()
+          .reverse()
+          .map((part) => {
+            if (
+              part.type !== "image" &&
+              !(part.type === "file" && part.mediaType.startsWith("image/"))
+            )
+              return part
+            if (valid && images < IMAGES_KEPT) {
+              images++
+              return part
+            }
+            return { type: "text" as const, text: "[Earlier screenshot omitted.]" }
+          })
+          .reverse()
+        if (sawObservation || !valid)
+          content.push({
+            type: "text",
+            text: "Historical screenshot; observe the current desktop before acting.",
+          })
+        sawObservation ||= valid
+        return { ...message, content }
       }
       if (
         message.role !== "tool" &&
@@ -478,13 +498,129 @@ export function compactContext(
                   (item) => isImage(item) && JSON.stringify(item).length <= 4_000_000
                 )
               : -1
-          const keepFull = outputs < recentOutputs
-          if (imageIndex >= 0) images++
-          outputs++
-          return {
-            ...part,
-            output: shrink(output, imageIndex, keepFull),
+          const key = calls.get(part.toolCallId)
+          if (key) {
+            const prior = reads.get(key)
+            const ok =
+              (output.type === "json" &&
+                output.value &&
+                typeof output.value === "object" &&
+                !("error" in output.value) &&
+                (!("ok" in output.value) || output.value.ok === true)) ||
+              (output.type === "text" && !output.value.startsWith("ERROR:"))
+            if (ok) {
+              const receipt = JSON.stringify(output)
+              if (prior && prior.receipt === receipt && receipt.length > 240)
+                return {
+                  ...part,
+                  output: {
+                    type: "text" as const,
+                    value: `[Identical read; see tool result ${prior.id}.]`,
+                  },
+                }
+              reads.set(key, { receipt, id: part.toolCallId })
+            } else reads.delete(key)
           }
+          const metadata =
+            binding ??
+            (output.type === "json" && typeof output.value === "object"
+              ? output.value
+              : null)
+          const observation =
+            metadata &&
+            "observationId" in metadata &&
+            "epoch" in metadata &&
+            "bootId" in metadata
+          const sameControl =
+            !current ||
+            (observation &&
+              metadata.epoch === current.epoch &&
+              metadata.bootId === current.bootId)
+          const historical = observation && (sawObservation || !sameControl)
+          if (observation && sameControl) sawObservation = true
+          if (imageIndex >= 0) images++
+          const projected = shrink(output, imageIndex)
+          // Only replace a successful read-only tree with a later identical observation.
+          // Other windows, partial states, errors and action receipts retain their evidence.
+          if (
+            observation &&
+            sameControl &&
+            ["screen_capture", "desktop_get_window_state", "browser_observe"].includes(
+              part.toolName
+            ) &&
+            metadata.ok === true &&
+            !metadata.error &&
+            !metadata.observationError &&
+            !metadata.effect &&
+            !metadata.omittedElements &&
+            metadata.accessibility?.status !== "partial" &&
+            !metadata.accessibility?.truncated &&
+            Array.isArray(metadata.elements)
+          ) {
+            const { observationId, ...evidence } = metadata
+            const key = JSON.stringify([
+              part.toolName,
+              metadata.epoch,
+              metadata.bootId,
+              metadata.window_id,
+              metadata.url,
+            ])
+            const body = JSON.stringify(evidence)
+            const newer = observations.get(key)
+            if (newer && newer.body === body && body.length > 600) {
+              const stub = {
+                ok: true,
+                historicalObservation: true,
+                observationId,
+                identicalTreeIn: newer.id,
+                window_id: metadata.window_id,
+                url: metadata.url,
+              }
+              if (projected.type === "json")
+                return { ...part, output: { ...projected, value: stub } }
+              if (projected.type === "content")
+                return {
+                  ...part,
+                  output: {
+                    ...projected,
+                    value: [
+                      { type: "text" as const, text: JSON.stringify(stub) },
+                      ...projected.value.filter((p) => p.type !== "text"),
+                    ],
+                  },
+                }
+            } else observations.set(key, { body, id: part.toolCallId })
+          }
+          if (historical && projected.type === "content") {
+            return {
+              ...part,
+              output: {
+                ...projected,
+                value: [
+                  ...projected.value,
+                  {
+                    type: "text" as const,
+                    text: "Historical observation for comparison only; its coordinates and control references have expired.",
+                  },
+                ],
+              },
+            }
+          }
+          if (
+            historical &&
+            projected.type === "json" &&
+            typeof projected.value === "object" &&
+            projected.value &&
+            !Array.isArray(projected.value)
+          )
+            return {
+              ...part,
+              output: {
+                ...projected,
+                value: { ...projected.value, historicalObservation: true },
+              },
+            }
+          return { ...part, output: projected }
         })
         .reverse()
       return { ...message, content } as ModelMessage
@@ -611,6 +747,10 @@ export type ContextCheckpoint = { through: number; summary: string }
 export type ContextLimits = { window: number; output: number }
 export const DEFAULT_CONTEXT_LIMITS: ContextLimits = { window: 65536, output: 8192 }
 
+export function exceedsInputBudget(estimated: number, inputLimit: number) {
+  return estimated > inputLimit
+}
+
 export function isContextWindowError(error: unknown) {
   if (!(error instanceof Error)) return false
   const api = error as Error & {
@@ -628,7 +768,7 @@ export function isContextWindowError(error: unknown) {
   )
 }
 
-// ponytail: UTF-8/3 is an estimate, not a tokenizer. Reserve 20% headroom and
+// UTF-8/3 is an estimate, not a tokenizer. Reserve output space and
 // calibrate upward from provider usage; explicit window overrides cover gateways.
 export function estimateContextTokens(value: unknown): number {
   let media = 0
@@ -686,7 +826,8 @@ export function contextMessages(
       .slice(0, checkpoint.through)
       .filter(
         (message, index) =>
-          message.role === "system" || (message.role === "user" && index >= goalIndex)
+          message.role === "system" ||
+          (message.role === "user" && !isScreenshotMessage(message) && index >= goalIndex)
       ),
     {
       role: "assistant",
@@ -877,7 +1018,11 @@ export function planContextCompaction(
     .filter(
       (message, index) =>
         message.role !== "system" &&
-        !(message.role === "user" && index + (checkpoint?.through ?? 0) >= goalIndex)
+        !(
+          message.role === "user" &&
+          !isScreenshotMessage(message) &&
+          index + (checkpoint?.through ?? 0) >= goalIndex
+        )
     )
     .map((message) => ({
       ...message,
@@ -901,7 +1046,7 @@ export function planContextCompaction(
           previousSummary: checkpoint?.summary ?? null,
           currentTask: history
             .slice(goalIndex)
-            .filter((message) => message.role === "user")
+            .filter((message) => message.role === "user" && !isScreenshotMessage(message))
             .map((message) => message.content),
           transcript: source.map((message) => ({
             role: message.role,

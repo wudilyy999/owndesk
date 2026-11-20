@@ -149,7 +149,7 @@ test("even the newest large tool output is bounded with its beginning and error 
   assert.equal(JSON.stringify(input), original, "the audit history is immutable")
 })
 
-test("old output batches compact together while call/result pairs and intermediate prefixes stay stable", () => {
+test("unique tool evidence stays readable across later calls; pairs and prefixes stay stable", () => {
   const turns: ModelMessage[][] = Array.from({ length: 12 }, (_, index) => [
     {
       role: "assistant",
@@ -183,8 +183,7 @@ test("old output batches compact together while call/result pairs and intermedia
     const part = message.content[0]
     assert(part.type === "tool-result" && part.output.type === "text")
     assert.equal(part.toolCallId, `call_${index}`)
-    assert.equal(part.output.value.includes("Tool output trimmed"), index < 6)
-    if (index < 6) assert.equal(part.output.value.length, 600)
+    assert.equal(part.output.value, `${index}: ${"x".repeat(2000)} END`)
   }
   assert.deepEqual(
     twelve.flatMap((message) =>
@@ -459,7 +458,7 @@ test("all SDK output kinds are bounded, valid, typed, immutable and preserve con
       assert(result.role === "tool" && result.content[0].type === "tool-result")
       const actual = result.content[0].output
       assert.equal(actual.type, output.type)
-      const limit = old ? 600 : 12000
+      const limit = 12000
       if (actual.type === "json" || actual.type === "error-json") {
         assert(JSON.stringify(actual.value).length <= limit)
         if ("value" in output && output.value === json) {
@@ -1069,4 +1068,132 @@ test("DBOS error serialization retains the compaction decision number used by ow
   } finally {
     await pool.end()
   }
+})
+
+test("duplicate read projections compare full receipts and historical pages cannot replay a shell", async () => {
+  const { readResult } = await import("@/lib/agent/read-result")
+  const turns = (id: string, body: string): ModelMessage[] => [
+    {
+      role: "assistant",
+      content: [
+        { type: "tool-call", toolName: "fs_read", toolCallId: id, input: { path: "a" } },
+      ],
+    },
+    {
+      role: "tool",
+      content: [
+        {
+          type: "tool-result",
+          toolName: "fs_read",
+          toolCallId: id,
+          output: { type: "json", value: { ok: true, content: body } },
+        },
+      ],
+    },
+  ]
+  const body = "a".repeat(9000) + "B" + "z".repeat(6000)
+  const h = [
+    ...turns("old", body),
+    ...turns("again", body),
+    ...turns("changed", body.replace("B", "C")),
+  ]
+  const view = compactContext(h)
+  assert.match(JSON.stringify(view[1]), /Identical read; see tool result again/)
+  assert.doesNotMatch(JSON.stringify(view.slice(2)), /Identical read/)
+  const page = readResult(h, { id: "old", offset: 9000, limit: 100 })
+  assert(page.text?.includes("B"))
+  assert(readResult([], { id: "old" }).error)
+})
+
+test("several images in a lifted message share the two-frame budget; a newer text-only observation expires a previous frame", () => {
+  const lifted: ModelMessage = {
+    role: "user",
+    providerOptions: { owndesk: { screenshot: true, epoch: 4, bootId: "boot" } },
+    content: ["one", "two", "three"].map((t) => ({
+      type: "file",
+      data: `lift-${t}`,
+      mediaType: "image/png",
+    })),
+  }
+  const native: ModelMessage = {
+    role: "tool",
+    content: [
+      {
+        type: "tool-result",
+        toolCallId: "native",
+        toolName: "desktop_get_window_state",
+        output: {
+          type: "json",
+          value: {
+            ok: true,
+            epoch: 4,
+            bootId: "boot",
+            observationId: "new",
+            screenshot_status: "omitted",
+            elements: [],
+          },
+        },
+      },
+    ],
+  }
+  const text = JSON.stringify(
+    compactContext([lifted, screenshot("previous", 4, "boot"), native], {
+      epoch: 4,
+      bootId: "boot",
+    })
+  )
+  assert.match(text, /lift-three/)
+  assert.doesNotMatch(text, /lift-one|lift-two/)
+  assert.match(text, /image-previous/)
+  assert.match(text, /Historical observation for comparison/)
+  assert.match(text, /screenshot_status/)
+})
+
+test("input exactly at capacity is sent; only excess triggers summary", async () => {
+  const { exceedsInputBudget } = await import("@/lib/agent/context")
+  assert.equal(exceedsInputBudget(8192, 8192), false)
+  assert.equal(exceedsInputBudget(8193, 8192), true)
+})
+
+test("repeated complete desktop trees fold; a partial or failed observation keeps its evidence", () => {
+  const tree = (
+    id: string,
+    extra: { accessibility?: { status: string }; ok?: boolean; error?: string } = {}
+  ): ModelMessage => ({
+    role: "tool",
+    content: [
+      {
+        type: "tool-result",
+        toolName: "desktop_get_window_state",
+        toolCallId: id,
+        output: {
+          type: "json",
+          value: {
+            ok: true,
+            observationId: id,
+            epoch: 2,
+            bootId: "boot",
+            window_id: "w1",
+            elements: Array.from({ length: 20 }, (_, i) => ({
+              name: `Document ${i}`,
+              role: "text",
+              value: `page ${i}`,
+            })),
+            ...extra,
+          },
+        },
+      },
+    ],
+  })
+  const h = [
+    tree("partial", { accessibility: { status: "partial" } }),
+    tree("failed", { ok: false, error: "busy" }),
+    tree("before"),
+    tree("after"),
+  ]
+  const p = compactContext(h, { epoch: 2, bootId: "boot" })
+  assert.match(JSON.stringify(p[2]), /identicalTreeIn/)
+  assert.doesNotMatch(JSON.stringify(p[2]), /Document 14/)
+  for (const i of [0, 1, 3]) assert.match(JSON.stringify(p[i]), /Document 14/)
+  assert.match(JSON.stringify(p[1]), /busy/)
 })

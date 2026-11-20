@@ -12,6 +12,7 @@ import { setTimeout as delay } from "node:timers/promises"
 import { promisify } from "node:util"
 import pg from "pg"
 import type { ObjectiveBudget } from "@/db/schema"
+import type { ModelMessage } from "ai"
 import type { Gateway } from "@/lib/evolution/gateway"
 import type { CandidateStack } from "@/lib/evolution/evaluator"
 
@@ -199,6 +200,65 @@ try {
       [randomUUID(), objective.id, taskId]
     )
     return { objective, taskId }
+  }
+  // Actual HTTP model adapter + task ledger: identical reads fit, distinct ones force
+  // one billed summary and the next normal turn reuses its checkpoint.
+  {
+    const { labContext } = await import("@/lib/evolution/context")
+    const { createModel, modelContextWindow } = await import("@/lib/providers/registry")
+    const { taskId, objective } = await taskFor()
+    const request = labContext({
+      taskId,
+      segment: 1,
+      spec,
+      model: await createModel(spec),
+      tools: {},
+      output: 8000,
+      timeout: 30000,
+    })
+    const history: ModelMessage[] = [
+      { role: "user", content: "Only inspect the synthetic fixture." },
+    ]
+    const add = (value: string) => {
+      const id = `file-${history.length}`
+      history.push(
+        {
+          role: "assistant",
+          content: [
+            {
+              type: "tool-call",
+              toolName: "read_file",
+              toolCallId: id,
+              input: { path: "test.txt" },
+            },
+          ],
+        },
+        {
+          role: "tool",
+          content: [
+            {
+              type: "tool-result",
+              toolName: "read_file",
+              toolCallId: id,
+              output: { type: "text", value },
+            },
+          ],
+        }
+      )
+    }
+    const n = Math.ceil(modelContextWindow(spec) / 3300)
+    for (let i = 0; i < n; i++) add("x".repeat(11000))
+    await request(history)
+    assert.equal((await objectiveUsage(objective.id)).steps, 1)
+    for (let i = 0; i < n; i++) add(String(i) + "y".repeat(11000))
+    await request(history)
+    assert.equal((await objectiveUsage(objective.id)).steps, 3)
+    add("next small read")
+    await request(history)
+    assert.equal((await objectiveUsage(objective.id)).steps, 4)
+    pass(
+      "Lab folds identical reads without a summary, bills one summary at overflow, and reuses it the next turn"
+    )
   }
   const gatewayFor = async (budget: Partial<ObjectiveBudget> = {}) => {
     const fixture = await taskFor(budget)
