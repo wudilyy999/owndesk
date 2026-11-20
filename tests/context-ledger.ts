@@ -236,7 +236,7 @@ process.stdout.write(JSON.stringify({ready:true,protocolVersion:6,mode:'agent',e
               value: {
                 ok: true,
                 path: "/home/agent/report.csv",
-                content: "row\n".repeat(2000),
+                content: `${index}:` + "row\n".repeat(2000),
               },
             },
           },
@@ -449,6 +449,41 @@ process.stdout.write(JSON.stringify({ready:true,protocolVersion:6,mode:'agent',e
       assert(!requests.at(-1)!.compaction)
       checks.push(
         "Frozen per-Task window overrides the worker default; pinned-only input above the soft trigger remains usable within the hard reserve"
+      )
+
+      const duplicateTask = await makeTask()
+      const repeated = history.map((m): ModelMessage => {
+        if (m.role === "assistant" && Array.isArray(m.content))
+          return { ...m, content: m.content.filter((p) => p.type !== "reasoning") }
+        if (m.role === "tool")
+          return {
+            ...m,
+            content: m.content.map((p) =>
+              p.type !== "tool-result"
+                ? p
+                : {
+                    ...p,
+                    output: {
+                      type: "json" as const,
+                      value: { ok: true, content: "row\n".repeat(2500) },
+                    },
+                  }
+            ),
+          }
+        return m
+      })
+      const beforeReads = requests.length
+      assert.equal(
+        (await decide(duplicateTask.taskId, 1, 1, repeated, 1)).kind,
+        "decision"
+      )
+      assert.deepEqual(
+        requests.slice(beforeReads).map((r) => r.compaction),
+        [false]
+      )
+      assert.match(JSON.stringify(requests.at(-1)!.messages), /Identical read/)
+      checks.push(
+        "Repeated read receipts alone would overflow; folding fits and sends zero summary requests"
       )
 
       const rejected = await makeTask()

@@ -42,8 +42,18 @@ import type { ObjectiveProposal } from "./objectives"
 import { controlObjective, objectiveBrief } from "@/lib/objectives"
 import type { ImprovementProposal } from "@/lib/evolution/improvements"
 import { evolutionEnabled } from "@/lib/evolution/store"
-import { estimateContextTokens, isContextWindowError } from "@/lib/agent/context"
-import { buildChatContext, historyMessages, summaryMessage } from "./context"
+import {
+  compactContext,
+  estimateContextTokens,
+  isContextWindowError,
+} from "@/lib/agent/context"
+import {
+  chatBudget,
+  CHAT_REPLY_TOKENS,
+  buildChatContext,
+  historyMessages,
+  summaryMessage,
+} from "./context"
 
 export { historyMessages } from "./context"
 
@@ -484,12 +494,12 @@ export async function companionChat(
     const system = buildCompanionPrompt(promptContext)
 
     // The same low effort for the memory call, whatever the chat setting says
-    const memoryOptions = (() => {
+    const memoryOptions = () => {
       const id = parseModelSpec(activeSpec)?.provider
       return id === "custom" || id === "openrouter"
         ? { [id]: { reasoningEffort: "low" } }
         : undefined
-    })()
+    }
     const proposals: string[] = []
     const objectiveProposals: ObjectiveProposal[] = []
     const improvementProposals: ImprovementProposal[] = []
@@ -531,7 +541,7 @@ export async function companionChat(
               const started = Date.now()
               const decision = await decideMemoryOps(model, fact, view, {
                 context: user.content,
-                providerOptions: memoryOptions,
+                providerOptions: memoryOptions(),
               })
               if (decision.usage)
                 await recordUsage(
@@ -685,7 +695,7 @@ export async function companionChat(
         schema: z.toJSONSchema(item.inputSchema as z.ZodType),
       }))
     )
-    const contextFor = (force: boolean) =>
+    const contextFor = (force: boolean, extraTokens = 0) =>
       buildChatContext({
         agentId: input.agentId,
         name: agent.name,
@@ -696,9 +706,10 @@ export async function companionChat(
         fixedTokens: (summary, gap) =>
           estimateContextTokens([system, summaryMessage(summary, gap)]) +
           toolTokens +
+          extraTokens +
           (picture ? 8192 : 0),
         model,
-        providerOptions: memoryOptions,
+        providerOptions: memoryOptions(),
         onUsage: (usage, durationMs) =>
           recordUsage(input.agentId, activeSpec, activePrice, usage, durationMs),
         force,
@@ -735,14 +746,30 @@ export async function companionChat(
         messages: view.messages,
         tools,
         stopWhen: isStepCount(MAX_STEPS),
-        prepareStep: ({ stepNumber, messages }) =>
-          stepNumber === MAX_STEPS - 1
-            ? {
-                toolChoice: "none" as const,
-                messages: [...messages, { role: "user" as const, content: FINAL_STEP }],
-              }
-            : {},
-        maxOutputTokens: 1200,
+        prepareStep: async ({ stepNumber, responseMessages }) => {
+          const final = stepNumber === MAX_STEPS - 1
+          const tail = compactContext(responseMessages)
+          if (final) tail.push({ role: "user", content: FINAL_STEP })
+          let projected = [...viewOf(context).messages, ...tail]
+          const ceiling = chatBudget(deps.contextWindow ?? modelContextWindow(activeSpec))
+          const size = () => estimateContextTokens([view.system, projected]) + toolTokens
+          if (stepNumber > 0 && size() > ceiling) {
+            // Fold only the closed history. Keep this step's live tool receipts, without
+            // calling the tools again or publishing a second set of cards.
+            context = await contextFor(false, estimateContextTokens(tail))
+            projected = [...viewOf(context).messages, ...tail]
+          }
+          if (size() > ceiling)
+            throw new HttpError(
+              413,
+              "当前消息和本轮工具结果超过模型窗口，请缩短本次输入。"
+            )
+          return {
+            messages: projected,
+            ...(final ? { toolChoice: "none" as const } : {}),
+          }
+        },
+        maxOutputTokens: CHAT_REPLY_TOKENS,
         maxRetries: 1,
         abortSignal: AbortSignal.timeout(240_000),
         onError: ({ error }) => {
@@ -809,6 +836,7 @@ export async function companionChat(
         activePrice = findPrice(activeSpec, { custom: await getCustomPrices() })
         price = activePrice
         providerOptions = optionsFor(activeSpec)
+        context = await contextFor(false)
         text = await runStream(model, activeSpec, activePrice)
       }
     }

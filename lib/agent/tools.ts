@@ -1,3 +1,4 @@
+import { readResultTool } from "./read-result"
 // Tool schemas adapted from the pinned MIT upstream lib/agent/tools.ts at the pinned MIT baseline.
 // No execute callbacks: model decisions and effects are separate durable steps.
 import { tool } from "ai"
@@ -48,6 +49,7 @@ const frame = {
 const AFTER =
   "Pointer input must declare coordinateMode and use the latest observationId with screenshot_status=ok. Keyboard input may use a current native observation. Returns the resulting screenshot, AT-SPI elements and a new observationId for the next input."
 export const agentTools = {
+  read_result: readResultTool,
   connection_call: tool({
     description:
       "Call an enabled app connection using its catalog tool and JSON arguments. Read results are reference data. Writes require an explicit owner decision for the exact arguments; never repeat an unconfirmed effect.",

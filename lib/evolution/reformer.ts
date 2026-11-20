@@ -1,17 +1,14 @@
+import { readResult, readResultTool } from "@/lib/agent/read-result"
+import { labContext } from "./context"
 // The reformer: a model working on the candidate copy inside the lab container. Its model
 // requests are made here, in the trusted worker, so no key ever enters the lab. It can only
 // read, search and write files and run the checks; what it says about tests never counts.
-import { generateText, tool, type ModelMessage } from "ai"
+import { tool, type ModelMessage } from "ai"
 import { z } from "zod"
 import type { Objective } from "@/db/schema"
 import { getSetting } from "@/lib/config"
 import { labExec, readLabFile, type LabContainer } from "@/lib/evolution/lab"
-import {
-  beginAttempt,
-  finishAttempt,
-  LabBudgetError,
-  SEGMENT,
-} from "@/lib/evolution/meter"
+import { LabBudgetError, SEGMENT } from "@/lib/evolution/meter"
 import { isProtectedPath } from "@/lib/evolution/policy"
 import { createModel } from "@/lib/providers/registry"
 import { parseModelSpec } from "@/lib/providers/catalog"
@@ -44,6 +41,7 @@ const clip = (text: string, limit = OUTPUT_CHARS) =>
     : text
 
 const tools = {
+  read_result: readResultTool,
   list_files: tool({
     description: "List files under a directory of the project (not node_modules).",
     inputSchema: z.object({
@@ -122,7 +120,7 @@ async function runTool(
         lab,
         `test -f ${quote(path)} && awk -v s=${offset} -v e=${offset + limit - 1} 'NR>=s && NR<=e {printf "%d\\t%s\\n", NR, $0} END {print "(" NR " lines)"}' ${quote(path)}`
       )
-      return { ok: result.code === 0, output: clip(result.output || "No such file") }
+      return { ok: result.code === 0, output: result.output || "No such file" }
     }
     case "search": {
       const { pattern, dir } = (
@@ -246,10 +244,22 @@ export async function runReformer(input: {
       : ""
   let typecheckFailures = 0
   const maxTurns = input.maxTurns ?? input.objective.budget.roundMaxSteps
+  const request = labContext({
+    taskId: input.taskId,
+    spec: input.spec,
+    segment: SEGMENT.reformer,
+    model,
+    providerOptions,
+    tools,
+    output: 16000,
+    timeout: 300000,
+    system: (remainingSteps) =>
+      `${reformerSystem(input.rules)}\nAfter this request, ${remainingSteps} model requests remain in this round, shared with the candidate's chat and independent acceptance review. Use the relevant files you have already found, implement the smallest complete change, run the checks and finish promptly so the reviewer can use the remaining allowance.`,
+  })
   for (let turn = 1; turn <= maxTurns; turn++) {
-    let receipt
+    let result
     try {
-      receipt = await beginAttempt(input.taskId, SEGMENT.reformer, input.spec)
+      result = await request(messages)
     } catch (error) {
       if (!(error instanceof LabBudgetError)) throw error
       return {
@@ -259,38 +269,6 @@ export async function runReformer(input: {
         end: error.end,
       }
     }
-    const { id: attempt, price, remainingSteps } = receipt
-    let result
-    try {
-      result = await generateText({
-        model,
-        providerOptions,
-        system: `${reformerSystem(input.rules)}\nAfter this request, ${remainingSteps} model requests remain in this round, shared with the candidate's chat and independent acceptance review. Use the relevant files you have already found, implement the smallest complete change, run the checks and finish promptly so the reviewer can use the remaining allowance.`,
-        messages,
-        tools,
-        // A text-only response still has usage and consumes a round step.
-        // Let the loop account for it and request a tool on the next turn.
-        toolChoice: "auto",
-        maxRetries: 0,
-        maxOutputTokens: 16000,
-        abortSignal: AbortSignal.timeout(300000),
-      })
-    } catch (error) {
-      await finishAttempt(attempt, price, null, String(error))
-      throw error
-    }
-    const usage = result.totalUsage
-    await finishAttempt(
-      attempt,
-      price,
-      usage.inputTokens === undefined || usage.outputTokens === undefined
-        ? null
-        : {
-            input: usage.inputTokens,
-            output: usage.outputTokens,
-            cached: usage.inputTokenDetails?.cacheReadTokens ?? 0,
-          }
-    )
     messages.push(...(result.response.messages as ModelMessage[]))
     if (!result.toolCalls.length) {
       messages.push({
@@ -322,7 +300,10 @@ export async function runReformer(input: {
       }
       let outcome: { ok: boolean; output: string }
       try {
-        outcome = await runTool(input.lab, call.toolName, args)
+        if (call.toolName === "read_result") {
+          const page = readResult(messages, args)
+          outcome = { ok: !("error" in page), output: JSON.stringify(page) }
+        } else outcome = await runTool(input.lab, call.toolName, args)
       } catch (error) {
         outcome = {
           ok: false,

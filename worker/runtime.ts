@@ -1,3 +1,4 @@
+import { readResult } from "@/lib/agent/read-result"
 import { executeConnectionTool } from "./connections"
 import { readUpload } from "@/lib/uploads"
 import { importTaskUploads } from "./uploads"
@@ -450,7 +451,8 @@ async function runTool(
   toolName: string,
   raw: Record<string, unknown>,
   epoch: number,
-  ownerMessageSeq?: number
+  ownerMessageSeq?: number,
+  history: ModelMessage[] = []
 ): Promise<ToolResult> {
   if (
     ownerMessageSeq !== undefined &&
@@ -570,6 +572,12 @@ async function runTool(
   ).safeParse(raw)
   if (!parsed.success) return { ok: false, output: { error: parsed.error.message } }
   const input = parsed.data as Record<string, unknown>
+  if (toolName === "read_result") {
+    if (!Object.hasOwn(toolsForTask(task.configSnapshot), toolName))
+      return { ok: false, output: { error: "Receipt reads unavailable in this mode" } }
+    const output = readResult(history, input)
+    return { ok: !("error" in output), output }
+  }
   if (toolName === "load_task_image") {
     if (task.configSnapshot.lifeSession)
       return { ok: false, output: { error: "This tool requires an owner task" } }
@@ -1235,7 +1243,8 @@ export async function runAgent(taskId: string, segmentNo: number) {
                     call.toolName,
                     call.input,
                     decision.epoch,
-                    ownerMessageSeq
+                    ownerMessageSeq,
+                    history
                   )
                 } catch (error) {
                   if (error instanceof WorkspacePaused)
