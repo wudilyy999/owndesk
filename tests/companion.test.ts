@@ -443,3 +443,20 @@ test("rhythm settings reject malformed times and too many away blocks", () => {
     false
   )
 })
+
+test("a vision request reserves image and output tokens before contacting the provider", async () => {
+  const { MockLanguageModelV3 } = await import("ai/test")
+  const { seeImage } = await import("@/lib/companion/images")
+  let calls = 0
+  const model = new MockLanguageModelV3({
+    doGenerate: async () => {
+      calls++
+      throw new Error("provider reached")
+    },
+  })
+  await assert.rejects(
+    seeImage(model, Buffer.from([1, 2, 3]), { window: 8192 }),
+    /image|picture/i
+  )
+  assert.equal(calls, 0)
+})

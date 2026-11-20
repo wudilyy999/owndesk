@@ -414,7 +414,10 @@ export async function companionChat(
         try {
           if (image.description === null) {
             const lookedAt = Date.now()
-            const looked = await seeImage(model, data, { providerOptions })
+            const looked = await seeImage(model, data, {
+              providerOptions,
+              window: deps.contextWindow ?? modelContextWindow(activeSpec),
+            })
             await recordUsage(
               input.agentId,
               activeSpec,
@@ -445,7 +448,7 @@ export async function companionChat(
     const link =
       redo === "regenerate"
         ? null
-        : await queueCoview(input.agentId, user.content, now, deps.linkCheck)
+        : await queueCoview(input.agentId, user.content, now, deps.linkCheck, user.id)
     await hide()
     hiddenNow = true
     emit({ type: "typing", on: true })

@@ -170,6 +170,23 @@ export async function submitTask(ownerId: string, source: string, raw: TaskInput
     )
       throw new HttpError(400, "A life session is a plain single-agent task")
     config.lifeSession = input.lifeSession
+    if (source === "life" && input.lifeSession.coview) {
+      // A new link request uses its originating message ID. Legacy URL-only requests carry
+      // no chat transcript. Only the message containing this link is handed across.
+      const { rows } = await pool.query<{ role: "user"; content: string }>(
+        `SELECT m.role,m.content FROM coview_requests r
+        JOIN companion_messages m ON m.id=r.id AND m.agent_id=r.agent_id
+        JOIN companions c ON c.agent_id=r.agent_id
+        WHERE r.id=$1 AND r.agent_id=$2 AND r.url=$3 AND c.owner_id=$4 AND m.role='user' AND m.superseded_at IS NULL`,
+        [
+          input.lifeSession.coview.requestId,
+          agent.id,
+          input.lifeSession.coview.url,
+          ownerId,
+        ]
+      )
+      config.conversation = rows
+    }
   } else await preemptLifeSessions(ownerId, agent.id)
   if (input.objectiveRound) {
     if (
