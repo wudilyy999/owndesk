@@ -5,8 +5,12 @@ import { db, pool } from "@/db"
 import { tasks } from "@/db/schema"
 import { eq } from "drizzle-orm"
 import { z } from "zod"
-import { getProviderCredentials, modelContextWindow } from "@/lib/providers/registry"
-import { withModelFallback } from "@/lib/providers/fallback"
+import {
+  createModel,
+  getProviderCredentials,
+  modelContextWindow,
+} from "@/lib/providers/registry"
+import { isRetriableModelError } from "@/lib/providers/fallback"
 import { getSetting } from "@/lib/config"
 import { parseModelSpec } from "@/lib/providers/catalog"
 import { callCost, findPrice, toMicros, type Price } from "@/lib/providers/pricing"
@@ -44,7 +48,7 @@ export type Decision = {
   }
   costMicros: number | null
   compaction?: { through: number; continuation?: Continuation; memoryRevision?: string }
-  context?: { estimatedInput: number; through: number }
+  context?: { estimatedInput: number; through: number; model?: string }
   finishReason?: string
 }
 
@@ -58,12 +62,29 @@ export class ModelRequestError extends Error {
   }
 }
 
+class RetryWithFallback extends Error {}
+
 export async function decide(
   taskId: string,
   segmentNo: number,
   decisionNo: number,
   history: ModelMessage[],
   goalIndex = history.findLastIndex((message) => message.role === "user")
+) {
+  try {
+    return await decideOnRoute(taskId, segmentNo, decisionNo, history, goalIndex)
+  } catch (error) {
+    if (!(error instanceof RetryWithFallback)) throw error
+    return decideOnRoute(taskId, segmentNo, decisionNo, history, goalIndex)
+  }
+}
+
+async function decideOnRoute(
+  taskId: string,
+  segmentNo: number,
+  decisionNo: number,
+  history: ModelMessage[],
+  goalIndex: number
 ): Promise<
   | Decision
   | { kind: "request"; requestId: string }
@@ -80,14 +101,38 @@ export async function decide(
     return requestDecision(taskId, segmentNo, decisionNo, history)
   const forceCompaction = prior?.error?.startsWith("ContextWindowExceeded:") ?? false
   const compactionAttempt = (
-    await pool.query<{ status: string }>(
-      "SELECT status FROM task_model_decisions WHERE task_id=$1 AND segment_no=$2 AND decision_no=$3",
+    await pool.query<{ status: string; error: string | null }>(
+      "SELECT status,error FROM task_model_decisions WHERE task_id=$1 AND segment_no=$2 AND decision_no=$3",
       [taskId, segmentNo, -decisionNo]
     )
   ).rows[0]
   if (compactionAttempt && ["pending", "failed"].includes(compactionAttempt.status))
     return requestDecision(taskId, segmentNo, -decisionNo, [])
+  const retrySummary =
+    compactionAttempt?.status === "retryable" &&
+    !compactionAttempt.error?.startsWith("FallbackSelected:")
   const [task] = await db.select().from(tasks).where(eq(tasks.id, taskId))
+  const configured = (await getSetting("model.fallback"))?.trim()
+  const fallback =
+    configured && configured !== task.configSnapshot.model && parseModelSpec(configured)
+      ? configured
+      : null
+  // A fold can span multiple decision numbers. Keep its route until the first normal
+  // decision is saved, then give the primary another chance on the next action.
+  const routed =
+    fallback &&
+    (
+      await pool.query(
+        `SELECT 1 FROM task_events e WHERE e.task_id=$1 AND e.type='model_fallback'
+      AND e.payload->>'model'=$4 AND (e.payload->>'segmentNo')::int=$2
+      AND (e.payload->>'decisionNo')::int <= $3 AND NOT EXISTS (
+        SELECT 1 FROM task_model_decisions d WHERE d.task_id=e.task_id AND d.segment_no=$2
+        AND d.status='succeeded' AND d.decision_no BETWEEN (e.payload->>'decisionNo')::int AND $3-1) LIMIT 1`,
+        [taskId, segmentNo, decisionNo, fallback]
+      )
+    ).rowCount
+  const model = routed ? fallback! : task.configSnapshot.model
+  const route = { model, fallback: routed ? null : fallback }
   const removed = await withdrawnMemory(task.agentId)
   const savedReceipt = (
     await pool.query<{ decision_no: number; result: Decision }>(
@@ -165,14 +210,16 @@ export async function decide(
   )
   const limits = {
     ...DEFAULT_CONTEXT_LIMITS,
-    window:
-      task.configSnapshot.contextWindowTokens ??
-      modelContextWindow(task.configSnapshot.model),
+    window: routed
+      ? Math.min(
+          task.configSnapshot.contextWindowTokens ?? Infinity,
+          modelContextWindow(model)
+        )
+      : (task.configSnapshot.contextWindowTokens ?? modelContextWindow(model)),
   }
   const inputLimit = inputBudget(limits.window, limits.output)
   const estimate = (view: ModelMessage[]) =>
-    schemaTokens +
-    estimateContextTokens(prepareModelContext(task.configSnapshot.model, view, session))
+    schemaTokens + estimateContextTokens(prepareModelContext(model, view, session))
   const historyRoom =
     inputLimit -
     estimate(history.filter((m, i) => m.role === "system" || i === goalIndex))
@@ -195,16 +242,13 @@ export async function decide(
   ).rows[0]?.result
   if (
     last?.context?.through === (checkpoint?.through ?? 0) &&
+    (last.context.model ?? task.configSnapshot.model) === model &&
     last.context.estimatedInput > 0
   )
     estimatedInput = Math.ceil(
       estimatedInput * Math.max(1, last.usage.input / last.context.estimatedInput)
     )
-  if (
-    exceedsInputBudget(estimatedInput, inputLimit) ||
-    forceCompaction ||
-    compactionAttempt?.status === "retryable"
-  ) {
+  if (exceedsInputBudget(estimatedInput, inputLimit) || forceCompaction || retrySummary) {
     if (savedReceipt && !saved && savedReceipt.decision_no === -decisionNo)
       return { kind: "compacted", more: true }
     if (saved?.decision_no === -decisionNo && estimatedInput > inputLimit && planFold())
@@ -244,6 +288,7 @@ export async function decide(
           segmentNo,
           -decisionNo,
           plan.messages,
+          route,
           {
             through: plan.through,
             memoryRevision: removed.revision,
@@ -265,7 +310,7 @@ export async function decide(
             : {}),
         } // Re-enter the existing step/cost/control gates before the next request.
       }
-      if (compactionAttempt?.status === "retryable")
+      if (retrySummary)
         throw new Error(
           "The authorized compaction retry has no useful older history to summarize; inspect the changed context"
         )
@@ -280,7 +325,8 @@ export async function decide(
       "Pinned/recent context exceeds the reserved window after available compaction; reduce the input or increase its configured window"
     )
   try {
-    return await requestDecision(taskId, segmentNo, decisionNo, view, undefined, {
+    return await requestDecision(taskId, segmentNo, decisionNo, view, route, undefined, {
+      model,
       estimatedInput: rawEstimate,
       through: checkpoint?.through ?? 0,
     })
@@ -310,6 +356,7 @@ async function requestDecision(
   segmentNo: number,
   decisionNo: number,
   history: ModelMessage[],
+  route?: { model: string; fallback: string | null },
   compaction?: { through: number; continuation?: Continuation; memoryRevision?: string },
   context?: Decision["context"]
 ): Promise<Decision | { kind: "request"; requestId: string } | { kind: "capacity" }> {
@@ -343,10 +390,9 @@ async function requestDecision(
   const [task] = await db.select().from(tasks).where(eq(tasks.id, taskId))
   if (task.activeSegment !== segmentNo) throw new SegmentSuperseded()
   const workspace = await assertAgentControl(taskId, task.agentId)
-  const primarySpec = task.configSnapshot.model
-  const parsed = parseModelSpec(primarySpec)!
+  const spec = route?.model ?? task.configSnapshot.model
+  const parsed = parseModelSpec(spec)!
   const credentials = await getProviderCredentials(parsed.provider)
-  const fallbackSpec = (await getSetting("model.fallback"))?.trim() || null
   const redact = (value: string) =>
     credentials.apiKey
       ? value
@@ -369,7 +415,7 @@ async function requestDecision(
       [taskId]
     )
     if (active.cancel_requested_at) throw new TaskCancelled()
-    price = findPrice(task.configSnapshot.model, {
+    price = findPrice(spec, {
       custom: await getCustomPrices(intent),
     })
     const month = await monthlyUsage(task.ownerId, intent)
@@ -410,13 +456,7 @@ async function requestDecision(
     await intent.query(
       `INSERT INTO task_model_attempts(task_id,segment_no,decision_no,attempt_no,model,status,price_snapshot,cost_micros,started_at)
       VALUES($1,$2,$3,$4,$5,'pending',$6,$7,now())`,
-      [
-        ...key,
-        attemptNo,
-        task.configSnapshot.model,
-        JSON.stringify(price),
-        price?.kind === "local" ? 0 : null,
-      ]
+      [...key, attemptNo, spec, JSON.stringify(price), price?.kind === "local" ? 0 : null]
     )
     await appendEventInTransaction(
       intent,
@@ -425,7 +465,7 @@ async function requestDecision(
       "model_started",
       {
         decisionNo,
-        model: task.configSnapshot.model,
+        model: spec,
         phase: compaction
           ? "context_compaction"
           : task.configSnapshot.workflowCompilation
@@ -455,29 +495,23 @@ async function requestDecision(
           typeof value === "string" ? redact(value) : value
         )
       ) as ModelMessage[]
-      const { result } = await withModelFallback({
-        primarySpec,
-        fallbackSpec,
-        run: async (model, spec) =>
-          generateText({
-            model,
-            tools: compaction ? {} : toolsForTask(task.configSnapshot),
-            ...(!compaction &&
-            (task.configSnapshot.workflowCompilation ||
-              task.configSnapshot.workflowExecution)
-              ? { toolChoice: "required" as const }
-              : {}),
-            ...prepareModelContext(spec, safeHistory, {
-              taskId,
-              threadId: task.threadId,
-              segmentNo,
-              epoch: workspace.epoch,
-              bootId: workspace.bootId,
-            }),
-            maxOutputTokens: compaction ? 4096 : DEFAULT_CONTEXT_LIMITS.output,
-            maxRetries: 0,
-            abortSignal: AbortSignal.any([signal, AbortSignal.timeout(240000)]),
-          }),
+      const result = await generateText({
+        model: await createModel(spec, credentials),
+        tools: compaction ? {} : toolsForTask(task.configSnapshot),
+        ...(!compaction &&
+        (task.configSnapshot.workflowCompilation || task.configSnapshot.workflowExecution)
+          ? { toolChoice: "required" as const }
+          : {}),
+        ...prepareModelContext(spec, safeHistory, {
+          taskId,
+          threadId: task.threadId,
+          segmentNo,
+          epoch: workspace.epoch,
+          bootId: workspace.bootId,
+        }),
+        maxOutputTokens: compaction ? 4096 : DEFAULT_CONTEXT_LIMITS.output,
+        maxRetries: 0,
+        abortSignal: AbortSignal.any([signal, AbortSignal.timeout(240000)]),
       })
       const usage = z
         .object({
@@ -530,18 +564,32 @@ async function requestDecision(
       error instanceof Error ? `${error.name}: ${error.message}` : String(error)
     message = redact(message)
     if (isContextWindowError(error)) message = `ContextWindowExceeded: ${message}`
+    const nextModel =
+      route?.fallback && isRetriableModelError(error) ? route.fallback : null
     const failure = await pool.connect()
     try {
       await failure.query("BEGIN")
       await failure.query("SELECT id FROM tasks WHERE id=$1 FOR UPDATE", [taskId])
       await failure.query(
-        "UPDATE task_model_decisions SET status='failed',error=$4,finished_at=now() WHERE task_id=$1 AND segment_no=$2 AND decision_no=$3",
-        [...key, message]
+        "UPDATE task_model_decisions SET status=$5,error=$4,finished_at=now() WHERE task_id=$1 AND segment_no=$2 AND decision_no=$3",
+        [
+          ...key,
+          nextModel ? `FallbackSelected: ${message}` : message,
+          nextModel ? "retryable" : "failed",
+        ]
       )
       await failure.query(
         "UPDATE task_model_attempts SET status='unknown',error=$5,finished_at=now() WHERE task_id=$1 AND segment_no=$2 AND decision_no=$3 AND attempt_no=$4",
         [...key, attemptNo, message]
       )
+      if (nextModel)
+        await appendEventInTransaction(
+          failure,
+          taskId,
+          `model-fallback:${segmentNo}:${decisionNo}:${attemptNo}`,
+          "model_fallback",
+          { segmentNo, decisionNo: Math.abs(decisionNo), model: nextModel }
+        )
       await failure.query("COMMIT")
     } catch (recordError) {
       await failure.query("ROLLBACK")
@@ -554,6 +602,7 @@ async function requestDecision(
       [taskId]
     )
     if (state.rows[0].cancel_requested_at) throw new TaskCancelled()
+    if (nextModel) throw new RetryWithFallback()
     throw new ModelRequestError(message, decisionNo)
   }
   const client = await pool.connect()

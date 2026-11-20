@@ -63,7 +63,12 @@ if (process.argv[2] === "--resume") {
     PATH: `${directory}/bin:${process.env.PATH}`,
   })
   const checks: string[] = continuation?.checks ?? []
-  const requests: { compaction: boolean; mode: string; messages: any[] }[] = []
+  const requests: {
+    compaction: boolean
+    mode: string
+    model: string
+    messages: any[]
+  }[] = []
   let mode = "success",
     passed = false
   const server = createServer((request, response) => {
@@ -73,13 +78,19 @@ if (process.argv[2] === "--resume") {
       request.setEncoding("utf8")
       for await (const chunk of request) raw += chunk
       const body = JSON.parse(raw)
-      assert.equal(body.model, "context-fixture")
+      assert(["context-fixture", "smaller-fixture"].includes(body.model))
       const compaction = body.messages.some(
         (message: any) =>
           message.role === "system" &&
           message.content.includes("Summarize the supplied historical")
       )
-      requests.push({ compaction, mode, messages: body.messages })
+      requests.push({ compaction, mode, model: body.model, messages: body.messages })
+      if (mode === "primary-unavailable" && body.model === "context-fixture") {
+        response
+          .writeHead(503, { "content-type": "application/json" })
+          .end(JSON.stringify({ error: { message: "controlled primary outage" } }))
+        return
+      }
       const refuseOnce = mode === "context-limit-once" && !compaction
       if (refuseOnce) mode = "success"
       if (mode === "context-limit" || refuseOnce) {
@@ -720,6 +731,85 @@ process.stdout.write(JSON.stringify({ready:true,protocolVersion:6,mode:'agent',e
       assert.equal(requests.length, beforeCancel)
       checks.push(
         "Cancellation blocks both summary and ordinary model requests before dispatch"
+      )
+    }
+    if (!continuation) {
+      // The primary was frozen with a larger window. The fallback uses the actual
+      // registered window, which needs a fold for `history`, but not for a short turn.
+      await setSettings([{ key: "model.fallback", value: "custom/smaller-fixture" }])
+      await setCustomPrice("custom/smaller-fixture", { input: 2, output: 2 })
+      const fixture = await makeTask()
+      await pool.query(
+        "UPDATE tasks SET config_snapshot=jsonb_set(config_snapshot,'{contextWindowTokens}','120000') WHERE id=$1",
+        [fixture.taskId]
+      )
+      const wire = requests.length
+      mode = "primary-unavailable"
+      assert.equal((await decide(fixture.taskId, 1, 1, history, 1)).kind, "compacted")
+      const file = path.join(directory, "fallback-restart.json")
+      await writeFile(file, JSON.stringify({ taskId: fixture.taskId, history }))
+      const restart = spawn(
+        process.execPath,
+        ["--import", "tsx", "tests/context-ledger.ts", "--resume", file],
+        { stdio: "inherit" }
+      )
+      assert.equal((await once(restart, "exit"))[0], 0)
+      assert.equal(
+        JSON.parse(await readFile(file + ".result.json", "utf8")).kind,
+        "decision"
+      )
+      assert.deepEqual(
+        requests.slice(wire).map((r) => [r.model, r.compaction]),
+        [
+          ["context-fixture", false],
+          ["smaller-fixture", true],
+          ["smaller-fixture", false],
+        ]
+      )
+      const resumedView = JSON.stringify(requests.at(-1)!.messages)
+      assert(resumedView.includes("Historical continuation summary"))
+      assert(resumedView.length < JSON.stringify(requests[wire].messages).length)
+      assert(JSON.stringify(requests.at(-1)!.messages).includes("do not send any email"))
+      const billed = await pool.query(
+        "SELECT model,status,price_snapshot,cost_micros FROM task_model_attempts WHERE task_id=$1 ORDER BY started_at",
+        [fixture.taskId]
+      )
+      assert.deepEqual(
+        billed.rows.map((r) => [r.model, r.status]),
+        [
+          ["custom/context-fixture", "unknown"],
+          ["custom/smaller-fixture", "succeeded"],
+          ["custom/smaller-fixture", "succeeded"],
+        ]
+      )
+      assert.deepEqual(
+        billed.rows.map((r) => r.price_snapshot.price.input),
+        [1, 2, 2]
+      )
+      assert.equal(billed.rows[0].cost_micros, null)
+      assert(billed.rows.slice(1).every((r) => Number(r.cost_micros) > 0))
+      const short = await makeTask()
+      const shortStart = requests.length
+      assert.equal(
+        (await decide(short.taskId, 1, 1, history.slice(0, 2), 1)).kind,
+        "decision"
+      )
+      mode = "success"
+      assert.equal(
+        (await decide(short.taskId, 1, 2, history.slice(0, 2), 1)).kind,
+        "decision"
+      )
+      assert.deepEqual(
+        requests.slice(shortStart).map((r) => [r.model, r.compaction]),
+        [
+          ["context-fixture", false],
+          ["smaller-fixture", false],
+          ["context-fixture", false],
+        ]
+      )
+      await setSettings([{ key: "model.fallback", value: null }])
+      checks.push(
+        "A failed primary gets a separate attempt; the smaller fallback folds only on overflow, resumes its route after process restart, and a short fallback does not summarize"
       )
     }
     assert.equal(JSON.stringify(history), rawHistory)
