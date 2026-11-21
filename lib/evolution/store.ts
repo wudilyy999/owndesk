@@ -27,7 +27,15 @@ export type Evaluation = {
   startedAt: string
   finishedAt?: string
 }
+export type DevelopmentCheck = {
+  tree: string
+  kind: string
+  expected: string
+  status: "pass" | "fail" | "unverified"
+  detail: string
+}
 export type Candidate = {
+  development?: { tree: string; checks: DevelopmentCheck[] }
   roundNo: number
   branch: string
   parent: string

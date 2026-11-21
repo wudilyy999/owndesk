@@ -1,3 +1,4 @@
+import { developmentPreview } from "./dev-preview"
 import { UnknownLabTurn } from "./journal"
 // Improvement rounds (B1). An improvement is an A1 objective whose rounds are run by the lab
 // instead of the ordinary task runtime: each round is still a task row (so cost, limits,
@@ -28,7 +29,13 @@ import {
 } from "@/lib/evolution/lab"
 import { LabBudgetError } from "@/lib/evolution/meter"
 import { reformerJournal, runReformer } from "@/lib/evolution/reformer"
-import { changedFiles, commitTree, evolutionDir, git } from "@/lib/evolution/repo"
+import {
+  changedFiles,
+  commitTree,
+  evolutionDir,
+  git,
+  gitText,
+} from "@/lib/evolution/repo"
 import {
   IMPROVEMENT_PREFIX,
   readImprovement,
@@ -314,7 +321,12 @@ async function runRound(objectiveId: string, roundNo: number, taskId: string) {
           taskId,
           phase: resumeEvaluation ? "evaluating" : "reforming",
           ...(resumeEvaluation
-            ? { commit: previous.commit, claim: previous.claim, files: previous.files }
+            ? {
+                commit: previous.commit,
+                claim: previous.claim,
+                files: previous.files,
+                development: previous.development,
+              }
             : {}),
           feedback: value.feedback,
         })
@@ -332,6 +344,7 @@ async function runRound(objectiveId: string, roundNo: number, taskId: string) {
     if (candidate.phase === "reforming") {
       const journal = await reformerJournal(taskId, candidate.parent)
       const lab = await startLab(labImage, key)
+      const preview = developmentPreview(labImage)
       let preserve = false
       try {
         const result = await runReformer({
@@ -339,6 +352,8 @@ async function runRound(objectiveId: string, roundNo: number, taskId: string) {
           taskId,
           spec,
           lab,
+          preview,
+          cancelled: () => cancelled(objectiveId, taskId),
           brief: reformerBrief(improvement, candidate, previous),
           rules: await rulesExcerpt(trusted),
           parent: candidate.parent,
@@ -358,10 +373,12 @@ async function runRound(objectiveId: string, roundNo: number, taskId: string) {
             candidate.branch,
             `Improvement ${objectiveId} round ${roundNo}\n\n${result.summary}`
           )
+          const treeId = await gitText(["rev-parse", `${commit}^{tree}`])
           const files = await changedFiles(improvement.baseCommit, commit)
           improvement = await updateImprovement(objectiveId, (value) => {
             const item = value.candidates.find((entry) => entry.roundNo === roundNo)!
             item.commit = commit
+            item.development = { tree: treeId, checks: result.checks ?? [] }
             item.claim = result.summary
             item.files = files.map((file) => ({
               path: file.path,
@@ -388,8 +405,12 @@ async function runRound(objectiveId: string, roundNo: number, taskId: string) {
         preserve = reason instanceof UnknownLabTurn
         throw reason
       } finally {
-        if (preserve) await docker(["stop", lab.name]).catch(() => undefined)
-        else await stopLab(lab)
+        try {
+          await preview.close()
+        } finally {
+          if (preserve) await docker(["stop", lab.name]).catch(() => undefined)
+          else await stopLab(lab)
+        }
       }
     }
     if (candidate.phase === "evaluating") {

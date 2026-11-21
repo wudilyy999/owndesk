@@ -1,6 +1,10 @@
+import { redactSecrets } from "@/lib/redact-secrets"
 import { openLabJournal } from "./journal"
 import type { ContextCheckpoint } from "@/lib/agent/context"
 import { readResult, readResultTool } from "@/lib/agent/read-result"
+import { previewInput, type developmentPreview } from "./dev-preview"
+import { gitText, patch } from "./repo"
+import type { DevelopmentCheck } from "./store"
 import { labContext } from "./context"
 // The reformer: a model working on the candidate copy inside the lab container. Its model
 // requests are made here, in the trusted worker, so no key ever enters the lab. It can only
@@ -22,6 +26,7 @@ export type ReformerResult = {
   turns: number
   finished: boolean
   end?: "steps" | "cost"
+  checks?: DevelopmentCheck[]
 }
 
 const relative = z
@@ -80,12 +85,23 @@ const tools = {
       new_text: z.string().max(50000),
     }),
   }),
+  view_diff: tool({
+    description:
+      "Read the current changes including unsaved edits, compared to the round start or the last completed turn.",
+    inputSchema: z.object({ base: z.enum(["round", "checkpoint"]).default("round") }),
+  }),
+  preview_web: tool({
+    description:
+      "Verify a web behavior against your current source and a synthetic signed-in owner. Provide a local path, optional ordered click/fill actions and expected visible/absent text. Worker and channels are offline. Preview diaries: 公园散步, 番茄炒蛋, 整理周报 on successive days newest first.",
+    inputSchema: previewInput,
+  }),
   run_check: tool({
     description:
       "Run a check in the lab (no network): typecheck (tsc), lint (eslint on given files), format (prettier --write on given files), or unit tests (node test runner on given test files).",
     inputSchema: z.object({
       kind: z.enum(["typecheck", "lint", "format", "test"]),
       files: z.array(relative).max(20).default([]),
+      expectation: z.string().trim().min(1).max(300).optional(),
     }),
   }),
   finish: tool({
@@ -210,6 +226,7 @@ export function reformerSystem(rules: string) {
     "- Never change: lib/evolution/, scripts/, deploy/, Dockerfile, workstation/, db/ (no schema or migration changes), package.json or package-lock.json (no new dependencies), auth, secrets, vault, spend/budget, network guard, docker, workstation, desktop and agent tool code. Changes there are rejected automatically.",
     "- Read before you edit; keep the change small and focused; match the existing code style; keep user-facing text in Simplified Chinese like the rest of the UI.",
     "- Find the requested feature in application code. Once you have its entry points, edit them before broad searches or baseline checks. Stay focused on the feature; investigate protected lab/evaluator code or synthetic fixtures only when a reported failure requires it.",
+    "- Pick the lightest observable check: run a focused test for logic and give its expectation; use preview_web for visible behavior, then fix and recheck. A web preview cannot verify a backend task or delivery. Use view_diff to inspect your changes.",
     "- Add at least one unit test for new logic. Run typecheck before finishing and fix every error. Format the files you changed with run_check format.",
     "- Claims about tests count for nothing: an independent evaluator rebuilds and retests everything.",
     rules ? `Project development rules (AGENTS.md, excerpt):\n${rules}` : "",
@@ -223,6 +240,7 @@ export const reformerJournal = (taskId: string, parent: string) =>
     commit: string
     failures: number
     progress: string[]
+    checks?: DevelopmentCheck[]
     finished?: ReformerResult
   }>(taskId, "reformer", parent)
 
@@ -236,6 +254,8 @@ export async function runReformer(input: {
   parent: string
   journal: Awaited<ReturnType<typeof reformerJournal>>
   restore: (commit: string) => Promise<void>
+  cancelled: () => Promise<boolean>
+  preview: ReturnType<typeof developmentPreview>
   capture: (previous: string) => Promise<string>
   maxTurns?: number
   log?: (line: string) => void
@@ -262,6 +282,7 @@ export async function runReformer(input: {
     ...journal.messages,
   ]
   const progress: string[] = journal.last?.state.progress ?? []
+  const checks: DevelopmentCheck[] = journal.last?.state.checks ?? []
   const notes = () =>
     progress.length
       ? `\nRecent tool outcomes; continue from these files:\n${progress.slice(-12).join("\n").slice(-1800)}`
@@ -282,11 +303,21 @@ export async function runReformer(input: {
       `${reformerSystem(input.rules)}\nAfter this request, ${remainingSteps} model requests remain in this round, shared with the candidate's chat and independent acceptance review. Use the relevant files you have already found, implement the smallest complete change, run the checks and finish promptly so the reviewer can use the remaining allowance.`,
   })
   for (let turn = journal.turn; turn <= maxTurns; turn++) {
+    if (await input.cancelled())
+      return { summary: "本轮已停止", turns: turn - 1, finished: false, checks }
     await journal.begin()
     const from = messages.length
     let dirty = false
+    const previous = commit
+    const checkpoint = async () => {
+      if (dirty) {
+        commit = await input.capture(commit)
+        dirty = false
+      }
+      return commit
+    }
     const save = async (finished?: ReformerResult) => {
-      if (dirty) commit = await input.capture(commit)
+      await checkpoint()
       await journal.seal({
         messages: messages.slice(from),
         checkpoint: resume.checkpoint,
@@ -294,6 +325,7 @@ export async function runReformer(input: {
           commit,
           failures: typecheckFailures,
           progress: progress.slice(-12),
+          checks,
           finished,
         },
       })
@@ -306,6 +338,7 @@ export async function runReformer(input: {
       const stopped: ReformerResult = {
         summary: error.message + notes(),
         turns: turn - 1,
+        checks,
         finished: false,
         end: error.end,
       }
@@ -324,14 +357,13 @@ export async function runReformer(input: {
     const results: ModelMessage = { role: "tool", content: [] }
     for (const call of result.toolCalls) {
       const args = call.input as Record<string, unknown>
-      if (["write_file", "edit_file", "run_check", "finish"].includes(call.toolName))
-        dirty = true
+
       if (call.toolName === "finish") {
         const summary = String(args.summary ?? "").slice(0, 2000)
         const check = await runTool(input.lab, "run_check", { kind: "typecheck" })
         input.log?.(`turn ${turn}: finish (typecheck ${check.ok ? "ok" : "failed"})`)
         if (check.ok || typecheckFailures >= 2) {
-          const finished = { summary, turns: turn, finished: true }
+          const finished = { summary, turns: turn, finished: true, checks }
           await save(finished)
           return finished
         }
@@ -352,7 +384,52 @@ export async function runReformer(input: {
         if (call.toolName === "read_result") {
           const page = readResult(messages, args)
           outcome = { ok: !("error" in page), output: JSON.stringify(page) }
-        } else outcome = await runTool(input.lab, call.toolName, args)
+        } else if (call.toolName === "view_diff") {
+          const base = args.base === "checkpoint" ? previous : input.parent
+          outcome = {
+            ok: true,
+            output: clip(await patch(base, await checkpoint())) || "(no changes)",
+          }
+        } else if (
+          call.toolName === "preview_web" ||
+          (call.toolName === "run_check" && args.kind !== "format")
+        ) {
+          const revision = await checkpoint(),
+            tree = await gitText(["rev-parse", `${revision}^{tree}`])
+          const probe = call.toolName === "preview_web" ? previewInput.parse(args) : null
+          const expected = probe
+            ? `${probe.path}：包含「${probe.contains}」${probe.absent ? `，不含「${probe.absent}」` : ""}`
+            : String(
+                args.expectation ??
+                  `${args.kind}: ${((args.files ?? []) as string[]).join(" ")}`
+              ).slice(0, 500)
+          let observed = true
+          try {
+            outcome = probe
+              ? await input.preview.check(revision, tree, probe)
+              : await runTool(input.lab, call.toolName, args)
+          } catch (error) {
+            observed = false
+            outcome = {
+              ok: false,
+              output: error instanceof Error ? error.message : String(error),
+            }
+          }
+          checks.push({
+            tree,
+            kind: probe ? "web" : String(args.kind),
+            expected: redactSecrets(expected),
+            status: !observed ? "unverified" : outcome.ok ? "pass" : "fail",
+            detail: redactSecrets(outcome.output).slice(-700),
+          })
+          if (checks.length > 24) checks.shift()
+          // A test is executable project code; capture its resulting source before later tools.
+          if (!probe) dirty = true
+        } else {
+          outcome = await runTool(input.lab, call.toolName, args)
+          if (["edit_file", "write_file", "run_check"].includes(call.toolName))
+            dirty = true
+        }
       } catch (error) {
         outcome = {
           ok: false,
@@ -380,6 +457,7 @@ export async function runReformer(input: {
   return {
     summary: "改造者用完了这一轮的步数，没有说完成" + notes(),
     turns: maxTurns,
+    checks,
     finished: false,
   }
 }
