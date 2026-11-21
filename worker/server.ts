@@ -74,6 +74,13 @@ export async function startWorker() {
   )
   if (!lock.acquired)
     throw new Error("Another worker owns this database; only one worker is supported")
+  // Only the worker holding the installation lease may reclaim a crashed preview.
+  const { clearDevPreview } = await import("@/lib/evolution/dev-preview")
+  await clearDevPreview().catch(() =>
+    console.warn(
+      "Could not reclaim development preview at worker startup; retrying on preview use"
+    )
+  )
   await pool.query(
     "UPDATE task_model_attempts SET status='unknown',error='Worker stopped during model request' WHERE status='pending'"
   )

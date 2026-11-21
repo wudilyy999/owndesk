@@ -1,3 +1,4 @@
+import { defaultPersona } from "@/lib/companion/persona"
 // The sanitized snapshot for a candidate stack (B1 owner decision): only persona, settings
 // and definitions, plus synthetic chat and memory written here. No real chat, memory, life
 // records, pictures, vault items, connection credentials, channel tokens, push
@@ -34,19 +35,13 @@ const insertJson = (table: string, row: Record<string, unknown>) => {
 
 export type SnapshotLogin = { email: string; password: string }
 
-export async function sanitizedSeed(input: {
-  labPriceSpec: string
-  labPrice: { input: number; output: number; cached?: number } | null
-}): Promise<{ sql: string; login: SnapshotLogin; agentIds: string[] }> {
+async function seedOwner(timeZone: string) {
   const login = {
     email: `lab-${randomUUID().slice(0, 8)}@owndesk.local`,
     password: randomUUID() + randomUUID(),
   }
   const userId = randomUUID()
   const statements: string[] = ["BEGIN;"]
-  const {
-    rows: [owner],
-  } = await pool.query<{ time_zone: string }>("SELECT time_zone FROM owners LIMIT 1")
   statements.push(
     insertJson('"user"', {
       id: userId,
@@ -68,10 +63,68 @@ export async function sanitizedSeed(input: {
     insertJson("owners", {
       id: 1,
       user_id: userId,
-      time_zone: owner?.time_zone ?? "UTC",
+      time_zone: timeZone,
       created_at: new Date().toISOString(),
     })
   )
+  return { statements, login, userId }
+}
+
+function seedDiary(statements: string[], agentId: string, today: Date) {
+  for (const [index, title] of ["公园散步", "番茄炒蛋", "整理周报"].entries()) {
+    const createdAt = new Date(today.getTime() - index * 86400_000).toISOString()
+    statements.push(
+      insertJson("life_activities", {
+        id: randomUUID(),
+        agent_id: agentId,
+        kind: "diary",
+        title: `（合成）${title}日记`,
+        summary: `（合成）${title}的测试记录`,
+        body: `（合成）这是用于候选界面验收的${title}日记。`,
+        starred: false,
+        created_at: createdAt,
+      })
+    )
+  }
+}
+
+// Development previews never read the owner's database.
+export async function previewSeed() {
+  const { statements, login, userId } = await seedOwner("UTC")
+  const agentId = randomUUID(),
+    now = new Date().toISOString()
+  statements.push(
+    insertJson("agents", {
+      id: agentId,
+      name: "预览助手",
+      role: "assistant",
+      glyph: "preview",
+      created_at: now,
+      updated_at: now,
+    }),
+    insertJson("companions", {
+      agent_id: agentId,
+      owner_id: userId,
+      persona: defaultPersona,
+      created_at: now,
+      updated_at: now,
+    })
+  )
+  const today = new Date()
+  today.setUTCHours(4, 0, 0, 0)
+  seedDiary(statements, agentId, today)
+  statements.push("COMMIT;")
+  return { sql: statements.join("\n"), login }
+}
+
+export async function sanitizedSeed(input: {
+  labPriceSpec: string
+  labPrice: { input: number; output: number; cached?: number } | null
+}): Promise<{ sql: string; login: SnapshotLogin; agentIds: string[] }> {
+  const {
+    rows: [owner],
+  } = await pool.query<{ time_zone: string }>("SELECT time_zone FROM owners LIMIT 1")
+  const { statements, login, userId } = await seedOwner(owner?.time_zone ?? "UTC")
   const agents = await pool.query("SELECT * FROM agents ORDER BY created_at")
   for (const row of agents.rows)
     statements.push(
@@ -113,21 +166,7 @@ export async function sanitizedSeed(input: {
     // without importing any of the owner's diary, objectives or task history.
     const today = new Date()
     today.setUTCHours(4, 0, 0, 0)
-    for (const [index, title] of ["公园散步", "番茄炒蛋", "整理周报"].entries()) {
-      const createdAt = new Date(today.getTime() - index * 86400_000).toISOString()
-      statements.push(
-        insertJson("life_activities", {
-          id: randomUUID(),
-          agent_id: companion.agent_id,
-          kind: "diary",
-          title: `（合成）${title}日记`,
-          summary: `（合成）${title}的测试记录`,
-          body: `（合成）这是用于候选界面验收的${title}日记。`,
-          starred: false,
-          created_at: createdAt,
-        })
-      )
-    }
+    seedDiary(statements, companion.agent_id, today)
     const objectiveId = randomUUID()
     statements.push(
       insertJson("objectives", {

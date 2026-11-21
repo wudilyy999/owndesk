@@ -155,6 +155,32 @@ export function Improvements({ initial }: { initial: ImprovementOverview }) {
                         ? "全部通过"
                         : "没通过"}
                 </p>
+                {last.development && (
+                  <details>
+                    <summary>开发自测（{last.development.checks.length} 项记录）</summary>
+                    {last.development.checks.length === 0 && <p>尚无自测记录</p>}
+                    {last.development.checks.map((c, i) => (
+                      <div key={i} className="py-1">
+                        <p>
+                          {c.tree !== last.development!.tree ? "旧版 · " : ""}
+                          {c.status === "pass"
+                            ? "通过"
+                            : c.status === "fail"
+                              ? "失败"
+                              : "未验证"}{" "}
+                          · {c.expected}
+                        </p>
+                        <details>
+                          <summary>观察结果</summary>
+                          <pre className="break-words whitespace-pre-wrap">
+                            {c.detail}
+                          </pre>
+                          <small>源码 {c.tree.slice(0, 12)}</small>
+                        </details>
+                      </div>
+                    ))}
+                  </details>
+                )}
                 {last.claim && (
                   <p className="text-muted-foreground">改造者说明：{last.claim}</p>
                 )}
