@@ -44,7 +44,6 @@ import {
 } from "@/lib/evolution/improvements"
 
 export async function startWorker() {
-  await assertWorkstationNetwork()
   const lease = await pool.connect()
   let failing = false
   async function failStop(error: unknown) {
@@ -74,6 +73,7 @@ export async function startWorker() {
   )
   if (!lock.acquired)
     throw new Error("Another worker owns this database; only one worker is supported")
+  await assertWorkstationNetwork("restore")
   // Only the worker holding the installation lease may reclaim a crashed preview.
   const { clearDevPreview } = await import("@/lib/evolution/dev-preview")
   await clearDevPreview().catch(() =>

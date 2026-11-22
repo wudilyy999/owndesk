@@ -584,6 +584,10 @@ async function start() {
 async function watch() {
   const id = options.deployment
   assert(id, "--deployment is required")
+  // A postmaster restart after promotion means the installation is starting again.
+  // Anchor the deadline to that restart, so restarting the watcher cannot extend it.
+  const { boot } = await one("SELECT pg_postmaster_start_time() AS boot")
+  let warming = true
   let failures = 0
   while (true) {
     const dep = await deployment(id)
@@ -605,10 +609,14 @@ async function watch() {
         detail: [web.detail, worker.detail].filter(Boolean).join("; ") || undefined,
       }
     })
-    if (entry.ok) failures = 0
-    else {
+    if (entry.ok) {
+      warming = false
+      failures = 0
+    } else {
       await note(id, entry).catch(() => {})
-      if (++failures >= FAILURES) {
+      const starting =
+        warming && boot > dep.finished_at && Date.now() < boot.getTime() + START_DEADLINE
+      if (!starting && ++failures >= FAILURES) {
         await rollBack(
           dep,
           `health failed after the switch (${FAILURES} checks in a row): ${entry.detail}`

@@ -487,6 +487,50 @@ try {
     }
   )
 
+  // Only power-cycle a disposable DinD that this invocation created.
+  if (!process.env.PA_LINUX_HOST_STATE && !h.kind) {
+    const promoted = last[0]
+    const workerId = out(await compose(["ps", "--quiet", "worker"]))
+    // Hold the Worker down across the boot long enough to cross the normal rollback threshold.
+    await inner(["stop", "--timeout", "0", watcherId])
+    await inner(["stop", workerId])
+    await docker(["restart", h.name], { timeoutMs: 120000 })
+    h.dockerPort = out(await docker(["port", h.name, "2376/tcp"]))
+      .split(":")
+      .at(-1)!
+    await until(
+      async () =>
+        (await inner(["info", "--format", "{{.ServerVersion}}"])).exitCode === 0,
+      "cold Docker daemon"
+    )
+    await inner(["start", shell, watcherId])
+    await until(async () => {
+      const count =
+        await psql(`SELECT count(*) FROM deployments d, jsonb_array_elements(d.health_log) e
+        WHERE d.id='${promoted}' AND d.status='healthy' AND e->>'worker'='false'
+          AND (e->>'at')::timestamptz >= pg_postmaster_start_time()`)
+      return Number(count) >= 3
+    }, "watcher tolerates three failed probes during host startup")
+    await inner(["start", workerId])
+    await until(async () => {
+      const id = out(await compose(["ps", "--quiet", "worker"]))
+      return (
+        id &&
+        out(await inner(["inspect", "--format", "{{.State.Health.Status}}", id])) ===
+          "healthy"
+      )
+    }, "worker restores its network after a cold boot")
+    await expectRunning(ids.webB, ids.workerB, "cold boot")
+    assert.deepEqual((await latestDeployments(1))[0].slice(0, 4), [
+      promoted,
+      "promote",
+      "healthy",
+      "watching",
+    ])
+    assert.equal(await watcher(), watcherId)
+    pass("Cold DinD restart retains the promoted version, its watcher and existing data")
+  }
+
   // 3. Broken upgrade (web answers 500): rolled back to B automatically.
   result = await upgrade(["--local", "owndesk-web:b0-bad", "owndesk-worker:b0-b"])
   await log("promote-bad", result.output)

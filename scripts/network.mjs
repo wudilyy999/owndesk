@@ -6,7 +6,7 @@ import { isIPv4 } from "node:net"
 
 // Run on the Linux Docker host's network namespace, using the trusted worker image.
 const mode = process.argv[2]
-assert(["init", "check"].includes(mode), "Use network.mjs init|check")
+assert(["init", "check", "restore"].includes(mode), "Use network.mjs init|check|restore")
 const id = process.env.INSTALL_ID
 assert(
   /^[a-f0-9]{8}-[a-f0-9]{4}-[1-5][a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/.test(
@@ -165,13 +165,16 @@ assert.deepEqual(
   network.IPAM.Config.map((entry) => entry.Subnet),
   [subnet]
 )
-if (mode === "init") {
+// Docker keeps the bridge across daemon restarts, but its host firewall chains are volatile.
+// Only rebuild an entirely absent policy. Partial rules or live guest endpoints need an operator.
+const saved = mode === "check" ? "" : run("iptables-save", ["-t", "filter"])
+const missing = [outbound, host].every((chain) => !saved.includes(`:${chain} `))
+if (mode === "init" || (mode === "restore" && missing)) {
   assert.equal(
     Object.keys(network.Containers).length,
     0,
     "Drain guest containers before replacing network policy"
   )
-  const saved = run("iptables-save", [])
   for (const chain of [outbound, host]) {
     if (!saved.includes(`:${chain} `)) iptables(["-N", chain])
     iptables(["-F", chain])

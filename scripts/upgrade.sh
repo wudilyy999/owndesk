@@ -115,7 +115,11 @@ set -e
 case "$CODE" in
   0)
     compose up --detach --no-deps caddy >/dev/null 2>&1 || true
-    echo "Upgrade finished: the new version is healthy. It stays under health watch; the previous version is kept on the versions page."
+    if [[ "$MODE" == --resume ]]; then
+      echo "Resume finished. See the deployment record for the outcome."
+    else
+      echo "Upgrade finished: the new version is healthy. It stays under health watch; the previous version is kept on the versions page."
+    fi
     ;;
   2) echo "The new version failed its health checks and was rolled back automatically; the previous version is running. See the versions page for the reason." >&2 ;;
   3) echo "Another switch is in progress. If it was interrupted, run: $0 --resume" >&2 ;;
