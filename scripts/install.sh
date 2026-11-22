@@ -22,8 +22,8 @@ need node
 node_major="$(node -p 'process.versions.node.split(".")[0]')"
 [[ "$node_major" -ge 24 ]] || echo "Warning: Node 24+ recommended (found $(node -v))" >&2
 
-if [[ -f "$DEPLOY/.env" ]]; then
-  echo "deploy/.env already exists — refusing to overwrite. Use scripts/upgrade.sh to upgrade." >&2
+if [[ -e "$DEPLOY/.env" || -e "$DEPLOY/owner.env" ]]; then
+  echo "Deployment or owner configuration already exists — refusing to overwrite. Use scripts/upgrade.sh to upgrade." >&2
   exit 1
 fi
 
@@ -35,38 +35,42 @@ node "$ROOT/scripts/deploy-env.mjs" "$APP_URL" "$OWNER_EMAIL" "$DEPLOY"
 WEB_IMAGE="ghcr.io/wudilyy999/owndesk-web:latest"
 WORKER_IMAGE="ghcr.io/wudilyy999/owndesk-worker:latest"
 WS_IMAGE="ghcr.io/wudilyy999/owndesk-workstation:0.7.0"
-use_ghcr=0
+compose() { docker compose --file "$DEPLOY/compose.yaml" --env-file "$DEPLOY/.env" "$@"; }
 if docker pull "$WEB_IMAGE" >/dev/null 2>&1 && docker pull "$WORKER_IMAGE" >/dev/null 2>&1; then
-  use_ghcr=1
-  # workstation may be large; fall back to local build if pull fails
-  docker pull "$WS_IMAGE" >/dev/null 2>&1 || WS_IMAGE="owndesk-workstation:0.7.0"
-fi
-
-if [[ "$use_ghcr" -eq 1 ]]; then
   echo "Using GHCR images."
-  # Rewrite image names in env without printing file
-  node --input-type=module -e "
-    import { readFileSync, writeFileSync } from 'node:fs'
-    const p='$DEPLOY/.env'
-    let t=readFileSync(p,'utf8')
-    t=t.replace(/^PA_WEB_IMAGE=.*/m,'PA_WEB_IMAGE=$WEB_IMAGE')
-    t=t.replace(/^PA_WORKER_IMAGE=.*/m,'PA_WORKER_IMAGE=$WORKER_IMAGE')
-    t=t.replace(/^PA_WORKSTATION_IMAGE=.*/m,'PA_WORKSTATION_IMAGE=$WS_IMAGE')
-    writeFileSync(p,t,{mode:0o600})
-  "
+  if ! docker pull "$WS_IMAGE" >/dev/null 2>&1; then
+    WS_IMAGE="owndesk-workstation:0.7.0"
+    docker build --tag "$WS_IMAGE" "$ROOT/workstation"
+  fi
+  node --input-type=module - "$DEPLOY/.env" "$WEB_IMAGE" "$WORKER_IMAGE" "$WS_IMAGE" <<'JS'
+import { readFileSync, writeFileSync } from "node:fs"
+const [file, ...images] = process.argv.slice(2)
+let config = readFileSync(file, "utf8")
+for (const [i, key] of ["PA_WEB_IMAGE", "PA_WORKER_IMAGE", "PA_WORKSTATION_IMAGE"].entries()) {
+  config = config.replace(new RegExp(`^${key}=.*$`, "m"), `${key}=${images[i]}`)
+}
+writeFileSync(file, config, { mode: 0o600 })
+JS
 else
   echo "GHCR images not available; building from source (this takes a while)..."
-  PA_SOURCE_REVISION="$(git -C "$ROOT" rev-parse HEAD 2>/dev/null || echo unknown)" \
-    docker compose --file "$DEPLOY/compose.yaml" --env-file "$DEPLOY/.env" build web worker
+  PA_SOURCE_REVISION="$(git -C "$ROOT" rev-parse HEAD 2>/dev/null || echo unknown)" compose build web worker
   docker build --tag owndesk-workstation:0.7.0 "$ROOT/workstation"
 fi
 
+# Use the same Worker image and network settings as this installation, before any services start.
+guard_image="$(node --env-file="$DEPLOY/.env" -p 'process.env.PA_WORKER_IMAGE')"
+for mode in init check; do
+  docker run --rm --network host --cap-drop ALL --cap-add NET_ADMIN \
+    --volume /var/run/docker.sock:/var/run/docker.sock \
+    --env-file <(grep -E '^(INSTALL_ID|APP_URL|WORKSTATION_NETWORK|PA_GUEST_SUBNET|PA_CONTROL_IPS)=' "$DEPLOY/.env") \
+    "$guard_image" node scripts/network.mjs "$mode"
+done
+
 echo "Starting Postgres, migrating, creating the single owner..."
-docker compose --file "$DEPLOY/compose.yaml" --env-file "$DEPLOY/.env" up -d postgres
-docker compose --file "$DEPLOY/compose.yaml" --env-file "$DEPLOY/.env" run --rm worker npm run db:migrate
-docker compose --file "$DEPLOY/compose.yaml" --env-file "$DEPLOY/.env" run --rm \
-  --env-file "$DEPLOY/owner.env" worker npm run owner:create
-docker compose --file "$DEPLOY/compose.yaml" --env-file "$DEPLOY/.env" up -d --wait
+compose up -d --wait postgres
+compose run --rm worker npm run db:migrate
+compose run --rm --env-from-file "$DEPLOY/owner.env" worker npm run owner:create
+compose up -d --wait
 
 echo
 echo "OwnDesk is up at $APP_URL"

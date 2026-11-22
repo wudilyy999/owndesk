@@ -203,8 +203,7 @@ npm run dev
 
 按 [Linux 部署指南](deploy/README.md) 第 2–5 节操作：生成配置、构建镜像、[初始化 guest 网络](deploy/README.md#4-初始化并核对-guest-网络)，再启动数据库、创建主人账号和启动服务。HTTPS 配置见[自托管概览](docs/self-host.md)，没有公网 IP 时可以用 [Cloudflare Tunnel](docs/cloudflare-tunnel.md)。已有安装的维护见[升级与回退](docs/upgrade.md)和[备份与恢复](deploy/BACKUP.md)。
 
-> [!NOTE]
-> `scripts/install.sh` 目前没有初始化 guest 网络，创建主人时还给 `docker compose run` 传了不支持的参数。修复前请按上面的手动步骤部署。项目还没有发布 GitHub Release 和 GHCR 镜像，镜像需要从源码构建。
+全新安装可运行 `bash scripts/install.sh https://desk.example.com owner@example.com`。脚本会初始化工作站网络并创建主人；拉不到发布镜像时会从源码构建。已有实例请用 `scripts/upgrade.sh`。
 
 ### 选择你喜欢的模型
 

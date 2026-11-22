@@ -74,7 +74,8 @@ flowchart LR
 
 ## 发布和部署
 
-- 修复 `scripts/install.sh`：安装时初始化并检查 guest 网络；创建主人时把 `--env-file` 改为 `--env-from-file`。
+全新安装脚本现已初始化并核对 guest 网络，并通过单独的主人配置文件创建账号。隔离 Linux 验收覆盖真实登录、服务健康和重复安装保护。公开发布与公网部署仍待验收。
+
 - 发布第一个 GitHub Release，并推送 web、worker、工作站的 GHCR 镜像。
 - 降低候选构建的内存峰值，让 4 vCPU / 8 GB 机器在构建期间留出足够余量。
 - 用真实 QQ、微信账号和 iPhone 验证渠道与推送。

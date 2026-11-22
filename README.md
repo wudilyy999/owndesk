@@ -203,8 +203,7 @@ For an always-on assistant with version switching and self-improvement, use Dock
 
 Follow sections 2 to 5 of the [Linux deployment guide](deploy/README.md): generate the configuration, build the images, [initialize the guest network](deploy/README.md#4-初始化并核对-guest-网络), and start the database, owner account, and services. The [self-hosting overview](docs/self-host.md) covers HTTPS, including [Cloudflare Tunnel](docs/cloudflare-tunnel.md) for machines without a public IP. [Upgrades and rollback](docs/upgrade.md) and [backup and recovery](deploy/BACKUP.md) cover running installations.
 
-> [!NOTE]
-> `scripts/install.sh` currently skips the guest network setup and passes the owner file to `docker compose run` with an unsupported flag. Use the manual steps until it is fixed. No GitHub release or GHCR images are published yet, so images are built from source.
+For a fresh installation, `bash scripts/install.sh https://desk.example.com owner@example.com` sets up the guest network and creates the owner. The installer builds from source if published images are unavailable. Use `scripts/upgrade.sh` for an existing installation.
 
 ### Bring your own model
 
