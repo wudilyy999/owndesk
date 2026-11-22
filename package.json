@@ -17,6 +17,7 @@
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
     "test": "tsx --import ./tests/setup-env.mjs --test tests/*.test.ts",
+    "test:worker-resume": "tsx tests/telegram.ts worker-resume",
     "test:evolution": "tsx tests/evolution.ts",
     "test:evolution:recovery": "tsx tests/evolution-recovery.ts",
     "test:g01": "tsx tests/g01.ts",
