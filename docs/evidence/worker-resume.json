@@ -1,0 +1,21 @@
+{
+  "recordedAt": "2026-11-22T08:06:54.503Z",
+  "taskId": "f33f3c72-b877-49ff-b330-71c4fbaef86d",
+  "workflowId": "f33f3c72-b877-49ff-b330-71c4fbaef86d:1",
+  "checkpoint": "fixture-materialize",
+  "originalPid": 4537,
+  "resumedPid": 4851,
+  "signal": "SIGKILL",
+  "statusAtInterruption": "running",
+  "finalStatus": "completed",
+  "steps": ["prepare", "materialize", "verify"],
+  "file": "report.csv",
+  "bytes": 85,
+  "diskFiles": 1,
+  "artifactRows": 1,
+  "outboxRows": 1,
+  "sendAttempts": 1,
+  "receiverDeliveries": 1,
+  "receiptMessageId": 1003,
+  "postDeliveryRestart": true
+}

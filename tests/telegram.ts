@@ -2,7 +2,7 @@ import { ensureRecoveryLab } from "./fixtures/recovery-lab"
 import assert from "node:assert/strict"
 import { randomUUID } from "node:crypto"
 import { createServer, type ServerResponse } from "node:http"
-import { mkdir, writeFile, readFile } from "node:fs/promises"
+import { mkdir, writeFile, readFile, readdir } from "node:fs/promises"
 import path from "node:path"
 import { once } from "node:events"
 import { spawn, type ChildProcess } from "node:child_process"
@@ -11,7 +11,7 @@ import pg from "pg"
 import { workstationImage } from "./workstation-image"
 
 const focus = process.argv[2] ?? "core"
-assert(process.argv.length <= 3 && ["core", "handoff"].includes(focus))
+assert(process.argv.length <= 3 && ["core", "handoff", "worker-resume"].includes(focus))
 process.loadEnvFile(".env")
 const database = `agent_telegram_${randomUUID().replaceAll("-", "")}`
 const directory = path.resolve("data/experiments", database)
@@ -48,6 +48,7 @@ const checks: { check: string }[] = [],
   sends: any[] = [],
   modelRequests: any[] = []
 const rosterCases = new Map<string, { targetId: string; expected: string[] }>()
+let resumeEvidence: Record<string, unknown> | undefined
 let workerLogSaved = Promise.resolve()
 let pendingSend: ServerResponse | undefined,
   webhook = "",
@@ -344,7 +345,123 @@ try {
       return row?.status === "sent" && row
     }, `notification ${key}`)
   try {
-    if (focus === "core") {
+    if (focus === "worker-resume") {
+      const { submitTask, getTask } = await import("@/lib/tasks")
+      const { durableClient } = await import("@/lib/durable")
+      await changeTelegram(owner, { action: "token", token })
+      const { pairCode } = await telegramStatus(owner)
+      assert(pairCode)
+      await start()
+      const pairing = message(`/pair ${pairCode}`)
+      await processed(pairing.update_id)
+      await sentNotice(`update:${pairing.update_id}`)
+      assert.equal((await state()).user_id, String(userId))
+      const { taskId } = await submitTask(owner, "test", {
+        agentId: fixtureAgent,
+        goal: "Isolated report recovery",
+        clientRequestId: randomUUID(),
+        completionContract: { requireHumanReview: false },
+        budget: { maxSteps: 40 },
+      })
+      const durable = await durableClient(),
+        workflowId = `${taskId}:1`,
+        checkpoint = "fixture-materialize"
+      const steps = () => durable.listWorkflowSteps(workflowId)
+      await until(
+        async () =>
+          (await steps())?.some((s) => s.name === checkpoint && !!s.completedAtEpochMs),
+        checkpoint
+      )
+      const originalPid = worker!.pid!
+      await stop("SIGKILL")
+      const interrupted = await getTask(owner, taskId)
+      assert.equal(interrupted.status, "running")
+      assert.equal(interrupted.artifacts.length, 0)
+      const checkpointSteps = (await steps()) ?? []
+      assert(checkpointSteps.some((s) => s.name === checkpoint && s.completedAtEpochMs))
+      assert(
+        !checkpointSteps.some((s) => s.name === "fixture-verify" && s.completedAtEpochMs)
+      )
+      const folder = path.join(process.env.ARTIFACT_DIR!, taskId),
+        csv = path.join(folder, "report.csv")
+      const expected =
+        "date,site,amount\n2026-10-12,A,100\n2026-10-13,B,200\n2026-10-14,A,110\n2026-10-15,B,210\n"
+      assert.deepEqual(await readdir(folder), ["report.csv"])
+      assert.equal(await readFile(csv, "utf8"), expected)
+      const key = `task:${taskId}:completed`
+      const receipts = () => sends.filter((s) => s.text.includes(`?task=${taskId}`))
+      assert.equal(receipts().length, 0)
+      await start()
+      const resumedPid = worker!.pid!
+      assert.notEqual(originalPid, resumedPid)
+      const notice = await sentNotice(key)
+      // Restart after the send receipt commits as well. A new, acknowledged command is a
+      // barrier proving the replacement dispatcher ran collection and delivery again.
+      await stop("SIGKILL")
+      await start()
+      const barrier = message("/status")
+      await processed(barrier.update_id)
+      await sentNotice(`update:${barrier.update_id}`)
+      const task = await getTask(owner, taskId)
+      assert.equal(task.id, taskId)
+      assert.equal(task.status, "completed")
+      assert.equal(task.artifacts.length, 1)
+      assert.equal(task.artifacts[0].name, "report.csv")
+      assert.equal(task.artifacts[0].verification.grade, "program_checked")
+      assert.deepEqual(await readdir(folder), ["report.csv"])
+      assert.equal(await readFile(csv, "utf8"), expected)
+      const calls = (
+        await readFile(
+          path.join(
+            process.env.ARTIFACT_DIR!,
+            ".experiments",
+            taskId,
+            "invocations.ndjson"
+          ),
+          "utf8"
+        )
+      )
+        .trim()
+        .split("\n")
+        .map((line) => JSON.parse(line).step)
+      assert.deepEqual(calls, ["prepare", "materialize", "verify"])
+      const rows = (
+        await pool.query(
+          "SELECT attempts,status,message_id FROM telegram_outbox WHERE key=$1",
+          [key]
+        )
+      ).rows
+      assert.equal(rows.length, 1)
+      assert.equal(rows[0].status, "sent")
+      assert.equal(rows[0].attempts, 1)
+      assert.equal(receipts().length, 1)
+      assert.equal(String(receipts()[0].message_id), String(notice.message_id))
+      assert.equal(modelRequests.length, 0)
+      resumeEvidence = {
+        taskId,
+        workflowId,
+        checkpoint,
+        originalPid,
+        resumedPid,
+        signal: "SIGKILL",
+        statusAtInterruption: interrupted.status,
+        finalStatus: task.status,
+        steps: calls,
+        file: "report.csv",
+        bytes: Buffer.byteLength(expected),
+        diskFiles: 1,
+        artifactRows: task.artifacts.length,
+        outboxRows: rows.length,
+        sendAttempts: rows[0].attempts,
+        receiverDeliveries: receipts().length,
+        receiptMessageId: notice.message_id,
+        postDeliveryRestart: true,
+      }
+      checks.push({
+        check:
+          "Recovered one materialized file and one acknowledged notification across two real Worker exits",
+      })
+    } else if (focus === "core") {
       await assert.rejects(telegramStatus("foreign-owner"), { status: 403 })
       await changeTelegram(owner, { action: "token", token })
       await changeTelegram(owner, { action: "agent", agentId: fixtureAgent })
@@ -1175,12 +1292,14 @@ try {
     ).rows
     assert.deepEqual(
       taskCounts,
-      focus === "handoff"
-        ? [{ status: "completed", count: 3 }]
-        : [
-            { status: "cancelled", count: 1 },
-            { status: "completed", count: 4 },
-          ]
+      focus === "worker-resume"
+        ? [{ status: "completed", count: 1 }]
+        : focus === "handoff"
+          ? [{ status: "completed", count: 3 }]
+          : [
+              { status: "cancelled", count: 1 },
+              { status: "completed", count: 4 },
+            ]
     )
     if (focus === "core") assert.equal(checks.length, 8)
     await stop("SIGTERM")
@@ -1228,6 +1347,7 @@ try {
     guestProtocolVersion: 6,
     focus,
     taskCounts,
+    ...(resumeEvidence ? { resumeEvidence } : {}),
     actualTasks: taskCounts.reduce((sum, row) => sum + row.count, 0),
     controlledTelegram: true,
     controlledProvider: true,
@@ -1242,10 +1362,11 @@ try {
     JSON.stringify(result, null, 2) + "\n"
   )
   if (passed) {
-    await writeFile(
-      `docs/evidence/telegram${focus === "handoff" ? "-handoff" : ""}.json`,
-      JSON.stringify(result, null, 2) + "\n"
-    )
+    if (focus !== "worker-resume")
+      await writeFile(
+        `docs/evidence/telegram${focus === "handoff" ? "-handoff" : ""}.json`,
+        JSON.stringify(result, null, 2) + "\n"
+      )
     await until(
       async () =>
         (
