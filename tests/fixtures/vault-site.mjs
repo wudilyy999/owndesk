@@ -19,6 +19,7 @@ const state = {
   paymentMethod: "card",
   mutationApplied: null,
 }
+let inspectionDeadline = null
 const server = createServer(async (request, response) => {
   const url = new URL(request.url, "http://127.0.0.1:8083")
   if (request.method === "POST") {
@@ -52,8 +53,7 @@ const server = createServer(async (request, response) => {
       state.manualActions++
       state.submissions++
     } else if (url.pathname === "/slow-ready") state.slowReady = true
-    else if (url.pathname === "/inspection-start") state.inspectionStartedAt ??= body.at
-    else if (url.pathname === "/inspection-end") state.inspectionFinishedAt ??= body.at
+    else if (url.pathname === "/inspection-deadline") inspectionDeadline = body.expiresAt
     else if (url.pathname === "/changed") state.changed = true
     else if (url.pathname === "/mutation-applied") state.mutationApplied = body.mode
     else if (url.pathname === "/input")
@@ -99,6 +99,27 @@ const server = createServer(async (request, response) => {
         paymentMethod: state.paymentMethod,
         mutationApplied: state.mutationApplied,
       })
+    )
+    return
+  }
+  // A synchronous request from the fixture getter keeps the real DOM read pending until
+  // the same absolute deadline used by the grant. No worker or database clock is mocked.
+  if (url.pathname === "/hold-inspection") {
+    const start = Date.now()
+    state.inspectionStartedAt ??= start
+    if (
+      !Number.isSafeInteger(inspectionDeadline) ||
+      inspectionDeadline - start > 10_000
+    ) {
+      response.writeHead(400).end()
+      return
+    }
+    setTimeout(
+      () => {
+        state.inspectionFinishedAt ??= Date.now()
+        response.writeHead(200, { "Cache-Control": "no-store" }).end()
+      },
+      Math.max(0, inspectionDeadline + 100 - start)
     )
     return
   }
@@ -149,7 +170,7 @@ const server = createServer(async (request, response) => {
     if(update.mode==='result_merchant'&&document.querySelector('#receipt')){document.querySelector('#merchant').textContent=update.merchant;applied=true}
     if(applied){appliedMutation=update.mode;await fetch('/mutation-applied',{method:'POST',body:JSON.stringify({mode:update.mode})})}
   },100);
-  setInterval(async()=>{const update=await(await fetch('/mode')).json();mode=update.mode;const input=document.querySelector('[name=password]');if(mode==='changed'&&!input.dataset.changed){input.setAttribute('aria-label','Changed target');input.dataset.changed='true';await fetch('/changed',{method:'POST',body:'{}'})}if(mode==='normal'&&input?.disabled)input.disabled=false;const merchant=document.querySelector('#merchant'),amount=document.querySelector('#amount');if(merchant&&mode==='slow_payment'&&!merchant.dataset.slow){const native=Object.getOwnPropertyDescriptor(HTMLElement.prototype,'innerText').get;Object.defineProperty(merchant,'innerText',{get(){fetch('/inspection-start',{method:'POST',body:JSON.stringify({at:Date.now()})});const end=performance.now()+1500;while(performance.now()<end){};fetch('/inspection-end',{method:'POST',body:JSON.stringify({at:Date.now()})});return native.call(this)}});merchant.dataset.slow='true';fetch('/slow-ready',{method:'POST',body:'{}'})}if(merchant)merchant.textContent=update.merchant;if(amount)amount.textContent=pinnedAmount??update.amount},100);
+  setInterval(async()=>{const update=await(await fetch('/mode')).json();mode=update.mode;const input=document.querySelector('[name=password]');if(mode==='changed'&&!input.dataset.changed){input.setAttribute('aria-label','Changed target');input.dataset.changed='true';await fetch('/changed',{method:'POST',body:'{}'})}if(mode==='normal'&&input?.disabled)input.disabled=false;const merchant=document.querySelector('#merchant'),amount=document.querySelector('#amount');if(merchant&&mode==='slow_payment'&&!merchant.dataset.slow){const native=Object.getOwnPropertyDescriptor(HTMLElement.prototype,'innerText').get;Object.defineProperty(merchant,'innerText',{get(){const hold=new XMLHttpRequest();hold.open('GET','/hold-inspection',false);hold.send();if(hold.status!==200)throw new Error('Fixture inspection deadline not armed');return native.call(this)}});merchant.dataset.slow='true';fetch('/slow-ready',{method:'POST',body:'{}'})}if(merchant)merchant.textContent=update.merchant;if(amount)amount.textContent=pinnedAmount??update.amount},100);
   for(const input of document.querySelectorAll('input,textarea,select')){
     input.addEventListener('input',()=>{
       fetch('/input',{method:'POST',body:JSON.stringify({field:input.name,value:input.value,masked:getComputedStyle(input).webkitTextSecurity==='disc'}),keepalive:true});

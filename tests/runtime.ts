@@ -3008,6 +3008,16 @@ try {
               "payment outcome reaches model"
             )
           }
+          // Give the worker time to start the read. The fixture itself holds that read until
+          // the grant expires; the assertions below still require it to straddle the deadline.
+          async function armInspectionDeadline(run: FillRun) {
+            const { rows } = await pool.query<{ expires: Date }>(
+              "SELECT clock_timestamp()+interval '8 seconds' AS expires"
+            )
+            const deadline = rows[0].expires
+            await site(run, "/inspection-deadline", { expiresAt: deadline.getTime() })
+            return deadline
+          }
           if (focus === "paymentdeadline") {
             const run = await fillRun("pay_deadline"),
               request = await paymentApproval(run)
@@ -3018,11 +3028,7 @@ try {
               async () => (await site(run)).slowReady,
               "slow DOM getter installed after approval snapshot"
             )
-            const expires = (
-              await pool.query<{ expires: Date }>(
-                "SELECT clock_timestamp()+interval '1 second' AS expires"
-              )
-            ).rows[0].expires
+            const expires = await armInspectionDeadline(run)
             await pool.query(
               "UPDATE task_requests SET payload=jsonb_set(payload,'{expiresAt}',$2::jsonb) WHERE id=$1",
               [fill.id, JSON.stringify(expires.toISOString())]
@@ -3058,7 +3064,7 @@ try {
             paymentTasksEvaluated = 1
             checks.push({
               check:
-                "A real 1.5-second DOM read begins before and ends after a short owner-grant deadline; no release, fill or submit after expiry",
+                "A real DOM read begins before and ends after a short owner-grant deadline; no release, fill or submit after expiry",
               taskId: run.taskId,
               expiresAt: expires.toISOString(),
               inspectionStartedAt: state.inspectionStartedAt,
@@ -3654,11 +3660,7 @@ try {
                 async () => (await site(expired.run)).slowReady,
                 "slow final read installed"
               )
-              const deadline = (
-                await pool.query<{ expires: Date }>(
-                  "SELECT clock_timestamp()+interval '1 second' AS expires"
-                )
-              ).rows[0].expires
+              const deadline = await armInspectionDeadline(expired.run)
               await pool.query(
                 "UPDATE task_requests SET payload=jsonb_set(payload,'{expiresAt}',$2::jsonb) WHERE id=$1",
                 [expired.request.id, JSON.stringify(deadline.toISOString())]
