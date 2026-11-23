@@ -6,6 +6,8 @@
 //   delivery  deliverOutbox sends what the platform allows now; the rest is `held` and is folded
 //             into her next reply (awayDigest), so passive-only channels still hear everything
 import { and, asc, eq, gt, inArray, isNull, lte, notExists, or, sql } from "drizzle-orm"
+import type { ObjectiveProposal } from "@/lib/companion/objectives"
+import { describeObjectiveSchedule } from "@/lib/schedule"
 import { db, pool } from "@/db"
 import {
   channelInbound,
@@ -36,15 +38,36 @@ export const FAILED_TEXT = "我这边卡了一下，等会儿再说一次好吗�
 
 // What a companion_messages row looks like as plain text on a channel; null = web only
 export function renderMessage(
-  message: Pick<CompanionMessage, "kind" | "content" | "metadata">
+  message: Pick<CompanionMessage, "kind" | "content" | "metadata">,
+  channel?: ChannelLink["channel"]
 ) {
   switch (message.kind) {
     case "errand_proposal": {
       const goal = (message.metadata as { goal?: string } | null)?.goal ?? message.content
       return `要我去电脑上办「${goal}」的话，在网页聊天页点一下确认就开始。`
     }
-    case "objective_proposal":
-      return `要我长期去做「${message.content}」的话，在网页聊天页点一下确认就开始。`
+    case "objective_proposal": {
+      const meta = message.metadata as {
+        proposal?: ObjectiveProposal
+        status?: string
+      } | null
+      if (meta?.status && meta.status !== "pending") return null
+      const plan = meta?.proposal
+      return [
+        `长期目标「${message.content}」：在网页聊天页确认后开始。`,
+        plan?.objective,
+        plan?.doneCriteria && `完成标准：${plan.doneCriteria}`,
+        describeObjectiveSchedule(plan?.schedulePlan),
+      ]
+        .filter(Boolean)
+        .join("\n")
+    }
+    case "objective_update": {
+      const id = (message.metadata as { objectiveId?: string } | null)?.objectiveId
+      return channel === "telegram" && id
+        ? `${message.content}\n暂停：/goal_pause ${id}\n继续：/goal_resume ${id}`
+        : message.content
+    }
     case "improvement_proposal":
       return `要我在实验室里改进「${message.content}」的话，在网页聊天页确认改进提议卡就开始。`
     case "improvement_report":
@@ -107,7 +130,18 @@ export async function routeBackgroundMessages() {
         and(
           eq(companionMessages.agentId, link.agentId),
           eq(companionMessages.role, "assistant"),
-          inArray(companionMessages.kind, ["share", "errand_update", "coview"]),
+          or(
+            inArray(companionMessages.kind, [
+              "share",
+              "errand_update",
+              "coview",
+              "objective_update",
+            ]),
+            and(
+              eq(companionMessages.kind, "objective_proposal"),
+              sql`${companionMessages.metadata}->>'status' = 'pending' AND ${companionMessages.channel} <> ${link.channel}`
+            )
+          ),
           gt(companionMessages.createdAt, link.createdAt),
           notExists(
             db
@@ -125,7 +159,7 @@ export async function routeBackgroundMessages() {
       .orderBy(asc(companionMessages.createdAt))
       .limit(20)
     for (const message of rows) {
-      const text = renderMessage(message)
+      const text = renderMessage(message, link.channel)
       if (!text) continue
       const inserted = await db
         .insert(channelOutbox)
@@ -179,7 +213,9 @@ async function deliverDue(now: Date, limit: number) {
         )
         .where(eq(channelOutbox.id, row.id))
     }
-    const plan = adapter.plan(link, row.kind, now, row.context)
+    const deliveryKind =
+      row.kind === "update" && row.context?.objectiveReply === true ? "reply" : row.kind
+    const plan = adapter.plan(link, deliveryKind, now, row.context)
     if (plan.mode === "hold") {
       await hold(plan.reason)
       continue
@@ -187,7 +223,7 @@ async function deliverDue(now: Date, limit: number) {
     try {
       const patch = await adapter.send(
         link,
-        { id: row.id, kind: row.kind, text: row.text, context: row.context },
+        { id: row.id, kind: deliveryKind, text: row.text, context: row.context },
         now
       )
       if (patch && Object.keys(patch).length) await setLinkState(link.id, patch)
@@ -334,11 +370,42 @@ export async function processInbound(
   await setLinkState(link.id, patch, { lastInboundAt: now })
   link = (await getLink(link.id))!
 
-  const held = await db
-    .select()
+  const waiting = await db
+    .select({
+      id: channelOutbox.id,
+      text: channelOutbox.text,
+      kind: companionMessages.kind,
+      metadata: companionMessages.metadata,
+      supersededAt: companionMessages.supersededAt,
+    })
     .from(channelOutbox)
+    .leftJoin(companionMessages, eq(companionMessages.id, channelOutbox.messageId))
     .where(and(eq(channelOutbox.linkId, link.id), eq(channelOutbox.status, "held")))
-    .orderBy(asc(channelOutbox.createdAt))
+    .orderBy(asc(channelOutbox.createdAt), asc(channelOutbox.id))
+  // Keep actionable cards and progress verbatim on reply-only transports. Reuse the
+  // original outbox row so a replay cannot create a second copy of the same card.
+  const objectiveNotice = (row: (typeof waiting)[number]) =>
+    row.kind === "objective_proposal" || row.kind === "objective_update"
+  for (const notice of waiting.filter(objectiveNotice)) {
+    const expired =
+      notice.kind === "objective_proposal" &&
+      (notice.supersededAt ||
+        (notice.metadata as { status?: string } | null)?.status !== "pending")
+    await db
+      .update(channelOutbox)
+      .set(
+        expired
+          ? { status: "skipped" }
+          : {
+              status: "pending",
+              context: { ...inbound.context, objectiveReply: true },
+              notBefore: null,
+            }
+      )
+      .where(and(eq(channelOutbox.id, notice.id), eq(channelOutbox.status, "held")))
+  }
+  if (waiting.some(objectiveNotice)) await deliverOutbox(now)
+  const held = waiting.filter((row) => !objectiveNotice(row))
   const [{ pace }] = await db
     .select({ pace: companions.typingPace })
     .from(companions)
@@ -378,7 +445,7 @@ export async function processInbound(
           )
         )
     for (const [index, message] of replies.entries()) {
-      const text = renderMessage(message)
+      const text = renderMessage(message, link.channel)
       if (!text) continue
       await db
         .insert(channelOutbox)

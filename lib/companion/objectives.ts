@@ -2,13 +2,19 @@
 // person confirms the card; confirming twice creates one objective.
 import { and, eq, sql } from "drizzle-orm"
 import { db } from "@/db"
-import { companionMessages, companions, objectives } from "@/db/schema"
+import {
+  companionMessages,
+  companions,
+  objectives,
+  type ObjectiveSchedule,
+} from "@/db/schema"
 import { HttpError } from "@/lib/errors"
 import { createObjective } from "@/lib/objectives"
 
 export type ObjectiveProposal = {
   title: string
   objective: string
+  schedulePlan?: ObjectiveSchedule
   doneCriteria: string
   completionContract: { requireHumanReview: boolean }
   budget: {

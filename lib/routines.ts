@@ -10,6 +10,7 @@ import {
   routines,
   routineRuns,
   routineInputSchema,
+  missedRunPolicySchema,
   taskInputSchema,
   type Routine,
   type RoutineSchedule,
@@ -43,7 +44,7 @@ export const routinePlanSchema = z
     agentId: z.string().min(1).max(100),
     squadId: z.null().optional(),
     timeZone: taskInputSchema.shape.timeZone.unwrap(),
-    missedRunPolicy: z.enum(["latest", "skip"]).default("latest"),
+    missedRunPolicy: missedRunPolicySchema,
     dateRange: z.enum(["none", "previous_week"]).default("none"),
     completionContract: taskInputSchema.shape.completionContract,
     budget: taskInputSchema.shape.budget,
@@ -102,6 +103,29 @@ export async function calendarWindow(schedule: RoutineSchedule, zone: string, at
     ]
   )
   return row
+}
+
+// Routines and scheduled objectives share the same persisted anchor and one-minute grace.
+export async function dueScheduleWindow(
+  plan: Pick<Routine, "schedule" | "timeZone" | "missedRunPolicy">,
+  first: Date,
+  now: Date
+) {
+  let latest: Date, next: Date | null
+  if (plan.schedule.kind === "hourly") {
+    const every = plan.schedule.every * 3600000
+    latest = new Date(
+      first.getTime() + Math.floor((now.getTime() - first.getTime()) / every) * every
+    )
+    next = new Date(latest.getTime() + every)
+  } else {
+    const window = await calendarWindow(plan.schedule, plan.timeZone, now)
+    latest = window.previous!
+    next = window.next
+  }
+  const skipLatest =
+    plan.missedRunPolicy === "skip" && now.getTime() - latest.getTime() > 60000
+  return { latest, next, skipLatest }
 }
 
 export async function initialRun(
@@ -317,20 +341,7 @@ export async function stageDueRoutines(now = new Date()) {
       .for("update")
     for (const routine of due) {
       const first = routine.nextRunAt!
-      let latest: Date, next: Date | null
-      if (routine.schedule.kind === "hourly") {
-        const every = routine.schedule.every * 3600000
-        latest = new Date(
-          first.getTime() + Math.floor((now.getTime() - first.getTime()) / every) * every
-        )
-        next = new Date(latest.getTime() + every)
-      } else {
-        const window = await calendarWindow(routine.schedule, routine.timeZone, now)
-        latest = window.previous!
-        next = window.next
-      }
-      const skipLatest =
-        routine.missedRunPolicy === "skip" && now.getTime() - latest.getTime() > 60000
+      const { latest, next, skipLatest } = await dueScheduleWindow(routine, first, now)
       if (first < latest || skipLatest) {
         const key = `routine:${routine.id}:v${routine.planVersion}:skipped:${first.toISOString()}`
         const snapshot = await freezeRoutine(routine, owner.userId, first, key)

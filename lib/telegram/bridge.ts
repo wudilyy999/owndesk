@@ -4,6 +4,7 @@
 import { randomUUID } from "node:crypto"
 import { setTimeout as delay } from "node:timers/promises"
 import type { PoolClient } from "pg"
+import { drizzle } from "drizzle-orm/node-postgres"
 import { and, eq } from "drizzle-orm"
 import { db, pool } from "@/db"
 import { channelLinks } from "@/db/schema"
@@ -11,6 +12,7 @@ import { enqueueInbound } from "@/lib/channels/inbound"
 import { getSetting } from "@/lib/config"
 import { decryptSecret, encryptSecret } from "@/lib/secrets"
 import { HttpError } from "@/lib/errors"
+import { controlObjective } from "@/lib/objectives"
 import { submitTask } from "@/lib/tasks"
 import { requestCancellation, respondToRequest } from "@/lib/task-control"
 import type { TaskInput } from "@/db/schema"
@@ -41,6 +43,7 @@ type Command =
   | { type: "pair"; name: string; chatId: string }
   | { type: "notice"; text: string }
   | { type: "target"; agentId: string }
+  | { type: "objective"; id: string; action: "pause" | "resume" }
   | { type: "new" }
   | { type: "cancel"; taskId: string }
   | { type: "task"; input: TaskInput }
@@ -57,7 +60,7 @@ type Command =
 const MAX_PHOTO_BYTES = 10 * 1024 * 1024
 
 const HELP =
-  "直接发送任务。/agents 查看 Agent；/use ID 切换；/new 新对话；/stop 停止当前任务；/status 查看状态。需要回答时直接回复对应通知。桌面登录和追加预算请打开网页。不要通过消息发送密码或验证码。"
+  "直接发送任务。/agents 查看 Agent；/use ID 切换；/new 新对话；/stop 停止当前任务；/status 查看状态；/goal_pause 目标ID 暂停目标，/goal_resume 目标ID 继续。需要回答时直接回复对应通知。桌面登录和追加预算请打开网页。不要通过消息发送密码或验证码。"
 
 async function makeCommand(
   client: PoolClient,
@@ -180,6 +183,15 @@ async function makeCommand(
   if (command) {
     const [, name, rest] = command
     if (["start", "help"].includes(name)) return { type: "notice", text: HELP }
+    if (name === "goal_pause" || name === "goal_resume") {
+      return /^[A-Za-z0-9_-]{1,100}$/.test(rest.trim())
+        ? {
+            type: "objective",
+            id: rest.trim(),
+            action: name === "goal_pause" ? "pause" : "resume",
+          }
+        : { type: "notice", text: `用法：/${name} 目标ID` }
+    }
     if (name === "agents") {
       const agents = await client.query(
         "SELECT id,name,role FROM agents ORDER BY created_at,id LIMIT 30"
@@ -357,6 +369,14 @@ export async function processTelegramUpdate(generation: string, update: TgUpdate
               [task.taskId, task.threadId]
             )
             text = `任务已受理。${task.reused ? "已复用原任务。" : ""}\n${taskLink(task.taskId)}`
+          } else if (command.type === "objective") {
+            await controlObjective(
+              current.owner_id,
+              command.id,
+              command.action,
+              drizzle(client, { casing: "snake_case" })
+            )
+            text = command.action === "pause" ? "目标已暂停。" : "目标已继续。"
           } else if (command.type === "respond") {
             await respondToRequest(
               current.owner_id,

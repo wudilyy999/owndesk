@@ -236,9 +236,10 @@ export async function importHandoffFiles(
         const artifact = (
           await pool.query<{ storage_path: string }>(
             "SELECT storage_path FROM artifacts WHERE id=$1 AND task_id=$2",
-            [file.id, task.id]
+            [file.id, handoff.fromRoundTaskId ?? task.id]
           )
         ).rows[0]
+        if (!artifact) throw new Error("Frozen handoff artifact is unavailable")
         const source = path.join(artifactDir, artifact.storage_path)
         const target = `/home/agent/Transfers/${task.id}/s${segmentNo}/${index}-${file.name}`
         const expected = await readFile(source)

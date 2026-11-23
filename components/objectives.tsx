@@ -5,6 +5,9 @@ import { useState } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { ScheduleFields } from "@/components/schedule-fields"
+import type { ObjectiveSchedule } from "@/db/schema"
+import { describeObjectiveSchedule } from "@/lib/schedule"
 import type { ObjectiveOverview } from "@/lib/objectives"
 
 type Agent = { id: string; name: string }
@@ -116,6 +119,7 @@ export function Objectives({ initial }: { initial: Data }) {
   const [title, setTitle] = useState("")
   const [objective, setObjective] = useState("")
   const [doneCriteria, setDoneCriteria] = useState("")
+  const [schedulePlan, setSchedulePlan] = useState<ObjectiveSchedule | null>(null)
   const [csvPath, setCsvPath] = useState("")
   const [csvColumns, setCsvColumns] = useState("")
   const [csvRows, setCsvRows] = useState("1")
@@ -179,9 +183,11 @@ export function Objectives({ initial }: { initial: Data }) {
                   }
                 : {}),
             },
+            schedulePlan: schedulePlan ?? undefined,
             budget: budgetFrom(limits),
           })
           if (ok) {
+            setSchedulePlan(null)
             setTitle("")
             setObjective("")
             setDoneCriteria("")
@@ -276,6 +282,35 @@ export function Objectives({ initial }: { initial: Data }) {
           />
           完成时需要我确认
         </label>
+        <label className="block space-y-1 text-sm">
+          推进方式
+          <select
+            className={selectClass}
+            value={schedulePlan ? "plan" : "continuous"}
+            onChange={(e) =>
+              setSchedulePlan(
+                e.target.value === "plan"
+                  ? {
+                      schedule: { kind: "daily", time: "09:00" },
+                      timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+                      missedRunPolicy: "latest",
+                    }
+                  : null
+              )
+            }
+          >
+            <option value="continuous">连续推进</option>
+            <option value="plan">按计划推进</option>
+          </select>
+        </label>
+        {schedulePlan && (
+          <div className="grid gap-4 sm:grid-cols-3">
+            <ScheduleFields
+              draft={schedulePlan}
+              set={(key, value) => setSchedulePlan({ ...schedulePlan, [key]: value })}
+            />
+          </div>
+        )}
         <LimitFields value={limits} onChange={setLimits} label="新目标" />
         <Button
           type="submit"
@@ -306,6 +341,12 @@ export function Objectives({ initial }: { initial: Data }) {
               </div>
               <p className="text-sm whitespace-pre-wrap text-muted-foreground">
                 {item.objective}
+              </p>
+              <p className="text-xs text-muted-foreground">
+                {describeObjectiveSchedule(item.schedulePlan)}
+                {item.status === "active" && item.nextRoundAt && item.schedulePlan
+                  ? ` · 下一轮 ${new Date(item.nextRoundAt).toLocaleString("zh-CN", { timeZone: item.schedulePlan.timeZone, hour12: false })}`
+                  : ""}
               </p>
               <p className="text-xs text-muted-foreground">
                 {agent?.name ?? "Agent"} · 已做 {item.usage.rounds} 轮 ·{" "}
@@ -408,6 +449,9 @@ export function Objectives({ initial }: { initial: Data }) {
                           ? "进行中"
                           : "准备中"}{" "}
                       · {date(round.startedAt)}
+                      {round.scheduledFor && item.schedulePlan
+                        ? ` · 计划 ${new Date(round.scheduledFor).toLocaleString("zh-CN", { timeZone: item.schedulePlan.timeZone, hour12: false })} (${item.schedulePlan.timeZone})`
+                        : ""}
                       {round.taskId && (
                         <>
                           {" "}

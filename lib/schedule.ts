@@ -1,5 +1,5 @@
 // Adapted from the pinned MIT upstream lib/schedule.ts (MIT): schedule labels and weekday choices.
-import type { RoutineSchedule } from "@/db/schema"
+import type { RoutineSchedule, ObjectiveSchedule } from "@/db/schema"
 
 export const WEEKDAYS = ["周日", "周一", "周二", "周三", "周四", "周五", "周六"]
 
@@ -16,4 +16,10 @@ export function describeSchedule(schedule: RoutineSchedule) {
     case "once":
       return `一次性 ${schedule.at.replace("T", " ")}`
   }
+}
+
+export function describeObjectiveSchedule(plan?: ObjectiveSchedule | null) {
+  return plan
+    ? `${describeSchedule(plan.schedule)}（${plan.timeZone}） · ${plan.missedRunPolicy === "skip" ? "漏跑跳过" : "漏跑只补最近一次"}`
+    : "连续推进"
 }
