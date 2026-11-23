@@ -7570,7 +7570,7 @@ try {
         "INSERT INTO companion_messages(id,agent_id,role,content,metadata,created_at) VALUES($1,$2,'user','Chinese headings from source chat',$3,now()-interval '1 minute')",
         [sourceId, agentId, JSON.stringify({ imageId: photo.id })]
       )
-      const goal = `CASE=continuity RUN=${run}; Prepare the report from our chat and picture.`
+      const goal = `CASE=continuity RUN=${run}; Prepare the report from our chat and picture. Wait for me to confirm the proposal before starting.`
       await pool.query(
         "INSERT INTO companion_messages(id,agent_id,role,kind,content,metadata,created_at) VALUES($1,$2,'assistant','errand_proposal',$3,$4,now())",
         [
@@ -7582,6 +7582,13 @@ try {
       )
       const submitted = await confirmErrand(ownerId, proposalId)
       await until(async () => scenario.release, "initial model response held")
+      const initialPrompt = JSON.stringify(scenario.calls[0].messages)
+      assert.match(initialPrompt, /Wait for me to confirm the proposal/)
+      assert.match(initialPrompt, /The owner confirmed the errand proposal/)
+      assert.match(
+        initialPrompt,
+        /separate action approvals and review requirements still apply/
+      )
       const note = { text: "Use the revised totals", clientRequestId: randomUUID() }
       await appendTaskSupplement(ownerId, submitted.taskId, note)
       scenario.release!()

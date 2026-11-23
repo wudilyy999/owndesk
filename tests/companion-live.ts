@@ -538,9 +538,7 @@ try {
           artifacts: { id: string; name: string }[]
         }>(`/api/tasks/${taskId}`)
         assert(
-          !["failed", "cancelled", "needs_review", "awaiting_confirmation"].includes(
-            item.status
-          ),
+          !["failed", "cancelled", "needs_review", "waiting_user"].includes(item.status),
           `Actual task stopped: ${item.status}`
         )
         return item.status === "completed" ? item : false
