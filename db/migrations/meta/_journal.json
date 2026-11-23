@@ -246,6 +246,13 @@
       "when": 1795444580130,
       "tag": "0034_scheduled_objectives",
       "breakpoints": true
+    },
+    {
+      "idx": 35,
+      "version": "7",
+      "when": 1795457001696,
+      "tag": "0035_channel_delivery_order",
+      "breakpoints": true
     }
   ]
 }

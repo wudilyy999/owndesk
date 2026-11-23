@@ -6,6 +6,7 @@ import {
   bigint,
   primaryKey,
   pgTable,
+  pgSequence,
   text,
   timestamp as pgTimestamp,
   jsonb,
@@ -1430,10 +1431,16 @@ export const pushDeliveries = pgTable("push_deliveries", {
   createdAt: timestamp(),
 })
 
+// A message and a channel binding share one insertion order across clock adjustments.
+export const channelDeliverySequence = pgSequence("channel_delivery_sequence")
+const deliveryOrder = () =>
+  bigint({ mode: "number" }).default(sql`nextval('channel_delivery_sequence')`)
+
 export const companionMessages = pgTable(
   "companion_messages",
   {
     id: id(),
+    deliveryOrder: deliveryOrder(),
     agentId: text()
       .notNull()
       .references(() => agents.id, { onDelete: "cascade" }),
@@ -1605,6 +1612,7 @@ export const channelLinks = pgTable(
   "channel_links",
   {
     id: id(),
+    deliveryOrder: deliveryOrder(),
     agentId: text()
       .notNull()
       .references(() => agents.id, { onDelete: "cascade" }),

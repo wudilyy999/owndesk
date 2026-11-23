@@ -142,7 +142,14 @@ export async function routeBackgroundMessages() {
               sql`${companionMessages.metadata}->>'status' = 'pending' AND ${companionMessages.channel} <> ${link.channel}`
             )
           ),
-          gt(companionMessages.createdAt, link.createdAt),
+          // Legacy rows have no sequence. Only two legacy rows use the old time boundary;
+          // an old message can never be backfilled into a newly paired account.
+          link.deliveryOrder === null
+            ? or(
+                sql`${companionMessages.deliveryOrder} IS NOT NULL`,
+                gt(companionMessages.createdAt, link.createdAt)
+              )
+            : gt(companionMessages.deliveryOrder, link.deliveryOrder),
           notExists(
             db
               .select({ one: sql`1` })
@@ -156,7 +163,11 @@ export async function routeBackgroundMessages() {
           )
         )
       )
-      .orderBy(asc(companionMessages.createdAt))
+      .orderBy(
+        sql`${companionMessages.deliveryOrder} ASC NULLS FIRST`,
+        asc(companionMessages.createdAt),
+        asc(companionMessages.id)
+      )
       .limit(20)
     for (const message of rows) {
       const text = renderMessage(message, link.channel)

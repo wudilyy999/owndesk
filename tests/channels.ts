@@ -1139,6 +1139,37 @@ try {
     channelsSeen.has("qq") && channelsSeen.has("wechat") && channelsSeen.has("telegram")
   )
 
+  // Backwards wall clocks neither disclose pre-pairing progress nor skip new notices.
+  const [clockAgent] = await db
+    .insert(schema.agents)
+    .values({ name: "Clock ordering", role: "fixture" })
+    .returning()
+  const timedNotice = (content: string, createdAt: Date) =>
+    db
+      .insert(schema.companionMessages)
+      .values({
+        agentId: clockAgent.id,
+        role: "assistant",
+        kind: "objective_update",
+        channel: "web",
+        content,
+        createdAt,
+      })
+  await timedNotice("before binding", new Date(Date.now() + 60000))
+  const bound = await bindChannel({
+    agentId: clockAgent.id,
+    ownerId,
+    channel: "telegram",
+    externalId: "clock-fixture",
+  })
+  await timedNotice("after binding", new Date(Date.now() - 60000))
+  await hub.routeBackgroundMessages()
+  await hub.routeBackgroundMessages()
+  assert.deepEqual(
+    (await outbox(bound.id)).map((row) => row.text),
+    ["after binding"]
+  )
+
   await closeDurableClient()
   await pool.end()
   passed = true
