@@ -1145,16 +1145,14 @@ try {
     .values({ name: "Clock ordering", role: "fixture" })
     .returning()
   const timedNotice = (content: string, createdAt: Date) =>
-    db
-      .insert(schema.companionMessages)
-      .values({
-        agentId: clockAgent.id,
-        role: "assistant",
-        kind: "objective_update",
-        channel: "web",
-        content,
-        createdAt,
-      })
+    db.insert(schema.companionMessages).values({
+      agentId: clockAgent.id,
+      role: "assistant",
+      kind: "objective_update",
+      channel: "web",
+      content,
+      createdAt,
+    })
   await timedNotice("before binding", new Date(Date.now() + 60000))
   const bound = await bindChannel({
     agentId: clockAgent.id,

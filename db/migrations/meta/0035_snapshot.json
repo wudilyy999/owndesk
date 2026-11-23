@@ -125,12 +125,8 @@
           "name": "agent_versions_parent_id_agent_versions_id_fk",
           "tableFrom": "agent_versions",
           "tableTo": "agent_versions",
-          "columnsFrom": [
-            "parent_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["parent_id"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         }
@@ -377,12 +373,8 @@
           "name": "artifacts_task_id_tasks_id_fk",
           "tableFrom": "artifacts",
           "tableTo": "tasks",
-          "columnsFrom": [
-            "task_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["task_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -628,12 +620,8 @@
           "name": "channel_links_agent_id_agents_id_fk",
           "tableFrom": "channel_links",
           "tableTo": "agents",
-          "columnsFrom": [
-            "agent_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["agent_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -772,12 +760,8 @@
           "name": "channel_outbox_link_id_channel_links_id_fk",
           "tableFrom": "channel_outbox",
           "tableTo": "channel_links",
-          "columnsFrom": [
-            "link_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["link_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -785,12 +769,8 @@
           "name": "channel_outbox_message_id_companion_messages_id_fk",
           "tableFrom": "channel_outbox",
           "tableTo": "companion_messages",
-          "columnsFrom": [
-            "message_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["message_id"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         }
@@ -870,12 +850,8 @@
           "name": "channel_pair_codes_agent_id_agents_id_fk",
           "tableFrom": "channel_pair_codes",
           "tableTo": "agents",
-          "columnsFrom": [
-            "agent_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["agent_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -1002,12 +978,8 @@
           "name": "companion_images_agent_id_agents_id_fk",
           "tableFrom": "companion_images",
           "tableTo": "agents",
-          "columnsFrom": [
-            "agent_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["agent_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -1120,12 +1092,8 @@
           "name": "companion_messages_agent_id_agents_id_fk",
           "tableFrom": "companion_messages",
           "tableTo": "agents",
-          "columnsFrom": [
-            "agent_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["agent_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -1227,12 +1195,8 @@
           "name": "companion_usage_agent_id_agents_id_fk",
           "tableFrom": "companion_usage",
           "tableTo": "agents",
-          "columnsFrom": [
-            "agent_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["agent_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -1400,12 +1364,8 @@
           "name": "companions_agent_id_agents_id_fk",
           "tableFrom": "companions",
           "tableTo": "agents",
-          "columnsFrom": [
-            "agent_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["agent_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -1492,12 +1452,8 @@
           "name": "coview_requests_agent_id_agents_id_fk",
           "tableFrom": "coview_requests",
           "tableTo": "agents",
-          "columnsFrom": [
-            "agent_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["agent_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -1505,12 +1461,8 @@
           "name": "coview_requests_task_id_tasks_id_fk",
           "tableFrom": "coview_requests",
           "tableTo": "tasks",
-          "columnsFrom": [
-            "task_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["task_id"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         }
@@ -1593,12 +1545,8 @@
           "name": "demonstrations_agent_id_agents_id_fk",
           "tableFrom": "demonstrations",
           "tableTo": "agents",
-          "columnsFrom": [
-            "agent_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["agent_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -1727,12 +1675,8 @@
           "name": "deployments_from_version_id_agent_versions_id_fk",
           "tableFrom": "deployments",
           "tableTo": "agent_versions",
-          "columnsFrom": [
-            "from_version_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["from_version_id"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         },
@@ -1740,12 +1684,8 @@
           "name": "deployments_to_version_id_agent_versions_id_fk",
           "tableFrom": "deployments",
           "tableTo": "agent_versions",
-          "columnsFrom": [
-            "to_version_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["to_version_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -1821,12 +1761,8 @@
           "name": "desktop_tickets_agent_id_agents_id_fk",
           "tableFrom": "desktop_tickets",
           "tableTo": "agents",
-          "columnsFrom": [
-            "agent_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["agent_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -1937,12 +1873,8 @@
           "name": "life_activities_agent_id_agents_id_fk",
           "tableFrom": "life_activities",
           "tableTo": "agents",
-          "columnsFrom": [
-            "agent_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["agent_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -1950,12 +1882,8 @@
           "name": "life_activities_task_id_tasks_id_fk",
           "tableFrom": "life_activities",
           "tableTo": "tasks",
-          "columnsFrom": [
-            "task_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["task_id"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         }
@@ -2054,12 +1982,8 @@
           "name": "life_shares_agent_id_agents_id_fk",
           "tableFrom": "life_shares",
           "tableTo": "agents",
-          "columnsFrom": [
-            "agent_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["agent_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -2067,12 +1991,8 @@
           "name": "life_shares_activity_id_life_activities_id_fk",
           "tableFrom": "life_shares",
           "tableTo": "life_activities",
-          "columnsFrom": [
-            "activity_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["activity_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -2180,12 +2100,8 @@
           "name": "memories_agent_id_agents_id_fk",
           "tableFrom": "memories",
           "tableTo": "agents",
-          "columnsFrom": [
-            "agent_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["agent_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -2193,12 +2109,8 @@
           "name": "memories_summary_id_memories_id_fk",
           "tableFrom": "memories",
           "tableTo": "memories",
-          "columnsFrom": [
-            "summary_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["summary_id"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         }
@@ -2327,12 +2239,8 @@
           "name": "memory_changes_agent_id_agents_id_fk",
           "tableFrom": "memory_changes",
           "tableTo": "agents",
-          "columnsFrom": [
-            "agent_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["agent_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -2446,12 +2354,8 @@
           "name": "memory_suggestions_agent_id_agents_id_fk",
           "tableFrom": "memory_suggestions",
           "tableTo": "agents",
-          "columnsFrom": [
-            "agent_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["agent_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -2459,12 +2363,8 @@
           "name": "memory_suggestions_memory_id_memories_id_fk",
           "tableFrom": "memory_suggestions",
           "tableTo": "memories",
-          "columnsFrom": [
-            "memory_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["memory_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -2472,12 +2372,8 @@
           "name": "memory_suggestions_other_id_memories_id_fk",
           "tableFrom": "memory_suggestions",
           "tableTo": "memories",
-          "columnsFrom": [
-            "other_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["other_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -2557,12 +2453,8 @@
           "name": "messages_thread_id_threads_id_fk",
           "tableFrom": "messages",
           "tableTo": "threads",
-          "columnsFrom": [
-            "thread_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["thread_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -2687,12 +2579,8 @@
           "name": "objective_rounds_objective_id_objectives_id_fk",
           "tableFrom": "objective_rounds",
           "tableTo": "objectives",
-          "columnsFrom": [
-            "objective_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["objective_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -2700,12 +2588,8 @@
           "name": "objective_rounds_task_id_tasks_id_fk",
           "tableFrom": "objective_rounds",
           "tableTo": "tasks",
-          "columnsFrom": [
-            "task_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["task_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -2715,9 +2599,7 @@
         "objective_rounds_taskId_unique": {
           "name": "objective_rounds_taskId_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "task_id"
-          ]
+          "columns": ["task_id"]
         }
       },
       "policies": {},
@@ -2856,12 +2738,8 @@
           "name": "objectives_agent_id_agents_id_fk",
           "tableFrom": "objectives",
           "tableTo": "agents",
-          "columnsFrom": [
-            "agent_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["agent_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -2871,9 +2749,7 @@
         "objectives_proposalId_unique": {
           "name": "objectives_proposalId_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "proposal_id"
-          ]
+          "columns": ["proposal_id"]
         }
       },
       "policies": {},
@@ -2918,9 +2794,7 @@
         "owners_userId_unique": {
           "name": "owners_userId_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "user_id"
-          ]
+          "columns": ["user_id"]
         }
       },
       "policies": {},
@@ -2980,12 +2854,8 @@
           "name": "push_deliveries_message_id_companion_messages_id_fk",
           "tableFrom": "push_deliveries",
           "tableTo": "companion_messages",
-          "columnsFrom": [
-            "message_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["message_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -2993,12 +2863,8 @@
           "name": "push_deliveries_agent_id_agents_id_fk",
           "tableFrom": "push_deliveries",
           "tableTo": "agents",
-          "columnsFrom": [
-            "agent_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["agent_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -3106,12 +2972,8 @@
           "name": "push_subscriptions_agent_id_agents_id_fk",
           "tableFrom": "push_subscriptions",
           "tableTo": "agents",
-          "columnsFrom": [
-            "agent_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["agent_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -3303,12 +3165,8 @@
           "name": "routine_runs_routine_id_routines_id_fk",
           "tableFrom": "routine_runs",
           "tableTo": "routines",
-          "columnsFrom": [
-            "routine_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["routine_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -3316,12 +3174,8 @@
           "name": "routine_runs_task_id_tasks_id_fk",
           "tableFrom": "routine_runs",
           "tableTo": "tasks",
-          "columnsFrom": [
-            "task_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["task_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -3329,12 +3183,8 @@
           "name": "routine_runs_thread_id_threads_id_fk",
           "tableFrom": "routine_runs",
           "tableTo": "threads",
-          "columnsFrom": [
-            "thread_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["thread_id"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         },
@@ -3342,12 +3192,8 @@
           "name": "routine_runs_turn_id_turns_id_fk",
           "tableFrom": "routine_runs",
           "tableTo": "turns",
-          "columnsFrom": [
-            "turn_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["turn_id"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         }
@@ -3549,12 +3395,8 @@
           "name": "routines_agent_id_agents_id_fk",
           "tableFrom": "routines",
           "tableTo": "agents",
-          "columnsFrom": [
-            "agent_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["agent_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -3562,12 +3404,8 @@
           "name": "routines_squad_id_squads_id_fk",
           "tableFrom": "routines",
           "tableTo": "squads",
-          "columnsFrom": [
-            "squad_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["squad_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -3575,12 +3413,8 @@
           "name": "routines_thread_id_threads_id_fk",
           "tableFrom": "routines",
           "tableTo": "threads",
-          "columnsFrom": [
-            "thread_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["thread_id"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         }
@@ -3668,12 +3502,8 @@
           "name": "squad_members_squad_id_squads_id_fk",
           "tableFrom": "squad_members",
           "tableTo": "squads",
-          "columnsFrom": [
-            "squad_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["squad_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -3681,12 +3511,8 @@
           "name": "squad_members_agent_id_agents_id_fk",
           "tableFrom": "squad_members",
           "tableTo": "agents",
-          "columnsFrom": [
-            "agent_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["agent_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -3694,10 +3520,7 @@
       "compositePrimaryKeys": {
         "squad_members_squad_id_agent_id_pk": {
           "name": "squad_members_squad_id_agent_id_pk",
-          "columns": [
-            "squad_id",
-            "agent_id"
-          ]
+          "columns": ["squad_id", "agent_id"]
         }
       },
       "uniqueConstraints": {},
@@ -3825,12 +3648,8 @@
           "name": "task_action_attempts_task_id_tasks_id_fk",
           "tableFrom": "task_action_attempts",
           "tableTo": "tasks",
-          "columnsFrom": [
-            "task_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["task_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -3838,21 +3657,14 @@
       "compositePrimaryKeys": {
         "task_action_attempts_task_id_segment_no_action_no_attempt_no_pk": {
           "name": "task_action_attempts_task_id_segment_no_action_no_attempt_no_pk",
-          "columns": [
-            "task_id",
-            "segment_no",
-            "action_no",
-            "attempt_no"
-          ]
+          "columns": ["task_id", "segment_no", "action_no", "attempt_no"]
         }
       },
       "uniqueConstraints": {
         "task_action_attempts_dispatchId_unique": {
           "name": "task_action_attempts_dispatchId_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "dispatch_id"
-          ]
+          "columns": ["dispatch_id"]
         }
       },
       "policies": {},
@@ -3948,12 +3760,8 @@
           "name": "task_actions_task_id_tasks_id_fk",
           "tableFrom": "task_actions",
           "tableTo": "tasks",
-          "columnsFrom": [
-            "task_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["task_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -3961,11 +3769,7 @@
       "compositePrimaryKeys": {
         "task_actions_task_id_segment_no_action_no_pk": {
           "name": "task_actions_task_id_segment_no_action_no_pk",
-          "columns": [
-            "task_id",
-            "segment_no",
-            "action_no"
-          ]
+          "columns": ["task_id", "segment_no", "action_no"]
         }
       },
       "uniqueConstraints": {},
@@ -4042,12 +3846,8 @@
           "name": "task_events_task_id_tasks_id_fk",
           "tableFrom": "task_events",
           "tableTo": "tasks",
-          "columnsFrom": [
-            "task_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["task_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -4055,10 +3855,7 @@
       "compositePrimaryKeys": {
         "task_events_task_id_seq_pk": {
           "name": "task_events_task_id_seq_pk",
-          "columns": [
-            "task_id",
-            "seq"
-          ]
+          "columns": ["task_id", "seq"]
         }
       },
       "uniqueConstraints": {},
@@ -4240,12 +4037,8 @@
           "name": "task_model_attempts_task_id_tasks_id_fk",
           "tableFrom": "task_model_attempts",
           "tableTo": "tasks",
-          "columnsFrom": [
-            "task_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["task_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -4341,12 +4134,8 @@
           "name": "task_model_decisions_task_id_tasks_id_fk",
           "tableFrom": "task_model_decisions",
           "tableTo": "tasks",
-          "columnsFrom": [
-            "task_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["task_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -4354,11 +4143,7 @@
       "compositePrimaryKeys": {
         "task_model_decisions_task_id_segment_no_decision_no_pk": {
           "name": "task_model_decisions_task_id_segment_no_decision_no_pk",
-          "columns": [
-            "task_id",
-            "segment_no",
-            "decision_no"
-          ]
+          "columns": ["task_id", "segment_no", "decision_no"]
         }
       },
       "uniqueConstraints": {},
@@ -4473,12 +4258,8 @@
           "name": "task_requests_task_id_tasks_id_fk",
           "tableFrom": "task_requests",
           "tableTo": "tasks",
-          "columnsFrom": [
-            "task_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["task_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -4486,12 +4267,8 @@
           "name": "task_requests_agent_id_agents_id_fk",
           "tableFrom": "task_requests",
           "tableTo": "agents",
-          "columnsFrom": [
-            "agent_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["agent_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -4549,12 +4326,8 @@
           "name": "task_segments_task_id_tasks_id_fk",
           "tableFrom": "task_segments",
           "tableTo": "tasks",
-          "columnsFrom": [
-            "task_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["task_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -4562,12 +4335,8 @@
           "name": "task_segments_agent_id_agents_id_fk",
           "tableFrom": "task_segments",
           "tableTo": "agents",
-          "columnsFrom": [
-            "agent_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["agent_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -4575,19 +4344,14 @@
       "compositePrimaryKeys": {
         "task_segments_task_id_segment_no_pk": {
           "name": "task_segments_task_id_segment_no_pk",
-          "columns": [
-            "task_id",
-            "segment_no"
-          ]
+          "columns": ["task_id", "segment_no"]
         }
       },
       "uniqueConstraints": {
         "task_segments_workflowId_unique": {
           "name": "task_segments_workflowId_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "workflow_id"
-          ]
+          "columns": ["workflow_id"]
         }
       },
       "policies": {},
@@ -4675,12 +4439,8 @@
           "name": "task_uploads_agent_id_agents_id_fk",
           "tableFrom": "task_uploads",
           "tableTo": "agents",
-          "columnsFrom": [
-            "agent_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["agent_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -4778,12 +4538,8 @@
           "name": "task_workflow_runs_task_id_tasks_id_fk",
           "tableFrom": "task_workflow_runs",
           "tableTo": "tasks",
-          "columnsFrom": [
-            "task_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["task_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -4791,12 +4547,8 @@
           "name": "task_workflow_runs_version_id_workflow_versions_id_fk",
           "tableFrom": "task_workflow_runs",
           "tableTo": "workflow_versions",
-          "columnsFrom": [
-            "version_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["version_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -5039,12 +4791,8 @@
           "name": "tasks_agent_id_agents_id_fk",
           "tableFrom": "tasks",
           "tableTo": "agents",
-          "columnsFrom": [
-            "agent_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["agent_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -5052,12 +4800,8 @@
           "name": "tasks_thread_id_threads_id_fk",
           "tableFrom": "tasks",
           "tableTo": "threads",
-          "columnsFrom": [
-            "thread_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["thread_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -5065,12 +4809,8 @@
           "name": "tasks_objective_id_objectives_id_fk",
           "tableFrom": "tasks",
           "tableTo": "objectives",
-          "columnsFrom": [
-            "objective_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["objective_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -5203,12 +4943,8 @@
           "name": "telegram_connection_owner_id_owners_user_id_fk",
           "tableFrom": "telegram_connection",
           "tableTo": "owners",
-          "columnsFrom": [
-            "owner_id"
-          ],
-          "columnsTo": [
-            "user_id"
-          ],
+          "columnsFrom": ["owner_id"],
+          "columnsTo": ["user_id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -5216,12 +4952,8 @@
           "name": "telegram_connection_agent_id_agents_id_fk",
           "tableFrom": "telegram_connection",
           "tableTo": "agents",
-          "columnsFrom": [
-            "agent_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["agent_id"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         },
@@ -5229,12 +4961,8 @@
           "name": "telegram_connection_thread_id_threads_id_fk",
           "tableFrom": "telegram_connection",
           "tableTo": "threads",
-          "columnsFrom": [
-            "thread_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["thread_id"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         },
@@ -5242,12 +4970,8 @@
           "name": "telegram_connection_task_id_tasks_id_fk",
           "tableFrom": "telegram_connection",
           "tableTo": "tasks",
-          "columnsFrom": [
-            "task_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["task_id"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         }
@@ -5453,10 +5177,7 @@
       "compositePrimaryKeys": {
         "telegram_updates_generation_update_id_pk": {
           "name": "telegram_updates_generation_update_id_pk",
-          "columns": [
-            "generation",
-            "update_id"
-          ]
+          "columns": ["generation", "update_id"]
         }
       },
       "uniqueConstraints": {},
@@ -5575,12 +5296,8 @@
           "name": "threads_agent_id_agents_id_fk",
           "tableFrom": "threads",
           "tableTo": "agents",
-          "columnsFrom": [
-            "agent_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["agent_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -5588,12 +5305,8 @@
           "name": "threads_squad_id_squads_id_fk",
           "tableFrom": "threads",
           "tableTo": "squads",
-          "columnsFrom": [
-            "squad_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["squad_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -5728,12 +5441,8 @@
           "name": "turns_thread_id_threads_id_fk",
           "tableFrom": "turns",
           "tableTo": "threads",
-          "columnsFrom": [
-            "thread_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["thread_id"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         },
@@ -5741,12 +5450,8 @@
           "name": "turns_agent_id_agents_id_fk",
           "tableFrom": "turns",
           "tableTo": "agents",
-          "columnsFrom": [
-            "agent_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["agent_id"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         }
@@ -5857,12 +5562,8 @@
           "name": "vault_approvals_thread_id_threads_id_fk",
           "tableFrom": "vault_approvals",
           "tableTo": "threads",
-          "columnsFrom": [
-            "thread_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["thread_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -5870,12 +5571,8 @@
           "name": "vault_approvals_agent_id_agents_id_fk",
           "tableFrom": "vault_approvals",
           "tableTo": "agents",
-          "columnsFrom": [
-            "agent_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["agent_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -5883,12 +5580,8 @@
           "name": "vault_approvals_item_id_vault_items_id_fk",
           "tableFrom": "vault_approvals",
           "tableTo": "vault_items",
-          "columnsFrom": [
-            "item_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["item_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -6018,12 +5711,8 @@
           "name": "vault_items_scope_task_id_tasks_id_fk",
           "tableFrom": "vault_items",
           "tableTo": "tasks",
-          "columnsFrom": [
-            "scope_task_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["scope_task_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -6199,12 +5888,8 @@
           "name": "workflow_versions_source_task_id_tasks_id_fk",
           "tableFrom": "workflow_versions",
           "tableTo": "tasks",
-          "columnsFrom": [
-            "source_task_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["source_task_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -6212,12 +5897,8 @@
           "name": "workflow_versions_compilation_task_id_tasks_id_fk",
           "tableFrom": "workflow_versions",
           "tableTo": "tasks",
-          "columnsFrom": [
-            "compilation_task_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["compilation_task_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -6227,9 +5908,7 @@
         "workflow_versions_compilationTaskId_unique": {
           "name": "workflow_versions_compilationTaskId_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "compilation_task_id"
-          ]
+          "columns": ["compilation_task_id"]
         }
       },
       "policies": {},
@@ -6336,12 +6015,8 @@
           "name": "workstation_control_agent_id_agents_id_fk",
           "tableFrom": "workstation_control",
           "tableTo": "agents",
-          "columnsFrom": [
-            "agent_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["agent_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -6349,12 +6024,8 @@
           "name": "workstation_control_active_task_id_tasks_id_fk",
           "tableFrom": "workstation_control",
           "tableTo": "tasks",
-          "columnsFrom": [
-            "active_task_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["active_task_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -6364,9 +6035,7 @@
         "workstation_control_containerName_unique": {
           "name": "workstation_control_containerName_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "container_name"
-          ]
+          "columns": ["container_name"]
         }
       },
       "policies": {},
