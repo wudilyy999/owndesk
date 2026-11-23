@@ -2,7 +2,15 @@ import { ensureRecoveryLab } from "./fixtures/recovery-lab"
 import assert from "node:assert/strict"
 import { randomUUID } from "node:crypto"
 import { createServer, type ServerResponse } from "node:http"
-import { mkdir, readFile, writeFile, readdir, rename } from "node:fs/promises"
+import {
+  chmod,
+  mkdir,
+  readFile,
+  writeFile,
+  readdir,
+  rename,
+  stat,
+} from "node:fs/promises"
 import path from "node:path"
 import { spawn, spawnSync, type ChildProcess } from "node:child_process"
 import { once } from "node:events"
@@ -2242,12 +2250,30 @@ try {
         respondToRequest(ownerId, oldQuestion.id, "approve", 1, { answer: "Use CSV" }),
         /earlier task segment/
       )
+      // The recipient must be able to read a private frozen artifact even when
+      // the host's umask would normally create a more permissive file.
+      const frozenFile = detail.artifacts.find(
+        (a) => a.id === prepared.handoff.files[0].id
+      )!
+      const hostPath = path.join(process.env.ARTIFACT_DIR!, frozenFile.storagePath)
+      await chmod(hostPath, 0o600)
       busy.scenario.release!()
       await completed(busy.taskId)
       await until(
         async () => !!normal.scenario.release,
         "recipient uses frozen config and file"
       )
+      assert.equal((await stat(hostPath)).mode & 0o777, 0o600)
+      const transferredPath = `/home/agent/Transfers/${normal.taskId}/s2/0-source.csv`
+      const recipientFile = await docker([
+        "exec",
+        workstationName(target),
+        "stat",
+        "-c",
+        "%U:%a",
+        transferredPath,
+      ])
+      assert.equal(recipientFile.stdout.toString().trim(), "agent:600")
       const targetCall = normal.scenario.calls.find((c) =>
         JSON.stringify(c.messages).includes("Historical handoff from agent")
       )!
