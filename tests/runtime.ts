@@ -2,7 +2,15 @@ import { ensureRecoveryLab } from "./fixtures/recovery-lab"
 import assert from "node:assert/strict"
 import { randomUUID } from "node:crypto"
 import { createServer, type ServerResponse } from "node:http"
-import { mkdir, readFile, writeFile, readdir, rename } from "node:fs/promises"
+import {
+  chmod,
+  mkdir,
+  readFile,
+  writeFile,
+  readdir,
+  rename,
+  stat,
+} from "node:fs/promises"
 import path from "node:path"
 import { spawn, spawnSync, type ChildProcess } from "node:child_process"
 import { once } from "node:events"
@@ -2242,12 +2250,30 @@ try {
         respondToRequest(ownerId, oldQuestion.id, "approve", 1, { answer: "Use CSV" }),
         /earlier task segment/
       )
+      // The recipient must be able to read a private frozen artifact even when
+      // the host's umask would normally create a more permissive file.
+      const frozenFile = detail.artifacts.find(
+        (a) => a.id === prepared.handoff.files[0].id
+      )!
+      const hostPath = path.join(process.env.ARTIFACT_DIR!, frozenFile.storagePath)
+      await chmod(hostPath, 0o600)
       busy.scenario.release!()
       await completed(busy.taskId)
       await until(
         async () => !!normal.scenario.release,
         "recipient uses frozen config and file"
       )
+      assert.equal((await stat(hostPath)).mode & 0o777, 0o600)
+      const transferredPath = `/home/agent/Transfers/${normal.taskId}/s2/0-source.csv`
+      const recipientFile = await docker([
+        "exec",
+        workstationName(target),
+        "stat",
+        "-c",
+        "%U:%a",
+        transferredPath,
+      ])
+      assert.equal(recipientFile.stdout.toString().trim(), "agent:600")
       const targetCall = normal.scenario.calls.find((c) =>
         JSON.stringify(c.messages).includes("Historical handoff from agent")
       )!
@@ -3008,6 +3034,16 @@ try {
               "payment outcome reaches model"
             )
           }
+          // Give the worker time to start the read. The fixture itself holds that read until
+          // the grant expires; the assertions below still require it to straddle the deadline.
+          async function armInspectionDeadline(run: FillRun) {
+            const { rows } = await pool.query<{ expires: Date }>(
+              "SELECT clock_timestamp()+interval '8 seconds' AS expires"
+            )
+            const deadline = rows[0].expires
+            await site(run, "/inspection-deadline", { expiresAt: deadline.getTime() })
+            return deadline
+          }
           if (focus === "paymentdeadline") {
             const run = await fillRun("pay_deadline"),
               request = await paymentApproval(run)
@@ -3018,11 +3054,7 @@ try {
               async () => (await site(run)).slowReady,
               "slow DOM getter installed after approval snapshot"
             )
-            const expires = (
-              await pool.query<{ expires: Date }>(
-                "SELECT clock_timestamp()+interval '1 second' AS expires"
-              )
-            ).rows[0].expires
+            const expires = await armInspectionDeadline(run)
             await pool.query(
               "UPDATE task_requests SET payload=jsonb_set(payload,'{expiresAt}',$2::jsonb) WHERE id=$1",
               [fill.id, JSON.stringify(expires.toISOString())]
@@ -3058,7 +3090,7 @@ try {
             paymentTasksEvaluated = 1
             checks.push({
               check:
-                "A real 1.5-second DOM read begins before and ends after a short owner-grant deadline; no release, fill or submit after expiry",
+                "A real DOM read begins before and ends after a short owner-grant deadline; no release, fill or submit after expiry",
               taskId: run.taskId,
               expiresAt: expires.toISOString(),
               inspectionStartedAt: state.inspectionStartedAt,
@@ -3654,11 +3686,7 @@ try {
                 async () => (await site(expired.run)).slowReady,
                 "slow final read installed"
               )
-              const deadline = (
-                await pool.query<{ expires: Date }>(
-                  "SELECT clock_timestamp()+interval '1 second' AS expires"
-                )
-              ).rows[0].expires
+              const deadline = await armInspectionDeadline(expired.run)
               await pool.query(
                 "UPDATE task_requests SET payload=jsonb_set(payload,'{expiresAt}',$2::jsonb) WHERE id=$1",
                 [expired.request.id, JSON.stringify(deadline.toISOString())]
@@ -7542,7 +7570,7 @@ try {
         "INSERT INTO companion_messages(id,agent_id,role,content,metadata,created_at) VALUES($1,$2,'user','Chinese headings from source chat',$3,now()-interval '1 minute')",
         [sourceId, agentId, JSON.stringify({ imageId: photo.id })]
       )
-      const goal = `CASE=continuity RUN=${run}; Prepare the report from our chat and picture.`
+      const goal = `CASE=continuity RUN=${run}; Prepare the report from our chat and picture. Wait for me to confirm the proposal before starting.`
       await pool.query(
         "INSERT INTO companion_messages(id,agent_id,role,kind,content,metadata,created_at) VALUES($1,$2,'assistant','errand_proposal',$3,$4,now())",
         [
@@ -7554,6 +7582,13 @@ try {
       )
       const submitted = await confirmErrand(ownerId, proposalId)
       await until(async () => scenario.release, "initial model response held")
+      const initialPrompt = JSON.stringify(scenario.calls[0].messages)
+      assert.match(initialPrompt, /Wait for me to confirm the proposal/)
+      assert.match(initialPrompt, /The owner confirmed the errand proposal/)
+      assert.match(
+        initialPrompt,
+        /separate action approvals and review requirements still apply/
+      )
       const note = { text: "Use the revised totals", clientRequestId: randomUUID() }
       await appendTaskSupplement(ownerId, submitted.taskId, note)
       scenario.release!()

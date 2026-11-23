@@ -1,7 +1,7 @@
 import { docker } from "@/lib/docker"
 import { env } from "@/lib/env"
 
-export async function assertWorkstationNetwork() {
+export async function assertWorkstationNetwork(mode: "check" | "restore" = "check") {
   if (!env.NETWORK_GUARD_IMAGE) return
   await docker(
     [
@@ -27,7 +27,7 @@ export async function assertWorkstationNetwork() {
       env.NETWORK_GUARD_IMAGE,
       "node",
       "scripts/network.mjs",
-      "check",
+      mode,
     ],
     { timeoutMs: 30000, maxOutputBytes: 16384 }
   )

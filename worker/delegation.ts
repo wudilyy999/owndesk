@@ -242,19 +242,27 @@ export async function importHandoffFiles(
         const source = path.join(artifactDir, artifact.storage_path)
         const target = `/home/agent/Transfers/${task.id}/s${segmentNo}/${index}-${file.name}`
         const expected = await readFile(source)
+        // Create the copy as the recipient. `docker cp` can install a private
+        // host artifact as root:root 0600, unreadable by the workstation user.
         await docker(
           [
             "exec",
+            "-i",
             workstationName(task.agentId),
-            "mkdir",
-            "-p",
+            "sh",
+            "-ec",
+            `umask 077
+mkdir -p -- "$1"
+tmp=$(mktemp -- "$1/.handoff.XXXXXXXX")
+trap 'rm -f -- "$tmp"' EXIT
+cat > "$tmp"
+mv -fT -- "$tmp" "$2"`,
+            "handoff",
             path.posix.dirname(target),
+            target,
           ],
-          { timeoutMs: 15000 }
+          { input: expected, timeoutMs: 60000 }
         )
-        await docker(["cp", source, `${workstationName(task.agentId)}:${target}`], {
-          timeoutMs: 60000,
-        })
         const actual = await docker(
           ["exec", workstationName(task.agentId), "cat", target],
           { timeoutMs: 15000, maxOutputBytes: 20000000 }
