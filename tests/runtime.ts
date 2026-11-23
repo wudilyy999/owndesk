@@ -1552,18 +1552,24 @@ try {
       })
       return { taskId, agentId: agent.id, scenario }
     }
-    async function pending(taskId: string, purpose: string) {
-      return until(async () => {
-        const requests = (await getTask(ownerId, taskId)).requests
-        const failure = requests.find(
-          (request) =>
-            request.status === "pending" && request.payload.purpose === "execution_error"
-        )
-        if (failure) throw new Error(JSON.stringify(failure.payload))
-        return requests.find(
-          (request) => request.status === "pending" && request.payload.purpose === purpose
-        )
-      }, `owner request: ${purpose}`)
+    async function pending(taskId: string, purpose: string, timeout?: number) {
+      return until(
+        async () => {
+          const requests = (await getTask(ownerId, taskId)).requests
+          const failure = requests.find(
+            (request) =>
+              request.status === "pending" &&
+              request.payload.purpose === "execution_error"
+          )
+          if (failure) throw new Error(JSON.stringify(failure.payload))
+          return requests.find(
+            (request) =>
+              request.status === "pending" && request.payload.purpose === purpose
+          )
+        },
+        `owner request: ${purpose}`,
+        timeout
+      )
     }
     async function completed(taskId: string, timeout?: number) {
       return until(
@@ -6048,6 +6054,9 @@ try {
       }
     }
     if (focus === "reports") {
+      // Four browser downloads and eleven model decisions can take over 75s on a cold desktop.
+      // Bound only this fixture's observation; the task and its acceptance checks stay unchanged.
+      const reportWaitMs = 180_000
       const { saveRoutine, routinePlanSchema, routineOverview } =
         await import("@/lib/routines")
       const { ensureTelegramConnection } = await import("@/lib/telegram/state")
@@ -6173,7 +6182,8 @@ try {
         if (kind === "missing") {
           await until(
             async () => !!scenario.release,
-            "missing baseline rejected by real completion gate"
+            "missing baseline rejected by real completion gate",
+            reportWaitMs
           )
           assert.notEqual((await getTask(ownerId, linked.task_id)).status, "completed")
           await collectTelegramNotifications(connection.generation)
@@ -6189,7 +6199,7 @@ try {
           scenario.release!()
         }
         if (kind === "zero") {
-          const request = await pending(linked.task_id, "completion")
+          const request = await pending(linked.task_id, "completion", reportWaitMs)
           assert.equal((request.payload.comparison as any).currentTotal, "330")
           assert.equal((request.payload.comparison as any).needsAttention, true)
           await collectTelegramNotifications(connection.generation)
@@ -6219,7 +6229,7 @@ try {
             {}
           )
         }
-        const task = await completed(linked.task_id)
+        const task = await completed(linked.task_id, reportWaitMs)
         const comparison = task.result!.comparison as any
         assert.equal(comparison.currentTotal, kind === "quiet" ? "300" : "330")
         assert.equal(comparison.baselineTotal, kind === "zero" ? "0" : "300")
