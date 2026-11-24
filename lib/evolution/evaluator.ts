@@ -85,10 +85,15 @@ async function timed(
   }
 }
 
-export async function policyStage(baseCommit: string, commit: string) {
+export async function policyStage(
+  baseCommit: string,
+  commit: string,
+  officialOnly = false
+) {
   return timed("policy", async () => {
     const files = await changedFiles(baseCommit, commit)
-    const findings = checkChanges(files)
+    const findings =
+      officialOnly && baseCommit === commit && !files.length ? [] : checkChanges(files)
     if (!findings.length)
       for (const file of files.filter((f) => extensionPath.test(f.path))) {
         try {
@@ -132,19 +137,21 @@ export async function buildStage(
   trustedCommit: string,
   commit: string,
   tag: string,
-  log: Log
+  log: Log,
+  revision = commit
 ) {
   const images = { web: `owndesk-web:${tag}`, worker: `owndesk-worker:${tag}` }
   const result = await timed("build", async () => {
     const context = await mkdtemp(path.join(os.tmpdir(), "owndesk-cand-build-"))
     try {
-      await extract(commit, context)
+      const source = path.join(context, "source")
+      await extract(commit, source)
       const dockerfile = (await git(["show", `${trustedCommit}:Dockerfile`])).toString(
         "utf8"
       )
       await writeFile(path.join(context, "Dockerfile"), labDockerfile(dockerfile))
       await writeFile(
-        path.join(context, ".dockerignore"),
+        path.join(source, ".dockerignore"),
         await git(["show", `${trustedCommit}:.dockerignore`])
       )
       for (const [target, image] of Object.entries(images))
@@ -160,12 +167,14 @@ export async function buildStage(
             "--target",
             target,
             "--build-arg",
-            `SOURCE_REVISION=${commit}`,
+            `SOURCE_REVISION=${revision}`,
             "--label",
             `${LAB_LABEL}=${env.INSTALL_ID}`,
             "-t",
             image,
-            context,
+            "--file",
+            path.join(context, "Dockerfile"),
+            source,
           ],
           { timeoutMs: 45 * 60_000, maxOutputBytes: 16 * 1024 * 1024, onLine: log }
         )
@@ -1454,6 +1463,8 @@ export async function leakScan(stack: CandidateStack) {
 }
 
 export type EvaluateInput = {
+  officialRevision?: string
+  officialOnly?: boolean
   key: string
   baseCommit: string
   trustedCommit: string
@@ -1495,7 +1506,11 @@ export async function evaluate(input: EvaluateInput) {
         detail: "前面的关没通过",
       })
   }
-  const policy = await policyStage(input.baseCommit, input.commit)
+  const policy = await policyStage(
+    input.baseCommit,
+    input.commit,
+    input.officialOnly && input.trustedCommit === input.commit
+  )
   evaluation.stages.push(policy)
   input.log(`stage policy: ${policy.status}`)
   if (policy.status === "fail" || input.stopAfter === "policy") {
@@ -1516,7 +1531,15 @@ export async function evaluate(input: EvaluateInput) {
     skipRest(["build", "stack", "e2e"])
     return finish()
   }
-  const built = await buildStage(input.trustedCommit, input.commit, input.key, input.log)
+  const built = await buildStage(
+    input.trustedCommit,
+    input.commit,
+    input.key,
+    input.log,
+    input.officialOnly && input.commit === input.trustedCommit
+      ? input.officialRevision
+      : undefined
+  )
   evaluation.stages.push(built.result)
   input.log(`stage build: ${built.result.status}`)
   if (built.result.status === "fail") {

@@ -613,7 +613,7 @@ async function start() {
     options.web && options.worker,
     "--web and --worker image references are required"
   )
-  const expectedFrom = options["expected-from"]
+  let expectedFrom = options["expected-from"]
   const requestId = options["request-id"]
   assert(!requestId || /^[a-zA-Z0-9_-]{12}$/.test(requestId), "Invalid request ID")
   if (
@@ -624,6 +624,21 @@ async function start() {
   ) {
     log("FAILED: the active version changed since the candidate was selected")
     return 1
+  }
+  if (options.action === "promote" && !expectedFrom) {
+    const { present } = await one(
+      "SELECT to_regclass('public.agent_versions') IS NOT NULL AS present"
+    )
+    const local =
+      present &&
+      (await one("SELECT id FROM agent_versions WHERE status='active' AND kind='local'"))
+    if (local && options["discard-local"] !== "yes") {
+      log(
+        "FAILED: 当前有本地改进，请合并升级或明确选择 --discard-local。需求和候选历史会保留。"
+      )
+      return 1
+    }
+    if (local) expectedFrom = local.id
   }
   const adoption = options.action === "promote" && !!expectedFrom
   if (adoption) await requireIdle()

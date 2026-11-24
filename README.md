@@ -262,13 +262,12 @@ flowchart LR
         B0 --> B1[B1 Self-improvement v1]
         B1 --> A2[A2 Scheduled goals,<br/>goal cards in channels]
         A2 --> B2[B2 Try before adopting,<br/>desktop changes, additive migrations]
+        B2 --> B3[B3 Merge official upgrades,<br/>lineage page]
     end
-    subgraph upcoming[Next]
-        B3[B3 Merge official upgrades,<br/>lineage page]
-    end
-    B2 --> B3
     B3 -.-> B4[B4 Share improvements, optional]
 ```
+
+On **Versions**, check for an official update, merge your local changes, or try the official version alone. Each candidate keeps its original request, parent, test results and cost. You can start another improvement from a rejected candidate.
 
 The [roadmap](docs/ROADMAP.md) lists acceptance criteria for each stage, release work, and known gaps. [Development status](docs/STATUS.md) keeps the detailed validation history.
 

@@ -4,8 +4,8 @@ import { listVersions } from "@/lib/versions"
 
 export async function GET(request: Request) {
   try {
-    await requireOwner(request.headers)
-    return Response.json(await listVersions())
+    const owner = await requireOwner(request.headers)
+    return Response.json(await listVersions(owner.userId))
   } catch (error) {
     return errorResponse(error)
   }

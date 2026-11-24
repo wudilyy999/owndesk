@@ -6,11 +6,14 @@ import { listVersions } from "@/lib/versions"
 import { Versions } from "@/components/versions"
 
 export default async function VersionsPage() {
+  let owner
   try {
-    await requireOwner(await headers())
+    owner = await requireOwner(await headers())
   } catch (error) {
     if (error instanceof HttpError && error.status === 401) redirect("/login")
     throw error
   }
-  return <Versions initial={JSON.parse(JSON.stringify(await listVersions()))} />
+  return (
+    <Versions initial={JSON.parse(JSON.stringify(await listVersions(owner.userId)))} />
+  )
 }

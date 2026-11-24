@@ -40,6 +40,8 @@ import { assertWorkstationNetwork } from "./network"
 import { registerRunningVersion, requestSwitch } from "@/lib/versions"
 import {
   adoptImprovement,
+  forkImprovement,
+  startOfficialMerge,
   abandonImprovement,
   reviseImprovement,
   confirmImprovementProposal,
@@ -154,6 +156,7 @@ export async function startWorker() {
         "/internal/demonstrations/record",
         "/internal/workflows/template",
         "/internal/versions/switch",
+        "/internal/versions/official",
         "/internal/improvements",
         "/internal/improvement-trial",
       ].includes(req.url ?? "") &&
@@ -185,6 +188,13 @@ export async function startWorker() {
             const body = z
               .discriminatedUnion("action", [
                 z.object({
+                  action: z.literal("fork"),
+                  roundNo: z.number().int().positive(),
+                  note: z.string().trim().min(1).max(4000),
+                  requestId: z.string().uuid(),
+                  objectiveId: z.string().min(1).max(100),
+                }),
+                z.object({
                   action: z.literal("revise"),
                   objectiveId: z.string().min(1).max(100),
                   note: z.string().trim().min(1).max(2000),
@@ -206,32 +216,66 @@ export async function startWorker() {
               ])
               .parse(input)
             result =
-              body.action === "confirm"
-                ? {
-                    objectiveId: (
-                      await confirmImprovementProposal(
-                        owner.userId,
-                        body.messageId,
-                        body.checklist
-                      )
-                    ).id,
-                  }
-                : await withTrialClosed(
+              body.action === "fork"
+                ? await forkImprovement(
                     owner.userId,
                     body.objectiveId,
-                    async () => {
-                      if (body.action === "adopt")
-                        return adoptImprovement(
+                    body.roundNo,
+                    body.note,
+                    body.requestId
+                  )
+                : body.action === "confirm"
+                  ? {
+                      objectiveId: (
+                        await confirmImprovementProposal(
                           owner.userId,
-                          body.objectiveId,
-                          body.versionId
+                          body.messageId,
+                          body.checklist
                         )
-                      if (body.action === "revise")
-                        await reviseImprovement(owner.userId, body.objectiveId, body.note)
-                      else await abandonImprovement(owner.userId, body.objectiveId)
-                      return { status: body.action }
-                    },
-                    body.action === "adopt" ? body.versionId : undefined
+                      ).id,
+                    }
+                  : await withTrialClosed(
+                      owner.userId,
+                      body.objectiveId,
+                      async () => {
+                        if (body.action === "adopt")
+                          return adoptImprovement(
+                            owner.userId,
+                            body.objectiveId,
+                            body.versionId
+                          )
+                        if (body.action === "revise")
+                          await reviseImprovement(
+                            owner.userId,
+                            body.objectiveId,
+                            body.note
+                          )
+                        else await abandonImprovement(owner.userId, body.objectiveId)
+                        return { status: body.action }
+                      },
+                      body.action === "adopt" ? body.versionId : undefined
+                    )
+          } else if (req.url === "/internal/versions/official") {
+            const body = z
+              .discriminatedUnion("action", [
+                z.object({ action: z.literal("discover") }),
+                z.object({
+                  action: z.enum(["merge", "discard"]),
+                  revision: z.string().regex(/^[a-f0-9]{40}$/),
+                  fromId: z.string().min(1).max(100),
+                }),
+              ])
+              .parse(input)
+            result =
+              body.action === "discover"
+                ? await (
+                    await import("@/lib/evolution/official")
+                  ).discoverOfficial(owner.userId)
+                : await startOfficialMerge(
+                    owner.userId,
+                    body.revision,
+                    body.fromId,
+                    body.action === "discard"
                   )
           } else if (req.url === "/internal/versions/switch")
             result = await requestSwitch(

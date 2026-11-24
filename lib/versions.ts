@@ -9,7 +9,8 @@ import os from "node:os"
 import path from "node:path"
 import { promisify } from "node:util"
 import { desc, eq, sql } from "drizzle-orm"
-import { db } from "@/db"
+import { db, pool } from "@/db"
+import { listImprovements } from "@/lib/evolution/store"
 import { agentVersions, deployments } from "@/db/schema"
 import { docker } from "@/lib/docker"
 import { APPLICATION_VERSION } from "@/lib/durable"
@@ -129,10 +130,20 @@ export async function registerRunningVersion() {
   await docker(["tag", webId, images.web])
   await docker(["tag", workerId, images.worker])
   const revision = sourceRevision()
-  const gitCommit = await importSource(revision).catch((error) => {
-    console.error("Version source import failed", error)
-    return null
-  })
+  const [known] = await db
+    .select({ kind: agentVersions.kind, revision: agentVersions.sourceRevision })
+    .from(agentVersions)
+    .where(
+      sql`${agentVersions.webImageId}=${webId} AND ${agentVersions.workerImageId}=${workerId}`
+    )
+  // A local candidate is already archived on cand/*. Starting it must never advance upstream.
+  const gitCommit =
+    known?.kind === "local"
+      ? known.revision
+      : await importSource(revision).catch((error) => {
+          console.error("Version source import failed", error)
+          return null
+        })
   const [row] = await db
     .insert(agentVersions)
     .values({
@@ -147,8 +158,8 @@ export async function registerRunningVersion() {
     .onConflictDoUpdate({
       target: [agentVersions.webImageId, agentVersions.workerImageId],
       set: {
-        label: versionLabel(revision),
-        sourceRevision: revision,
+        label: sql`CASE WHEN ${agentVersions.kind}='local' THEN ${agentVersions.label} ELSE EXCLUDED.label END`,
+        sourceRevision: sql`CASE WHEN ${agentVersions.kind}='local' THEN ${agentVersions.sourceRevision} ELSE EXCLUDED.source_revision END`,
         gitCommit: sql`COALESCE(${gitCommit}, ${agentVersions.gitCommit})`,
         images,
       },
@@ -163,7 +174,18 @@ export async function registerRunningVersion() {
   return row
 }
 
-export async function listVersions() {
+export async function listVersions(ownerId: string) {
+  const improvements = await listImprovements(ownerId)
+  const ids = improvements.flatMap((x) => x.candidates.map((c) => c.taskId))
+  const { rows: costs } = await pool.query<{
+    task_id: string
+    known: string
+    unknown: number
+  }>(
+    `SELECT a.task_id, COALESCE(sum(COALESCE(a.cost_micros,a.reconciled_cost_micros)),0)::text AS known, count(*) FILTER(WHERE a.cost_micros IS NULL AND a.reconciled_cost_micros IS NULL)::int AS unknown FROM task_model_attempts a JOIN tasks t ON t.id=a.task_id WHERE t.owner_id=$1 AND a.task_id=ANY($2) GROUP BY a.task_id`,
+    [ownerId, ids]
+  )
+  const spend = new Map(costs.map((c) => [c.task_id, c]))
   const versions = await db
     .select()
     .from(agentVersions)
@@ -175,10 +197,29 @@ export async function listVersions() {
     .limit(30)
   return {
     enabled: versionsEnabled(),
+    officialOffer: await (await import("@/lib/evolution/official")).readOffer(),
+    lineage: improvements.flatMap((item) =>
+      item.candidates.map((c) => ({
+        objectiveId: item.objectiveId,
+        title: item.title,
+        request: item.request,
+        roundNo: c.roundNo,
+        parent: c.parent,
+        commit: c.commit,
+        versionId: c.versionId,
+        phase: c.phase,
+        abandoned: item.status === "abandoned",
+        passed: c.evaluation?.passed,
+        checks: c.evaluation?.stages.map((s) => ({ name: s.name, status: s.status })),
+        costMicros: spend.get(c.taskId)?.known ?? "0",
+        unknownCosts: spend.get(c.taskId)?.unknown ?? 0,
+      }))
+    ),
     versions: versions.map((version) => ({
       id: version.id,
       label: version.label,
       kind: version.kind,
+      parentId: version.parentId,
       sourceRevision: version.sourceRevision,
       gitCommit: version.gitCommit,
       status: version.status,
