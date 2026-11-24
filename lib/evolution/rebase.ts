@@ -147,8 +147,9 @@ export async function replayPatches(input: {
         await git(true, ["rebase", identical ? "--skip" : "--continue"])
       }
       const result = (await git(true, ["rev-parse", "HEAD"])).trim()
-      if (result === onto) outcome = "upstream"
-      else if ((await git(true, ["show", "-s", "--format=%P", result])).trim() !== onto)
+      if (result === onto) {
+        if (outcome === "replayed") outcome = "upstream"
+      } else if ((await git(true, ["show", "-s", "--format=%P", result])).trim() !== onto)
         throw new Error("Unexpected rebased parent")
       await input.save({ patch, onto, result, outcome })
       previous = patch

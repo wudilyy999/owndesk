@@ -92,11 +92,11 @@ export async function readImprovement(objectiveId: string): Promise<Improvement 
   return rows[0] ? (JSON.parse(rows[0].value) as Improvement) : null
 }
 
-export async function writeImprovement(value: Improvement) {
+export async function writeImprovement(value: Improvement, createOnly = false) {
   value.updatedAt = new Date().toISOString()
   await pool.query(
     `INSERT INTO settings(key,value,updated_at) VALUES($1,$2,now())
-     ON CONFLICT(key) DO UPDATE SET value=excluded.value,updated_at=now()`,
+     ON CONFLICT(key) DO ${createOnly ? "NOTHING" : "UPDATE SET value=excluded.value,updated_at=now()"}`,
     [key(value.objectiveId), JSON.stringify(value)]
   )
   return value

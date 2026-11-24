@@ -77,22 +77,25 @@ export async function createImprovement(
     `${IMPROVEMENT_PREFIX}${proposalKey}`
   )
   if (!(await readImprovement(objective.id)))
-    await writeImprovement({
-      objectiveId: objective.id,
-      ownerId,
-      agentId,
-      title: proposal.title,
-      request: proposal.request,
-      checklist: proposal.checklist,
-      baseVersionId: base.versionId,
-      baseCommit: base.commit,
-      ...(origin?.fork ? { fork: origin.fork } : {}),
-      ...(origin?.merge ? { merge: origin.merge } : {}),
-      status: "working",
-      candidates: [],
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    })
+    await writeImprovement(
+      {
+        objectiveId: objective.id,
+        ownerId,
+        agentId,
+        title: proposal.title,
+        request: proposal.request,
+        checklist: proposal.checklist,
+        baseVersionId: base.versionId,
+        baseCommit: base.commit,
+        ...(origin?.fork ? { fork: origin.fork } : {}),
+        ...(origin?.merge ? { merge: origin.merge } : {}),
+        status: "working",
+        candidates: [],
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      },
+      true
+    )
   return objective
 }
 
@@ -238,7 +241,23 @@ export async function forkImprovement(
       budget: objective.budget,
     },
     `fork:${objectiveId}:${roundNo}:${requestId}`,
-    { versionId: source.baseVersionId, commit: source.baseCommit, fork }
+    {
+      versionId: source.baseVersionId,
+      commit: source.baseCommit,
+      fork,
+      ...(source.merge
+        ? {
+            merge: {
+              ...source.merge,
+              discard: undefined,
+              requests: [
+                ...source.merge.requests,
+                { objectiveId, request: note, checklist: source.checklist },
+              ],
+            },
+          }
+        : {}),
+    }
   )
   return { objectiveId: result.id }
 }

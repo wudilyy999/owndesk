@@ -7,7 +7,7 @@ import { existsSync } from "node:fs"
 import { mkdtemp, readFile, rm } from "node:fs/promises"
 import os from "node:os"
 import path from "node:path"
-import { eq } from "drizzle-orm"
+import { eq, sql } from "drizzle-orm"
 import { db, pool } from "@/db"
 import {
   agents,
@@ -344,7 +344,12 @@ async function runRound(objectiveId: string, roundNo: number, taskId: string) {
     log(`round ${roundNo} phase ${candidate.phase} (trusted ${trusted.slice(0, 12)})`)
     const labImage = await ensureLabImage(trusted, (line) => log(`lab image: ${line}`))
     const key = roundKey(objectiveId, roundNo)
-    if (candidate.phase === "reforming" && improvement.merge && !previous) {
+    if (
+      candidate.phase === "reforming" &&
+      improvement.merge &&
+      !improvement.fork &&
+      (!previous || improvement.merge.discard)
+    ) {
       const offer = improvement.merge,
         receipts: import("./rebase").ReplayReceipt[] = []
       const result = offer.discard
@@ -590,7 +595,10 @@ async function registerCandidate(
     })
     .onConflictDoUpdate({
       target: [agentVersions.webImageId, agentVersions.workerImageId],
-      set: { status: "ready", images },
+      set: {
+        status: sql`CASE WHEN ${agentVersions.status} IN ('active','retained') THEN ${agentVersions.status} ELSE 'ready' END`,
+        images: sql`CASE WHEN ${agentVersions.status} IN ('active','retained') THEN ${agentVersions.images} ELSE EXCLUDED.images END`,
+      },
     })
     .returning({ id: agentVersions.id })
   await git([

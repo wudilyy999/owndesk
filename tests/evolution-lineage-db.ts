@@ -11,8 +11,13 @@ process.env.EVOLUTION_DIR = dir
 const { pool } = await import("@/db")
 const { setEvolutionEnabled, readImprovement, updateImprovement } =
   await import("@/lib/evolution/store")
-const { createImprovement, abandonImprovement, forkImprovement } =
-  await import("@/lib/evolution/improvements")
+const {
+  createImprovement,
+  abandonImprovement,
+  forkImprovement,
+  adoptImprovement,
+  startOfficialMerge,
+} = await import("@/lib/evolution/improvements")
 const { listVersions } = await import("@/lib/versions")
 const { commitTree } = await import("@/lib/evolution/repo")
 try {
@@ -118,6 +123,55 @@ try {
     (await pool.query("SELECT budget FROM objectives WHERE id=$1", [fork.objectiveId]))
       .rows[0].budget.maxRounds,
     3
+  )
+  // An official upgrade is approved against the exact active pair: the old base is a
+  // genuine ancestor, but switching back to it invalidates the prior merge decision.
+  const offer = {
+    fromId: "former-local",
+    local: candidate,
+    base,
+    official: base,
+    previousRevision: base,
+    revision: candidate,
+    agentId: agent,
+    requests: [{ objectiveId: original.id, request: "保留日记", checklist: ["可读"] }],
+  }
+  await updateImprovement(fork.objectiveId, (i) => {
+    i.status = "ready"
+    i.merge = offer
+    i.candidates = [
+      {
+        parent: base,
+        commit: candidate,
+        roundNo: 1,
+        phase: "done",
+        taskId: task,
+        branch: "cand/fork",
+        versionId: "stale-candidate",
+        evaluation: {
+          suiteRevision: base,
+          stages: [],
+          acceptance: [],
+          startedAt: new Date().toISOString(),
+          passed: true,
+        },
+      },
+    ]
+  })
+  await assert.rejects(adoptImprovement(owner, fork.objectiveId, "stale-candidate"), {
+    status: 409,
+    message: /当前版本已更新/,
+  })
+  await pool.query(
+    "INSERT INTO settings(key,value,updated_at) VALUES('evolution.official-offer',$1,now())",
+    [JSON.stringify(offer)]
+  )
+  await assert.rejects(startOfficialMerge(owner, candidate, "former-local", true), {
+    status: 409,
+  })
+  assert.equal(
+    (await pool.query("select count(*)::int as n from deployments")).rows[0].n,
+    0
   )
   console.log(
     JSON.stringify({

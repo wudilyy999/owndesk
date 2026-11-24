@@ -51,9 +51,10 @@ const config = JSON.parse(
   })()
 )
 assert(
-  config.spec === "custom/gpt-6-luna" &&
-    config.effort === "max" &&
-    new URL(config.url).origin === "https://api.wudilyy666.top" &&
+  config.spec === process.env.B3_LIVE_MODEL &&
+    config.spec.startsWith("custom/") &&
+    new URL(config.url).protocol === "https:" &&
+    new URL(config.url).origin === process.env.B3_LIVE_ORIGIN &&
     config.price &&
     !config.budget
 )

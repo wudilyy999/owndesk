@@ -270,7 +270,12 @@ export async function requestSwitch(
     .select()
     .from(agentVersions)
     .where(eq(agentVersions.id, versionId))
-  if (!target || target.status !== (action === "promote" ? "ready" : "retained"))
+  if (
+    !target ||
+    (action === "promote"
+      ? !(target.status === "ready" || (expectedFrom && target.status === "retained"))
+      : target.status !== "retained")
+  )
     throw new HttpError(
       409,
       action === "promote" ? "只能采用全部测试都通过的版本" : "只能切换到保留着的版本"

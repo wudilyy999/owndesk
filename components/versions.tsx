@@ -326,7 +326,9 @@ export function Versions({ initial }: { initial: VersionsOverview }) {
                       onChange={(e) => setFork({ ...fork, note: e.target.value })}
                     />
                   </label>
-                  <Button disabled={busy || !fork.note.trim()}>创建改进目标</Button>
+                  <Button type="submit" disabled={busy || !fork.note.trim()}>
+                    创建改进目标
+                  </Button>
                 </form>
               )}
             </article>

@@ -1066,7 +1066,8 @@ const reviewerTools = {
     inputSchema: z.object({ selector: z.string().min(1).max(300) }),
   }),
   fill: tool({
-    description: "Fill a visible field in the candidate browser, including date inputs.",
+    description:
+      "Fill a visible field or choose a select option by its exact value or visible label.",
     inputSchema: z.object({
       selector: z.string().min(1).max(300),
       value: z.string().max(2000),
@@ -1169,6 +1170,16 @@ export async function reviewAcceptance(input: {
             name: node.getAttribute("name"),
             type: node.getAttribute("type"),
             placeholder: node.getAttribute("placeholder"),
+            options:
+              node instanceof HTMLSelectElement
+                ? Array.from(node.options)
+                    .slice(0, 40)
+                    .map((o) => ({
+                      value: o.value,
+                      label: o.label,
+                      selected: o.selected,
+                    }))
+                : undefined,
             href: node.getAttribute("href"),
             value:
               node instanceof HTMLInputElement && node.type !== "password"
@@ -1352,7 +1363,19 @@ export async function reviewAcceptance(input: {
             const value = (
               reviewerTools.fill.inputSchema as unknown as z.ZodType<ReviewInput<"fill">>
             ).parse(args)
-            await page.locator(value.selector).fill(value.value, { timeout: 10000 })
+            const field = page.locator(value.selector)
+            if (await field.evaluate((el) => el.tagName === "SELECT")) {
+              const byValue = await field
+                .locator("option")
+                .evaluateAll(
+                  (items, v) => items.some((o) => (o as HTMLOptionElement).value === v),
+                  value.value
+                )
+              await field.selectOption(
+                byValue ? { value: value.value } : { label: value.value },
+                { timeout: 10000 }
+              )
+            } else await field.fill(value.value, { timeout: 10000 })
             observation = await observe()
             output = observation.text
           } else {
