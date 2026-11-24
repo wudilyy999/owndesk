@@ -274,9 +274,9 @@ export async function requestSwitch(
       ? ["--expected-from", expectedFrom, "--request-id", deploymentId]
       : []),
     "--web",
-    target.images.web,
+    target.webImageId,
     "--worker",
-    target.images.worker,
+    target.workerImageId,
   ])
   return { started: true as const, deploymentId }
 }

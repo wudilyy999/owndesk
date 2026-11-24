@@ -79,7 +79,15 @@ test("protected paths, dependencies, migrations and out-of-scope files are rejec
   assert.deepEqual(rules([file("lib/spend.ts")]), ["protected"])
   assert.deepEqual(rules([file("lib/evolution/policy.ts")]), ["protected"])
   assert.deepEqual(rules([file("worker/budgets.ts")]), ["protected"])
-  assert.deepEqual(rules([file("lib/workstation.ts")]), ["protected"])
+  assert.deepEqual(rules([file("lib/workstation.ts"), file("lib/desktop.ts")]), [])
+  for (const path of [
+    "scripts/workstation-gate.mjs",
+    "scripts/workstation-gate-policy.mjs",
+    "worker/network.ts",
+    "lib/docker.ts",
+    "workstation/controller/server.mjs",
+  ])
+    assert.deepEqual(rules([file(path)]), ["protected"])
   assert.deepEqual(rules([file("workstation/controller/server.mjs")]), ["protected"])
   assert.deepEqual(rules([file("package.json")]), ["dependencies"])
   assert.deepEqual(rules([file("package-lock.json")]), ["dependencies"])

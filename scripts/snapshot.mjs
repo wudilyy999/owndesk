@@ -207,11 +207,13 @@ if (mode === "backup") {
     ]),
     "Stop all installation workstations/viewers before backup"
   )
+  const supervisor = process.env.PA_SNAPSHOT_UPDATER_PID ?? "0"
+  assert(/^\d{1,10}$/.test(supervisor))
   assert.equal(
     Number(
       sql(
         services.postgres.Id,
-        "SELECT count(*) FROM pg_stat_activity WHERE datname=current_database() AND pid<>pg_backend_pid() AND backend_type='client backend'"
+        `SELECT count(*) FROM pg_stat_activity WHERE datname=current_database() AND pid<>pg_backend_pid() AND backend_type='client backend' AND NOT (pid=${supervisor} AND application_name='owndesk-updater' AND state='idle')`
       )
     ),
     0,
@@ -269,12 +271,53 @@ if (mode === "backup") {
     runtime.migrations.length,
     "Database and image migration versions differ"
   )
-  const artifacts = services.worker.Mounts.find(
-    (mount) => mount.Destination === "/app/data/artifacts"
+  // Older installations predate the version registry. They can still make a
+  // format-2 backup, but candidate adoption must always produce format 3.
+  const versioned =
+    sql(
+      services.postgres.Id,
+      "SELECT to_regclass('public.agent_versions') IS NOT NULL"
+    ) === "t"
+  assert(
+    versioned || !process.env.PA_SNAPSHOT_UPDATER_PID,
+    "Adoption requires version history"
   )
-  assert.equal(artifacts?.Type, "volume")
-  assert.equal(artifacts.Name, `${project}_artifacts`)
-  const volumes = [{ name: artifacts.Name, file: "artifacts.tar.gz", kind: "artifacts" }]
+  const hasEvolution = services.worker.Mounts.some(
+    (item) => item.Destination === "/app/data/evolution"
+  )
+  assert(!versioned || hasEvolution, "Versioned installation has no evolution volume")
+  const volumes = (hasEvolution ? ["artifacts", "evolution"] : ["artifacts"]).map(
+    (kind) => {
+      const mount = services.worker.Mounts.find(
+        (item) => item.Destination === `/app/data/${kind}`
+      )
+      assert.equal(mount?.Type, "volume")
+      assert.equal(mount.Name, `${project}_${kind}`)
+      return { kind, name: mount.Name, file: `${kind}.tar.gz` }
+    }
+  )
+  const versionTags = {}
+  for (const row of versioned
+    ? JSON.parse(
+        sql(
+          services.postgres.Id,
+          `SELECT COALESCE(json_agg(v),'[]') FROM (SELECT web_image_id AS web,worker_image_id AS worker,images FROM agent_versions WHERE status IN ('active','retained','ready')) v`
+        )
+      )
+    : []) {
+    for (const role of ["web", "worker"]) {
+      const tag = row.images[role],
+        id = row[role]
+      assert.match(tag, new RegExp(`^owndesk-${role}:[a-zA-Z0-9_][a-zA-Z0-9_.-]{0,127}$`))
+      assert.match(id, /^sha256:[0-9a-f]{64}$/)
+      assert.equal(
+        docker(["image", "inspect", "--format", "{{.Id}}", tag]),
+        id,
+        `Version tag drift: ${tag}`
+      )
+      versionTags[tag] = id
+    }
+  }
   const homeIds = list("volume", `label=personal-agent.install=${config.INSTALL_ID}`)
   if (homeIds.length)
     for (const volume of JSON.parse(docker(["volume", "inspect", ...homeIds]))) {
@@ -317,12 +360,27 @@ if (mode === "backup") {
     ],
     { file: path.join(directory, "database.dump") }
   )
+  // Decode every archive member before recording a successful recovery point.
+  docker(["exec", "-i", services.postgres.Id, "pg_restore", "--file=/dev/null"], {
+    file: path.join(directory, "database.dump"),
+    input: true,
+  })
   const files = {
     "database.dump": await fileReceipt(path.join(directory, "database.dump")),
   }
-  docker(["image", "save", ...new Set(Object.values(images).map((image) => image.id))], {
-    file: path.join(directory, "images.tar"),
-  })
+  docker(
+    [
+      "image",
+      "save",
+      ...new Set([
+        ...Object.values(images).map((image) => image.id),
+        ...Object.values(versionTags),
+      ]),
+    ],
+    {
+      file: path.join(directory, "images.tar"),
+    }
+  )
   files["images.tar"] = await fileReceipt(path.join(directory, "images.tar"))
   for (const volume of volumes) {
     const file = path.join(directory, volume.file)
@@ -330,7 +388,8 @@ if (mode === "backup") {
     files[volume.file] = await fileReceipt(file)
   }
   const body = {
-    format: 2,
+    format: hasEvolution ? 3 : 2,
+    ...(hasEvolution ? { versionTags, versioned } : {}),
     snapshotId: randomUUID(),
     createdAt: new Date().toISOString(),
     installId: config.INSTALL_ID,
@@ -362,7 +421,7 @@ if (mode === "backup") {
     mac(JSON.stringify(body)),
     "Snapshot signature/key mismatch; target was not modified"
   )
-  assert.equal(body.format, 2, "Use a complete format-2 snapshot including pinned images")
+  assert([2, 3].includes(body.format), "Unsupported snapshot format")
   assert.equal(body.installId, config.INSTALL_ID)
   assert.equal(
     body.configMac,
@@ -381,10 +440,20 @@ if (mode === "backup") {
     ["database.dump", "images.tar", ...body.volumes.map((v) => v.file)].sort()
   )
   assert.equal(body.volumes.filter((v) => v.kind === "artifacts").length, 1)
+  assert.equal(
+    body.volumes.filter((v) => v.kind === "evolution").length,
+    body.format === 3 ? 1 : 0
+  )
+  if (body.format === 3) {
+    for (const [ref, id] of Object.entries(body.versionTags)) {
+      assert.match(ref, /^owndesk-(web|worker):[a-zA-Z0-9_][a-zA-Z0-9_.-]{0,127}$/)
+      assert.match(id, /^sha256:[0-9a-f]{64}$/)
+    }
+  }
   for (const volume of body.volumes) {
-    if (volume.kind === "artifacts") {
-      assert.equal(volume.name, `${project}_artifacts`)
-      assert.equal(volume.file, "artifacts.tar.gz")
+    if (["artifacts", "evolution"].includes(volume.kind)) {
+      assert.equal(volume.name, `${project}_${volume.kind}`)
+      assert.equal(volume.file, `${volume.kind}.tar.gz`)
     } else {
       assert.equal(volume.kind, "home")
       assert.match(volume.agentId ?? "", /^[A-Za-z0-9_-]{1,100}$/)
@@ -426,6 +495,7 @@ if (mode === "backup") {
       `${project}_postgres`,
       `${project}_caddy`,
       `${project}_caddy_config`,
+      `${project}_evolution`,
       ...body.volumes.map((v) => v.name),
     ])
       assert(!presentVolumes.includes(name), `Restore refuses existing volume: ${name}`)
@@ -436,7 +506,25 @@ if (mode === "backup") {
         platform,
         "Restore requires the snapshot's tested OS/architecture"
       )
+    const existingTags = new Map(
+      docker([
+        "image",
+        "ls",
+        "--no-trunc",
+        "--format",
+        "{{.Repository}}:{{.Tag}} {{.ID}}",
+      ])
+        .split("\n")
+        .map((line) => line.split(" "))
+    )
+    for (const [tag, id] of Object.entries(body.versionTags ?? {}))
+      assert(
+        !existingTags.has(tag) || existingTags.get(tag) === id,
+        `Restore refuses to replace an existing image tag: ${tag}`
+      )
     docker(["image", "load"], { file: path.join(directory, "images.tar"), input: true })
+    for (const [tag, id] of Object.entries(body.versionTags ?? {}))
+      docker(["image", "tag", id, tag])
     for (const image of Object.values(body.images)) {
       const actual = JSON.parse(docker(["image", "inspect", image.id]))[0]
       assert.equal(actual.Os, image.os)
@@ -495,7 +583,7 @@ if (mode === "backup") {
           : [
               `com.docker.compose.project=${project}`,
               "--label",
-              "com.docker.compose.volume=artifacts",
+              `com.docker.compose.volume=${volume.kind}`,
             ]),
         volume.name,
       ])
@@ -508,6 +596,7 @@ if (mode === "backup") {
     sql(
       postgres,
       `BEGIN;
+      ${body.format === 3 && body.versioned !== false ? "UPDATE deployments SET status='failed',phase='before_switch',reason='Restored pre-adoption snapshot',updated_at=now(),finished_at=now() WHERE status='running' AND phase='snapshot';" : ""}
       DELETE FROM desktop_tickets;
       DELETE FROM "session";
       UPDATE workstation_control SET epoch=epoch+1,boot_id=NULL,updated_at=now();

@@ -7,7 +7,9 @@ import { env } from "@/lib/env"
 import { LAB_LABEL } from "@/lib/evolution/lab"
 import type { CandidateStack } from "@/lib/evolution/evaluator"
 
-export async function startReviewBrowser(stack: CandidateStack) {
+export async function startReviewBrowser(
+  stack: Pick<CandidateStack, "network" | "appUrl" | "containers" | "key">
+) {
   const name = stack.containers.web.replace(/-web$/, "-review")
   await dockerRaw(["rm", "-f", name])
   try {

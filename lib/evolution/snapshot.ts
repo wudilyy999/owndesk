@@ -114,7 +114,7 @@ export async function previewSeed() {
   today.setUTCHours(4, 0, 0, 0)
   seedDiary(statements, agentId, today)
   statements.push("COMMIT;")
-  return { sql: statements.join("\n"), login }
+  return { sql: statements.join("\n"), login, agentIds: [agentId] }
 }
 
 export async function sanitizedSeed(input: {

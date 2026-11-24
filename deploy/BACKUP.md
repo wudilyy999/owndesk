@@ -2,7 +2,9 @@
 
 定时备份示例见仓库根目录 `scripts/backup-cron.example.sh`（先停 Caddy/Web/worker → `snapshot.mjs backup` → 再启动；可选 restic 异地）。恢复演练仍按下文第 5 节做到另一台干净机器。
 
-适用于本仓库的专用 Linux Compose 安装。操作端需要 Node.js 24、Docker CLI 与 Compose；直接运行 `node scripts/snapshot.mjs`，无需为该工具安装 npm 依赖。当前使用 format 2；早期 format 1 实验快照需在原环境重新制作完整快照。
+适用于本仓库的专用 Linux Compose 安装。操作端需要 Node.js 24、Docker CLI 与 Compose；直接运行 `node scripts/snapshot.mjs`，无需为该工具安装 npm 依赖。当前使用 format 3，仍可验证和恢复 format 2（旧格式没有版本 Git 卷和保留镜像标签）；早期 format 1 实验快照需在原环境重新制作完整快照。
+
+采用本地候选时，版本控制器会先检查在途任务，再暂停写入，生成并校验 `deploy/backups/adoption-<部署ID>/`。原配置和密钥单独保存在 `deploy/backup-keys/<部署ID>.env`，请分开归档。中途断电可运行 `scripts/upgrade.sh --resume`。验收或运行健康检查失败时使用原数据卷切回旧镜像，采用后新增的任务和成果仍然保留。只有需要灾难恢复时才将快照恢复到干净环境。
 
 ## 1. 先明确恢复点
 
@@ -40,13 +42,14 @@ node scripts/snapshot.mjs backup deploy/.env \
 
 成功后数据目录包含：
 
-| 文件                    | 内容                                                                      |
-| ----------------------- | ------------------------------------------------------------------------- |
-| `database.dump`         | 完整 PostgreSQL 逻辑导出，包含业务、认证、Drizzle 和 DBOS                 |
-| `artifacts.tar.gz`      | 宿主成果卷                                                                |
-| `home-<agentId>.tar.gz` | 所有已存在的本安装 home 卷，包括浏览器 profile 和工作文件                 |
-| `images.tar`            | 当时实际使用的 Web、worker、guest、PostgreSQL、Caddy 镜像；按镜像 ID 固定 |
-| `manifest.json`         | 应用/依赖/迁移/平台清单、工作站和在途任务摘要、逐文件认证回执及清单认证   |
+| 文件                    | 内容                                                                                                                   |
+| ----------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| `database.dump`         | 完整 PostgreSQL 逻辑导出，包含业务、认证、Drizzle 和 DBOS                                                              |
+| `artifacts.tar.gz`      | 宿主成果卷                                                                                                             |
+| `home-<agentId>.tar.gz` | 所有已存在的本安装 home 卷，包括浏览器 profile 和工作文件                                                              |
+| `evolution.tar.gz`      | 本机版本 Git 仓库、分支、采用历史对应的源码                                                                            |
+| `images.tar`            | 当时实际使用的 Web、worker、guest、PostgreSQL、Caddy 镜像；按镜像 ID 固定，包含 active/retained/ready 版本及其原始标签 |
+| `manifest.json`         | 应用/依赖/迁移/平台清单、工作站和在途任务摘要、逐文件认证回执及清单认证                                                |
 
 独立的 `.env` 副本保存原主密钥、安装标识、认证秘密与部署配置，不向终端输出。数据目录权限 700，文件及密钥副本 600。此副本不包含另行保存的初始拥有者密码；恢复后仍使用原登录密码。
 
