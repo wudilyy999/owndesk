@@ -1,6 +1,6 @@
 # OwnDesk 路线图
 
-更新：2026-11-24
+更新：2026-11-25
 
 OwnDesk 先做好一个人、一台机器上的个人 Agent。这里记录已经合并的阶段、接下来的顺序，以及每个阶段做完的标准。阶段设计见[长期目标与自我改进设计](design/goal-and-self-evolution-plan.md)，详细验证历史见[开发状态](STATUS.md)。
 
@@ -14,13 +14,12 @@ flowchart LR
         B0 --> B1[B1 自我改进首版<br/>11-18]
         B1 --> A2[A2 按计划推进<br/>渠道收目标卡]
         A2 --> B2[B2 采用前试用<br/>可改工作站<br/>追加式迁移]
+        B2 --> B3[B3 合并官方升级<br/>谱系页]
     end
-    subgraph next[接下来]
-        B3[B3 合并官方升级<br/>谱系页]
-    end
-    B2 --> B3
     B3 -.-> B4[B4 分享改进包<br/>可选]
 ```
+
+在「版本」页可以检查官方更新，选择保留本地改进或只用官方版本。每个候选都保留需求、父版本、评测和花费；未通过的候选也可以作为下一次改进的起点。
 
 ## 已合并
 
@@ -36,6 +35,8 @@ flowchart LR
 | 11-14          | [#24](https://github.com/wudilyy999/owndesk/pull/24) | B0 版本底座：更新器、保留版本、健康检测、自动回退、版本页                             |
 | 11-18          | [#25](https://github.com/wudilyy999/owndesk/pull/25) | B1 自我改进首版：隔离实验室、评测、报告、采用、自动回退和修复轮次                     |
 | 11-18          | [#27](https://github.com/wudilyy999/owndesk/pull/27) | 前端整理：删除重复架构文案，统一工作区、页面导航、移动端布局和交付输入                |
+| 11-24          | [#35](https://github.com/wudilyy999/owndesk/pull/35) | A2 定时推进、多渠道目标卡和跨轮交接                                                   |
+| 11-25          | [#36](https://github.com/wudilyy999/owndesk/pull/36) | B2 隔离试用、追加式迁移、受限工作站与可恢复快照                                       |
 
 11-08 七项能力的逐项实现和检查记录保留在[交付记录](DELIVERY-ROADMAP.md)，那份文件现在作为历史日志。
 
@@ -64,6 +65,8 @@ flowchart LR
 - 用户可以放弃本地改进，直接按官方版本升级，需求文字保留。
 
 做完的标准：用真实的下一个官方版本合并一次，其中有冲突并自动解决，全部测试通过；被官方取代的改进自动丢弃；第二次遇到同样冲突由 `rerere` 解决。
+
+开发者可在有完整 Git 历史的 Linux 工作树运行 `npm run test:evolution:rebase`：它使用相邻的两个真实官方提交，检查补丁去重、冲突复用和合并后的实际行为。`npm run test:evolution:lineage` 使用全新、已迁移的 `b3_lineage_probe` 测试库。真实模型测试 `tests/evolution-merge-live.ts --live` 另外需要空的 `b3_merge_probe` 库、独立 `EVOLUTION_DIR` 和 `B3_PROOF_DIR`、`OWNDESK_HISTORY_REPO`、`B3_LIVE_MODEL` 与 `B3_LIVE_ORIGIN`；用受信任的管道在标准输入提供测试中转配置，先核对主人月预算。
 
 ### B4：分享改进包（可选）
 

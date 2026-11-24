@@ -39,7 +39,7 @@ async function baseVersion() {
   const {
     rows: [active],
   } = await pool.query<{ id: string; git_commit: string | null }>(
-    "SELECT id,git_commit FROM agent_versions WHERE status='active' LIMIT 1"
+    "SELECT id,CASE WHEN kind='local' THEN source_revision ELSE git_commit END AS git_commit FROM agent_versions WHERE status='active' LIMIT 1"
   )
   if (active?.git_commit) return { versionId: active.id, commit: active.git_commit }
   if (!repoReady()) await importSource()
@@ -53,12 +53,18 @@ export async function createImprovement(
   ownerId: string,
   agentId: string,
   raw: unknown,
-  proposalKey: string = randomUUID()
+  proposalKey: string = randomUUID(),
+  origin?: {
+    versionId: string | null
+    commit: string
+    fork?: NonNullable<Improvement["fork"]>
+    merge?: NonNullable<Improvement["merge"]>
+  }
 ) {
   if (!(await evolutionEnabled()))
     throw new HttpError(409, "自我改进还没打开：到“设置 → 自我改进”里打开后再试")
   const proposal = improvementProposalSchema.parse(raw)
-  const base = await baseVersion()
+  const base = origin ?? (await baseVersion())
   const objective = await createObjective(
     ownerId,
     {
@@ -71,20 +77,25 @@ export async function createImprovement(
     `${IMPROVEMENT_PREFIX}${proposalKey}`
   )
   if (!(await readImprovement(objective.id)))
-    await writeImprovement({
-      objectiveId: objective.id,
-      ownerId,
-      agentId,
-      title: proposal.title,
-      request: proposal.request,
-      checklist: proposal.checklist,
-      baseVersionId: base.versionId,
-      baseCommit: base.commit,
-      status: "working",
-      candidates: [],
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    })
+    await writeImprovement(
+      {
+        objectiveId: objective.id,
+        ownerId,
+        agentId,
+        title: proposal.title,
+        request: proposal.request,
+        checklist: proposal.checklist,
+        baseVersionId: base.versionId,
+        baseCommit: base.commit,
+        ...(origin?.fork ? { fork: origin.fork } : {}),
+        ...(origin?.merge ? { merge: origin.merge } : {}),
+        status: "working",
+        candidates: [],
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      },
+      true
+    )
   return objective
 }
 
@@ -160,6 +171,97 @@ async function owned(ownerId: string, objectiveId: string) {
   return improvement
 }
 
+export async function startOfficialMerge(
+  ownerId: string,
+  revision: string,
+  fromId: string,
+  discard = false
+) {
+  const { readOffer } = await import("./official")
+  const offer = await readOffer()
+  if (!offer || offer.fromId !== fromId || offer.revision !== revision)
+    throw new HttpError(409, "官方版本已变化，请重新检查")
+  const active = await pool.query(
+    "SELECT id FROM agent_versions WHERE status='active' AND id=$1 AND source_revision=$2",
+    [fromId, offer.local]
+  )
+  if (!active.rowCount) throw new HttpError(409, "本地版本已变化，请重新检查")
+  const requests = offer.requests
+  const objective = await createImprovement(
+    ownerId,
+    offer.agentId,
+    {
+      title: `${discard ? "只用官方版本" : "合并官方版本"} ${revision.slice(0, 7)}`,
+      request: discard
+        ? `切换到官方 ${revision}，归档本地需求。`
+        : `在官方 ${revision} 上保留本地改进，验证原需求。`,
+      checklist: discard
+        ? ["官方版本的目标页可以打开并显示创建目标的表单。"]
+        : ["确认合并后的候选保留适用的本地行为，已由官方实现的功能正常工作。"],
+      budget: {},
+    },
+    `${discard ? "discard" : "merge"}:${fromId}:${revision}`,
+    {
+      versionId: fromId,
+      commit: offer.official,
+      merge: discard ? { ...offer, discard: true } : offer,
+    }
+  )
+  return { objectiveId: objective.id, requirements: requests.length }
+}
+
+export async function forkImprovement(
+  ownerId: string,
+  objectiveId: string,
+  roundNo: number,
+  note: string,
+  requestId: string
+) {
+  const source = await owned(ownerId, objectiveId)
+  const candidate = source.candidates.find((item) => item.roundNo === roundNo)
+  if (
+    !candidate?.commit ||
+    candidate.phase !== "done" ||
+    (await resolveCommit(candidate.commit)) !== candidate.commit
+  )
+    throw new HttpError(409, "这一轮还没有可继续的源码")
+  const [objective] = await db
+    .select()
+    .from(objectives)
+    .where(eq(objectives.id, objectiveId))
+  if (!objective) throw new HttpError(404, "目标不存在")
+  const fork = { objectiveId, roundNo, commit: candidate.commit }
+  const result = await createImprovement(
+    ownerId,
+    source.agentId,
+    {
+      title: source.title,
+      request: note,
+      checklist: source.checklist,
+      budget: objective.budget,
+    },
+    `fork:${objectiveId}:${roundNo}:${requestId}`,
+    {
+      versionId: source.baseVersionId,
+      commit: source.baseCommit,
+      fork,
+      ...(source.merge
+        ? {
+            merge: {
+              ...source.merge,
+              discard: undefined,
+              requests: [
+                ...source.merge.requests,
+                { objectiveId, request: note, checklist: source.checklist },
+              ],
+            },
+          }
+        : {}),
+    }
+  )
+  return { objectiveId: result.id }
+}
+
 const latest = (improvement: Improvement) => improvement.candidates.at(-1)
 
 async function reopen(objectiveId: string, reason: string | null) {
@@ -227,7 +329,20 @@ export async function adoptImprovement(
         )
     )
   ).some(Boolean)
-  if (!currentIsBase)
+  const mergedFromActive =
+    improvement.merge?.fromId === active.id &&
+    improvement.merge.local === active.source_revision &&
+    candidate.evaluation?.suiteRevision === improvement.merge.official &&
+    (await git([
+      "merge-base",
+      "--is-ancestor",
+      improvement.merge.official,
+      candidate.commit,
+    ]).then(
+      () => true,
+      () => false
+    ))
+  if (improvement.merge ? !mergedFromActive : !currentIsBase)
     throw new HttpError(409, "当前版本已更新，请基于当前版本重新发起改进后再采用")
   const versionId = candidate.versionId
   await updateImprovement(objectiveId, async (value) => {

@@ -9,13 +9,21 @@
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 DEPLOY="$ROOT/deploy"
+DISCARD=false
+args=()
+for arg in "$@"; do
+  if [[ "$arg" == --discard-local ]]; then DISCARD=true; else args+=("$arg"); fi
+done
+set -- "${args[@]}"
 MODE="${1:-}"
 
 usage() {
-  echo "Usage: $0 <ghcr-tag> | --build | --local WEB_IMAGE WORKER_IMAGE | --resume" >&2
+  echo "Usage: $0 [--discard-local] (<ghcr-tag> | --build | --local WEB_IMAGE WORKER_IMAGE) | --resume" >&2
   exit 1
 }
 [[ -n "$MODE" ]] || usage
+if [[ "$MODE" == --local ]]; then [[ $# == 3 ]] || usage; else [[ $# == 1 ]] || usage; fi
+[[ "$MODE" != --resume || "$DISCARD" == false ]] || usage
 if [[ ! -f "$DEPLOY/.env" ]]; then
   echo "deploy/.env missing — install first (scripts/install.sh)" >&2
   exit 1
@@ -47,6 +55,19 @@ node --input-type=module -e "
 " "$DEPLOY/.env" "$DEPLOY"
 
 compose() { docker compose --file "$DEPLOY/compose.yaml" --env-file "$DEPLOY/.env" "$@"; }
+compose up --detach --wait postgres
+# The outgoing worker can predate this guard. Refuse before pulling/building or migrating.
+if [[ "$MODE" != --resume && "$DISCARD" == false ]]; then
+  dbquery() { compose exec -T postgres psql -XAtq -v ON_ERROR_STOP=1 -U agent -d personal_agent -c "$1"; }
+  versions=$(dbquery "SELECT to_regclass('public.agent_versions') IS NOT NULL")
+  if [[ "$versions" == t ]]; then
+    local_active=$(dbquery "SELECT EXISTS (SELECT 1 FROM agent_versions WHERE status='active' AND kind='local')")
+    if [[ "$local_active" == t ]]; then
+      echo '当前有本地改进。请在版本页合并升级，或明确使用 --discard-local 按官方升级（保留需求记录）。' >&2
+      exit 1
+    fi
+  fi
+fi
 INSTALL_ID="$(env_get INSTALL_ID)"
 WEB=""
 WORKER=""
@@ -81,7 +102,6 @@ case "$MODE" in
     ;;
 esac
 
-compose up --detach --wait postgres
 
 # The updater runs from the *current* worker image so a broken new version cannot
 # stop its own rollback. Installs from before the version base have no updater yet;
@@ -101,6 +121,7 @@ fi
 
 ARGS=(resume --deploy "$DEPLOY")
 [[ "$MODE" == --resume ]] || ARGS=(start --deploy "$DEPLOY" --action promote --web "$WEB" --worker "$WORKER")
+if [[ "$DISCARD" == true ]]; then ARGS+=(--discard-local yes); fi
 set +e
 docker run --rm \
   --name "pa-${INSTALL_ID:0:8}-updater-$(date +%s)" \

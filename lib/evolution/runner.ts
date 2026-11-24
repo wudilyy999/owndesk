@@ -7,7 +7,7 @@ import { existsSync } from "node:fs"
 import { mkdtemp, readFile, rm } from "node:fs/promises"
 import os from "node:os"
 import path from "node:path"
-import { eq } from "drizzle-orm"
+import { eq, sql } from "drizzle-orm"
 import { db, pool } from "@/db"
 import {
   agents,
@@ -18,6 +18,9 @@ import {
   type ObjectiveRoundInput,
 } from "@/db/schema"
 import { docker } from "@/lib/docker"
+import { replayPatches } from "./rebase"
+import { resolveInLab } from "./resolve-conflict"
+import { repoDir } from "./repo"
 import { evaluate } from "@/lib/evolution/evaluator"
 import {
   ensureLabImage,
@@ -305,7 +308,7 @@ async function runRound(objectiveId: string, roundNo: number, taskId: string) {
     const [agent] = await db.select().from(agents).where(eq(agents.id, current.agentId))
     const spec = await resolveModelSpec(agent?.model)
     if (!spec) throw new Error("没有可用的模型")
-    const trusted = await trustedCommit(improvement)
+    const trusted = improvement.merge?.official ?? (await trustedCommit(improvement))
     let candidate = improvement.candidates.find((item) => item.roundNo === roundNo)
     if (!candidate) {
       improvement = await updateImprovement(objectiveId, (value) => {
@@ -317,7 +320,7 @@ async function runRound(objectiveId: string, roundNo: number, taskId: string) {
           parent:
             previous?.files?.length === 0
               ? value.baseCommit
-              : (previous?.commit ?? value.baseCommit),
+              : (previous?.commit ?? value.fork?.commit ?? value.baseCommit),
           taskId,
           phase: resumeEvaluation ? "evaluating" : "reforming",
           ...(resumeEvaluation
@@ -341,6 +344,60 @@ async function runRound(objectiveId: string, roundNo: number, taskId: string) {
     log(`round ${roundNo} phase ${candidate.phase} (trusted ${trusted.slice(0, 12)})`)
     const labImage = await ensureLabImage(trusted, (line) => log(`lab image: ${line}`))
     const key = roundKey(objectiveId, roundNo)
+    if (
+      candidate.phase === "reforming" &&
+      improvement.merge &&
+      !improvement.fork &&
+      (!previous || improvement.merge.discard)
+    ) {
+      const offer = improvement.merge,
+        receipts: import("./rebase").ReplayReceipt[] = []
+      const result = offer.discard
+        ? offer.official
+        : await replayPatches({
+            repo: repoDir(),
+            base: offer.base,
+            local: offer.local,
+            official: offer.official,
+            resolve: async (patch, conflicts, onto) =>
+              resolveInLab({
+                patch,
+                onto,
+                conflicts,
+                taskId,
+                objective: {
+                  ...current,
+                  objective: offer.requests.map((r) => r.request).join("\n"),
+                },
+                key,
+                labImage,
+                spec,
+                rules: await rulesExcerpt(trusted),
+                cancelled: () => cancelled(objectiveId, taskId),
+                log,
+              }),
+            save: async (receipt) => {
+              receipts.push(receipt)
+              log(`rebase ${receipt.patch.slice(0, 12)}: ${receipt.outcome}`)
+            },
+          })
+      if (await cancelled(objectiveId, taskId))
+        return finishTask(taskId, { status: "cancelled" })
+      await git(["update-ref", `refs/heads/${candidate.branch}`, result])
+      const files = await changedFiles(offer.official, result)
+      improvement = await updateImprovement(objectiveId, (value) => {
+        value.replay = receipts
+        const c = value.candidates.find((c) => c.roundNo === roundNo)!
+        c.commit = result
+        c.parent = offer.official
+        c.claim = offer.discard
+          ? "按主人选择试用原版官方源码，本地需求和版本均已保留。"
+          : `已合并官方 ${offer.revision.slice(0, 12)}，${receipts.filter((r) => r.outcome === "upstream").length} 个补丁已由官方取代。`
+        c.files = files
+        c.phase = "evaluating"
+      })
+      candidate = improvement.candidates.find((c) => c.roundNo === roundNo)!
+    }
     if (candidate.phase === "reforming") {
       const journal = await reformerJournal(taskId, candidate.parent)
       const lab = await startLab(labImage, key)
@@ -422,8 +479,20 @@ async function runRound(objectiveId: string, roundNo: number, taskId: string) {
         trustedCommit: trusted,
         commit: candidate.commit!,
         labImage,
-        checklist: improvement.checklist,
-        request: improvement.request,
+        checklist:
+          improvement.merge && !improvement.merge.discard
+            ? [...new Set(improvement.merge.requests.flatMap((r) => r.checklist))]
+            : improvement.checklist,
+        request:
+          improvement.merge && !improvement.merge.discard
+            ? improvement.merge.requests.map((r) => r.request).join("\n")
+            : improvement.request,
+        officialRevision:
+          improvement.merge?.official === candidate.commit
+            ? improvement.merge?.revision
+            : undefined,
+        officialOnly:
+          !!improvement.merge && candidate.commit === improvement.merge.official,
         objective,
         taskId,
         spec,
@@ -508,13 +577,15 @@ async function registerCandidate(
   } = await pool.query<{ n: number }>(
     "SELECT count(*)::int + 1 AS n FROM agent_versions WHERE kind='local'"
   )
+  const official =
+    improvement.merge?.official === candidate.commit ? improvement.merge : null
   const [row] = await db
     .insert(agentVersions)
     .values({
-      label: `local-${n}`,
-      kind: "local",
+      label: official ? `官方 ${official.revision.slice(0, 7)}` : `local-${n}`,
+      kind: official ? "upstream" : "local",
       parentId: improvement.baseVersionId,
-      sourceRevision: candidate.commit!,
+      sourceRevision: official?.revision ?? candidate.commit!,
       gitCommit: candidate.commit!,
       webImageId: await id(images.web),
       workerImageId: await id(images.worker),
@@ -524,7 +595,10 @@ async function registerCandidate(
     })
     .onConflictDoUpdate({
       target: [agentVersions.webImageId, agentVersions.workerImageId],
-      set: { status: "ready", images },
+      set: {
+        status: sql`CASE WHEN ${agentVersions.status} IN ('active','retained') THEN ${agentVersions.status} ELSE 'ready' END`,
+        images: sql`CASE WHEN ${agentVersions.status} IN ('active','retained') THEN ${agentVersions.images} ELSE EXCLUDED.images END`,
+      },
     })
     .returning({ id: agentVersions.id })
   await git([

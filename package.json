@@ -16,6 +16,8 @@
     "db:migrate": "tsx scripts/migrate.ts",
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
+    "test:evolution:rebase": "tsx tests/evolution-historical-rebase.ts",
+    "test:evolution:lineage": "tsx tests/evolution-lineage-db.ts",
     "test:evolution:desktop-candidate": "bash scripts/test-workstation-candidate.sh",
     "test:evolution:workstation": "node tests/workstation-gate.mjs",
     "test:evolution:trial": "bash scripts/test-candidate-trial.sh",

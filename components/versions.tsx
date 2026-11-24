@@ -30,6 +30,38 @@ export function Versions({ initial }: { initial: VersionsOverview }) {
   const [data, setData] = useState(initial)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState("")
+  const [fork, setFork] = useState<{
+    id: string
+    roundNo: number
+    note: string
+    requestId: string
+  } | null>(null)
+  const [created, setCreated] = useState("")
+  async function submitFork() {
+    if (!fork || busy) return
+    setBusy(true)
+    setError("")
+    try {
+      const response = await fetch(`/api/improvements/${encodeURIComponent(fork.id)}`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          action: "fork",
+          roundNo: fork.roundNo,
+          note: fork.note,
+          requestId: fork.requestId,
+        }),
+      })
+      const result = await response.json()
+      if (!response.ok) throw new Error(result.error)
+      setCreated(result.objectiveId)
+      setFork(null)
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e))
+    } finally {
+      setBusy(false)
+    }
+  }
   const running = data.deployments.find((item) => item.status === "running")
 
   async function refresh() {
@@ -101,6 +133,55 @@ export function Versions({ initial }: { initial: VersionsOverview }) {
           <p className="mt-2 text-sm text-muted-foreground">还没有记录。</p>
         )}
       </section>
+      {active?.kind === "local" && data.enabled && (
+        <section className="space-y-2 rounded-xl border p-4" aria-label="官方升级">
+          <h2>合并官方升级</h2>
+          {data.officialOffer?.fromId === active.id && (
+            <p>
+              官方 {data.officialOffer.revision.slice(0, 12)} ·{" "}
+              {data.officialOffer.requests.length} 项本地需求
+            </p>
+          )}
+          {[
+            "discover",
+            ...(data.officialOffer?.fromId === active.id ? ["merge", "discard"] : []),
+          ].map((action) => (
+            <Button
+              key={action}
+              disabled={busy || !!running}
+              onClick={async () => {
+                setBusy(true)
+                setError("")
+                try {
+                  const r = await fetch("/api/versions/official", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                      action,
+                      fromId: active.id,
+                      revision: data.officialOffer?.revision,
+                    }),
+                  })
+                  const out = await r.json()
+                  if (!r.ok) throw new Error(out.error)
+                  if (out.objectiveId) setCreated(out.objectiveId)
+                  await refresh()
+                } catch (e) {
+                  setError(e instanceof Error ? e.message : String(e))
+                } finally {
+                  setBusy(false)
+                }
+              }}
+            >
+              {action === "discover"
+                ? "检查官方更新"
+                : action === "discard"
+                  ? "只用官方版（保留需求）"
+                  : "合并升级并评测"}
+            </Button>
+          ))}
+        </section>
+      )}
       <section aria-label="保留的版本" className="space-y-3">
         <h2 className="font-medium">保留的版本</h2>
         {data.enabled && kept.length > 0 && (
@@ -134,6 +215,133 @@ export function Versions({ initial }: { initial: VersionsOverview }) {
             </Button>
           </article>
         ))}
+      </section>
+      <section aria-label="版本谱系" className="space-y-3">
+        <h2 className="font-medium">版本谱系</h2>
+        <ul className="space-y-2 text-sm">
+          {data.versions.map((v) => (
+            <li key={v.id} id={`version-${v.id}`}>
+              {v.parentId && (
+                <>
+                  <a className="underline" href={`#version-${v.parentId}`}>
+                    {label(v.parentId)}
+                  </a>{" "}
+                  →{" "}
+                </>
+              )}
+              {v.label} · {statusLabels[v.status]}
+            </li>
+          ))}
+        </ul>
+        {data.lineage.map((c) => {
+          const id = `${c.objectiveId}:${c.roundNo}`
+          const parent = data.lineage.find(
+            (other) => other.commit && other.commit === c.parent
+          )
+          const version = data.versions.find((v) => v.id === c.versionId)
+          const base = data.versions.find(
+            (v) => v.gitCommit === c.parent || v.sourceRevision === c.parent
+          )
+          return (
+            <article
+              key={id}
+              id={`round-${id}`}
+              className="space-y-2 rounded-xl border p-3 text-sm"
+            >
+              <strong>
+                {c.title} · 第 {c.roundNo} 轮
+              </strong>
+              <p>{c.request}</p>
+              <p>
+                源自{" "}
+                {parent ? (
+                  <a
+                    className="underline"
+                    href={`#round-${parent.objectiveId}:${parent.roundNo}`}
+                  >
+                    {parent.title} · 第 {parent.roundNo} 轮
+                  </a>
+                ) : base ? (
+                  <a className="underline" href={`#version-${base.id}`}>
+                    {base.label}
+                  </a>
+                ) : (
+                  c.parent.slice(0, 12)
+                )}{" "}
+                → {c.commit?.slice(0, 12) ?? "生成中"}
+              </p>
+              <p>
+                {version
+                  ? statusLabels[version.status]
+                  : c.abandoned
+                    ? "已放弃"
+                    : c.passed === false
+                      ? "评测未通过"
+                      : c.passed
+                        ? "评测通过"
+                        : c.phase === "done"
+                          ? "本轮已结束"
+                          : "进行中"}{" "}
+                · 已知花费 ${(Number(c.costMicros) / 1e6).toFixed(6)}
+                {c.unknownCosts > 0 ? `（另有 ${c.unknownCosts} 笔待核算）` : ""}
+              </p>
+              {c.checks?.length ? (
+                <p>评测：{c.checks.map((x) => `${x.name} ${x.status}`).join(" · ")}</p>
+              ) : (
+                <p>尚无评测结果</p>
+              )}
+              {c.phase === "done" && c.commit && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  disabled={busy}
+                  onClick={() => {
+                    setCreated("")
+                    setFork({
+                      id: c.objectiveId,
+                      roundNo: c.roundNo,
+                      note: c.request,
+                      requestId: crypto.randomUUID(),
+                    })
+                  }}
+                >
+                  从这一版继续改
+                </Button>
+              )}
+              {fork?.id === c.objectiveId && fork.roundNo === c.roundNo && (
+                <form
+                  onSubmit={(e) => {
+                    e.preventDefault()
+                    void submitFork()
+                  }}
+                  className="space-y-2"
+                >
+                  <label className="block">
+                    新目标
+                    <textarea
+                      className="block w-full rounded border p-2"
+                      required
+                      maxLength={4000}
+                      value={fork.note}
+                      onChange={(e) => setFork({ ...fork, note: e.target.value })}
+                    />
+                  </label>
+                  <Button type="submit" disabled={busy || !fork.note.trim()}>
+                    创建改进目标
+                  </Button>
+                </form>
+              )}
+            </article>
+          )
+        })}
+        {created && (
+          <p role="status">
+            已创建新目标。
+            <a className="underline" href="/improvements">
+              查看改进
+            </a>
+          </p>
+        )}
       </section>
       <section aria-label="切换记录" className="space-y-2">
         <h2 className="font-medium">切换记录</h2>

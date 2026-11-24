@@ -12,6 +12,12 @@ const bodySchema = z.union([
   }),
   z.object({ action: z.literal("revise"), note: z.string().trim().min(1).max(2000) }),
   z.object({ action: z.literal("abandon") }),
+  z.object({
+    action: z.literal("fork"),
+    roundNo: z.number().int().positive(),
+    note: z.string().trim().min(1).max(4000),
+    requestId: z.string().uuid(),
+  }),
 ])
 
 // The report card's buttons: 采用 (worker starts the updater), 再改改, 放弃
