@@ -31,3 +31,5 @@ docs/evidence/*.jpg
 docs/evidence/*.jpeg
 docs/evidence/*.webp
 .DS_Store
+
+deploy/backup-keys/

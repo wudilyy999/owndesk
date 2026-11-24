@@ -40,10 +40,11 @@ test("compose wires the version base: deploy path, version repository, build rev
     "**/.env",
     "deploy/*.env",
     "deploy/backups",
+    "deploy/backup-keys/",
     "**/*.dump",
     ".git",
   ])
-    assert(ignore.split("\n").includes(pattern), pattern)
+    assert(ignore.split(/\r?\n/).includes(pattern), pattern)
 })
 
 test("upgrade runs every switch through the updater from the current image", async () => {

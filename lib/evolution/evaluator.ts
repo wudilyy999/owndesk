@@ -29,6 +29,7 @@ import {
   LAB_LABEL,
 } from "@/lib/evolution/lab"
 import { LabBudgetError, SEGMENT } from "@/lib/evolution/meter"
+import { extensionPath, extensionStatements } from "./extension-migrations"
 import { addedLines, checkChanges, scanAddedLines } from "@/lib/evolution/policy"
 import { changedFiles, extract, git, patch } from "@/lib/evolution/repo"
 import { sanitizedSeed } from "@/lib/evolution/snapshot"
@@ -79,6 +80,20 @@ export async function policyStage(baseCommit: string, commit: string) {
   return timed("policy", async () => {
     const files = await changedFiles(baseCommit, commit)
     const findings = checkChanges(files)
+    if (!findings.length)
+      for (const file of files.filter((f) => extensionPath.test(f.path))) {
+        try {
+          extensionStatements(
+            (await git(["show", `${commit}:${file.path}`])).toString("utf8")
+          )
+        } catch {
+          findings.push({
+            rule: "migration",
+            path: file.path,
+            detail: "迁移清单仅支持新表和可空列",
+          })
+        }
+      }
     const lines = addedLines(await patch(baseCommit, commit, 0))
     const secrets = scanAddedLines(lines, await installationSecrets())
     // Protected changes stop before any candidate code runs. Eligible changes also

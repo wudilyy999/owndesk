@@ -35,3 +35,6 @@ docs/evidence/*.png
 docs/evidence/*.jpg
 docs/evidence/*.jpeg
 docs/evidence/*.webp
+
+deploy/backup-keys/
+deploy/backups/

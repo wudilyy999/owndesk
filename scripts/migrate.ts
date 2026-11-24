@@ -3,6 +3,7 @@ import { getMigrations } from "better-auth/db/migration"
 import { migrate } from "drizzle-orm/node-postgres/migrator"
 import { db, pool } from "@/db"
 import { auth } from "@/lib/auth"
+import { migrateExtensions } from "@/lib/evolution/extension-migrations"
 import { env } from "@/lib/env"
 
 try {
@@ -10,6 +11,7 @@ try {
   const authMigration = await getMigrations(auth.options)
   await authMigration.runMigrations()
   await DBOS.migrate(env.DATABASE_URL)
+  await migrateExtensions(pool)
   console.log("Business, authentication and DBOS migrations applied")
 } finally {
   await pool.end()

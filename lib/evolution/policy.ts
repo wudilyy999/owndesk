@@ -1,3 +1,5 @@
+import { extensionPath } from "./extension-migrations"
+
 // Stage 0 of the evaluator (B1): rules a candidate change must pass before anything is
 // built. Pure functions over the change list and the added lines, so the rules are easy to
 // test and the candidate can never see or change them (lib/evolution/** is protected).
@@ -57,7 +59,7 @@ export type ChangedFile = {
 export type PolicyFinding = { rule: string; path?: string; detail: string }
 
 export function isProtectedPath(file: string) {
-  return PROTECTED.some((rule) => rule.test(file))
+  return !extensionPath.test(file) && PROTECTED.some((rule) => rule.test(file))
 }
 
 export function checkChanges(
@@ -74,11 +76,18 @@ export function checkChanges(
         item.split("/").some((part) => part === ".." || part === ".git")
       )
         findings.push({ rule: "path", path: item, detail: "路径不合法" })
-      if (/^db\/migrations\//.test(item))
+      if (extensionPath.test(item)) {
+        if (file.status !== "A" || file.from)
+          findings.push({
+            rule: "migration",
+            path: item,
+            detail: "只能新增迁移清单，已有迁移不能改动",
+          })
+      } else if (/^db\/migrations\//.test(item))
         findings.push({
           rule: "migration",
           path: item,
-          detail: "第一阶段不能改数据库结构（追加式迁移属于 B2）",
+          detail: "正式迁移受保护；新增表或可空列请写 db/extensions/ 下的新清单",
         })
       else if (/^package(-lock)?\.json$/.test(item))
         findings.push({

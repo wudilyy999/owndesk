@@ -14,8 +14,11 @@ import { randomBytes } from "node:crypto"
 import {
   chownSync,
   createWriteStream,
+  existsSync,
   mkdirSync,
+  mkdtempSync,
   readdirSync,
+  rmdirSync,
   readFileSync,
   renameSync,
   statSync,
@@ -130,7 +133,10 @@ async function serviceContainer(service) {
 
 /* ─────────────── database ─────────────── */
 
-const client = new pg.Client({ connectionString: config.DATABASE_URL })
+const client = new pg.Client({
+  connectionString: config.DATABASE_URL,
+  application_name: "owndesk-updater",
+})
 await client.connect()
 const one = async (sql, values) => (await client.query(sql, values)).rows[0]
 
@@ -504,6 +510,103 @@ async function execute(dep) {
 
 /* ─────────────── commands ─────────────── */
 
+async function requireIdle() {
+  const busy = await one(
+    "SELECT id FROM tasks WHERE status IN ('queued','running','verifying') LIMIT 1"
+  )
+  if (busy) throw new Error("A task is still in progress; retry adoption when idle")
+}
+
+// The old, trusted image owns the backup. Publish a recovery point atomically; a
+// process killed before publication leaves only an incomplete staging directory.
+async function fullSnapshot(dep) {
+  assert(/^[a-zA-Z0-9_-]{12}$/.test(dep.id))
+  const backups = path.join(deployDir, "backups"),
+    keyDir = path.join(deployDir, "backup-keys")
+  for (const dir of [backups, keyDir]) mkdirSync(dir, { recursive: true, mode: 0o700 })
+  const data = path.join(backups, `adoption-${dep.id}`),
+    keyFile = path.join(keyDir, `${dep.id}.env`)
+  const snapshotTool = async (args) => {
+    const result = await run(
+      process.execPath,
+      [new URL("./snapshot.mjs", import.meta.url).pathname, ...args],
+      { timeoutMs: 3600000, env: { PA_SNAPSHOT_UPDATER_PID: String(client.processID) } }
+    )
+    if (result.code !== 0)
+      throw new Error(`Snapshot ${args[0]} failed: ${result.stderr.slice(-800)}`)
+  }
+  if (!existsSync(data)) {
+    const staging = mkdtempSync(path.join(backups, `.partial-${dep.id}-`))
+    const candidate = path.join(staging, "data"),
+      keys = path.join(keyDir, `${path.basename(staging)}.env`)
+    await snapshotTool(["backup", envFile, candidate, keys])
+    await snapshotTool(["verify", keys, candidate])
+    renameSync(keys, keyFile)
+    renameSync(candidate, data)
+    rmdirSync(staging)
+  } else await snapshotTool(["verify", keyFile, data])
+  log(`verified recovery point backups/adoption-${dep.id} (keys in backup-keys)`)
+}
+
+async function recoverBaseline(dep) {
+  await compose(
+    [
+      "up",
+      "--detach",
+      "--no-recreate",
+      "--no-deps",
+      "--wait",
+      "--wait-timeout",
+      "300",
+      "web",
+      "worker",
+      "caddy",
+    ],
+    { timeoutMs: 420000 }
+  )
+  const health = await confirm(dep.id)
+  if (!health.healthy) throw new Error(`Old version health unconfirmed: ${health.reason}`)
+  await update(dep.id, {
+    status: "failed",
+    phase: "before_switch",
+    finished_at: new Date(),
+  })
+  const prior = await one(
+    "SELECT * FROM deployments WHERE status='healthy' AND phase='watching' AND to_version_id=$1 ORDER BY started_at DESC LIMIT 1",
+    [dep.from_version_id]
+  )
+  if (prior) await spawnWatcher(prior)
+  log(`Adoption stopped before switching: ${dep.reason}`)
+  return 1
+}
+async function prepareAdoption(dep) {
+  try {
+    await requireIdle()
+    await compose(["stop", "--timeout", "60", "caddy", "web"])
+    await requireIdle()
+    await compose(["stop", "--timeout", "60", "worker"])
+    await requireIdle()
+    await fullSnapshot(dep)
+    const target = await version(dep.to_version_id)
+    await compose(["run", "--rm", "--no-deps", "worker", "npm", "run", "db:migrate"], {
+      env: { PA_WORKER_IMAGE: target.worker_image_id },
+    })
+    // Caddy can start while the backends are still offline. apply() and rollback
+    // then use the existing health checks and the existing durable switch record.
+    await compose(["start", "caddy"])
+    await update(dep.id, { phase: "switching" })
+  } catch (error) {
+    // No image references have been changed. A failed restart leaves the durable
+    // record running so resume can recover, instead of claiming a healthy source.
+    await update(dep.id, {
+      phase: "restoring_baseline",
+      reason: error.message.slice(0, 500),
+    })
+    return recoverBaseline(await deployment(dep.id))
+  }
+  return execute(dep)
+}
+
 async function start() {
   assert(["promote", "rollback"].includes(options.action), "--action promote|rollback")
   assert(
@@ -522,7 +625,9 @@ async function start() {
     log("FAILED: the active version changed since the candidate was selected")
     return 1
   }
-  if (options.action === "promote") {
+  const adoption = options.action === "promote" && !!expectedFrom
+  if (adoption) await requireIdle()
+  if (options.action === "promote" && !adoption) {
     // Snapshot first (insurance), then migrate with the *new* worker image while the
     // old version keeps serving. Migrations are additive, so the old image can still
     // read the database if the new version has to be rolled back.
@@ -558,11 +663,18 @@ async function start() {
   try {
     dep = await one(
       `INSERT INTO deployments (id,from_version_id,to_version_id,action,status,phase,started_at,updated_at)
-       SELECT $1,$2,$3,$4,'running','switching',now(),now()
+       SELECT $1,$2,$3,$4,'running',$6,now(),now()
        WHERE $5::text IS NULL OR EXISTS
          (SELECT 1 FROM agent_versions WHERE id=$5 AND status='active' FOR UPDATE)
        RETURNING *`,
-      [requestId ?? newId(), from.id, to.id, options.action, expectedFrom ?? null]
+      [
+        requestId ?? newId(),
+        from.id,
+        to.id,
+        options.action,
+        expectedFrom ?? null,
+        adoption ? "snapshot" : "switching",
+      ]
     )
     if (!dep) {
       log("FAILED: the active version changed before the switch could start")
@@ -578,7 +690,8 @@ async function start() {
     throw error
   }
   await stopWatchers()
-  return execute(dep)
+  if (dep.phase === "restoring_baseline") return recoverBaseline(dep)
+  return dep.phase === "snapshot" ? prepareAdoption(dep) : execute(dep)
 }
 
 async function watch() {
@@ -592,7 +705,7 @@ async function watch() {
   while (true) {
     const dep = await deployment(id)
     const newer = await one(
-      "SELECT id FROM deployments WHERE started_at > $1 AND id<>$2 LIMIT 1",
+      "SELECT id FROM deployments WHERE started_at > $1 AND id<>$2 AND phase<>'before_switch' LIMIT 1",
       [dep?.started_at ?? new Date(0), id]
     )
     if (!dep || dep.status !== "healthy" || newer) {
@@ -638,12 +751,17 @@ async function resume() {
   }
   log(`resuming ${dep.action} ${dep.id} from phase ${dep.phase}`)
   await stopWatchers()
-  return execute(dep)
+  if (dep.phase === "restoring_baseline") return recoverBaseline(dep)
+  return dep.phase === "snapshot" ? prepareAdoption(dep) : execute(dep)
 }
 
 let code = 1
 try {
-  code = await { start, watch, resume }[command]()
+  const allowed =
+    command === "watch" ||
+    (await one("SELECT pg_try_advisory_lock(hashtext('owndesk.updater')) AS ok")).ok
+  if (!allowed) log("BUSY: another updater holds the installation lock")
+  code = allowed ? await { start, watch, resume }[command]() : 3
 } catch (error) {
   log("ERROR:", error.message)
 } finally {
