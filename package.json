@@ -16,6 +16,7 @@
     "db:migrate": "tsx scripts/migrate.ts",
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
+    "test:evolution:trial": "bash scripts/test-candidate-trial.sh",
     "test:evolution:migrations": "tsx tests/extension-postgres.ts",
     "test": "tsx --import ./tests/setup-env.mjs --test tests/*.test.ts",
     "test:worker-resume": "tsx tests/telegram.ts worker-resume",

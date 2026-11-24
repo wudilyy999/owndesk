@@ -40,8 +40,18 @@ import { assertWorkstationNetwork } from "./network"
 import { registerRunningVersion, requestSwitch } from "@/lib/versions"
 import {
   adoptImprovement,
+  abandonImprovement,
+  reviseImprovement,
   confirmImprovementProposal,
 } from "@/lib/evolution/improvements"
+
+import {
+  closeTrialAtShutdown,
+  reclaimTrialAtStartup,
+  trial,
+  withTrialClosed,
+} from "@/lib/evolution/trial"
+import { trialCommand } from "@/lib/evolution/trial-input"
 
 export async function startWorker() {
   const lease = await pool.connect()
@@ -76,6 +86,10 @@ export async function startWorker() {
   await assertWorkstationNetwork("restore")
   // Only the worker holding the installation lease may reclaim a crashed preview.
   const { clearDevPreview } = await import("@/lib/evolution/dev-preview")
+  if (env.PA_DEPLOY_DIR)
+    await reclaimTrialAtStartup().catch(() =>
+      console.warn("Candidate trial cleanup will retry on use")
+    )
   await clearDevPreview().catch(() =>
     console.warn(
       "Could not reclaim development preview at worker startup; retrying on preview use"
@@ -141,6 +155,7 @@ export async function startWorker() {
         "/internal/workflows/template",
         "/internal/versions/switch",
         "/internal/improvements",
+        "/internal/improvement-trial",
       ].includes(req.url ?? "") &&
       req.method === "POST"
     ) {
@@ -161,9 +176,19 @@ export async function startWorker() {
           }
           const input = JSON.parse(Buffer.concat(chunks).toString())
           let result
-          if (req.url === "/internal/improvements") {
+          if (req.url === "/internal/improvement-trial") {
+            const { objectiveId, command } = z
+              .object({ objectiveId: z.string().min(1).max(100), command: trialCommand })
+              .parse(input)
+            result = await trial(owner.userId, objectiveId, command)
+          } else if (req.url === "/internal/improvements") {
             const body = z
               .discriminatedUnion("action", [
+                z.object({
+                  action: z.literal("revise"),
+                  objectiveId: z.string().min(1).max(100),
+                  note: z.string().trim().min(1).max(2000),
+                }),
                 z.object({
                   action: z.literal("confirm"),
                   messageId: z.string().min(1).max(100),
@@ -174,7 +199,7 @@ export async function startWorker() {
                     .optional(),
                 }),
                 z.object({
-                  action: z.literal("adopt"),
+                  action: z.enum(["adopt", "abandon"]),
                   objectiveId: z.string().min(1).max(100),
                 }),
               ])
@@ -190,7 +215,14 @@ export async function startWorker() {
                       )
                     ).id,
                   }
-                : await adoptImprovement(owner.userId, body.objectiveId)
+                : await withTrialClosed(owner.userId, body.objectiveId, async () => {
+                    if (body.action === "adopt")
+                      return adoptImprovement(owner.userId, body.objectiveId)
+                    if (body.action === "revise")
+                      await reviseImprovement(owner.userId, body.objectiveId, body.note)
+                    else await abandonImprovement(owner.userId, body.objectiveId)
+                    return { status: body.action }
+                  })
           } else if (req.url === "/internal/versions/switch")
             result = await requestSwitch(
               z.object({ versionId: z.string().min(1).max(64) }).parse(input).versionId
@@ -297,6 +329,9 @@ export async function startWorker() {
   async function shutdown() {
     server.close()
     abort.abort()
+    await closeTrialAtShutdown().catch(() =>
+      console.warn("Candidate trial will be reclaimed on restart")
+    )
     await closeGateway()
     await controls
     await telegram

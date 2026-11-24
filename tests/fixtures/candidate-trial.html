@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+  <meta charset="utf-8" /><title>Candidate notebook</title
+  ><style>
+    body {
+      margin: 0;
+    }
+    input,
+    button {
+      position: absolute;
+      left: 40px;
+      width: 250px;
+      height: 60px;
+    }
+    input {
+      top: 60px;
+    }
+    button {
+      top: 180px;
+    }</style
+  ><input id="name" aria-label="Name" /><button id="save">Save synthetic entry</button
+  ><output style="position: absolute; top: 300px"></output>
+  <script>
+    document.querySelector("button").onclick = async () => {
+      const name = document.querySelector("input").value
+      const r = await fetch("/api/agents", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name,
+          role: "trial only",
+          instructions: "synthetic fixture",
+        }),
+      })
+      document.querySelector("output").textContent = r.ok ? "Saved" : "Failed"
+      if (r.ok) document.title = "Saved " + name
+    }
+  </script>
+</html>

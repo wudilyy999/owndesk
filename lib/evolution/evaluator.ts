@@ -32,7 +32,7 @@ import { LabBudgetError, SEGMENT } from "@/lib/evolution/meter"
 import { extensionPath, extensionStatements } from "./extension-migrations"
 import { addedLines, checkChanges, scanAddedLines } from "@/lib/evolution/policy"
 import { changedFiles, extract, git, patch } from "@/lib/evolution/repo"
-import { sanitizedSeed } from "@/lib/evolution/snapshot"
+import { previewSeed, sanitizedSeed } from "@/lib/evolution/snapshot"
 import { scanWithGitleaks, streamContainsSecret } from "@/lib/evolution/scanner"
 import type { AcceptanceResult, Evaluation, StageResult } from "@/lib/evolution/store"
 import { findPrice } from "@/lib/providers/pricing"
@@ -274,15 +274,25 @@ async function selfContainer() {
   return result.exitCode === 0 ? result.stdout.toString().trim() : null
 }
 
-export async function startCandidateStack(input: {
+type StackSettings = {
   key: string
   images: { web: string; worker: string }
+  log: Log
+}
+type EvaluationSettings = StackSettings & {
   objective: () => Promise<Objective>
   taskId: string
   spec: string
   onBlocked: (reason: string, end?: "steps" | "cost") => Promise<void>
-  log: Log
-}): Promise<CandidateStack> {
+}
+export type TrialStack = Omit<CandidateStack, "gateway"> & { gateway?: Gateway }
+export function startCandidateStack(input: EvaluationSettings): Promise<CandidateStack>
+export function startCandidateStack(
+  input: StackSettings & { trial: true }
+): Promise<TrialStack>
+export async function startCandidateStack(
+  input: EvaluationSettings | (StackSettings & { trial: true })
+): Promise<TrialStack> {
   const name = (role: string) => `${prefix()}-cand-${input.key}-${role}`.slice(0, 120)
   const network = name("net")
   await removeCandidateStack(input.key)
@@ -294,29 +304,31 @@ export async function startCandidateStack(input: {
     `${LAB_LABEL}=${env.INSTALL_ID}`,
     network,
   ])
-  const self = await selfContainer()
-  if (self) await docker(["network", "connect", network, self])
-  const gatewayHost = self
-    ? await containerIp(self, network)
-    : (
-        await docker([
-          "network",
-          "inspect",
-          "--format",
-          "{{(index .IPAM.Config 0).Gateway}}",
-          network,
-        ])
-      ).stdout
-        .toString()
-        .trim()
-  const gateway = await startGateway({
-    host: gatewayHost,
-    objective: input.objective,
-    taskId: input.taskId,
-    spec: input.spec,
-    onBlocked: input.onBlocked,
-  })
+  let gateway: Gateway | undefined
   try {
+    const self = await selfContainer()
+    if (self) await docker(["network", "connect", network, self])
+    const gatewayHost = self
+      ? await containerIp(self, network)
+      : (
+          await docker([
+            "network",
+            "inspect",
+            "--format",
+            "{{(index .IPAM.Config 0).Gateway}}",
+            network,
+          ])
+        ).stdout
+          .toString()
+          .trim()
+    if (!("trial" in input))
+      gateway = await startGateway({
+        host: gatewayHost,
+        objective: input.objective,
+        taskId: input.taskId,
+        spec: input.spec,
+        onBlocked: input.onBlocked,
+      })
     const password = randomBytes(18).toString("hex")
     const common = [
       "--detach",
@@ -389,8 +401,7 @@ export async function startCandidateStack(input: {
       INSTALL_ID: randomUUID(),
       WORKER_INTERNAL_URL: "http://worker:6798",
       ARTIFACT_DIR: "/app/data/artifacts",
-      CUSTOM_BASE_URL: gateway.url,
-      CUSTOM_API_KEY: gateway.token,
+      ...(gateway ? { CUSTOM_BASE_URL: gateway.url, CUSTOM_API_KEY: gateway.token } : {}),
       OWNDESK_DEFAULT_MODEL: `custom/${LAB_MODEL}`,
       OWNDESK_CHAT_MODEL: `custom/${LAB_MODEL}`,
     }
@@ -407,6 +418,8 @@ export async function startCandidateStack(input: {
         network,
         "--label",
         `${LAB_LABEL}=${env.INSTALL_ID}`,
+        "--label",
+        `owndesk.lab.stack=${input.key}`,
         ...envArgs(),
         input.images.worker,
         "npm",
@@ -419,11 +432,15 @@ export async function startCandidateStack(input: {
       throw new Error(
         `候选数据库迁移失败：${(migrate.stderr || migrate.stdout.toString()).slice(-2000)}`
       )
-    const price = findPrice(input.spec, { custom: await getCustomPrices() })
-    const seed = await sanitizedSeed({
-      labPriceSpec: `custom/${LAB_MODEL}`,
-      labPrice: price?.kind === "priced" ? price.price : null,
-    })
+    const price =
+      "trial" in input ? null : findPrice(input.spec, { custom: await getCustomPrices() })
+    const seed =
+      "trial" in input
+        ? await previewSeed()
+        : await sanitizedSeed({
+            labPriceSpec: `custom/${LAB_MODEL}`,
+            labPrice: price?.kind === "priced" ? price.price : null,
+          })
     const seeded = await dockerRaw(
       [
         "exec",
@@ -513,9 +530,19 @@ export async function startCandidateStack(input: {
 export async function removeCandidateStack(key: string, gateway?: Gateway) {
   await gateway?.close()
   const ids = (
-    await dockerRaw(["ps", "-aq", "--filter", `label=owndesk.lab.stack=${key}`], {
-      timeoutMs: 30000,
-    })
+    await dockerRaw(
+      [
+        "ps",
+        "-aq",
+        "--filter",
+        `label=${LAB_LABEL}=${env.INSTALL_ID}`,
+        "--filter",
+        `label=owndesk.lab.stack=${key}`,
+      ],
+      {
+        timeoutMs: 30000,
+      }
+    )
   ).stdout
     .toString()
     .trim()
@@ -532,7 +559,7 @@ export async function removeCandidateStack(key: string, gateway?: Gateway) {
 // An HTTP session against the candidate web, as its (synthetic) owner
 export class CandidateSession {
   cookie = ""
-  constructor(readonly stack: CandidateStack) {}
+  constructor(readonly stack: Pick<CandidateStack, "login" | "webUrl" | "appUrl">) {}
   async request(method: string, route: string, body?: unknown) {
     const target = new URL(route, this.stack.webUrl)
     if (

@@ -1,6 +1,7 @@
 "use client"
 // Self-improvement (B1): turn it on, follow each improvement, read the lab's report, and
 // adopt / revise / abandon. Only a candidate whose every test passed can be adopted.
+import { CandidateTrial } from "./candidate-trial"
 import { PageLayout } from "@/components/page-header"
 import { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
@@ -38,8 +39,19 @@ export function Improvements({ initial }: { initial: ImprovementOverview }) {
   const [data, setData] = useState(initial)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState("")
+  const [trialReset, setTrialReset] = useState<Record<string, number>>({})
   const [notes, setNotes] = useState<Record<string, string>>({})
 
+  async function decide(
+    id: string,
+    body: { action: "adopt" | "abandon" | "revise"; note?: string }
+  ) {
+    try {
+      return await call(`/api/improvements/${id}`, "POST", body)
+    } finally {
+      setTrialReset((old) => ({ ...old, [id]: (old[id] ?? 0) + 1 }))
+    }
+  }
   async function refresh() {
     const fresh = await fetch("/api/improvements", { cache: "no-store" })
     if (fresh.ok) setData(await fresh.json())
@@ -244,12 +256,19 @@ export function Improvements({ initial }: { initial: ImprovementOverview }) {
             {item.status !== "abandoned" && item.status !== "adopted" && (
               <div className="flex flex-wrap items-end gap-2">
                 {canAdopt && (
+                  <CandidateTrial
+                    key={`${canAdopt}:${trialReset[item.objectiveId] ?? 0}`}
+                    objectiveId={item.objectiveId}
+                    versionId={canAdopt}
+                  />
+                )}
+                {canAdopt && (
                   <Button
                     size="sm"
                     disabled={busy}
                     onClick={() =>
                       run(() =>
-                        call(`/api/improvements/${item.objectiveId}`, "POST", {
+                        decide(item.objectiveId, {
                           action: "adopt",
                         })
                       )
@@ -276,7 +295,7 @@ export function Improvements({ initial }: { initial: ImprovementOverview }) {
                       disabled={busy || !(notes[item.objectiveId] ?? "").trim()}
                       onClick={() =>
                         run(() =>
-                          call(`/api/improvements/${item.objectiveId}`, "POST", {
+                          decide(item.objectiveId, {
                             action: "revise",
                             note: notes[item.objectiveId],
                           })
@@ -291,7 +310,7 @@ export function Improvements({ initial }: { initial: ImprovementOverview }) {
                       disabled={busy}
                       onClick={() =>
                         run(() =>
-                          call(`/api/improvements/${item.objectiveId}`, "POST", {
+                          decide(item.objectiveId, {
                             action: "abandon",
                           })
                         )
