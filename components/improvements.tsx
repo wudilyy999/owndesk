@@ -24,6 +24,14 @@ const objectiveLabels: Record<string, string> = {
   stopped: "已停止",
 }
 
+class ResponseError extends Error {
+  constructor(
+    readonly status: number,
+    message: string
+  ) {
+    super(message)
+  }
+}
 async function call(path: string, method: string, body: unknown) {
   const response = await fetch(path, {
     method,
@@ -31,7 +39,8 @@ async function call(path: string, method: string, body: unknown) {
     body: JSON.stringify(body),
   })
   const result = await response.json().catch(() => ({}))
-  if (!response.ok) throw new Error(result.error ?? `HTTP ${response.status}`)
+  if (!response.ok)
+    throw new ResponseError(response.status, result.error ?? `HTTP ${response.status}`)
   return result
 }
 
@@ -39,22 +48,56 @@ export function Improvements({ initial }: { initial: ImprovementOverview }) {
   const [data, setData] = useState(initial)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState("")
+  const [notice, setNotice] = useState("")
   const [trialReset, setTrialReset] = useState<Record<string, number>>({})
   const [notes, setNotes] = useState<Record<string, string>>({})
 
   async function decide(
     id: string,
-    body: { action: "adopt" | "abandon" | "revise"; note?: string }
+    body: { action: "adopt" | "abandon" | "revise"; note?: string; versionId?: string }
   ) {
     try {
       return await call(`/api/improvements/${id}`, "POST", body)
+    } catch (cause) {
+      if (
+        body.action !== "adopt" ||
+        !body.versionId ||
+        (cause instanceof ResponseError && cause.status < 500)
+      )
+        throw cause
+      const previous = data.improvements.find((x) => x.objectiveId === id)?.adoption
+        ?.deploymentId
+      setNotice("正在核对采用结果，请稍候。")
+      try {
+        for (let attempt = 0; attempt < 60; attempt++) {
+          const fresh = await refresh().catch(() => undefined)
+          const record = fresh?.improvements.find((x) => x.objectiveId === id)?.adoption
+          if (
+            record?.versionId === body.versionId &&
+            record.deploymentId &&
+            record.deploymentId !== previous
+          )
+            return
+          await new Promise((resolve) => setTimeout(resolve, 2000))
+        }
+        throw new Error("尚未确认这次采用的结果，请到版本页查看切换记录。")
+      } finally {
+        setNotice("")
+      }
     } finally {
       setTrialReset((old) => ({ ...old, [id]: (old[id] ?? 0) + 1 }))
     }
   }
   async function refresh() {
-    const fresh = await fetch("/api/improvements", { cache: "no-store" })
-    if (fresh.ok) setData(await fresh.json())
+    const fresh = await fetch("/api/improvements", {
+      cache: "no-store",
+      signal: AbortSignal.timeout(4000),
+    })
+    if (fresh.ok) {
+      const overview: ImprovementOverview = await fresh.json()
+      setData(overview)
+      return overview
+    }
   }
   useEffect(() => {
     const timer = setInterval(() => void refresh().catch(() => {}), 10000)
@@ -66,7 +109,7 @@ export function Improvements({ initial }: { initial: ImprovementOverview }) {
     setError("")
     try {
       await action()
-      await refresh()
+      await refresh().catch(() => {})
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : String(cause))
     } finally {
@@ -76,6 +119,7 @@ export function Improvements({ initial }: { initial: ImprovementOverview }) {
 
   return (
     <PageLayout title="自我改进">
+      {notice && <p role="status">{notice}</p>}
       {error && (
         <p role="alert" className="text-sm text-destructive">
           {error}
@@ -270,6 +314,7 @@ export function Improvements({ initial }: { initial: ImprovementOverview }) {
                       run(() =>
                         decide(item.objectiveId, {
                           action: "adopt",
+                          versionId: canAdopt,
                         })
                       )
                     }

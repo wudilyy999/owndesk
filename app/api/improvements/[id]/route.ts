@@ -6,7 +6,10 @@ import { workerRequest } from "@/lib/worker-request"
 
 const bodySchema = z.union([
   z.object({ action: z.literal("trial"), command: trialCommand }),
-  z.object({ action: z.literal("adopt") }),
+  z.object({
+    action: z.literal("adopt"),
+    versionId: z.string().min(1).max(100).optional(),
+  }),
   z.object({ action: z.literal("revise"), note: z.string().trim().min(1).max(2000) }),
   z.object({ action: z.literal("abandon") }),
 ])

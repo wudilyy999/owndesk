@@ -67,10 +67,15 @@ export function reclaimTrialAtStartup() {
 export function withTrialClosed<T>(
   owner: string,
   goal: string,
-  change: () => Promise<T>
+  change: () => Promise<T>,
+  expectedVersion?: string
 ) {
   return serial(async () => {
-    if (current?.owner === owner && current.goal === goal) await clear()
+    if (current?.owner === owner && current.goal === goal) {
+      if (expectedVersion && expectedVersion !== current.version)
+        throw new HttpError(409, "试用版本已经变化，请刷新后再采用")
+      await clear()
+    }
     return change()
   })
 }

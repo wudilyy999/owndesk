@@ -200,6 +200,7 @@ export async function startWorker() {
                 }),
                 z.object({
                   action: z.enum(["adopt", "abandon"]),
+                  versionId: z.string().min(1).max(100).optional(),
                   objectiveId: z.string().min(1).max(100),
                 }),
               ])
@@ -215,14 +216,23 @@ export async function startWorker() {
                       )
                     ).id,
                   }
-                : await withTrialClosed(owner.userId, body.objectiveId, async () => {
-                    if (body.action === "adopt")
-                      return adoptImprovement(owner.userId, body.objectiveId)
-                    if (body.action === "revise")
-                      await reviseImprovement(owner.userId, body.objectiveId, body.note)
-                    else await abandonImprovement(owner.userId, body.objectiveId)
-                    return { status: body.action }
-                  })
+                : await withTrialClosed(
+                    owner.userId,
+                    body.objectiveId,
+                    async () => {
+                      if (body.action === "adopt")
+                        return adoptImprovement(
+                          owner.userId,
+                          body.objectiveId,
+                          body.versionId
+                        )
+                      if (body.action === "revise")
+                        await reviseImprovement(owner.userId, body.objectiveId, body.note)
+                      else await abandonImprovement(owner.userId, body.objectiveId)
+                      return { status: body.action }
+                    },
+                    body.action === "adopt" ? body.versionId : undefined
+                  )
           } else if (req.url === "/internal/versions/switch")
             result = await requestSwitch(
               z.object({ versionId: z.string().min(1).max(64) }).parse(input).versionId

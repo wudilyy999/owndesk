@@ -176,9 +176,21 @@ async function reopen(objectiveId: string, reason: string | null) {
 }
 
 // 采用: only a candidate whose evaluation passed, and only by the owner's click
-export async function adoptImprovement(ownerId: string, objectiveId: string) {
+export async function adoptImprovement(
+  ownerId: string,
+  objectiveId: string,
+  expectedVersion?: string
+) {
   const improvement = await owned(ownerId, objectiveId)
   const candidate = latest(improvement)
+  if (expectedVersion && expectedVersion !== candidate?.versionId)
+    throw new HttpError(409, "候选版本已变化，请刷新后再采用")
+  if (
+    expectedVersion &&
+    improvement.adoption?.versionId === expectedVersion &&
+    ["adopting", "adopted"].includes(improvement.status)
+  )
+    return { started: true }
   if (
     improvement.status !== "ready" ||
     !candidate?.evaluation?.passed ||

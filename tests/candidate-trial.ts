@@ -135,6 +135,14 @@ try {
     command: { action: "view", versionId: "another", session },
   })
   assert.equal(bad.status(), 410)
+  const staleAdoption = await api({ action: "adopt", versionId: "obsolete" })
+  assert.equal(staleAdoption.status(), 409)
+  assert.equal(
+    (
+      await api({ action: "trial", command: { action: "view", versionId: v, session } })
+    ).status(),
+    200
+  )
   const obs = await docker(
     "inspect",
     "-f",
@@ -218,6 +226,42 @@ try {
       (await pool.query("select status from agent_versions where id=$1", [v])).rows[0]
         .status === "rejected",
     "not abandoned"
+  )
+  // Transport-only regression: the real switch is tested on the Docker deployment.
+  // Drop the browser response and persist the server outcome in this fixture DB.
+  await pool.query(
+    "UPDATE settings SET value=(value::jsonb || jsonb_build_object('status','ready'))::text WHERE key=$1",
+    ["evolution.improvement." + goal]
+  )
+  await page.reload()
+  let posts = 0
+  const deploymentId = randomUUID().slice(0, 12)
+  await page.route("**" + act, async (route) => {
+    if (route.request().postDataJSON()?.action !== "adopt") return route.continue()
+    posts++
+    assert.equal(route.request().postDataJSON().versionId, v)
+    await pool.query(
+      "UPDATE settings SET value=(value::jsonb || jsonb_build_object('status','adopted','adoption',jsonb_build_object('versionId',$2::text,'roundNo',1,'at',now(),'deploymentId',$3::text,'outcome','healthy')))::text WHERE key=$1",
+      ["evolution.improvement." + goal, v, deploymentId]
+    )
+    await route.abort("connectionreset")
+  })
+  await page.getByRole("button", { name: "采用", exact: true }).click()
+  await page.getByTestId("improvement-status").filter({ hasText: "已采用" }).waitFor()
+  await until(
+    async () => (await page.getByText("正在核对采用结果，请稍候。").count()) === 0,
+    "pending confirmation"
+  )
+  assert.equal(posts, 1)
+  assert.equal(
+    await page
+      .getByRole("alert")
+      .filter({ hasText: /Failed to fetch|未确认/ })
+      .count(),
+    0
+  )
+  console.log(
+    "PASS browser reconciled a lost response against the exact saved candidate and deployment; one POST"
   )
   await writeFile(
     out + "/receipt.json",
