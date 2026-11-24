@@ -224,13 +224,24 @@ const modelServer = createServer((req, res) => {
           answer(res, index, "complete_task", {
             summary:
               "Wrote the first row of report.csv; the second day is still missing.",
-            files: [],
+            files: [{ path: "report.csv", mediaType: "text/csv" }],
             objective: { status: "progress" },
           })
           return
         }
         assert.match(prompt, /Round 1 \(progress\): Wrote the first row/)
-        if (!calls.length) {
+        const transferPath = /\/home\/agent\/Transfers\/[\w-]+\/s1\/0-report\.csv/.exec(
+          prompt
+        )?.[0]
+        assert(transferPath)
+        const has = (name: string) =>
+          calls.some((call: any) => call.function.name === name)
+        if (!has("fs_read")) {
+          answer(res, index, "fs_read", { path: transferPath })
+          return
+        }
+        if (!has("complete_task")) {
+          assert.match(results.at(-1).content, /2026-10-12,100/)
           // Claims achieved too early: the objective's CSV check must refuse one row
           answer(res, index, "complete_task", {
             summary: "Report is complete.",
@@ -239,7 +250,7 @@ const modelServer = createServer((req, res) => {
           })
           return
         }
-        if (calls.length === 1) {
+        if (!has("fs_write")) {
           assert.match(
             results.at(-1).content,
             /verificationFailed|rows|minimum|at least/i
@@ -1541,18 +1552,24 @@ try {
       })
       return { taskId, agentId: agent.id, scenario }
     }
-    async function pending(taskId: string, purpose: string) {
-      return until(async () => {
-        const requests = (await getTask(ownerId, taskId)).requests
-        const failure = requests.find(
-          (request) =>
-            request.status === "pending" && request.payload.purpose === "execution_error"
-        )
-        if (failure) throw new Error(JSON.stringify(failure.payload))
-        return requests.find(
-          (request) => request.status === "pending" && request.payload.purpose === purpose
-        )
-      }, `owner request: ${purpose}`)
+    async function pending(taskId: string, purpose: string, timeout?: number) {
+      return until(
+        async () => {
+          const requests = (await getTask(ownerId, taskId)).requests
+          const failure = requests.find(
+            (request) =>
+              request.status === "pending" &&
+              request.payload.purpose === "execution_error"
+          )
+          if (failure) throw new Error(JSON.stringify(failure.payload))
+          return requests.find(
+            (request) =>
+              request.status === "pending" && request.payload.purpose === purpose
+          )
+        },
+        `owner request: ${purpose}`,
+        timeout
+      )
     }
     async function completed(taskId: string, timeout?: number) {
       return until(
@@ -6037,6 +6054,9 @@ try {
       }
     }
     if (focus === "reports") {
+      // Four browser downloads and eleven model decisions can take over 75s on a cold desktop.
+      // Bound only this fixture's observation; the task and its acceptance checks stay unchanged.
+      const reportWaitMs = 180_000
       const { saveRoutine, routinePlanSchema, routineOverview } =
         await import("@/lib/routines")
       const { ensureTelegramConnection } = await import("@/lib/telegram/state")
@@ -6162,7 +6182,8 @@ try {
         if (kind === "missing") {
           await until(
             async () => !!scenario.release,
-            "missing baseline rejected by real completion gate"
+            "missing baseline rejected by real completion gate",
+            reportWaitMs
           )
           assert.notEqual((await getTask(ownerId, linked.task_id)).status, "completed")
           await collectTelegramNotifications(connection.generation)
@@ -6178,7 +6199,7 @@ try {
           scenario.release!()
         }
         if (kind === "zero") {
-          const request = await pending(linked.task_id, "completion")
+          const request = await pending(linked.task_id, "completion", reportWaitMs)
           assert.equal((request.payload.comparison as any).currentTotal, "330")
           assert.equal((request.payload.comparison as any).needsAttention, true)
           await collectTelegramNotifications(connection.generation)
@@ -6208,7 +6229,7 @@ try {
             {}
           )
         }
-        const task = await completed(linked.task_id)
+        const task = await completed(linked.task_id, reportWaitMs)
         const comparison = task.result!.comparison as any
         assert.equal(comparison.currentTotal, kind === "quiet" ? "300" : "330")
         assert.equal(comparison.baselineTotal, kind === "zero" ? "0" : "300")
@@ -7060,11 +7081,19 @@ try {
         assert(row.steps > 0 && Number(row.cost_micros) > 0)
       }
       assert.equal(csvRounds[0].result.objective.status, "progress")
-      assert.deepEqual(csvRounds[0].result.files, [])
+      assert.equal(csvRounds[0].result.files.length, 1)
+      const {
+        rows: [transfer],
+      } = await pool.query(
+        "SELECT snapshot->'handoff' AS handoff FROM task_segments WHERE task_id=$1 AND segment_no=1",
+        [csvRounds[1].task_id]
+      )
+      assert.equal(transfer.handoff.fromRoundTaskId, csvRounds[0].task_id)
+      assert.deepEqual(transfer.handoff.files, csvRounds[0].result.files)
       assert.equal(csvRounds[1].result.objective.status, "achieved")
       assert.equal(csvRounds[1].result.files.length, 1)
       // Round 2: early "achieved" refused, rewritten, accepted (3 model calls)
-      assert.equal(csv.scenario.calls.length, 5)
+      assert.equal(csv.scenario.calls.length, 6)
       assert.match(csv.scenario.observed[2], /Round 1 \(progress\)/)
       assert.match(csv.scenario.observed[1], /first round/)
       assert.deepEqual(await budgetRequests(a.id), [])
@@ -7342,6 +7371,49 @@ try {
           "Chat objective card: concurrent confirms create one objective and a cancelled answer is refused; concurrent dispatch starts one round; a lost task link resubmits the same idempotent request; the companion's chat gets one progress update",
       })
 
+      // Freeze the clock years ahead of the real dispatcher so it cannot steal a test slot.
+      const slot = new Date("2090-01-04T01:00:00Z"),
+        latest = new Date("2090-01-06T01:00:00Z")
+      for (const policy of ["skip", "latest"] as const) {
+        const scheduled = await createObjective(ownerId, {
+          agentId: objectiveAgent.id,
+          title: `漏跑 ${policy}`,
+          objective: scenarioFor("objective_quick").text,
+          schedulePlan: {
+            schedule: { kind: "daily", time: "09:00" },
+            timeZone: "Asia/Taipei",
+            missedRunPolicy: policy,
+          },
+        })
+        await pool.query("UPDATE objectives SET next_round_at=$2 WHERE id=$1", [
+          scheduled.id,
+          slot,
+        ])
+        await advanceObjectives(new Date(slot.getTime() - 1))
+        assert.equal((await roundRows(scheduled.id)).length, 0)
+        const late = new Date(latest.getTime() + 61000)
+        await Promise.all([advanceObjectives(late), advanceObjectives(late)])
+        await advanceObjectives(late)
+        const rows = await roundRows(scheduled.id)
+        assert.equal(
+          (await objectiveRow(scheduled.id)).next_round_at.toISOString(),
+          "2090-01-07T01:00:00.000Z"
+        )
+        if (policy === "skip") {
+          assert.equal(rows.length, 0)
+          await controlObjective(ownerId, scheduled.id, "pause")
+          await controlObjective(ownerId, scheduled.id, "resume")
+          assert((await objectiveRow(scheduled.id)).next_round_at < slot)
+          await controlObjective(ownerId, scheduled.id, "stop")
+        } else {
+          assert.equal(rows.length, 1)
+          assert.equal(rows[0].scheduled_for.toISOString(), latest.toISOString())
+          await drive(
+            async () => (await objectiveRow(scheduled.id)).status === "achieved",
+            "scheduled latest task finishes"
+          )
+        }
+      }
       // G. Owner-authenticated /objectives page
       const web = spawn(
         process.execPath,
@@ -7407,6 +7479,10 @@ try {
         await page.getByLabel("目标名字").fill("页面目标")
         await page.getByLabel("目标内容").fill(`${ui.text}Created from the page.`)
         await page.getByLabel("新目标轮数上限").fill("4")
+        await page.getByLabel("推进方式").selectOption("plan")
+        await page.getByLabel("IANA 时区").fill("UTC")
+        const wallTime = new Date(Date.now() + 90000).toISOString().slice(11, 16)
+        await page.getByLabel("当地时间").fill(wallTime)
         await page.getByRole("button", { name: "开始", exact: true }).click()
         const article = page.getByRole("article", { name: "目标 页面目标" })
         await article.waitFor()
@@ -7414,10 +7490,24 @@ try {
           (row) => row.title === "页面目标"
         )!
         assert.deepEqual(created.budget, { roundMaxSteps: 40, maxRounds: 4 })
-        await drive(
+        assert.equal(created.schedulePlan?.timeZone, "UTC")
+        assert(created.nextRoundAt && created.nextRoundAt > new Date())
+        assert.equal(created.rounds.length, 0)
+        // No direct advanceObjectives: the real DBOS calendar tick must start this task.
+        await until(
           async () => (await objectiveRow(created.id)).status === "achieved",
-          "page objective achieved"
+          "wall clock daily objective achieved",
+          240000
         )
+        const [scheduledRound] = await roundRows(created.id)
+        assert.equal(
+          scheduledRound.scheduled_for.toISOString(),
+          created.nextRoundAt.toISOString()
+        )
+        assert(scheduledRound.started_at >= created.nextRoundAt)
+        checks.push({
+          check: `Daily ${wallTime} UTC: real scheduler started ${scheduledRound.task_id} for ${created.nextRoundAt.toISOString()}; fake-clock skip/latest, duplicate tick and file handoff also verified`,
+        })
         await page.reload()
         await page
           .getByRole("article", { name: "目标 页面目标" })

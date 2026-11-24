@@ -775,6 +775,92 @@ try {
   )
   await updateCompanion(ownerId, agentId, { typingPace: "natural" })
 
+  // Timed objective notices: real channel adapters, local transport receivers.
+  const notices = await db
+    .insert(schema.companionMessages)
+    .values([
+      {
+        agentId,
+        role: "assistant" as const,
+        channel: "web" as const,
+        kind: "objective_proposal" as const,
+        content: "整理周报",
+        metadata: {
+          status: "pending",
+          proposal: {
+            objective: "合成目标验收",
+            schedulePlan: {
+              schedule: { kind: "daily", time: "09:00" },
+              timeZone: "Asia/Taipei",
+              missedRunPolicy: "latest",
+            },
+          },
+        },
+      },
+      {
+        agentId,
+        role: "assistant" as const,
+        channel: "web" as const,
+        kind: "objective_update" as const,
+        content: "周报第一轮已完成",
+        metadata: { objectiveId: "goal-fixture" },
+      },
+    ])
+    .returning({ id: schema.companionMessages.id })
+  const qqMark = qqApi.calls.length,
+    wxStart = ilink.calls.length
+  await hub.routeBackgroundMessages()
+  await hub.routeBackgroundMessages()
+  await hub.deliverOutbox()
+  await db.insert(schema.channelInbound).values({
+    channel: "wechat",
+    eventKey: "objective-wx",
+    externalId: "wx-user@im.wechat",
+    text: "进度怎么样",
+    context: { contextToken: "CTX-GOAL" },
+  })
+  await run(["收到"])
+  await send(qqEvent("objective-qq", "查看目标进度"))
+  await run(["收到"])
+  await hub.deliverOutbox()
+  const wxTexts = ilink.calls
+    .slice(wxStart)
+    .filter((c) => c.path === "/ilink/bot/sendmessage")
+    .map((c) => c.body.msg.item_list[0].text_item.text)
+  const qqTexts = qqApi.calls
+    .slice(qqMark)
+    .map((c) => c.body?.content)
+    .filter(Boolean)
+  const tgTexts = (
+    await pool.query(
+      "SELECT payload->>'text' AS body FROM telegram_outbox WHERE chat_id='555'"
+    )
+  ).rows.map((r) => r.body)
+  for (const [channel, texts] of Object.entries({
+    wechat: wxTexts,
+    qq: qqTexts,
+    telegram: tgTexts,
+  })) {
+    assert.equal(
+      texts.filter((t) => t.includes("合成目标验收") && t.includes("Asia/Taipei")).length,
+      1
+    )
+    assert.equal(
+      texts.filter((t) => t.includes("周报第一轮已完成")).length,
+      1,
+      `${channel} progress delivery`
+    )
+  }
+  assert(tgTexts.some((t) => t.includes("/goal_pause goal-fixture")))
+  for (const channel of ["wechat", "qq", "telegram"] as const) {
+    const rows = (await outbox((await linkOf(channel)).id)).filter((r) =>
+      notices.some((n) => n.id === r.messageId)
+    )
+    assert.deepEqual(
+      rows.map((r) => r.status),
+      ["sent", "sent"]
+    )
+  }
   // ───────────────────────── management API ─────────────────────────
   await channelAction(ownerId, agentId, {
     action: "configure",
@@ -1051,6 +1137,35 @@ try {
   )
   assert.ok(
     channelsSeen.has("qq") && channelsSeen.has("wechat") && channelsSeen.has("telegram")
+  )
+
+  // Backwards wall clocks neither disclose pre-pairing progress nor skip new notices.
+  const [clockAgent] = await db
+    .insert(schema.agents)
+    .values({ name: "Clock ordering", role: "fixture" })
+    .returning()
+  const timedNotice = (content: string, createdAt: Date) =>
+    db.insert(schema.companionMessages).values({
+      agentId: clockAgent.id,
+      role: "assistant",
+      kind: "objective_update",
+      channel: "web",
+      content,
+      createdAt,
+    })
+  await timedNotice("before binding", new Date(Date.now() + 60000))
+  const bound = await bindChannel({
+    agentId: clockAgent.id,
+    ownerId,
+    channel: "telegram",
+    externalId: "clock-fixture",
+  })
+  await timedNotice("after binding", new Date(Date.now() - 60000))
+  await hub.routeBackgroundMessages()
+  await hub.routeBackgroundMessages()
+  assert.deepEqual(
+    (await outbox(bound.id)).map((row) => row.text),
+    ["after binding"]
   )
 
   await closeDurableClient()

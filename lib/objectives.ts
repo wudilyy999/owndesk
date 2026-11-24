@@ -29,6 +29,8 @@ import {
 } from "@/lib/evolution/runner"
 import { watchAdoptions } from "@/lib/evolution/improvements"
 
+import { initialRun, dueScheduleWindow } from "@/lib/routines"
+
 export const OBJECTIVE_SOURCE = "objective"
 // Rounds in a row that failed or were cancelled outside the owner's stop before it pauses
 export const OBJECTIVE_MAX_FAILURES = 3
@@ -135,7 +137,7 @@ export function roundGoal(
     roundNo === 1
       ? "This is the first round."
       : "Earlier round reports are historical context.",
-    'Files you made in earlier rounds are still in your workstation. Make concrete progress in this round, then call complete_task with objective.status="progress" and a summary of what you did and what remains, or with objective.status="achieved" only when the whole objective is verifiably done, delivering the evidence files.',
+    'Declare the files needed next round in complete_task.files. The next round receives byte-checked copies of those deliverables. Make concrete progress in this round, then call complete_task with objective.status="progress" and a summary of what you did and what remains, or with objective.status="achieved" only when the whole objective is verifiably done, delivering the evidence files.',
     `This round allows at most ${roundSteps} steps; if they run out, the round ends and the next round continues from your notes.`,
   ]
     .filter(Boolean)
@@ -156,6 +158,22 @@ export async function createObjective(
 ): Promise<Objective> {
   const input: ObjectiveInput = objectiveInputSchema.parse(raw)
   await assertAgent(input.agentId)
+  const nextRoundAt = input.schedulePlan
+    ? await initialRun(input.schedulePlan, new Date())
+    : null
+  if (input.schedulePlan && !nextRoundAt) {
+    // Retrying an already confirmed one-time card must still return its original objective.
+    if (proposalId) {
+      const [existing] = await db
+        .select()
+        .from(objectives)
+        .where(
+          and(eq(objectives.ownerId, ownerId), eq(objectives.proposalId, proposalId))
+        )
+      if (existing) return existing
+    }
+    throw new HttpError(400, "计划时间已过")
+  }
   const [created] = await db
     .insert(objectives)
     .values({
@@ -166,6 +184,8 @@ export async function createObjective(
       doneCriteria: input.doneCriteria,
       completionContract: input.completionContract,
       budget: input.budget,
+      schedulePlan: input.schedulePlan,
+      nextRoundAt,
       proposalId,
     })
     .onConflictDoNothing({ target: objectives.proposalId })
@@ -208,11 +228,12 @@ export async function listObjectives(ownerId: string, agentId?: string) {
         summary: string | null
         task_id: string | null
         task_status: string | null
+        scheduled_for: Date | null
         started_at: Date
         finished_at: Date | null
       }>(
         `SELECT r.objective_id,r.round_no,r.verdict,r.summary,r.task_id,t.status AS task_status,
-          r.started_at,r.finished_at FROM objective_rounds r LEFT JOIN tasks t ON t.id=r.task_id
+          r.scheduled_for,r.started_at,r.finished_at FROM objective_rounds r LEFT JOIN tasks t ON t.id=r.task_id
          WHERE r.objective_id=ANY($1) ORDER BY r.round_no DESC`,
         [ids]
       )
@@ -230,6 +251,7 @@ export async function listObjectives(ownerId: string, agentId?: string) {
           summary: round.summary,
           taskId: round.task_id,
           taskStatus: round.task_status,
+          scheduledFor: round.scheduled_for,
           startedAt: round.started_at,
           finishedAt: round.finished_at,
         })),
@@ -245,40 +267,65 @@ export async function objectiveAgents() {
     .orderBy(agents.createdAt)
 }
 
+type ControlStore = Pick<typeof db, "select" | "update">
 export async function controlObjective(
   ownerId: string,
   id: string,
-  action: "pause" | "resume" | "stop"
+  action: "pause" | "resume" | "stop",
+  store?: ControlStore
 ) {
-  const objective = await ownedObjective(ownerId, id)
-  if (objective.status === "achieved" || objective.status === "stopped")
-    throw new HttpError(409, "这个目标已经结束了")
-  if (action === "pause") {
-    await db
+  const change = async (tx: ControlStore) => {
+    const [objective] = await tx
+      .select()
+      .from(objectives)
+      .where(and(eq(objectives.id, id), eq(objectives.ownerId, ownerId)))
+      .for("update")
+    if (!objective) throw new HttpError(404, "Objective not found")
+    if (objective.status === "achieved" || objective.status === "stopped")
+      throw new HttpError(409, "这个目标已经结束了")
+    if (action === "pause") {
+      await tx
+        .update(objectives)
+        .set({ status: "paused", statusReason: "你暂停了它", updatedAt: new Date() })
+        .where(eq(objectives.id, id))
+      return
+    }
+    if (action === "resume") {
+      if (objective.status === "active") return
+      const reason = limitReason(objective.budget, await objectiveUsage(id))
+      if (reason) throw new HttpError(409, `${reason}，先提高上限再继续`)
+      const now = new Date()
+      const next = objective.schedulePlan
+        ? await initialRun(objective.schedulePlan, now)
+        : null
+      if (objective.schedulePlan && !next)
+        throw new HttpError(409, "这项一次性计划没有下一次执行时间")
+      await tx
+        .update(objectives)
+        .set({
+          status: "active",
+          statusReason: null,
+          failures: 0,
+          nextRoundAt: next,
+          updatedAt: now,
+        })
+        .where(eq(objectives.id, id))
+      return
+    }
+    await tx
       .update(objectives)
-      .set({ status: "paused", statusReason: "你暂停了它", updatedAt: new Date() })
+      .set({
+        status: "stopped",
+        statusReason: "你停止了它",
+        updatedAt: new Date(),
+        finishedAt: new Date(),
+      })
       .where(eq(objectives.id, id))
-    return
   }
-  if (action === "resume") {
-    if (objective.status === "active") return
-    const reason = limitReason(objective.budget, await objectiveUsage(id))
-    if (reason) throw new HttpError(409, `${reason}，先提高上限再继续`)
-    await db
-      .update(objectives)
-      .set({ status: "active", statusReason: null, failures: 0, updatedAt: new Date() })
-      .where(eq(objectives.id, id))
-    return
-  }
-  await db
-    .update(objectives)
-    .set({
-      status: "stopped",
-      statusReason: "你停止了它",
-      updatedAt: new Date(),
-      finishedAt: new Date(),
-    })
-    .where(eq(objectives.id, id))
+  // Telegram shares its inbox transaction with this state transition.
+  if (store) await change(store)
+  else await db.transaction(change)
+  if (action !== "stop") return
   const open = await pool.query<{ task_id: string }>(
     "SELECT task_id FROM objective_rounds WHERE objective_id=$1 AND verdict IS NULL AND task_id IS NOT NULL",
     [id]
@@ -492,6 +539,40 @@ async function nextRound(objective: Objective, now: Date) {
   )
   if (open.some((round) => round.task_id)) return null
   if (open[0]) return open[0]
+  const plan = objective.schedulePlan
+  if (plan && !objective.nextRoundAt) {
+    await db
+      .update(objectives)
+      .set({
+        status: "paused",
+        statusReason: "这项计划已没有下一次执行时间",
+        updatedAt: now,
+      })
+      .where(
+        and(
+          eq(objectives.id, objective.id),
+          eq(objectives.status, "active"),
+          isNull(objectives.nextRoundAt)
+        )
+      )
+    return null
+  }
+  if (plan && objective.nextRoundAt! > now) return null
+  const due = plan ? await dueScheduleWindow(plan, objective.nextRoundAt!, now) : null
+  const activeCursor = and(
+    eq(objectives.id, objective.id),
+    eq(objectives.status, "active"),
+    objective.nextRoundAt
+      ? eq(objectives.nextRoundAt, objective.nextRoundAt)
+      : isNull(objectives.nextRoundAt)
+  )
+  if (due?.skipLatest) {
+    await db
+      .update(objectives)
+      .set({ nextRoundAt: due.next, updatedAt: now })
+      .where(activeCursor)
+    return null
+  }
   const usage = await objectiveUsage(objective.id)
   const reason = limitReason(objective.budget, usage, now)
   if (reason) {
@@ -519,7 +600,7 @@ async function nextRound(objective: Objective, now: Date) {
     .limit(1)
   const roundNo = (last?.roundNo ?? 0) + 1
   const budget = roundBudget(objective.budget, usage)
-  const timeZone = await companionTimeZone(objective.agentId)
+  const timeZone = plan?.timeZone ?? (await companionTimeZone(objective.agentId))
   const input: ObjectiveRoundInput = {
     agentId: objective.agentId,
     goal: roundGoal(objective, roundNo, budget.maxSteps),
@@ -529,12 +610,26 @@ async function nextRound(objective: Objective, now: Date) {
     budget,
     ...(timeZone ? { timeZone } : {}),
   }
-  const [inserted] = await db
-    .insert(objectiveRounds)
-    .values({ objectiveId: objective.id, roundNo, input })
-    .onConflictDoNothing()
-    .returning({ id: objectiveRounds.id, input: objectiveRounds.input })
-  return inserted ? { ...inserted, task_id: null } : null
+  return db.transaction(async (tx) => {
+    const [stillActive] = await tx
+      .select({ id: objectives.id })
+      .from(objectives)
+      .where(activeCursor)
+      .for("update")
+    if (!stillActive) return null
+    const [inserted] = await tx
+      .insert(objectiveRounds)
+      .values({ objectiveId: objective.id, roundNo, scheduledFor: due?.latest, input })
+      .onConflictDoNothing()
+      .returning({ id: objectiveRounds.id, input: objectiveRounds.input })
+    if (!inserted) return null
+    if (due)
+      await tx
+        .update(objectives)
+        .set({ nextRoundAt: due.next, updatedAt: now })
+        .where(eq(objectives.id, objective.id))
+    return { ...inserted, task_id: null }
+  })
 }
 
 // Dispatcher tick: close finished rounds, then start the next round of each active objective
@@ -611,6 +706,8 @@ export async function objectiveBrief(ownerId: string, agentId: string) {
     title: row.title,
     status: row.status,
     statusReason: row.statusReason,
+    schedulePlan: row.schedulePlan,
+    nextRoundAt: row.nextRoundAt,
     rounds: row.usage.rounds,
     spentUsd: Number((row.usage.costMicros / 1_000_000).toFixed(4)),
     lastRound: row.rounds[0]

@@ -6,6 +6,7 @@ import {
   bigint,
   primaryKey,
   pgTable,
+  pgSequence,
   text,
   timestamp as pgTimestamp,
   jsonb,
@@ -746,6 +747,8 @@ export type TaskInput = z.infer<typeof taskInputSchema>
 export type SegmentSnapshot = {
   config: Task["configSnapshot"]
   handoff?: {
+    // Present only for the previous completed round of this same owner/agent/objective.
+    fromRoundTaskId?: string
     fromSegment: number
     fromAgentId: string
     actionNo: number
@@ -867,6 +870,13 @@ export const objectiveContractSchema = z
     requireHumanReview: z.boolean().default(false),
   })
   .strict()
+export const missedRunPolicySchema = z.enum(["latest", "skip"]).default("latest")
+export const objectiveScheduleSchema = z.object({
+  schedule: routineScheduleSchema,
+  timeZone: taskInputSchema.shape.timeZone.unwrap(),
+  missedRunPolicy: missedRunPolicySchema,
+})
+export type ObjectiveSchedule = z.infer<typeof objectiveScheduleSchema>
 export const objectiveInputSchema = z.object({
   agentId: z.string().min(1).max(100),
   title: z.string().trim().min(1, "给目标起个名字").max(60),
@@ -874,6 +884,7 @@ export const objectiveInputSchema = z.object({
   doneCriteria: z.string().trim().max(2000).default(""),
   completionContract: objectiveContractSchema.default({ requireHumanReview: false }),
   budget: objectiveBudgetSchema.default({ roundMaxSteps: 40 }),
+  schedulePlan: objectiveScheduleSchema.optional(),
 })
 export type ObjectiveInput = z.infer<typeof objectiveInputSchema>
 
@@ -892,6 +903,9 @@ export const objectives = pgTable(
     status: text({ enum: objectiveStatuses }).notNull().default("active"),
     statusReason: text(),
     budget: jsonb().notNull().$type<ObjectiveBudget>(),
+    // A null plan keeps existing objectives continuous. A null cursor on a plan means it has ended.
+    schedulePlan: jsonb().$type<ObjectiveSchedule>(),
+    nextRoundAt: pgTimestamp({ withTimezone: true, mode: "date" }),
     // Consecutive rounds that failed or were cancelled outside the owner's stop
     failures: integer().notNull().default(0),
     // The chat card that created it, so confirming twice creates one objective
@@ -923,6 +937,7 @@ export const objectiveRounds = pgTable(
       .notNull()
       .references(() => objectives.id, { onDelete: "cascade" }),
     roundNo: integer().notNull(),
+    scheduledFor: pgTimestamp({ withTimezone: true, mode: "date" }),
     // Frozen before submission, so a retried submission is the same request
     input: jsonb().notNull().$type<ObjectiveRoundInput>(),
     taskId: text()
@@ -1416,10 +1431,16 @@ export const pushDeliveries = pgTable("push_deliveries", {
   createdAt: timestamp(),
 })
 
+// A message and a channel binding share one insertion order across clock adjustments.
+export const channelDeliverySequence = pgSequence("channel_delivery_sequence")
+const deliveryOrder = () =>
+  bigint({ mode: "number" }).default(sql`nextval('channel_delivery_sequence')`)
+
 export const companionMessages = pgTable(
   "companion_messages",
   {
     id: id(),
+    deliveryOrder: deliveryOrder(),
     agentId: text()
       .notNull()
       .references(() => agents.id, { onDelete: "cascade" }),
@@ -1591,6 +1612,7 @@ export const channelLinks = pgTable(
   "channel_links",
   {
     id: id(),
+    deliveryOrder: deliveryOrder(),
     agentId: text()
       .notNull()
       .references(() => agents.id, { onDelete: "cascade" }),

@@ -17,6 +17,7 @@ import {
   threads,
   type Task,
   type TaskInput,
+  type SegmentSnapshot,
 } from "@/db/schema"
 import {
   APPLICATION_VERSION,
@@ -522,10 +523,46 @@ export async function submitTask(ownerId: string, source: string, raw: TaskInput
           }),
         ]
       )
+    const snapshot: SegmentSnapshot = { config }
+    if (input.objectiveRound && input.objectiveRound.roundNo > 1) {
+      type Handoff = NonNullable<SegmentSnapshot["handoff"]>
+      const {
+        rows: [prior],
+      } = await client.query<{
+        id: string
+        active_segment: number
+        result: { files?: Handoff["files"]; summary?: string } | null
+      }>(
+        `SELECT t.id,t.active_segment,t.result FROM objective_rounds r JOIN tasks t ON t.id=r.task_id
+         WHERE r.objective_id=$1 AND t.objective_id=r.objective_id AND r.round_no=$2 AND t.owner_id=$3 AND t.agent_id=$4
+         AND t.source='objective' AND t.status='completed' AND r.verdict IS NOT NULL`,
+        [
+          input.objectiveRound.objectiveId,
+          input.objectiveRound.roundNo - 1,
+          ownerId,
+          agent.id,
+        ]
+      )
+      if (prior?.result?.files?.length)
+        snapshot.handoff = {
+          fromRoundTaskId: prior.id,
+          fromSegment: prior.active_segment,
+          fromAgentId: agent.id,
+          actionNo: 0,
+          input: {
+            agentId: agent.id,
+            brief: `上一轮已提交的成果：${prior.result.summary ?? ""}`,
+            files: [],
+          },
+          files: prior.result.files,
+          answers: [],
+          windowedAnswers: true,
+        }
+    }
     const workflowID = `${taskId}:1`
     await client.query(
       "INSERT INTO task_segments(task_id,segment_no,agent_id,workflow_id,snapshot,created_at) VALUES($1,1,$2,$3,$4,now())",
-      [taskId, agent.id, workflowID, JSON.stringify({ config })]
+      [taskId, agent.id, workflowID, JSON.stringify(snapshot)]
     )
     await appendEventInTransaction(client, taskId, "accepted", "accepted", {
       agentId: agent.id,

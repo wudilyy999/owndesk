@@ -114,13 +114,19 @@ const server = createServer(async (request, response) => {
       response.writeHead(400).end()
       return
     }
-    setTimeout(
-      () => {
-        state.inspectionFinishedAt ??= Date.now()
-        response.writeHead(200, { "Cache-Control": "no-store" }).end()
-      },
-      Math.max(0, inspectionDeadline + 100 - start)
-    )
+    // WSL can adjust wall time while a monotonic timer is pending. Recheck the
+    // grant's wall-clock deadline before letting the browser finish its read.
+    const target = inspectionDeadline + 100
+    function finishAfterDeadline() {
+      const now = Date.now()
+      if (now < target) {
+        if (!response.destroyed) setTimeout(finishAfterDeadline, target - now)
+        return
+      }
+      state.inspectionFinishedAt ??= now
+      response.writeHead(200, { "Cache-Control": "no-store" }).end()
+    }
+    finishAfterDeadline()
     return
   }
   if (url.pathname === "/mode") {

@@ -1,4 +1,6 @@
 "use client"
+import type { ObjectiveProposal } from "@/lib/companion/objectives"
+import { describeObjectiveSchedule } from "@/lib/schedule"
 // Companion page: chat, the companion's own days, notes it keeps about you, and settings.
 // Chat-bubble and "life feed" ideas follow common companion apps (SillyTavern, AIRI); no code taken.
 import { WorkspaceBackLink } from "@/components/page-header"
@@ -171,13 +173,7 @@ function Bubble({
   const meta = (message.metadata ?? {}) as {
     goal?: string
     objectiveId?: string
-    proposal?: {
-      title: string
-      objective: string
-      doneCriteria: string
-      completionContract: { requireHumanReview: boolean }
-      budget: { maxCostMicros?: number; maxRounds?: number; deadlineAt?: string }
-    }
+    proposal?: ObjectiveProposal
     status?: string
     memoryId?: string
     activityId?: string
@@ -229,6 +225,9 @@ function Bubble({
             <p className="text-xs text-faint">要我长期去做这件事吗？</p>
             <p className="font-medium">{meta.proposal.title}</p>
             <p>{meta.proposal.objective}</p>
+            <p className="text-xs">
+              {describeObjectiveSchedule(meta.proposal.schedulePlan)}
+            </p>
             {meta.proposal.doneCriteria && (
               <p className="text-xs">完成标准：{meta.proposal.doneCriteria}</p>
             )}

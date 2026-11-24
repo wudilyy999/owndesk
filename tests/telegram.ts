@@ -506,6 +506,24 @@ try {
           "Owner-only encrypted token/pairing, expiring one-time private pairing; foreign/group updates consumed without tasks or replies",
       })
 
+      const goalId = randomUUID()
+      await pool.query(
+        `INSERT INTO objectives(id,owner_id,agent_id,title,objective,done_criteria,completion_contract,budget,status,schedule_plan,next_round_at,created_at,updated_at)
+       VALUES($1,$2,$3,'Telegram goal','synthetic','','{}','{"roundMaxSteps":40}','paused','{"schedule":{"kind":"hourly","every":6},"timeZone":"UTC","missedRunPolicy":"skip"}',null,now(),now())`,
+        [goalId, owner, fixtureAgent]
+      )
+      const goalStatus = async () =>
+        (await pool.query("SELECT status FROM objectives WHERE id=$1", [goalId])).rows[0]
+          .status
+      await processed(message(`/goal_resume ${goalId}`, userId + 1).update_id)
+      assert.equal(await goalStatus(), "paused")
+      const resumed = message(`/goal_resume ${goalId}`)
+      await processed(resumed.update_id)
+      assert.equal(await goalStatus(), "active")
+      await processed(message(`/goal_pause ${goalId}`).update_id)
+      assert.equal(await goalStatus(), "paused")
+      await processTelegramUpdate((await state()).generation, resumed)
+      assert.equal(await goalStatus(), "paused")
       // Block the connection update AFTER submitTask commits; crash before inbox/cursor commit.
       const barrier = new pg.Client({ connectionString: url.toString() })
       await barrier.connect()

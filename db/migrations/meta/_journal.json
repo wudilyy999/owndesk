@@ -239,6 +239,20 @@
       "when": 1794612167804,
       "tag": "0033_versions",
       "breakpoints": true
+    },
+    {
+      "idx": 34,
+      "version": "7",
+      "when": 1795444580130,
+      "tag": "0034_scheduled_objectives",
+      "breakpoints": true
+    },
+    {
+      "idx": 35,
+      "version": "7",
+      "when": 1795457001696,
+      "tag": "0035_channel_delivery_order",
+      "breakpoints": true
     }
   ]
 }

@@ -16,6 +16,7 @@ import {
   lifeActivities,
   memories,
   objectives,
+  objectiveScheduleSchema,
   type CompanionImage,
   type CompanionMessage,
 } from "@/db/schema"
@@ -635,10 +636,11 @@ export async function companionChat(
       }),
       propose_objective: tool({
         description:
-          "对方想让你长期、分很多轮去完成一个较大的目标（不是一次能办完的小事）时，写清目标和完成标准发给对方确认。确认前不会开始；上限不填就不限。",
+          "对方想让你长期、分很多轮去完成一个较大的目标（不是一次能办完的小事）时，写清目标和完成标准发给对方确认。确认前不会开始；上限不填就不限。对方指定了节奏时填写 schedulePlan，包括时区；否则连续推进。",
         inputSchema: z.object({
           title: z.string().trim().min(1).max(60),
           objective: z.string().trim().min(1).max(4000),
+          schedulePlan: objectiveScheduleSchema.optional(),
           doneCriteria: z.string().trim().max(2000).default(""),
           requireReview: z.boolean().default(false),
           maxCostUsd: z.number().positive().max(100000).optional(),
@@ -649,6 +651,7 @@ export async function companionChat(
           objectiveProposals.push({
             title: draft.title,
             objective: draft.objective,
+            schedulePlan: draft.schedulePlan,
             doneCriteria: draft.doneCriteria,
             completionContract: { requireHumanReview: draft.requireReview },
             budget: {
