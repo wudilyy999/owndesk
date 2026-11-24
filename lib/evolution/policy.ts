@@ -6,8 +6,7 @@ import { extensionPath } from "./extension-migrations"
 
 export const B1_DIFF_LINE_LIMIT = 1500
 
-// Paths only an official upgrade may change. B1 also keeps the computer (workstation,
-// desktop and browser control) out of reach; that opens up in B2.
+// The workstation image, controller, gate, network guard and evaluator remain trusted.
 const PROTECTED: RegExp[] = [
   /^lib\/evolution\//,
   /^scripts\//,
@@ -27,8 +26,6 @@ const PROTECTED: RegExp[] = [
   /^lib\/env\.ts$/,
   /^lib\/versions\.ts$/,
   /^lib\/docker\.ts$/,
-  /^lib\/workstation\.ts$/,
-  /^lib\/desktop\.ts$/,
   /^lib\/agent\//,
   /^worker\/budgets\.ts$/,
   /^worker\/network\.ts$/,
@@ -57,6 +54,12 @@ export type ChangedFile = {
 }
 
 export type PolicyFinding = { rule: string; path?: string; detail: string }
+
+export function needsCandidateWorkstation(paths: string[]) {
+  return paths.some((path) =>
+    ["lib/workstation.ts", "lib/desktop.ts", "worker/artifacts.ts"].includes(path)
+  )
+}
 
 export function isProtectedPath(file: string) {
   return !extensionPath.test(file) && PROTECTED.some((rule) => rule.test(file))

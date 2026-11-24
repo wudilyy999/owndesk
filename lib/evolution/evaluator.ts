@@ -30,8 +30,17 @@ import {
 } from "@/lib/evolution/lab"
 import { LabBudgetError, SEGMENT } from "@/lib/evolution/meter"
 import { extensionPath, extensionStatements } from "./extension-migrations"
-import { addedLines, checkChanges, scanAddedLines } from "@/lib/evolution/policy"
+import {
+  addedLines,
+  checkChanges,
+  scanAddedLines,
+  needsCandidateWorkstation,
+} from "@/lib/evolution/policy"
 import { changedFiles, extract, git, patch } from "@/lib/evolution/repo"
+import {
+  startWorkstationGate,
+  type WorkstationGate,
+} from "@/scripts/workstation-gate.mjs"
 import { previewSeed, sanitizedSeed } from "@/lib/evolution/snapshot"
 import { scanWithGitleaks, streamContainsSecret } from "@/lib/evolution/scanner"
 import type { AcceptanceResult, Evaluation, StageResult } from "@/lib/evolution/store"
@@ -274,7 +283,9 @@ async function selfContainer() {
   return result.exitCode === 0 ? result.stdout.toString().trim() : null
 }
 
+const activeWorkstationGates = new Map<string, WorkstationGate>()
 type StackSettings = {
+  workstation?: boolean
   key: string
   images: { web: string; worker: string }
   log: Log
@@ -460,6 +471,51 @@ export async function startCandidateStack(
     if (seeded.exitCode !== 0)
       throw new Error(`脱敏快照导入失败：${seeded.stderr.slice(-2000)}`)
     input.log("candidate database seeded with the sanitized snapshot")
+    const workerEnvironment: Record<string, string> = {
+      WORKER_HOST: "0.0.0.0",
+      WORKER_PORT: "6798",
+    }
+    if (input.workstation) {
+      const network = name("desktops"),
+        ref = env.WORKSTATION_IMAGE
+      const image = (
+        await docker(["image", "inspect", "--format", "{{.Id}}", ref])
+      ).stdout
+        .toString()
+        .trim()
+      await docker([
+        "network",
+        "create",
+        "--opt",
+        "com.docker.network.bridge.gateway_mode_ipv4=isolated",
+        "--internal",
+        "--label",
+        `${LAB_LABEL}=${env.INSTALL_ID}`,
+        "--label",
+        `owndesk.lab.stack=${input.key}`,
+        network,
+      ])
+      const gate = await startWorkstationGate({
+        install: application.INSTALL_ID,
+        owner: env.INSTALL_ID,
+        stack: input.key,
+        image,
+        ref,
+        network,
+        agents: seed.agentIds,
+        host: gatewayHost,
+      })
+      activeWorkstationGates.set(input.key, gate)
+      Object.assign(workerEnvironment, {
+        DOCKER_HOST: gate.host,
+        DOCKER_CUSTOM_HEADERS: `X-OwnDesk-Session=${gate.token}`,
+        WORKSTATION_IMAGE: ref,
+        WORKSTATION_NETWORK: network,
+        PA_GUEST_DNS: "127.0.0.1",
+        WORKSTATION_CPUS: "1",
+        WORKSTATION_MEMORY_MB: "1024",
+      })
+    }
     await docker([
       "run",
       ...common,
@@ -473,7 +529,7 @@ export async function startCandidateStack(
       "/tmp",
       "--mount",
       `type=volume,source=${artifacts},target=/app/data/artifacts`,
-      ...envArgs({ WORKER_HOST: "0.0.0.0", WORKER_PORT: "6798" }),
+      ...envArgs(workerEnvironment),
       input.images.worker,
     ])
     await docker([
@@ -528,6 +584,11 @@ export async function startCandidateStack(
 }
 
 export async function removeCandidateStack(key: string, gateway?: Gateway) {
+  const gate = activeWorkstationGates.get(key)
+  if (gate) {
+    await gate.close()
+    activeWorkstationGates.delete(key)
+  }
   await gateway?.close()
   const ids = (
     await dockerRaw(
@@ -547,6 +608,22 @@ export async function removeCandidateStack(key: string, gateway?: Gateway) {
     .toString()
     .trim()
   if (ids) await dockerRaw(["rm", "-f", "-v", ...ids.split(/\s+/)], { timeoutMs: 120000 })
+  for (const kind of ["volume", "network"]) {
+    const filters = [
+      "--filter",
+      `label=${LAB_LABEL}=${env.INSTALL_ID}`,
+      "--filter",
+      `label=owndesk.lab.stack=${key}`,
+    ]
+    const names = (
+      await dockerRaw([kind, "ls", "--format", "{{.Name}}", ...filters])
+    ).stdout
+      .toString()
+      .trim()
+      .split(/\s+/)
+      .filter(Boolean)
+    if (names.length) await docker([kind, "rm", ...names])
+  }
   const artifacts = `${prefix()}-cand-${key}-artifacts`.slice(0, 120)
   await dockerRaw(["volume", "rm", artifacts], { timeoutMs: 30000 })
   const network = `${prefix()}-cand-${key}-net`.slice(0, 120)
@@ -741,6 +818,77 @@ export async function frozenRegressions(input: {
 }
 
 // Frozen core end-to-end checks, run against every candidate
+// The probe drives the candidate's own adapter, then independently inspects the
+// labeled live guest and its foreground window on the trusted Docker endpoint.
+export async function verifyCandidateWorkstation(
+  stack: Pick<CandidateStack, "key" | "containers" | "agentIds">
+) {
+  const agent = stack.agentIds[0]
+  if (!agent) throw Error("候选缺少工作站测试账号")
+  const { stdout } = await docker(
+    [
+      "exec",
+      stack.containers.worker,
+      "node",
+      "--import",
+      "tsx",
+      "--input-type=module",
+      "-e",
+      `
+    import {ensureWorkstation,controller,workstationHealth} from './lib/workstation.ts';import {pool} from './db/index.ts';
+    const agent=process.argv[1],row=await ensureWorkstation(agent);if(row.mode!=='idle'||row.activeTaskId)throw Error('Test workspace is in use');const epoch=Math.max(row.epoch,(await workstationHealth(agent)).epoch)+1;
+    try{await controller(agent,'/control',{epoch,mode:'agent'});await controller(agent,'/desktop_open_application',{epoch,application:'Mousepad'});
+      const shot=await controller(agent,'/screen_capture',{epoch});const b=Buffer.from(shot.image,'base64');if(shot.screenshot_status!=='ok'||b.length<1000||b[0]!==255||b[1]!==216)throw Error('No desktop frame');console.log(JSON.stringify({bytes:b.length}));}
+    finally{try{await controller(agent,'/control',{epoch:epoch+1,mode:'idle'});await pool.query('UPDATE workstation_control SET epoch=GREATEST(epoch,$2) WHERE agent_id=$1 AND active_task_id IS NULL',[agent,epoch+1])}finally{await pool.end()}}
+  `,
+      agent,
+    ],
+    { timeoutMs: 160000, maxOutputBytes: 8192 }
+  )
+  const { bytes } = JSON.parse(stdout.toString())
+  if (!Number.isSafeInteger(bytes) || bytes < 1000) throw Error("候选截图无效")
+  const ids = (
+    await docker([
+      "ps",
+      "-q",
+      "--filter",
+      `label=${LAB_LABEL}=${env.INSTALL_ID}`,
+      "--filter",
+      `label=owndesk.lab.stack=${stack.key}`,
+      "--filter",
+      `label=personal-agent.agent=${agent}`,
+      "--filter",
+      "label=personal-agent.protocol=6",
+    ])
+  ).stdout
+    .toString()
+    .trim()
+  if (!/^[0-9a-f]{12}$/.test(ids)) throw Error("候选未启动独立工作站")
+  const [info] = JSON.parse((await docker(["inspect", ids])).stdout.toString())
+  const image = (
+    await docker(["image", "inspect", "--format", "{{.Id}}", env.WORKSTATION_IMAGE])
+  ).stdout
+    .toString()
+    .trim()
+  if (
+    info.Image !== image ||
+    info.HostConfig.Privileged ||
+    info.Mounts.some((v: { Type: string }) => v.Type !== "volume")
+  )
+    throw Error("工作站镜像或挂载不符")
+  const title = (
+    await docker(["exec", ids, "xdotool", "getactivewindow", "getwindowname"], {
+      timeoutMs: 10000,
+    })
+  ).stdout.toString()
+  if (!/mousepad/i.test(title)) throw Error("候选没有在真实桌面打开文本编辑器")
+  return {
+    name: "workstation",
+    ok: true,
+    detail: `独立工作站已打开文本编辑器并完成 ${bytes} 字节桌面截图`,
+  }
+}
+
 export async function coreChecks(stack: CandidateStack, log: Log) {
   const results: { name: string; ok: boolean; detail: string }[] = []
   const check = async (name: string, run: () => Promise<string>) => {
@@ -1377,10 +1525,14 @@ export async function evaluate(input: EvaluateInput) {
   }
   let stack: CandidateStack | undefined
   try {
+    const changed = (await changedFiles(input.baseCommit, input.commit)).map(
+      (file) => file.path
+    )
     const stackStage = await timed("stack", async () => {
       stack = await startCandidateStack({
         key: input.key,
         images: built.images,
+        workstation: needsCandidateWorkstation(changed),
         objective: input.objective,
         taskId: input.taskId,
         spec: input.spec,
@@ -1401,12 +1553,11 @@ export async function evaluate(input: EvaluateInput) {
       return finish(built.images)
     }
     const running = stack
-    const changed = (await changedFiles(input.baseCommit, input.commit)).map(
-      (file) => file.path
-    )
     let session: CandidateSession | undefined
     const e2e = await timed("e2e", async () => {
       const core = await coreChecks(running, input.log)
+      if (needsCandidateWorkstation(changed))
+        core.results.push(await verifyCandidateWorkstation(running))
       core.results.push(
         ...(await frozenRegressions({
           stack: running,

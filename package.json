@@ -16,6 +16,8 @@
     "db:migrate": "tsx scripts/migrate.ts",
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
+    "test:evolution:desktop-candidate": "bash scripts/test-workstation-candidate.sh",
+    "test:evolution:workstation": "node tests/workstation-gate.mjs",
     "test:evolution:trial": "bash scripts/test-candidate-trial.sh",
     "test:evolution:migrations": "tsx tests/extension-postgres.ts",
     "test": "tsx --import ./tests/setup-env.mjs --test tests/*.test.ts",

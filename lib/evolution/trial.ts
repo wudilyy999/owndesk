@@ -1,3 +1,4 @@
+import { needsCandidateWorkstation } from "./policy"
 import { randomUUID } from "node:crypto"
 import type { Page } from "playwright"
 import { eq } from "drizzle-orm"
@@ -108,14 +109,22 @@ async function target(owner: string, goal: string, version: string) {
     ![v.webImageId, v.workerImageId].every((v) => /^sha256:[0-9a-f]{64}$/.test(v))
   )
     throw new HttpError(409, "候选镜像尚未就绪")
-  return { web: v.webImageId, worker: v.workerImageId }
+  return {
+    web: v.webImageId,
+    worker: v.workerImageId,
+    workstation: needsCandidateWorkstation((last.files ?? []).map((file) => file.path)),
+  }
 }
-async function launch(t: Trial, images: { web: string; worker: string }) {
+async function launch(
+  t: Trial,
+  images: { web: string; worker: string; workstation: boolean }
+) {
   try {
     const stack = await startCandidateStack({
       key: key(),
       images,
       trial: true,
+      workstation: images.workstation,
       log: () => {},
     })
     const session = new CandidateSession(stack)

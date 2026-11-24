@@ -260,13 +260,13 @@ flowchart LR
         S7 --> A1[A1 Long-running goals]
         A1 --> B0[B0 Versions and rollback]
         B0 --> B1[B1 Self-improvement v1]
+        B1 --> A2[A2 Scheduled goals,<br/>goal cards in channels]
+        A2 --> B2[B2 Try before adopting,<br/>desktop changes, additive migrations]
     end
     subgraph upcoming[Next]
-        A2[A2 Scheduled goals,<br/>goal cards in channels]
-        B2[B2 Try before adopting,<br/>desktop changes, additive migrations]
         B3[B3 Merge official upgrades,<br/>lineage page]
     end
-    B1 --> A2 --> B2 --> B3
+    B2 --> B3
     B3 -.-> B4[B4 Share improvements, optional]
 ```
 
@@ -305,7 +305,7 @@ Most detailed guides are currently in Chinese.
 
 **Does a rollback lose data?** A rollback swaps only the web and worker images. The database, uploads, deliverables, and version history stay as they are, including anything created after the switch. Database snapshots from each switch are kept for manual restores; see [upgrades](docs/upgrade.md).
 
-**What can self-improvement change?** Interface, chat behavior, companion features, notifications, and routines in `app/`, `components/`, `lib/`, and `worker/`. Changes to the desktop, database schema, or dependencies are planned for stage B2.
+**What can self-improvement change?** Interface, chat behavior, companion features, notifications, and routines in `app/`, `components/`, `lib/`, and `worker/`. Workstation adapter changes run on an isolated desktop. A candidate can add tables or nullable columns; installing dependencies and changing existing migrations remain restricted. Try the candidate on synthetic data before adopting it.
 
 **Can I run it on Windows or macOS?** A source run works through WSL2 or Docker Desktop. The server deployment, with version switching and self-improvement, needs a Linux host with rootful Docker.
 

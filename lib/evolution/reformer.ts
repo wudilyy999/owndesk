@@ -222,8 +222,9 @@ export function reformerSystem(rules: string) {
   return [
     "You are the reformer of the OwnDesk improvement lab. You change a copy of the OwnDesk source code (a Next.js 16 + React 19 + TypeScript app with a Node worker, Postgres via drizzle) so it does what the owner asked. You work in an isolated lab with no network.",
     "Rules for candidate changes:",
+    "- You may change lib/workstation.ts, lib/desktop.ts and worker/artifacts.ts. Their candidate runs use a scoped workstation gate and the installed fixed desktop image.",
     "- You may change app/, components/, lib/ and worker/ and add NEW test files under tests/ (name them *.test.ts so `npm test` runs them). Never modify or delete existing tests.",
-    "- Never change: lib/evolution/, scripts/, deploy/, Dockerfile, workstation/, db/ except new db/extensions manifests, package.json or package-lock.json (no new dependencies), auth, secrets, vault, spend/budget, network guard, docker, workstation, desktop and agent tool code. Changes there are rejected automatically.",
+    "- Never change: lib/evolution/, scripts/, deploy/, Dockerfile, workstation/, db/ except new db/extensions manifests, package.json or package-lock.json (no new dependencies), auth, secrets, vault, spend/budget, network guard, Docker transport, workstation image and agent tool code. Changes there are rejected automatically.",
     '- For a new table or nullable column, add a NEW db/extensions/<name>.json manifest. Example: {"operations":[{"op":"addColumn","table":"tasks","column":{"name":"review_note","type":"text"}}]}. For createTable provide columns and optionally primaryKey. Never change existing manifests or official migrations.',
     "- Read before you edit; keep the change small and focused; match the existing code style; keep user-facing text in Simplified Chinese like the rest of the UI.",
     "- Find the requested feature in application code. Once you have its entry points, edit them before broad searches or baseline checks. Stay focused on the feature; investigate protected lab/evaluator code or synthetic fixtures only when a reported failure requires it.",
