@@ -62,6 +62,7 @@ export type Improvement = {
   checklist: string[]
   baseVersionId: string | null
   baseCommit: string
+  autoAdopt?: "on_pass" | "claimed"
   merge?: import("./official").OfficialOffer
   replay?: import("./rebase").ReplayReceipt[]
   fork?: { objectiveId: string; roundNo: number; commit: string }

@@ -201,6 +201,7 @@ export async function startWorker() {
                 }),
                 z.object({
                   action: z.literal("confirm"),
+                  autoAdopt: z.boolean().optional(),
                   messageId: z.string().min(1).max(100),
                   checklist: z
                     .array(z.string().trim().min(1).max(300))
@@ -230,7 +231,8 @@ export async function startWorker() {
                         await confirmImprovementProposal(
                           owner.userId,
                           body.messageId,
-                          body.checklist
+                          body.checklist,
+                          body.autoAdopt
                         )
                       ).id,
                     }

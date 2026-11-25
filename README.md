@@ -54,7 +54,7 @@ After a useful task, choose **生成操作手册** (Generate operation manual), 
 
 ## Self-improvement with automatic rollback
 
-Self-improvement is off by default. Turn it on from **自我改进** (Self-improvement, `/improvements`) in the sidebar, then describe the change in chat.
+Self-improvement is off by default. Turn it on from **自我改进** (Self-improvement, `/improvements`) in the sidebar, then describe the change in chat. On the proposal, choose **开始改进，通过后自动上线** to authorize this change to go live on your own instance after it passes evaluation and the instance is idle. Choose **只改进，我来上线** to review it first.
 
 ```mermaid
 flowchart LR
@@ -68,6 +68,7 @@ flowchart LR
     F -->|3 failed checks| H[Previous image restored<br/>tasks and files kept]
     H --> I[Debug round in the lab]
     I --> D
+    D -->|pre-authorized and passed| F
 ```
 
 <table>
