@@ -11,6 +11,7 @@ import {
   timestamp as pgTimestamp,
   jsonb,
   boolean,
+  date,
   uniqueIndex,
   check,
 } from "drizzle-orm/pg-core"
@@ -81,6 +82,34 @@ export const taskUploads = pgTable(
     createdAt: timestamp(),
   },
   (t) => [index("task_uploads_owner_agent_idx").on(t.ownerId, t.agentId)]
+)
+
+export const libraryEntries = pgTable(
+  "library_entries",
+  {
+    id: id(),
+    ownerId: text().notNull(),
+    kind: text({ enum: ["note", "followup"] }).notNull(),
+    title: text().notNull(),
+    body: text().notNull().default(""),
+    sourceKind: text(),
+    sourceId: text(),
+    dueDate: date(),
+    reminderAgent: text().references(() => companions.agentId, { onDelete: "set null" }),
+    remindedAt: pgTimestamp({ withTimezone: true }),
+    done: boolean().notNull().default(false),
+    createdAt: timestamp().defaultNow(),
+    updatedAt: timestamp().defaultNow(),
+  },
+  (t) => [
+    index("library_owner_idx").on(t.ownerId, t.updatedAt),
+    index("library_pending_reminders_idx")
+      .on(t.dueDate)
+      .where(
+        sql`${t.dueDate} IS NOT NULL AND ${t.reminderAgent} IS NOT NULL AND NOT ${t.done} AND ${t.remindedAt} IS NULL`
+      ),
+    check("library_entries_kind_check", sql`${t.kind} IN ('note','followup')`),
+  ]
 )
 
 export const appConnections = pgTable("app_connections", {

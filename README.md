@@ -211,6 +211,8 @@ Provider integrations include **OpenAI, Anthropic, Google, xAI, DeepSeek, Mistra
 
 Task records and workstation files live in your installation. Your selected model provider receives the context needed for a task, which may include text, screenshots, and application controls.
 
+Open **资料与跟进** (Library) from navigation to search chats, tasks and file names, open the original, and save notes for all your agents. Import text, preview authorized Google mail snippets and calendar events, or choose a follow-up date and a companion chat for the reminder. Supported browsers can dictate a chat draft; SRT/VTT transcripts can also be imported.
+
 ## How it works
 
 ```mermaid

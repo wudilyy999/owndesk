@@ -1,8 +1,10 @@
 "use client"
+import Link from "next/link"
 import type { ObjectiveProposal } from "@/lib/companion/objectives"
 import { describeObjectiveSchedule } from "@/lib/schedule"
 // Companion page: chat, the companion's own days, notes it keeps about you, and settings.
 // Chat-bubble and "life feed" ideas follow common companion apps (SillyTavern, AIRI); no code taken.
+import { Dictation } from "@/components/dictation"
 import { WorkspaceBackLink } from "@/components/page-header"
 import { useCallback, useEffect, useRef, useState } from "react"
 import { Button } from "@/components/ui/button"
@@ -106,6 +108,9 @@ export function Companion() {
       <header className="flex flex-col gap-2 pb-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-baseline justify-between gap-3 sm:block">
           <h1 className="min-w-0 truncate text-lg font-medium">{view?.name ?? "…"}</h1>
+          <Link className="text-xs underline" href="/library">
+            资料与跟进
+          </Link>
           <WorkspaceBackLink />
         </div>
         <nav className="-mx-1 flex [scrollbar-width:none] gap-1 overflow-x-auto px-1 pb-0.5 [&>button]:shrink-0 [&>button]:whitespace-nowrap">
@@ -180,6 +185,8 @@ function Bubble({
     hasImage?: boolean
     imageId?: string
     attachments?: UploadReference[]
+    libraryEntryId?: string
+    followupSourceId?: string
     taskId?: string
   }
   // Merge cards from before the model decided merges are no longer shown
@@ -309,6 +316,25 @@ function Bubble({
               </a>
             ))}
             {message.content}
+            {message.kind === "objective_update" && meta.followupSourceId && (
+              <a
+                className="block underline"
+                href={
+                  "/library?source=chat&followup=1&id=" +
+                  encodeURIComponent(meta.followupSourceId)
+                }
+              >
+                核对原话并加入跟进
+              </a>
+            )}
+            {message.kind === "objective_update" && meta.libraryEntryId && (
+              <a
+                className="block underline"
+                href={"/library?entry=" + encodeURIComponent(meta.libraryEntryId)}
+              >
+                查看跟进事项
+              </a>
+            )}
             {meta.hasImage && meta.activityId && (
               // eslint-disable-next-line @next/next/no-img-element
               <img
@@ -602,6 +628,12 @@ function Chat({
                     >
                       {copied === message.id ? "已复制" : "复制"}
                     </button>
+                    <a
+                      className={actionButton}
+                      href={"/library?source=chat&id=" + encodeURIComponent(message.id)}
+                    >
+                      记到资料库
+                    </a>
                     {mine && redoable && message.id === userRow?.id && (
                       <button
                         type="button"
@@ -710,6 +742,10 @@ function Chat({
         >
           {uploading ? "…" : "＋"}
         </Button>
+        <Dictation
+          disabled={busy}
+          onText={(value) => setText((previous) => (previous + value).slice(0, 4000))}
+        />
         <Input
           value={text}
           onChange={(event) => setText(event.target.value)}

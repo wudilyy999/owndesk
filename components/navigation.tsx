@@ -4,6 +4,7 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import {
   BookOpen,
+  Library,
   Bot,
   CalendarClock,
   ChartNoAxesCombined,
@@ -25,6 +26,7 @@ import {
 
 const APP_NAV_ITEMS = [
   { href: "/companion", label: "陪伴聊天", icon: MessageCircle },
+  { href: "/library", label: "资料与跟进", icon: Library },
   { href: "/settings", label: "模型与 Agent 设置", icon: Bot },
   { href: "/usage", label: "用量与预算", icon: ChartNoAxesCombined },
   { href: "/routines", label: "定时例程", icon: CalendarClock },

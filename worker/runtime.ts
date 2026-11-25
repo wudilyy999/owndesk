@@ -1,4 +1,5 @@
 import { readResult } from "@/lib/agent/read-result"
+import { recallLibrary } from "@/lib/library"
 import { executeConnectionTool } from "./connections"
 import { readUpload } from "@/lib/uploads"
 import { importTaskUploads } from "./uploads"
@@ -636,6 +637,8 @@ async function runTool(
   }
   if (toolName === "connection_call")
     return executeConnectionTool(task, segmentNo, actionNo, input, epoch, ownerMessageSeq)
+  if (toolName === "search_library")
+    return { ok: true, output: { entries: await recallLibrary(task.ownerId, input) } }
   if (toolName === "recall_memory") {
     const output = await recallNotes(task.agentId, input)
     return { ok: !("error" in output), output }
