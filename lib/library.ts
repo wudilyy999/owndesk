@@ -25,8 +25,8 @@ const sources = `WITH sources AS (
  FROM companion_messages m JOIN companions c ON c.agent_id=m.agent_id JOIN agents a ON a.id=c.agent_id
  WHERE c.owner_id=$1 AND m.kind='chat' AND m.superseded_at IS NULL AND (m.reveal_at IS NULL OR m.reveal_at<=now())
  UNION ALL SELECT 'task',t.id,t.goal,concat_ws(E'\n',t.result->>'summary', (SELECT string_agg(p->>'text',E'\n' ORDER BY n) FROM messages m CROSS JOIN jsonb_array_elements(m.parts) WITH ORDINALITY parts(p,n) WHERE m.thread_id=t.thread_id AND m.id=t.id||'-answer' AND p->>'type'='text')),t.created_at,t.id FROM tasks t WHERE t.owner_id=$1 AND t.config_snapshot->>'runtime' IS DISTINCT FROM 'fixture'
- UNION ALL SELECT 'artifact',a.id,a.name,t.goal,a.created_at,t.id FROM artifacts a JOIN tasks t ON t.id=a.task_id WHERE t.owner_id=$1 AND t.config_snapshot->>'runtime' IS DISTINCT FROM 'fixture'
- UNION ALL SELECT 'upload',u.id,u.name,u.media_type,u.created_at,NULL FROM task_uploads u WHERE u.owner_id=$1)`
+ UNION ALL SELECT 'artifact',a.id,a.name,concat_ws(E'\n',t.goal,ax.body),a.created_at,t.id FROM artifacts a LEFT JOIN library_artifact_text ax ON ax.id=a.id JOIN tasks t ON t.id=a.task_id WHERE t.owner_id=$1 AND t.config_snapshot->>'runtime' IS DISTINCT FROM 'fixture'
+ UNION ALL SELECT 'upload',u.id,u.name,concat_ws(E'\n',u.media_type,ux.body),u.created_at,NULL FROM task_uploads u LEFT JOIN library_upload_text ux ON ux.id=u.id WHERE u.owner_id=$1)`
 export async function searchSources(
   owner: string,
   query: string,
@@ -70,7 +70,7 @@ export function listEntries(
         kind && eq(entries.kind, kind),
         done === undefined ? undefined : eq(entries.done, done),
         query
-          ? sql`strpos(lower(${entries.title} || ' ' || ${entries.body}),lower(${query}))>0`
+          ? sql`(strpos(lower(${entries.title} || ' ' || ${entries.body}),lower(${query}))>0 OR EXISTS(SELECT 1 FROM library_project_events e WHERE e.entry_id=${entries.id} AND strpos(lower(e.body || ' ' || e.title),lower(${query}))>0))`
           : undefined
       )
     )
@@ -147,22 +147,40 @@ export async function changeEntry(
 
 export async function recallLibrary(owner: string, raw: unknown) {
   const { query, openFollowups } = sharedQuery.parse(raw)
-  return (
-    await listEntries(
-      owner,
-      query,
-      openFollowups ? "followup" : undefined,
-      openFollowups ? false : undefined,
-      8
-    )
-  ).map((r) => ({
-    title: redactSecrets(r.title),
-    excerpt: redactSecrets(r.body).slice(0, 540),
-    kind: r.kind,
-    done: r.done,
-    dueDate: r.dueDate,
-    url: `/library?entry=${encodeURIComponent(r.id)}`,
-  }))
+  const items = await listEntries(
+    owner,
+    query,
+    openFollowups ? "followup" : undefined,
+    openFollowups ? false : undefined,
+    8
+  )
+  return Promise.all(
+    items.map(async (r) => {
+      const history = (
+        await pool.query<{ title: string; excerpt: string; at: Date; origin: string }>(
+          `WITH latest AS (SELECT origin FROM library_project_events WHERE entry_id=$1 ORDER BY at DESC,origin DESC LIMIT 1) SELECT title,origin,at,substring(body from greatest(1,strpos(lower(body),lower($2))-120) for 900) AS excerpt FROM library_project_events WHERE entry_id=$1 ORDER BY (origin=(SELECT origin FROM latest)) DESC,(strpos(lower(body),lower($2))>0) DESC,at DESC,origin DESC LIMIT 4`,
+          [r.id, query]
+        )
+      ).rows
+      return {
+        title: redactSecrets(r.title),
+        excerpt: redactSecrets(r.body).slice(0, 540),
+        kind: r.kind,
+        done: r.done,
+        dueDate: r.dueDate,
+        url: "/library?entry=" + encodeURIComponent(r.id),
+        ...(history.length
+          ? {
+              history: history.map((e) => ({
+                ...e,
+                title: redactSecrets(e.title),
+                excerpt: redactSecrets(e.excerpt),
+              })),
+            }
+          : {}),
+      }
+    })
+  )
 }
 
 // Mark and deliver in the same statement. Retries and concurrent workers do not duplicate a reminder.
@@ -171,6 +189,7 @@ export async function deliverLibraryReminders(now = new Date()) {
     `WITH picked AS (
  SELECT l.id FROM library_entries l JOIN companions c ON c.agent_id=l.reminder_agent AND c.owner_id=l.owner_id
  JOIN owners o ON o.user_id=l.owner_id WHERE l.kind='followup' AND NOT l.done AND l.reminded_at IS NULL AND l.due_date<=($1::timestamptz AT TIME ZONE o.time_zone)::date
+ AND NOT EXISTS(SELECT 1 FROM library_mail_watches w WHERE w.entry_id=l.id AND (w.last_error IS NOT NULL OR w.next_check<=$1 OR w.last_checked IS NULL OR (w.last_checked AT TIME ZONE o.time_zone)::date < ($1::timestamptz AT TIME ZONE o.time_zone)::date))
  ORDER BY l.due_date,l.id LIMIT 30 FOR UPDATE OF l SKIP LOCKED), marked AS (
  UPDATE library_entries l SET reminded_at=$1 FROM picked WHERE l.id=picked.id RETURNING l.*)
  INSERT INTO companion_messages(id,agent_id,role,kind,content,metadata,channel,created_at)

@@ -361,3 +361,52 @@ export async function callConnection(
     client.callTool({ name: tool, arguments: args }, undefined, { timeout: 60000 })
   )
 }
+
+// Watching one selected thread has the same read authority as email_read.
+export async function readWatchedThread(
+  owner: string,
+  id: string,
+  revision: number,
+  thread: string
+) {
+  const row = await connectionRow(owner, id)
+  if (
+    row.kind !== "google" ||
+    !row.enabled ||
+    row.revision !== revision ||
+    !row.tools.some((t) => t.name === "email_read")
+  )
+    throw new HttpError(409, "Google 连接已更改，请重新选择会话")
+  const token = await accessToken(
+    row,
+    decode<ConnectionConfig>(id, "config", row.config_cipher)
+  )
+  if (!token) throw new HttpError(401, "请授权 Google 连接")
+  const response = await fetch(
+    "https://gmail.googleapis.com/gmail/v1/users/me/threads/" +
+      encodeURIComponent(thread) +
+      "?format=full",
+    {
+      method: "GET",
+      headers: { Authorization: "Bearer " + token },
+      redirect: "error",
+      signal: AbortSignal.timeout(12000),
+    }
+  )
+  if (!response.ok || !response.body)
+    throw new HttpError(502, "Google returned " + response.status)
+  const reader = response.body.getReader(),
+    chunks: Uint8Array[] = []
+  let size = 0
+  for (;;) {
+    const { done, value } = await reader.read()
+    if (done) break
+    size += value.length
+    if (size > 12 * 1024 * 1024) {
+      await reader.cancel()
+      throw new HttpError(413, "此邮件会话超过 12 MB，请选择较短会话")
+    }
+    chunks.push(value)
+  }
+  return JSON.parse(Buffer.concat(chunks).toString("utf8"))
+}

@@ -1,3 +1,5 @@
+import { pollWatches } from "@/lib/project-tracking"
+import { indexDocuments } from "@/lib/document-index"
 import { ZodError } from "zod"
 import { DBOS } from "@dbos-inc/dbos-sdk"
 import { eq } from "drizzle-orm"
@@ -60,9 +62,25 @@ export const routineDispatcher = DBOS.registerWorkflow(
   { name: "routine-dispatcher-v1" }
 )
 
+const libraryMaintenance = DBOS.registerWorkflow(
+  async (_scheduledDate: Date, _context: unknown) => {
+    await DBOS.runStep(() => pollWatches(), { name: "follow-selected-mail" })
+    await DBOS.runStep(() => indexDocuments(), { name: "index-library-documents" })
+  },
+  { name: "library-maintenance-v1" }
+)
 export async function startRoutineSchedule() {
   await DBOS.registerQueue("routine-dispatch", { workerConcurrency: 1 })
+  await DBOS.registerQueue("library-maintenance", { workerConcurrency: 1 })
   await DBOS.applySchedules([
+    {
+      scheduleName: "personal-library-maintenance",
+      workflowFn: libraryMaintenance,
+      schedule: "0 */2 * * * *",
+      automaticBackfill: false,
+      queueName: "library-maintenance",
+      cronTimezone: "UTC",
+    },
     {
       scheduleName: "personal-agent-routines",
       workflowFn: routineDispatcher,

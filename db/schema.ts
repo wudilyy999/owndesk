@@ -112,6 +112,37 @@ export const libraryEntries = pgTable(
   ]
 )
 
+export const libraryProjectEvents = pgTable(
+  "library_project_events",
+  {
+    entryId: text()
+      .notNull()
+      .references(() => libraryEntries.id, { onDelete: "cascade" }),
+    origin: text().notNull(),
+    title: text().notNull(),
+    body: text().notNull(),
+    at: pgTimestamp({ withTimezone: true }).notNull(),
+  },
+  (t) => [primaryKey({ columns: [t.entryId, t.origin] })]
+)
+export const libraryMailWatches = pgTable(
+  "library_mail_watches",
+  {
+    entryId: text()
+      .primaryKey()
+      .references(() => libraryEntries.id, { onDelete: "cascade" }),
+    connectionId: text()
+      .notNull()
+      .references(() => appConnections.id, { onDelete: "cascade" }),
+    revision: integer().notNull(),
+    threadId: text().notNull(),
+    since: pgTimestamp({ withTimezone: true }).notNull(),
+    nextCheck: pgTimestamp({ withTimezone: true }).notNull().defaultNow(),
+    lastError: text(),
+    lastChecked: pgTimestamp({ withTimezone: true }),
+  },
+  (t) => [uniqueIndex("library_mail_thread_idx").on(t.connectionId, t.threadId)]
+)
 export const appConnections = pgTable("app_connections", {
   id: text().primaryKey(),
   ownerId: text().notNull(),
@@ -1815,3 +1846,16 @@ export const deployments = pgTable(
 
 export type AgentVersion = typeof agentVersions.$inferSelect
 export type Deployment = typeof deployments.$inferSelect
+
+export const libraryUploadText = pgTable("library_upload_text", {
+  id: text()
+    .primaryKey()
+    .references(() => taskUploads.id, { onDelete: "cascade" }),
+  body: text().notNull(),
+})
+export const libraryArtifactText = pgTable("library_artifact_text", {
+  id: text()
+    .primaryKey()
+    .references(() => artifacts.id, { onDelete: "cascade" }),
+  body: text().notNull(),
+})

@@ -1,7 +1,14 @@
+import { mail as email, mailText } from "./mail-text"
 import { z } from "zod"
 import { callConnection, connectionRow } from "@/lib/connections"
 import { HttpError } from "@/lib/errors"
-export type LibraryDraft = { title: string; body: string; origin: string }
+export type LibraryDraft = {
+  title: string
+  body: string
+  origin: string
+  thread?: string
+  connection?: string
+}
 const calendar = z.object({
   items: z
     .array(
@@ -15,16 +22,6 @@ const calendar = z.object({
       })
     )
     .default([]),
-})
-const email = z.object({
-  id: z.string(),
-  threadId: z.string().optional(),
-  snippet: z.string().optional(),
-  payload: z
-    .object({
-      headers: z.array(z.object({ name: z.string(), value: z.string() })).optional(),
-    })
-    .optional(),
 })
 export async function googleDrafts(
   owner: string,
@@ -70,10 +67,12 @@ export async function googleDrafts(
         e.payload?.headers?.find((h) => h.name.toLowerCase() === key)?.value
       return {
         title: (header("subject") || "未命名邮件").slice(0, 180),
-        body: [header("from"), header("date"), e.snippet]
+        body: [header("from"), header("date"), mailText(e)]
           .filter(Boolean)
           .join("\n")
           .slice(0, 4000),
+        thread: e.threadId,
+        connection: id,
         origin:
           "https://mail.google.com/mail/u/0/#all/" +
           encodeURIComponent(e.threadId || e.id),

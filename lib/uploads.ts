@@ -47,7 +47,8 @@ export async function saveUpload(
   ownerId: string,
   agentId: string,
   name: string,
-  bytes: Buffer
+  bytes: Buffer,
+  project?: string
 ) {
   if (!bytes.length) throw new HttpError(400, "文件为空")
   if (bytes.length > MAX_FILE_BYTES) throw new HttpError(413, "文件最大 20 MB")
@@ -99,10 +100,17 @@ export async function saveUpload(
   await mkdir(path.dirname(file), { recursive: true, mode: 0o700 })
   await writeFile(file, bytes, { flag: "wx", mode: 0o600 })
   try {
-    await pool.query(
-      "INSERT INTO task_uploads(id,owner_id,agent_id,name,media_type,size,storage_path,created_at) VALUES($1,$2,$3,$4,$5,$6,$7,now())",
-      [id, ownerId, agentId, name, mediaType, bytes.length, storagePath]
-    )
+    if (project) {
+      const r = await pool.query(
+        `WITH target AS (SELECT id FROM library_entries WHERE owner_id=$2 AND id=$7 FOR KEY SHARE), uploaded AS (INSERT INTO task_uploads(id,owner_id,agent_id,name,media_type,size,storage_path,created_at) SELECT $1,$2,$3,$4,$5,$6,$8,now() FROM target RETURNING id,created_at) INSERT INTO library_project_events(entry_id,origin,title,body,at) SELECT target.id,'/library?source=upload&id='||uploaded.id,$4,'正在提取正文',uploaded.created_at FROM target,uploaded`,
+        [id, ownerId, agentId, name, mediaType, bytes.length, project, storagePath]
+      )
+      if (!r.rowCount) throw new HttpError(404, "项目不存在")
+    } else
+      await pool.query(
+        "INSERT INTO task_uploads(id,owner_id,agent_id,name,media_type,size,storage_path,created_at) VALUES($1,$2,$3,$4,$5,$6,$7,now())",
+        [id, ownerId, agentId, name, mediaType, bytes.length, storagePath]
+      )
   } catch (error) {
     await unlink(file)
     throw error

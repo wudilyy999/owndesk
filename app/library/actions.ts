@@ -1,4 +1,6 @@
 "use server"
+import { pool } from "@/db"
+import { startWatch, attachSource } from "@/lib/project-tracking"
 import { googleDrafts, type LibraryDraft } from "@/lib/library-google"
 import { headers } from "next/headers"
 import { redirect } from "next/navigation"
@@ -102,4 +104,46 @@ export async function previewGoogle(
       return { drafts: [], message: "请求或服务返回的数据格式不匹配。" }
     throw e
   }
+}
+
+export async function projectAction(form: FormData) {
+  const { userId } = await requireOwner(await headers())
+  let entry = String(form.get("entry") || "")
+  try {
+    switch (form.get("action")) {
+      case "watch":
+        entry = await startWatch(userId, {
+          title: form.get("title"),
+          connection: form.get("connection"),
+          thread: form.get("thread"),
+          due: form.get("due") || null,
+          agent: form.get("agent") || null,
+        })
+        break
+      case "attach":
+        await attachSource(userId, entry, {
+          kind: form.get("sourceKind"),
+          id: form.get("sourceId"),
+        })
+        break
+      case "stop":
+        await pool.query(
+          "DELETE FROM library_mail_watches w USING library_entries l WHERE w.entry_id=l.id AND l.owner_id=$1 AND w.entry_id=$2",
+          [userId, entry]
+        )
+        break
+      default:
+        throw new HttpError(400, "操作无效")
+    }
+  } catch (e) {
+    if (!(e instanceof HttpError) && !(e instanceof z.ZodError)) throw e
+    redirect(
+      "/library?error=" +
+        encodeURIComponent(
+          e instanceof HttpError ? e.message : "请检查项目名称、会话和日期"
+        )
+    )
+  }
+  revalidatePath("/library")
+  redirect("/library?entry=" + encodeURIComponent(entry))
 }
