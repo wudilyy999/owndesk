@@ -59,7 +59,8 @@ export async function createImprovement(
     commit: string
     fork?: NonNullable<Improvement["fork"]>
     merge?: NonNullable<Improvement["merge"]>
-  }
+  },
+  autoAdopt = false
 ) {
   if (!(await evolutionEnabled()))
     throw new HttpError(409, "自我改进还没打开：到“设置 → 自我改进”里打开后再试")
@@ -89,6 +90,7 @@ export async function createImprovement(
         baseCommit: base.commit,
         ...(origin?.fork ? { fork: origin.fork } : {}),
         ...(origin?.merge ? { merge: origin.merge } : {}),
+        ...(autoAdopt ? { autoAdopt: "on_pass" as const } : {}),
         status: "working",
         candidates: [],
         createdAt: new Date().toISOString(),
@@ -119,7 +121,8 @@ async function ownedProposal(ownerId: string, messageId: string) {
 export async function confirmImprovementProposal(
   ownerId: string,
   messageId: string,
-  checklist?: string[]
+  checklist?: string[],
+  autoAdopt = false
 ) {
   const message = await ownedProposal(ownerId, messageId)
   const meta = message.metadata as { proposal: ImprovementProposal; status: string }
@@ -136,7 +139,9 @@ export async function confirmImprovementProposal(
     ownerId,
     message.agentId,
     { ...meta.proposal, ...(checklist ? { checklist } : {}) },
-    messageId
+    messageId,
+    undefined,
+    autoAdopt
   )
   await db
     .update(companionMessages)
@@ -277,7 +282,7 @@ async function reopen(objectiveId: string, reason: string | null) {
     .where(eq(objectives.id, objectiveId))
 }
 
-// 采用: only a candidate whose evaluation passed, and only by the owner's click
+// Manual and pre-authorized switches share the candidate and ancestry checks.
 export async function adoptImprovement(
   ownerId: string,
   objectiveId: string,
@@ -355,6 +360,7 @@ export async function adoptImprovement(
       throw new HttpError(409, "改进状态已变化，请刷新后再试")
     const at = new Date().toISOString()
     const { deploymentId } = await requestSwitch(versionId, "promote", active.id)
+    delete value.autoAdopt
     value.status = "adopting"
     value.adoption = { versionId, roundNo: candidate.roundNo, at, deploymentId }
   })
@@ -371,6 +377,7 @@ export async function reviseImprovement(
   if (improvement.status === "abandoned" || improvement.status === "adopting")
     throw new HttpError(409, "这个改进现在不能再改")
   await updateImprovement(objectiveId, (value) => {
+    delete value.autoAdopt
     value.feedback = `The owner reviewed the last candidate and wants changes:\n${note}`
     value.status = "working"
   })
@@ -383,6 +390,7 @@ export async function abandonImprovement(ownerId: string, objectiveId: string) {
   if (improvement.status === "adopting")
     throw new HttpError(409, "正在切换版本，稍后再试")
   await updateImprovement(objectiveId, (value) => {
+    delete value.autoAdopt
     value.status = "abandoned"
   })
   const versionIds = improvement.candidates.flatMap((item) =>
@@ -417,6 +425,48 @@ async function tell(agentId: string, objectiveId: string, content: string) {
     metadata: { objectiveId },
     channel: "web",
   })
+}
+
+// Claim one owner's authorization durably before starting Docker. A worker restart or
+// uncertain launch can leave a candidate for manual review, never a second auto-switch.
+export async function dispatchAutoAdoption() {
+  const {
+    rows: [row],
+  } = await pool.query<{ value: string }>(`
+    WITH next AS (
+      SELECT s.key FROM settings s JOIN objectives o ON s.key='evolution.improvement.' || o.id
+      WHERE o.status='achieved' AND CASE WHEN s.key LIKE 'evolution.improvement.%'
+        THEN s.value::jsonb @> '{"status":"ready","autoAdopt":"on_pass"}' END
+        AND EXISTS (SELECT 1 FROM settings WHERE key='evolution.enabled' AND value='true')
+        AND NOT EXISTS (SELECT 1 FROM tasks WHERE status IN ('queued','running','verifying'))
+        AND NOT EXISTS (SELECT 1 FROM deployments WHERE status='running')
+      ORDER BY s.updated_at,s.key LIMIT 1 FOR UPDATE OF s SKIP LOCKED
+    ) UPDATE settings s SET value=jsonb_set(s.value::jsonb,'{autoAdopt}','"claimed"')::text,
+      updated_at=now() FROM next WHERE s.key=next.key RETURNING s.value`)
+  if (!row) return
+  const item = JSON.parse(row.value) as Improvement
+  const version = latest(item)?.versionId
+  try {
+    if (!version) throw new HttpError(409, "候选版本尚未就绪")
+    const { withTrialClosed } = await import("./trial")
+    await withTrialClosed(
+      item.ownerId,
+      item.objectiveId,
+      () => adoptImprovement(item.ownerId, item.objectiveId, version),
+      version
+    )
+  } catch (error) {
+    console.error(
+      "Automatic adoption could not be confirmed",
+      item.objectiveId,
+      error instanceof HttpError ? error.status : "updater"
+    )
+    await tell(
+      item.agentId,
+      item.objectiveId,
+      `「${item.title}」未能确认自动上线：${error instanceof HttpError ? error.message : "请查看版本页的切换记录"}。这次不会自动重试。`
+    )
+  }
 }
 
 // Dispatcher tick: follow adopted versions. Healthy -> adopted. Rolled back (at the switch or

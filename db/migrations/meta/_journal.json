@@ -253,6 +253,20 @@
       "when": 1795457001696,
       "tag": "0035_channel_delivery_order",
       "breakpoints": true
+    },
+    {
+      "idx": 36,
+      "version": "7",
+      "when": 1795651200000,
+      "tag": "0036_library",
+      "breakpoints": true
+    },
+    {
+      "idx": 37,
+      "version": "7",
+      "when": 1795651201000,
+      "tag": "0037_library_followup",
+      "breakpoints": true
     }
   ]
 }

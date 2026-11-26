@@ -41,14 +41,14 @@ export function ImprovementProposalCard({
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const pending = meta.status === "pending"
-  async function act(action: "confirm" | "cancel") {
+  async function act(action: "confirm" | "cancel", autoAdopt = false) {
     setBusy(true)
     setError(null)
     try {
       await post(`/api/companion/improvements/${message.id}`, {
         action,
         ...(action === "confirm"
-          ? { checklist: items.map((item) => item.trim()).filter(Boolean) }
+          ? { autoAdopt, checklist: items.map((item) => item.trim()).filter(Boolean) }
           : {}),
       })
       onChanged()
@@ -113,12 +113,20 @@ export function ImprovementProposalCard({
           .join(" · ") || "没有上限（每月预算照常生效）"}
       </p>
       <p className="text-xs text-faint">
-        第一版只改界面和行为：不改测试、评测、预算、登录、密码库、工作站，不加第三方包，不改数据库结构。
+        可选择让这次改进在验收通过、实例空闲时自动上线；也可以先看报告再决定。
       </p>
       {pending ? (
-        <div className="flex gap-2">
-          <Button size="sm" disabled={busy} onClick={() => act("confirm")}>
-            确认，开始改进
+        <div className="flex flex-wrap gap-2">
+          <Button size="sm" disabled={busy} onClick={() => act("confirm", true)}>
+            开始改进，通过后自动上线
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            disabled={busy}
+            onClick={() => act("confirm")}
+          >
+            只改进，我来上线
           </Button>
           <Button size="sm" variant="ghost" disabled={busy} onClick={() => act("cancel")}>
             不用了
@@ -183,7 +191,7 @@ export function ImprovementReportCard({ message }: { message: CompanionMessage }
         ))}
       </ul>
       <a href="/improvements" className="text-xs underline underline-offset-4">
-        到自我改进页看报告，决定采用、再改改或放弃
+        查看改进报告与上线状态
       </a>
     </div>
   )

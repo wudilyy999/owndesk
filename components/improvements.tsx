@@ -171,6 +171,12 @@ export function Improvements({ initial }: { initial: ImprovementOverview }) {
               </span>
             </div>
             <p className="text-sm">{item.request}</p>
+            {item.autoAdopt === "on_pass" && (
+              <p className="text-sm">已授权：验收通过且实例空闲后自动上线。</p>
+            )}
+            {item.autoAdopt === "claimed" && item.status === "ready" && (
+              <p className="text-sm">已发起一次上线尝试，请查看版本页确认结果。</p>
+            )}
             <ul className="text-sm">
               {item.checklist.map((entry) => {
                 const verdict = evaluation?.acceptance.find((row) => row.item === entry)

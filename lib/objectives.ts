@@ -27,7 +27,8 @@ import {
   resumeImprovementRounds,
   startImprovementRound,
 } from "@/lib/evolution/runner"
-import { watchAdoptions } from "@/lib/evolution/improvements"
+import { deliverLibraryReminders } from "@/lib/library"
+import { dispatchAutoAdoption, watchAdoptions } from "@/lib/evolution/improvements"
 
 import { initialRun, dueScheduleWindow } from "@/lib/routines"
 
@@ -646,6 +647,8 @@ export async function advanceObjectives(now = new Date()) {
       await closeFinishedRounds()
       await resumeImprovementRounds()
       await watchAdoptions()
+      await dispatchAutoAdoption()
+      await deliverLibraryReminders(now)
       const active = await db
         .select()
         .from(objectives)

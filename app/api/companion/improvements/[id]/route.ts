@@ -7,6 +7,7 @@ import { workerRequest } from "@/lib/worker-request"
 const bodySchema = z.union([
   z.object({
     action: z.literal("confirm"),
+    autoAdopt: z.boolean().optional(),
     checklist: z.array(z.string().trim().min(1).max(300)).min(1).max(12).optional(),
   }),
   z.object({ action: z.literal("cancel") }),
@@ -32,6 +33,7 @@ export async function POST(
         action: "confirm",
         messageId: id,
         checklist: body.checklist,
+        autoAdopt: body.autoAdopt,
       }),
       { status: 201 }
     )

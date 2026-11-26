@@ -54,7 +54,7 @@ After a useful task, choose **生成操作手册** (Generate operation manual), 
 
 ## Self-improvement with automatic rollback
 
-Self-improvement is off by default. Turn it on from **自我改进** (Self-improvement, `/improvements`) in the sidebar, then describe the change in chat.
+Self-improvement is off by default. Turn it on from **自我改进** (Self-improvement, `/improvements`) in the sidebar, then describe the change in chat. On the proposal, choose **开始改进，通过后自动上线** to authorize this change to go live on your own instance after it passes evaluation and the instance is idle. Choose **只改进，我来上线** to review it first.
 
 ```mermaid
 flowchart LR
@@ -68,6 +68,7 @@ flowchart LR
     F -->|3 failed checks| H[Previous image restored<br/>tasks and files kept]
     H --> I[Debug round in the lab]
     I --> D
+    D -->|pre-authorized and passed| F
 ```
 
 <table>
@@ -202,14 +203,15 @@ For an always-on assistant with version switching and self-improvement, use Dock
 
 Follow sections 2 to 5 of the [Linux deployment guide](deploy/README.md): generate the configuration, build the images, [initialize the guest network](deploy/README.md#4-初始化并核对-guest-网络), and start the database, owner account, and services. The [self-hosting overview](docs/self-host.md) covers HTTPS, including [Cloudflare Tunnel](docs/cloudflare-tunnel.md) for machines without a public IP. [Upgrades and rollback](docs/upgrade.md) and [backup and recovery](deploy/BACKUP.md) cover running installations.
 
-> [!NOTE]
-> `scripts/install.sh` currently skips the guest network setup and passes the owner file to `docker compose run` with an unsupported flag. Use the manual steps until it is fixed. No GitHub release or GHCR images are published yet, so images are built from source.
+For a fresh installation, `bash scripts/install.sh https://desk.example.com owner@example.com` sets up the guest network and creates the owner. The installer builds from source if published images are unavailable. Use `scripts/upgrade.sh` for an existing installation.
 
 ### Bring your own model
 
 Provider integrations include **OpenAI, Anthropic, Google, xAI, DeepSeek, Mistral, Groq, OpenRouter, Ollama, LM Studio**, and **custom OpenAI-compatible endpoints**. Configure the model and credentials in settings. Choose a model with tool calling and image input for desktop tasks.
 
 Task records and workstation files live in your installation. Your selected model provider receives the context needed for a task, which may include text, screenshots, and application controls.
+
+Open **资料与跟进** (Library) from navigation to search chats, tasks and file names, open the original, and save notes for all your agents. Import text, preview authorized Google mail snippets and calendar events, or choose a follow-up date and a companion chat for the reminder. Supported browsers can dictate a chat draft; SRT/VTT transcripts can also be imported.
 
 ## How it works
 

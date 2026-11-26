@@ -54,7 +54,7 @@
 
 ## 自我改进与自动回退
 
-自我改进默认关闭。在侧栏打开 **自我改进**（`/improvements`）后，直接在聊天里说想改什么。
+自我改进默认关闭。在侧栏打开 **自我改进**（`/improvements`）后，直接在聊天里说想改什么。在提案卡选择 **开始改进，通过后自动上线**，OwnDesk 会在验收通过且实例空闲时，把这次改动作为本机新版本上线。选择 **只改进，我来上线** 则保留人工采用。
 
 ```mermaid
 flowchart LR
@@ -68,6 +68,7 @@ flowchart LR
     F -->|连续 3 次失败| H[换回旧镜像<br/>任务和文件保留]
     H --> I[实验室 debug 轮次]
     I --> D
+    D -->|已授权且通过| F
 ```
 
 <table>
@@ -202,14 +203,15 @@ npm run dev
 
 按 [Linux 部署指南](deploy/README.md) 第 2–5 节操作：生成配置、构建镜像、[初始化 guest 网络](deploy/README.md#4-初始化并核对-guest-网络)，再启动数据库、创建主人账号和启动服务。HTTPS 配置见[自托管概览](docs/self-host.md)，没有公网 IP 时可以用 [Cloudflare Tunnel](docs/cloudflare-tunnel.md)。已有安装的维护见[升级与回退](docs/upgrade.md)和[备份与恢复](deploy/BACKUP.md)。
 
-> [!NOTE]
-> `scripts/install.sh` 目前没有初始化 guest 网络，创建主人时还给 `docker compose run` 传了不支持的参数。修复前请按上面的手动步骤部署。项目还没有发布 GitHub Release 和 GHCR 镜像，镜像需要从源码构建。
+全新安装可运行 `bash scripts/install.sh https://desk.example.com owner@example.com`。脚本会初始化工作站网络并创建主人；拉不到发布镜像时会从源码构建。已有实例请用 `scripts/upgrade.sh`。
 
 ### 选择你喜欢的模型
 
 已接入 **OpenAI、Anthropic、Google、xAI、DeepSeek、Mistral、Groq、OpenRouter、Ollama、LM Studio** 和 **自定义 OpenAI 兼容端点**。在设置中填写模型与凭据；桌面任务应选择支持工具调用和图像输入的模型。
 
 任务记录和桌面文件保存在自己的安装中。所选模型服务会收到完成任务所需的上下文，其中可能包含文字、截图和应用控件信息。
+
+从导航打开 **资料与跟进**。按关键词查聊天原话、任务、成果和附件名，打开原始出处，再决定哪些结论共享给所有助手。也可以导入文本、预览已授权的 Google 邮件摘要或日历，或把条目设为待跟进并选择到期时接收提醒的聊天。支持的浏览器可在聊天输入框听写草稿；已有的 SRT/VTT 会议字幕也可导入资料库。
 
 ## 它怎样运行
 
