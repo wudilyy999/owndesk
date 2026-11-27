@@ -30,15 +30,28 @@ export async function POST(request: Request) {
     const file = form.get("file")
     if (!(file instanceof File)) throw new HttpError(400, "没有收到文件")
     if (file.size > MAX_FILE_BYTES) throw new HttpError(413, "文件最大 20 MB")
-    return Response.json(
-      await saveUpload(
-        owner.userId,
-        agentId,
-        file.name,
-        Buffer.from(await file.arrayBuffer())
-      ),
-      { status: 201 }
+    const project = form.get("project")
+    if (
+      project !== null &&
+      (typeof project !== "string" ||
+        !project ||
+        project.length > 100 ||
+        !/\.(pdf|docx|xlsx|csv)$/i.test(file.name))
     )
+      throw new HttpError(400, "请选择项目和支持的资料格式")
+    const saved = await saveUpload(
+      owner.userId,
+      agentId,
+      file.name,
+      Buffer.from(await file.arrayBuffer()),
+      project ?? undefined
+    )
+    if (project)
+      return new Response(null, {
+        status: 303,
+        headers: { Location: "/library?entry=" + encodeURIComponent(project) },
+      })
+    return Response.json(saved, { status: 201 })
   } catch (error) {
     return errorResponse(error)
   }

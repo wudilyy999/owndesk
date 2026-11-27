@@ -56,7 +56,7 @@ COPY --from=secret-scanner /usr/bin/gitleaks /usr/local/bin/gitleaks
 COPY --from=docker-cli /usr/local/libexec/docker/cli-plugins/docker-compose /usr/local/libexec/docker/cli-plugins/docker-compose
 COPY --from=docker-cli /usr/local/libexec/docker/cli-plugins/docker-buildx /usr/local/libexec/docker/cli-plugins/docker-buildx
 RUN apt-get update \
- && apt-get install -y --no-install-recommends iptables iproute2 git \
+ && apt-get install -y --no-install-recommends iptables iproute2 git poppler-utils python3 \
  && rm -rf /var/lib/apt/lists/*
 EXPOSE 6798
 CMD ["node", "--import", "tsx", "worker/main.ts"]

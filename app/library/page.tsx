@@ -10,7 +10,10 @@ import { requireOwner } from "@/lib/auth"
 import { HttpError } from "@/lib/errors"
 import { listEntries, readSource, searchSources, sourceType } from "@/lib/library"
 import { PageLayout } from "@/components/page-header"
-import { updateLibrary } from "./actions"
+import { projectFacts } from "@/lib/project-facts"
+import { projectEvents } from "@/lib/project-tracking"
+import { pool } from "@/db"
+import { updateLibrary, projectAction } from "./actions"
 const box = "w-full rounded-md border bg-background p-2 text-sm",
   btn = "rounded-md border px-3 py-1.5 text-sm hover:bg-muted",
   panel = "space-y-3 rounded-xl border p-4"
@@ -57,6 +60,23 @@ export default async function LibraryPage({
         )
     : []
   if (arg("entry") && !entry) notFound()
+  const events = entry ? await projectEvents(owner.userId, entry.id) : []
+  const watch = entry
+    ? (
+        await pool.query(
+          "SELECT last_error,last_checked FROM library_mail_watches WHERE entry_id=$1",
+          [entry.id]
+        )
+      ).rows[0]
+    : null
+  const targets = source
+    ? (
+        await pool.query(
+          "SELECT id,title FROM library_entries WHERE owner_id=$1 ORDER BY updated_at DESC",
+          [owner.userId]
+        )
+      ).rows
+    : []
   const connections = (await listConnections(owner.userId))
     .filter((c) => c.kind === "google" && c.enabled && c.authorized)
     .map((c) => ({ id: String(c.id), name: String(c.name) }))
@@ -65,6 +85,9 @@ export default async function LibraryPage({
     .from(companions)
     .innerJoin(agents, eq(agents.id, companions.agentId))
     .where(eq(companions.ownerId, owner.userId))
+  const storageAgent = entry
+    ? (people[0]?.id ?? (await db.select({ id: agents.id }).from(agents).limit(1))[0]?.id)
+    : undefined
   const page = Math.min(10000, Math.max(1, Number.parseInt(arg("page"), 10) || 1)),
     size = 30
   const next = (n: number) =>
@@ -91,7 +114,7 @@ export default async function LibraryPage({
     <PageLayout title="资料与跟进">
       {arg("error") && <p role="alert">{arg("error")}</p>}
       <form className={panel} action="/library">
-        <label htmlFor="lookup">搜索共享笔记、聊天原话、任务和文件名</label>
+        <label htmlFor="lookup">搜索项目记录、聊天、任务、文件名和正文</label>
         <div className="flex flex-wrap gap-2">
           <input
             className={box}
@@ -140,6 +163,24 @@ export default async function LibraryPage({
               下载原文件
             </a>
           )}
+          {targets.length > 0 && (
+            <form action={projectAction}>
+              <input type="hidden" name="action" value="attach" />
+              <input type="hidden" name="sourceKind" value={source.kind} />
+              <input type="hidden" name="sourceId" value={source.id} />
+              <label>
+                共享给项目{" "}
+                <select name="entry">
+                  {targets.map((t) => (
+                    <option key={t.id} value={t.id}>
+                      {t.title}
+                    </option>
+                  ))}
+                </select>
+              </label>{" "}
+              <button className={btn}>加入项目时间线</button>
+            </form>
+          )}
         </section>
       )}
       {q && (
@@ -158,7 +199,11 @@ export default async function LibraryPage({
       )}
       <section className={panel}>
         <h2>
-          {entry ? "编辑条目" : source ? "根据这份原文记一条" : "添加笔记或待跟进事项"}
+          {entry
+            ? "编辑条目"
+            : source
+              ? "根据这份原文记一条"
+              : "新建项目笔记或待跟进事项"}
         </h2>
         <p className="text-sm text-muted-foreground">
           保存的标题和正文供你的各个助手查询。来源链接只供你查看。
@@ -250,7 +295,60 @@ export default async function LibraryPage({
           </form>
         )}
       </section>
-      <GoogleImport connections={connections} />
+      {entry && storageAgent && (
+        <form
+          className={panel}
+          action={"/api/uploads?agentId=" + encodeURIComponent(storageAgent)}
+          method="post"
+          encType="multipart/form-data"
+        >
+          <input type="hidden" name="project" value={entry.id} />
+          <label>
+            添加项目文件{" "}
+            <input required name="file" type="file" accept=".pdf,.docx,.xlsx,.csv" />
+          </label>
+          <button className={btn}>上传并共享正文</button>
+          <p className="text-sm">支持文字 PDF、Word、Excel 和 CSV，单份最多 20 MB。</p>
+        </form>
+      )}
+      {entry && (events.length > 0 || watch) && (
+        <section className={panel}>
+          <h2>项目时间线</h2>
+          {projectFacts(events).map((f) => (
+            <p key={f.field}>
+              <strong>{f.field}：</strong>
+              {f.value}{" "}
+              <a className="underline" href={f.origin}>
+                原文
+              </a>
+            </p>
+          ))}
+          {watch && (
+            <form action={projectAction}>
+              <input type="hidden" name="entry" value={entry.id} />
+              <p role="status">
+                {watch.last_error ||
+                  (watch.last_checked ? "正在跟踪邮件回复" : "等待首次检查")}
+              </p>
+              <button className={btn} name="action" value="stop">
+                停止同步此会话
+              </button>
+            </form>
+          )}
+          {events.map((e) => (
+            <details key={e.origin}>
+              <summary>
+                {e.at.toISOString().slice(0, 10)} · {e.title}
+              </summary>
+              <p className="whitespace-pre-wrap">{e.body}</p>
+              <a className="underline" href={e.origin}>
+                查看原文
+              </a>
+            </details>
+          ))}
+        </section>
+      )}
+      <GoogleImport connections={connections} people={people} />
       <section className={panel}>
         <h2>我的条目</h2>
         <nav className="flex gap-3">
